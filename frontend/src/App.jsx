@@ -7,6 +7,8 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import MyProfilePage from './pages/MyProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import SearchBar from './components/SearchBar';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
 import './App.css';
@@ -193,6 +195,12 @@ export const AppRoutes = () => {
           
           {/* Change password page */}
           <Route path="/change-password" element={<ChangePasswordPage />} />
+          
+          {/* Forgot password page */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          
+          {/* Reset password page */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
