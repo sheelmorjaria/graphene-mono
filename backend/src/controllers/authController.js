@@ -437,3 +437,140 @@ export const changePassword = async (req, res) => {
     });
   }
 };
+
+// Forgot password - send reset token
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Input validation
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid email address'
+      });
+    }
+
+    // Find user by email
+    const user = await User.findByEmail(email);
+    
+    // Always return the same response to prevent email enumeration
+    const standardResponse = {
+      success: true,
+      message: 'If an account exists for that email, a password reset link has been sent.'
+    };
+
+    // If user doesn't exist or is inactive, return standard response but don't send email
+    if (!user || !user.isActive) {
+      return res.json(standardResponse);
+    }
+
+    // Generate password reset token
+    const resetToken = user.generatePasswordResetToken();
+    await user.save();
+
+    // TODO: Send password reset email
+    // await sendPasswordResetEmail(user.email, resetToken);
+    
+    // Log the reset request for debugging (remove in production)
+    console.log(`Password reset requested for user ${user.email} at ${new Date().toISOString()}`);
+    console.log(`Reset token generated: ${resetToken}`); // Remove in production
+
+    res.json(standardResponse);
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred while processing password reset request'
+    });
+  }
+};
+
+// Reset password with token
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword, confirmNewPassword } = req.body;
+
+    // Input validation
+    if (!token || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token, new password, and confirmation are required'
+      });
+    }
+
+    // Check if new passwords match
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Passwords do not match'
+      });
+    }
+
+    // Validate new password strength
+    const passwordError = validatePasswordStrength(newPassword);
+    if (passwordError) {
+      return res.status(400).json({
+        success: false,
+        error: passwordError
+      });
+    }
+
+    // Find user with valid reset token
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password reset token is invalid or has expired'
+      });
+    }
+
+    // Update password and clear reset token
+    user.password = newPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    // Log the password reset event
+    console.log(`Password reset completed for user ${user.email} at ${new Date().toISOString()}`);
+
+    // TODO: Send password reset confirmation email
+    // await sendPasswordResetConfirmationEmail(user.email);
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: validationErrors.join('. ')
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred while resetting password'
+    });
+  }
+};

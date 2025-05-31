@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { register, login, logout, getProfile, updateProfile, changePassword } from '../controllers/authController.js';
+import { register, login, logout, getProfile, updateProfile, changePassword, forgotPassword, resetPassword } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -31,6 +31,8 @@ const registerLimiter = process.env.NODE_ENV === 'test' ? (req, res, next) => ne
 // Public routes
 router.post('/register', registerLimiter, register);
 router.post('/login', authLimiter, login);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
 // Protected routes
 router.get('/profile', authenticate, getProfile);
