@@ -1,12 +1,74 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import SearchResultsPage from './pages/SearchResultsPage';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import MyProfilePage from './pages/MyProfilePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import SearchBar from './components/SearchBar';
+import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
 import './App.css';
 
+const AuthenticatedUserMenu = () => {
+  const { user } = useAuth();
+  const logout = useLogout();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    setIsDropdownOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        className="flex items-center space-x-2 hover:text-blue-300 transition-colors"
+        aria-expanded={isDropdownOpen}
+        aria-haspopup="true"
+      >
+        <span>Welcome, {user?.firstName}</span>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isDropdownOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+          <div className="px-4 py-2 text-sm text-gray-700 border-b">
+            {user?.email}
+          </div>
+          <Link
+            to="/profile"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsDropdownOpen(false)}
+          >
+            Profile
+          </Link>
+          <Link
+            to="/change-password"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsDropdownOpen(false)}
+          >
+            Change Password
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Header = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
     <header className="bg-gray-900 text-white shadow-lg" role="banner">
       <div className="container mx-auto px-4 py-4">
@@ -27,7 +89,7 @@ const Header = () => {
           </div>
           
           <nav className="flex-shrink-0">
-            <ul className="flex space-x-6">
+            <ul className="flex items-center space-x-6">
               <li>
                 <Link 
                   to="/products" 
@@ -36,6 +98,33 @@ const Header = () => {
                   Products
                 </Link>
               </li>
+              
+              {!isLoading && (
+                isAuthenticated ? (
+                  <li>
+                    <AuthenticatedUserMenu />
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <Link 
+                        to="/login" 
+                        className="hover:text-blue-300 transition-colors"
+                      >
+                        Login
+                      </Link>
+                    </li>
+                    <li>
+                      <Link 
+                        to="/register" 
+                        className="hover:text-blue-300 transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </li>
+                  </>
+                )
+              )}
             </ul>
           </nav>
         </div>
@@ -93,6 +182,18 @@ export const AppRoutes = () => {
           {/* Search results page */}
           <Route path="/search" element={<SearchResultsPage />} />
           
+          {/* Registration page */}
+          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* Login page */}
+          <Route path="/login" element={<LoginPage />} />
+          
+          {/* Profile page */}
+          <Route path="/profile" element={<MyProfilePage />} />
+          
+          {/* Change password page */}
+          <Route path="/change-password" element={<ChangePasswordPage />} />
+          
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
           
@@ -107,7 +208,9 @@ export const AppRoutes = () => {
 function App() {
   return (
     <Router>
-      <AppRoutes />
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </Router>
   );
 }

@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import productsRouter from './src/routes/products.js';
+import authRouter from './src/routes/auth.js';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ const connectDB = async () => {
 
 // Routes
 app.use('/api/products', productsRouter);
+app.use('/api/auth', authRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -62,7 +64,7 @@ app.get('/health', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
