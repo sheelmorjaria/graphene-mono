@@ -13,10 +13,12 @@ import MyAddressesPage from './pages/MyAddressesPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
 import { CartProvider, useCart } from './contexts/CartContext';
+import { CheckoutProvider } from './contexts/CheckoutContext';
 import './App.css';
 
 const AuthenticatedUserMenu = () => {
@@ -238,6 +240,9 @@ export const AppRoutes = () => {
           {/* Cart page */}
           <Route path="/cart" element={<CartPage />} />
           
+          {/* Checkout page */}
+          <Route path="/checkout" element={<CheckoutPage />} />
+          
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
           
@@ -254,7 +259,9 @@ function App() {
     <Router>
       <AuthProvider>
         <CartProvider>
-          <AppRoutes />
+          <CheckoutProvider>
+            <AppRoutes />
+          </CheckoutProvider>
         </CartProvider>
       </AuthProvider>
     </Router>
