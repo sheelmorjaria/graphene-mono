@@ -10,7 +10,6 @@ const shippingMethodSchema = new mongoose.Schema({
   code: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     maxlength: 50,
     match: /^[A-Z0-9_]+$/
