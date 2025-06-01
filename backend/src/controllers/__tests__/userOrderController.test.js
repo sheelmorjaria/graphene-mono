@@ -624,4 +624,215 @@ describe('User Order Controller', () => {
       expect(response.body.error).toBeDefined();
     });
   });
+
+  describe('Order Tracking Features (Story 4.1)', () => {
+    let trackingOrder;
+
+    beforeEach(async () => {
+      // Create an order specifically for tracking tests
+      trackingOrder = new Order({
+        orderNumber: 'TRACK-TEST-001',
+        userId: testUser._id,
+        customerEmail: testUser.email,
+        status: 'pending',
+        items: [{
+          productId: new mongoose.Types.ObjectId(),
+          productName: 'Tracking Test Product',
+          productSlug: 'tracking-test-product',
+          quantity: 1,
+          unitPrice: 50.00,
+          totalPrice: 50.00
+        }],
+        subtotal: 50.00,
+        tax: 4.00,
+        shipping: 7.99,
+        totalAmount: 61.99,
+        shippingAddress: {
+          fullName: 'Tracking Test User',
+          addressLine1: '123 Test St',
+          city: 'London',
+          stateProvince: 'London',
+          postalCode: 'SW1A 1AA',
+          country: 'GB',
+          phoneNumber: '+44 20 7946 0958'
+        },
+        billingAddress: {
+          fullName: 'Tracking Test User',
+          addressLine1: '123 Test St',
+          city: 'London',
+          stateProvince: 'London',
+          postalCode: 'SW1A 1AA',
+          country: 'GB',
+          phoneNumber: '+44 20 7946 0958'
+        },
+        shippingMethod: {
+          id: new mongoose.Types.ObjectId(),
+          name: 'Standard Shipping',
+          cost: 7.99,
+          estimatedDelivery: '3-5 business days'
+        },
+        paymentMethod: {
+          type: 'card',
+          name: 'Credit or Debit Card'
+        },
+        paymentDetails: {
+          cardBrand: 'visa',
+          last4: '4242'
+        },
+        paymentStatus: 'completed'
+      });
+      await trackingOrder.save();
+    });
+
+    describe('Enhanced Status Enum', () => {
+      it('should support all new order statuses', async () => {
+        const newStatuses = ['out_for_delivery', 'returned'];
+        
+        for (const status of newStatuses) {
+          trackingOrder.status = status;
+          const savedOrder = await trackingOrder.save();
+          expect(savedOrder.status).toBe(status);
+        }
+      });
+
+      it('should automatically add status history entry on status change', async () => {
+        // Initial status should have history entry
+        expect(trackingOrder.statusHistory).toHaveLength(1);
+        expect(trackingOrder.statusHistory[0].status).toBe('pending');
+        expect(trackingOrder.statusHistory[0].note).toBe('Order created');
+
+        // Change status and verify history is updated
+        trackingOrder.status = 'processing';
+        await trackingOrder.save();
+
+        expect(trackingOrder.statusHistory).toHaveLength(2);
+        expect(trackingOrder.statusHistory[1].status).toBe('processing');
+        expect(trackingOrder.statusHistory[1].note).toBe('Status updated');
+      });
+
+      it('should display formatted status correctly', async () => {
+        const statusTests = [
+          { status: 'pending', expected: 'Pending' },
+          { status: 'processing', expected: 'Processing' },
+          { status: 'shipped', expected: 'Shipped' },
+          { status: 'out_for_delivery', expected: 'Out for Delivery' },
+          { status: 'delivered', expected: 'Delivered' },
+          { status: 'cancelled', expected: 'Cancelled' },
+          { status: 'returned', expected: 'Returned' }
+        ];
+
+        for (const test of statusTests) {
+          trackingOrder.status = test.status;
+          expect(trackingOrder.getStatusDisplay()).toBe(test.expected);
+        }
+      });
+    });
+
+    describe('GET /api/user/orders/:orderId - Enhanced with Tracking Data', () => {
+      it('should return statusHistory and shippingMethod in order details', async () => {
+        const response = await request(app)
+          .get(`/api/user/orders/${trackingOrder._id}`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        const order = response.body.data.order;
+        
+        // Check statusHistory is included
+        expect(order.statusHistory).toBeDefined();
+        expect(Array.isArray(order.statusHistory)).toBe(true);
+        expect(order.statusHistory.length).toBeGreaterThan(0);
+        expect(order.statusHistory[0]).toHaveProperty('status');
+        expect(order.statusHistory[0]).toHaveProperty('timestamp');
+        expect(order.statusHistory[0]).toHaveProperty('note');
+
+        // Check shippingMethod is included
+        expect(order.shippingMethod).toBeDefined();
+        expect(order.shippingMethod).toHaveProperty('name');
+        expect(order.shippingMethod).toHaveProperty('cost');
+        expect(order.shippingMethod).toHaveProperty('estimatedDelivery');
+      });
+
+      it('should return tracking information when present', async () => {
+        // Add tracking info to order
+        trackingOrder.trackingNumber = 'TRACK123456789';
+        trackingOrder.trackingUrl = 'https://tracking.example.com/TRACK123456789';
+        trackingOrder.status = 'shipped';
+        await trackingOrder.save();
+
+        const response = await request(app)
+          .get(`/api/user/orders/${trackingOrder._id}`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        const order = response.body.data.order;
+        
+        expect(order.trackingNumber).toBe('TRACK123456789');
+        expect(order.trackingUrl).toBe('https://tracking.example.com/TRACK123456789');
+        expect(order.status).toBe('shipped');
+      });
+
+      it('should handle orders without tracking information', async () => {
+        const response = await request(app)
+          .get(`/api/user/orders/${trackingOrder._id}`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        const order = response.body.data.order;
+        
+        expect(order.trackingNumber).toBeUndefined();
+        expect(order.trackingUrl).toBeUndefined();
+        expect(order.statusHistory).toBeDefined();
+      });
+    });
+
+    describe('Status History Tracking', () => {
+      it('should track multiple status changes with timestamps', async () => {
+        const statuses = ['processing', 'shipped', 'out_for_delivery', 'delivered'];
+        
+        for (let i = 0; i < statuses.length; i++) {
+          // Add a small delay to ensure different timestamps
+          await new Promise(resolve => setTimeout(resolve, 10));
+          
+          trackingOrder.status = statuses[i];
+          await trackingOrder.save();
+          
+          expect(trackingOrder.statusHistory).toHaveLength(i + 2); // +1 for initial 'pending', +1 for current
+          expect(trackingOrder.statusHistory[i + 1].status).toBe(statuses[i]);
+          expect(trackingOrder.statusHistory[i + 1].timestamp).toBeInstanceOf(Date);
+        }
+      });
+
+      it('should not add duplicate history entries for same status', async () => {
+        const initialHistoryLength = trackingOrder.statusHistory.length;
+        
+        // Save without changing status
+        await trackingOrder.save();
+        
+        // History length should remain the same
+        expect(trackingOrder.statusHistory).toHaveLength(initialHistoryLength);
+      });
+
+      it('should maintain chronological order in status history', async () => {
+        trackingOrder.status = 'processing';
+        await trackingOrder.save();
+        
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        trackingOrder.status = 'shipped';
+        await trackingOrder.save();
+
+        const history = trackingOrder.statusHistory;
+        expect(history).toHaveLength(3);
+        
+        // Verify chronological order
+        for (let i = 1; i < history.length; i++) {
+          expect(new Date(history[i].timestamp).getTime())
+            .toBeGreaterThanOrEqual(new Date(history[i - 1].timestamp).getTime());
+        }
+      });
+    });
+  });
 });

@@ -78,8 +78,10 @@ export const formatOrderStatus = (status) => {
     pending: 'Pending',
     processing: 'Processing',
     shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
     delivered: 'Delivered',
-    cancelled: 'Cancelled'
+    cancelled: 'Cancelled',
+    returned: 'Returned'
   };
   return statusMap[status] || status;
 };
@@ -90,8 +92,10 @@ export const getStatusColor = (status) => {
     pending: '#fbbf24', // yellow
     processing: '#3b82f6', // blue
     shipped: '#8b5cf6', // purple
+    out_for_delivery: '#f59e0b', // amber
     delivered: '#10b981', // green
-    cancelled: '#ef4444' // red
+    cancelled: '#ef4444', // red
+    returned: '#6b7280' // gray
   };
   return colorMap[status] || '#6b7280'; // gray as default
 };
@@ -171,8 +175,10 @@ export const getOrderStatusColor = (status) => {
     pending: 'text-yellow-600 bg-yellow-50',
     processing: 'text-blue-600 bg-blue-50',
     shipped: 'text-purple-600 bg-purple-50',
+    out_for_delivery: 'text-amber-600 bg-amber-50',
     delivered: 'text-green-600 bg-green-50',
-    cancelled: 'text-red-600 bg-red-50'
+    cancelled: 'text-red-600 bg-red-50',
+    returned: 'text-gray-600 bg-gray-50'
   };
   
   return colorMap[status] || 'text-gray-600 bg-gray-50';
