@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import productsRouter from './src/routes/products.js';
 import authRouter from './src/routes/auth.js';
+import userRouter from './src/routes/user.js';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ const connectDB = async () => {
 // Routes
 app.use('/api/products', productsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/user', userRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
