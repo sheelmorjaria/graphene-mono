@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getUserOrderDetails, formatCurrency, getStatusColor } from '../services/orderService';
+import OrderStatusTimeline from '../components/OrderStatusTimeline';
 
 const OrderDetailsPage = () => {
   const { orderId } = useParams();
@@ -135,6 +136,12 @@ const OrderDetailsPage = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
+            {/* Order Status Timeline */}
+            <OrderStatusTimeline 
+              currentStatus={order.status} 
+              statusHistory={order.statusHistory || []} 
+            />
+
             {/* Order Items */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Items</h2>
@@ -172,31 +179,84 @@ const OrderDetailsPage = () => {
               </div>
             </div>
 
-            {/* Shipping Tracking */}
-            {(order.trackingNumber || order.trackingUrl) && (
+            {/* Enhanced Shipping Tracking */}
+            {(order.status === 'shipped' || order.status === 'out_for_delivery' || order.status === 'delivered' || order.trackingNumber || order.trackingUrl) && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Shipping Information</h2>
-                {order.trackingNumber && (
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700">Tracking Number:</span>
-                    <span className="ml-2 text-sm text-gray-900 font-mono">
-                      {order.trackingNumber}
-                    </span>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  📦 Shipping & Tracking Information
+                </h2>
+                
+                {/* Shipping Method */}
+                {order.shippingMethod && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Shipping Method:</span>
+                        <div className="text-sm text-gray-900 mt-1">{order.shippingMethod.name}</div>
+                      </div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatCurrency(order.shippingMethod.cost)}
+                      </div>
+                    </div>
+                    {order.shippingMethod.estimatedDelivery && (
+                      <div className="text-xs text-gray-600 mt-2">
+                        Estimated delivery: {order.shippingMethod.estimatedDelivery}
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Tracking Information */}
+                {order.trackingNumber && (
+                  <div className="mb-4">
+                    <span className="text-sm font-medium text-gray-700">Tracking Number:</span>
+                    <div className="mt-1 p-2 bg-blue-50 rounded border border-blue-200">
+                      <span className="text-sm text-blue-900 font-mono font-medium">
+                        {order.trackingNumber}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Track Package Button */}
                 {order.trackingUrl && (
-                  <div>
+                  <div className="mb-4">
                     <a 
                       href={order.trackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                     >
                       Track Package
                       <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
+                  </div>
+                )}
+
+                {/* Status-specific messages */}
+                {order.status === 'shipped' && !order.trackingNumber && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      📦 Your order has been shipped! Tracking information will be available soon.
+                    </p>
+                  </div>
+                )}
+
+                {order.status === 'out_for_delivery' && (
+                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-sm text-amber-800">
+                      🚚 Your order is out for delivery! You should receive it today.
+                    </p>
+                  </div>
+                )}
+
+                {order.status === 'delivered' && (
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800">
+                      ✅ Your order has been delivered! We hope you enjoy your purchase.
+                    </p>
                   </div>
                 )}
               </div>

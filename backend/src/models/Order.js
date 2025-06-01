@@ -113,8 +113,8 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Order status is required'],
     enum: {
-      values: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-      message: 'Status must be one of: pending, processing, shipped, delivered, cancelled'
+      values: ['pending', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
+      message: 'Status must be one of: pending, processing, shipped, out_for_delivery, delivered, cancelled, returned'
     },
     default: 'pending'
   },
@@ -257,7 +257,27 @@ const orderSchema = new mongoose.Schema({
     type: String,
     trim: true,
     maxlength: 500
-  }
+  },
+  statusHistory: [{
+    status: {
+      type: String,
+      required: [true, 'Status is required'],
+      enum: {
+        values: ['pending', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
+        message: 'Status must be one of: pending, processing, shipped, out_for_delivery, delivered, cancelled, returned'
+      }
+    },
+    timestamp: {
+      type: Date,
+      required: [true, 'Timestamp is required'],
+      default: Date.now
+    },
+    note: {
+      type: String,
+      trim: true,
+      maxlength: 200
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -279,6 +299,21 @@ orderSchema.pre('save', function(next) {
     this.totalAmount = this.subtotal + this.tax + this.shipping - this.discount;
   }
   
+  // Track status changes in statusHistory
+  if (this.isModified('status') || this.isNew) {
+    // Initialize statusHistory if it doesn't exist
+    if (!this.statusHistory) {
+      this.statusHistory = [];
+    }
+    
+    // Add new status entry to history
+    this.statusHistory.push({
+      status: this.status,
+      timestamp: new Date(),
+      note: this.isNew ? 'Order created' : 'Status updated'
+    });
+  }
+  
   next();
 });
 
@@ -288,8 +323,10 @@ orderSchema.methods.getStatusDisplay = function() {
     pending: 'Pending',
     processing: 'Processing',
     shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
     delivered: 'Delivered',
-    cancelled: 'Cancelled'
+    cancelled: 'Cancelled',
+    returned: 'Returned'
   };
   return statusMap[this.status] || this.status;
 };
