@@ -16,7 +16,7 @@ jest.mock('../../services/addressService', () => ({
 
 jest.mock('../../services/cartService', () => ({
   getCart: jest.fn(),
-  formatCurrency: jest.fn((amount) => `$${amount.toFixed(2)}`)
+  formatCurrency: jest.fn((amount) => `£${amount.toFixed(2)}`)
 }));
 
 import { getUserAddresses } from '../../services/addressService';
@@ -139,7 +139,7 @@ describe('CheckoutPage', () => {
         expect(screen.getByText('Order Summary')).toBeInTheDocument();
         expect(screen.getByText('GrapheneOS Pixel 9')).toBeInTheDocument();
         expect(screen.getByText('GrapheneOS Pixel 9 Pro')).toBeInTheDocument();
-        expect(screen.getByText('$2899.97')).toBeInTheDocument();
+        expect(screen.getByText('£2899.97')).toBeInTheDocument();
       });
     });
   });
