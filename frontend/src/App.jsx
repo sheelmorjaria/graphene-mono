@@ -9,6 +9,7 @@ import MyProfilePage from './pages/MyProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import MyAddressesPage from './pages/MyAddressesPage';
 import SearchBar from './components/SearchBar';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
 import './App.css';
@@ -55,6 +56,13 @@ const AuthenticatedUserMenu = () => {
             onClick={() => setIsDropdownOpen(false)}
           >
             Change Password
+          </Link>
+          <Link
+            to="/addresses"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsDropdownOpen(false)}
+          >
+            My Addresses
           </Link>
           <button
             onClick={handleLogout}
@@ -201,6 +209,9 @@ export const AppRoutes = () => {
           
           {/* Reset password page */}
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* My addresses page */}
+          <Route path="/addresses" element={<MyAddressesPage />} />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />

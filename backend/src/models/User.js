@@ -71,7 +71,63 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetExpires: {
     type: Date
-  }
+  },
+  shippingAddresses: [{
+    fullName: {
+      type: String,
+      required: [true, 'Full name is required'],
+      trim: true,
+      maxlength: 100
+    },
+    addressLine1: {
+      type: String,
+      required: [true, 'Address line 1 is required'],
+      trim: true,
+      maxlength: 100
+    },
+    addressLine2: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    },
+    city: {
+      type: String,
+      required: [true, 'City is required'],
+      trim: true,
+      maxlength: 50
+    },
+    stateProvince: {
+      type: String,
+      required: [true, 'State/Province is required'],
+      trim: true,
+      maxlength: 50
+    },
+    postalCode: {
+      type: String,
+      required: [true, 'Postal code is required'],
+      trim: true,
+      maxlength: 20
+    },
+    country: {
+      type: String,
+      required: [true, 'Country is required'],
+      trim: true,
+      maxlength: 50
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      maxlength: 20,
+      match: [
+        /^[\+]?[1-9][\d\s\-\(\)]{0,20}$/,
+        'Please enter a valid phone number'
+      ]
+    },
+    isDefault: {
+      type: Boolean,
+      default: false
+    }
+  }]
 }, {
   timestamps: true,
   toJSON: {
