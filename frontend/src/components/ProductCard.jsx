@@ -23,9 +23,9 @@ const ProductCard = ({ product }) => {
   // Get the main image or placeholder
   const mainImage = images && images.length > 0 ? images[0] : '/placeholder-product.jpg';
 
-  // Format price in USD (updated from GBP)
+  // Format price in GBP
   const formatPrice = (price) => {
-    return `$${price.toFixed(2)}`;
+    return `£${price.toFixed(2)}`;
   };
 
   // Handle add to cart

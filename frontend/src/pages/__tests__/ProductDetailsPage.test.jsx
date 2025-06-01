@@ -139,7 +139,7 @@ describe('ProductDetailsPage', () => {
     // Header section
     expect(screen.getByRole('heading', { name: mockProduct.name })).toBeInTheDocument();
     expect(screen.getByText(mockProduct.shortDescription)).toBeInTheDocument();
-    expect(screen.getByText(/\$899\.99/)).toBeInTheDocument();
+    expect(screen.getByText(/£899\.99/)).toBeInTheDocument();
 
     // Image gallery
     expect(screen.getByTestId('image-gallery')).toBeInTheDocument();
@@ -396,7 +396,7 @@ describe('ProductDetailsPage', () => {
     renderWithRouter(<ProductDetailsPage />);
 
     expect(screen.getByRole('heading', { name: 'Minimal Product' })).toBeInTheDocument();
-    expect(screen.getByText(/\$99\.99/)).toBeInTheDocument();
+    expect(screen.getByText(/£99\.99/)).toBeInTheDocument();
 
     // Should not break when optional fields are missing
     expect(screen.queryByText(/specifications/i)).not.toBeInTheDocument();

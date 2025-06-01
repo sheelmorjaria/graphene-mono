@@ -128,7 +128,7 @@ describe('Product Details Integration Tests', () => {
 
     // Verify product details are displayed
     expect(screen.getByText('Premium privacy-focused smartphone with GrapheneOS pre-installed')).toBeInTheDocument();
-    expect(screen.getByText('$899.99')).toBeInTheDocument();
+    expect(screen.getByText('£899.99')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();
     // Check category is displayed in the details section
     const detailsSection = screen.getByTestId('details-section');
@@ -377,7 +377,7 @@ describe('Product Details Integration Tests', () => {
       expect(screen.getByRole('heading', { name: 'Minimal Product' })).toBeInTheDocument();
     });
 
-    expect(screen.getByText('$99.99')).toBeInTheDocument();
+    expect(screen.getByText('£99.99')).toBeInTheDocument();
     
     // Should not crash when optional fields are missing
     expect(screen.queryByText(/specifications/i)).not.toBeInTheDocument();

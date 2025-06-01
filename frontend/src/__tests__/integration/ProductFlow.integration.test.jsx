@@ -133,7 +133,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Verify product details are displayed
     expect(screen.getByText('Premium privacy-focused smartphone with GrapheneOS pre-installed')).toBeInTheDocument();
-    expect(screen.getByText('$899.99')).toBeInTheDocument();
+    expect(screen.getByText('£899.99')).toBeInTheDocument();
     expect(screen.getByText('Specifications')).toBeInTheDocument();
 
     // Verify both API calls were made
