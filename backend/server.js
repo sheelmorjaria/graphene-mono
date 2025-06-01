@@ -9,6 +9,7 @@ import productsRouter from './src/routes/products.js';
 import authRouter from './src/routes/auth.js';
 import userRouter from './src/routes/user.js';
 import cartRouter from './src/routes/cart.js';
+import shippingRouter from './src/routes/shipping.js';
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use('/api/products', productsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/cart', cartRouter);
+app.use('/api/shipping', shippingRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
