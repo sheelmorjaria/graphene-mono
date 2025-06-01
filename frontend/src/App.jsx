@@ -12,6 +12,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import MyAddressesPage from './pages/MyAddressesPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+import CartPage from './pages/CartPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
@@ -233,6 +234,9 @@ export const AppRoutes = () => {
           
           {/* Order details page */}
           <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+          
+          {/* Cart page */}
+          <Route path="/cart" element={<CartPage />} />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
