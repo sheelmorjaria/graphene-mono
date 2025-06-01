@@ -119,6 +119,86 @@ const emailService = {
     }
   },
 
+  // Send support request email to customer support team
+  async sendSupportRequestEmail(contactRequest) {
+    try {
+      const subjectMap = {
+        'order-inquiry': 'Order Inquiry',
+        'product-question': 'Product Question',
+        'technical-issue': 'Technical Issue',
+        'other': 'General Inquiry'
+      };
+
+      const emailContent = {
+        to: 'support@grapheneos-store.com',
+        subject: `[Contact Form] ${subjectMap[contactRequest.subject]} - ${contactRequest.fullName}`,
+        template: 'support-request',
+        data: {
+          customerName: contactRequest.fullName,
+          customerEmail: contactRequest.email,
+          subject: subjectMap[contactRequest.subject],
+          orderNumber: contactRequest.orderNumber,
+          message: contactRequest.message,
+          submittedAt: contactRequest.submittedAt,
+          orderValidation: contactRequest.orderValidation,
+          ipAddress: contactRequest.ipAddress,
+          userAgent: contactRequest.userAgent
+        }
+      };
+
+      console.log('📧 Support Request Email to Team:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `support_${Date.now()}`,
+        message: 'Support request email sent to team'
+      };
+      
+    } catch (error) {
+      console.error('Error sending support request email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Send acknowledgment email to customer
+  async sendContactAcknowledgmentEmail(contactData) {
+    try {
+      const emailContent = {
+        to: contactData.email,
+        subject: 'We received your message - GrapheneOS Store Support',
+        template: 'contact-acknowledgment',
+        data: {
+          customerName: contactData.fullName,
+          subject: contactData.subject,
+          message: contactData.message,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Contact Acknowledgment Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `ack_${Date.now()}`,
+        message: 'Acknowledgment email sent to customer'
+      };
+      
+    } catch (error) {
+      console.error('Error sending acknowledgment email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
   // Generate HTML email template for order cancellation
   generateCancellationEmailHTML(data) {
     return `

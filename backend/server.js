@@ -11,6 +11,7 @@ import userRouter from './src/routes/user.js';
 import cartRouter from './src/routes/cart.js';
 import shippingRouter from './src/routes/shipping.js';
 import paymentRouter from './src/routes/payment.js';
+import supportRouter from './src/routes/support.js';
 import internalOrderRouter from './src/routes/internalOrderRoutes.js';
 
 dotenv.config();
@@ -69,6 +70,7 @@ app.use('/api/user', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/shipping', shippingRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/api/support', supportRouter);
 
 // Internal admin routes (secured with API key)
 app.use('/api/internal', internalOrderRouter);
