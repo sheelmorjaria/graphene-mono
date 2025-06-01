@@ -7,6 +7,8 @@ import { formatCurrency } from '../services/cartService';
 import ShippingAddressSection from '../components/checkout/ShippingAddressSection';
 import BillingAddressSection from '../components/checkout/BillingAddressSection';
 import PaymentMethodSection from '../components/checkout/PaymentMethodSection';
+import { placeOrder, validateOrderData } from '../services/orderService';
+import { createPaymentIntent, processPayment, getStripe, generateBillingDetails } from '../services/paymentService';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
@@ -164,12 +166,118 @@ const PaymentSection = () => {
 };
 
 const ReviewSection = () => {
-  const { checkoutState, prevStep } = useCheckout();
-  const { cart } = useCart();
+  const { 
+    checkoutState, 
+    paymentState, 
+    shippingAddress, 
+    billingAddress, 
+    shippingMethod, 
+    paymentMethod, 
+    useSameAsShipping,
+    orderSummary,
+    prevStep,
+    resetCheckout
+  } = useCheckout();
+  const { cart, clearCart } = useCart();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderError, setOrderError] = useState(null);
 
-  const handlePlaceOrder = () => {
-    // TODO: Implement order placement in future stories
-    alert('Order placement will be implemented in future stories!');
+  const handlePlaceOrder = async () => {
+    try {
+      setIsProcessing(true);
+      setOrderError(null);
+
+      // Validate that we have all required data
+      if (!paymentState.stripe || !paymentState.elements || !paymentState.isReady) {
+        throw new Error('Payment method is not ready. Please go back and complete the payment setup.');
+      }
+
+      if (!paymentState.clientSecret) {
+        // Create payment intent first
+        const paymentIntentData = await createPaymentIntent({
+          shippingAddress,
+          shippingMethodId: shippingMethod.id
+        });
+
+        if (!paymentIntentData.clientSecret) {
+          throw new Error('Failed to create payment intent');
+        }
+
+        // Process payment with Stripe
+        const billingDetails = generateBillingDetails(billingAddress);
+        const paymentResult = await processPayment(
+          paymentState.stripe, 
+          paymentState.elements, 
+          paymentIntentData.clientSecret,
+          billingDetails
+        );
+
+        if (paymentResult.status !== 'succeeded') {
+          throw new Error('Payment was not successful');
+        }
+
+        // Prepare order data
+        const orderData = {
+          shippingAddress,
+          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
+          shippingMethodId: shippingMethod.id,
+          paymentIntentId: paymentResult.id,
+          useSameAsShipping
+        };
+
+        // Validate order data
+        const validation = validateOrderData(orderData);
+        if (!validation.isValid) {
+          throw new Error(validation.errors.join(', '));
+        }
+
+        // Place the order
+        const orderResult = await placeOrder(orderData);
+
+        // Clear the cart
+        await clearCart();
+
+        // Reset checkout state
+        resetCheckout();
+
+        // Redirect to order confirmation
+        window.location.href = `/order-confirmation/${orderResult.orderId}`;
+
+      } else {
+        // We already have a payment intent, just place the order
+        const orderData = {
+          shippingAddress,
+          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
+          shippingMethodId: shippingMethod.id,
+          paymentIntentId: paymentState.paymentIntentId,
+          useSameAsShipping
+        };
+
+        // Validate order data
+        const validation = validateOrderData(orderData);
+        if (!validation.isValid) {
+          throw new Error(validation.errors.join(', '));
+        }
+
+        // Place the order
+        const orderResult = await placeOrder(orderData);
+
+        // Clear the cart
+        await clearCart();
+
+        // Reset checkout state
+        resetCheckout();
+
+        // Redirect to order confirmation
+        window.location.href = `/order-confirmation/${orderResult.orderId}`;
+      }
+
+    } catch (error) {
+      console.error('Order placement error:', error);
+      setOrderError(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -312,18 +420,50 @@ const ReviewSection = () => {
         </div>
       </div>
 
+      {/* Error display */}
+      {orderError && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">
+                {orderError}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between">
         <button
           onClick={prevStep}
-          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          disabled={isProcessing}
+          className={`px-6 py-3 rounded-lg transition-colors ${
+            isProcessing 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
         >
           Back to Payment
         </button>
         <button
           onClick={handlePlaceOrder}
-          className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+          disabled={isProcessing}
+          className={`px-8 py-3 rounded-lg font-medium transition-colors flex items-center ${
+            isProcessing 
+              ? 'bg-gray-400 text-white cursor-not-allowed' 
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
         >
-          Place Order
+          {isProcessing && (
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          )}
+          {isProcessing ? 'Processing...' : 'Place Order'}
         </button>
       </div>
     </div>

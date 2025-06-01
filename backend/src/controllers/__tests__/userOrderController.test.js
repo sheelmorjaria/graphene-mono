@@ -4,6 +4,13 @@ import jwt from 'jsonwebtoken';
 import app from '../../../server.js';
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
+import Cart from '../../models/Cart.js';
+import Product from '../../models/Product.js';
+import ShippingMethod from '../../models/ShippingMethod.js';
+
+// Set up environment variables for testing
+process.env.STRIPE_SECRET_KEY = 'sk_test_fake_key_for_testing';
+process.env.STRIPE_WEBHOOK_SECRET = 'whsec_fake_webhook_secret_for_testing';
 
 describe('User Order Controller', () => {
   let testUser;
@@ -72,7 +79,21 @@ describe('User Order Controller', () => {
         country: 'United States',
         phoneNumber: '+1 (555) 987-6543'
       },
-      paymentMethod: 'credit_card'
+      shippingMethod: {
+        id: new mongoose.Types.ObjectId(),
+        name: 'Standard Shipping',
+        cost: 15.00,
+        estimatedDelivery: '3-5 business days'
+      },
+      paymentMethod: {
+        type: 'card',
+        name: 'Credit or Debit Card'
+      },
+      paymentDetails: {
+        cardBrand: 'visa',
+        last4: '4242'
+      },
+      paymentStatus: 'completed'
     };
 
     testOrders = await Promise.all([
@@ -269,7 +290,21 @@ describe('User Order Controller', () => {
           postalCode: '90210',
           country: 'United States'
         },
-        paymentMethod: 'credit_card'
+        shippingMethod: {
+          id: new mongoose.Types.ObjectId(),
+          name: 'Standard Shipping',
+          cost: 5.00,
+          estimatedDelivery: '3-5 business days'
+        },
+        paymentMethod: {
+          type: 'card',
+          name: 'Credit or Debit Card'
+        },
+        paymentDetails: {
+          cardBrand: 'visa',
+          last4: '1234'
+        },
+        paymentStatus: 'completed'
       }).save();
 
       // Request orders with original user's token
@@ -311,7 +346,7 @@ describe('User Order Controller', () => {
       expect(order.items).toHaveLength(1);
       expect(order.shippingAddress.fullName).toBe('John Doe');
       expect(order.billingAddress.fullName).toBe('John Doe');
-      expect(order.paymentMethodDisplay).toBe('Credit Card');
+      expect(order.paymentMethodDisplay).toBe('Credit or Debit Card (visa) ending in ****4242');
     });
 
     it('should fail with invalid order ID format', async () => {
@@ -372,6 +407,221 @@ describe('User Order Controller', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toContain('token');
+    });
+  });
+
+  describe('POST /api/user/orders/place-order', () => {
+    let testProduct;
+    let testCart;
+    let testShippingMethod;
+
+    beforeEach(async () => {
+      // Clear additional collections
+      await Cart.deleteMany({});
+      await Product.deleteMany({});
+      await ShippingMethod.deleteMany({});
+
+      // Create test product
+      testProduct = new Product({
+        name: 'Test Product',
+        description: 'A test product',
+        price: 29.99,
+        stockQuantity: 10,
+        category: new mongoose.Types.ObjectId(),
+        isActive: true,
+        weight: 100,
+        slug: 'test-product',
+        images: ['test-image.jpg']
+      });
+      await testProduct.save();
+
+      // Create test shipping method
+      testShippingMethod = new ShippingMethod({
+        name: 'Standard Shipping',
+        code: 'STANDARD',
+        baseCost: 7.99,
+        isActive: true,
+        estimatedDelivery: '3-5 business days',
+        estimatedDeliveryDays: {
+          min: 3,
+          max: 5
+        },
+        criteria: {
+          supportedCountries: ['GB', 'IE'],
+          freeShippingThreshold: 60.00
+        }
+      });
+      await testShippingMethod.save();
+
+      // Create test cart
+      testCart = new Cart({
+        userId: testUser._id,
+        items: [{
+          productId: testProduct._id,
+          productName: testProduct.name,
+          productSlug: testProduct.slug,
+          unitPrice: testProduct.price,
+          quantity: 2,
+          subtotal: testProduct.price * 2
+        }]
+      });
+      await testCart.save();
+    });
+
+    const validOrderData = {
+      shippingAddress: {
+        firstName: 'John',
+        lastName: 'Doe',
+        addressLine1: '123 Test Street',
+        city: 'London',
+        stateProvince: 'London',
+        postalCode: 'SW1A 1AA',
+        country: 'GB',
+        phoneNumber: '+44 20 7946 0958'
+      },
+      useSameAsShipping: true,
+      paymentIntentId: 'pi_test_12345'
+    };
+
+    it('should return 400 for missing required fields', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({})
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('required');
+    });
+
+    it('should return 400 for missing shipping address', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          shippingMethodId: testShippingMethod._id.toString(),
+          paymentIntentId: 'pi_test_12345'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Shipping address');
+    });
+
+    it('should return 400 for missing shipping method', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          shippingAddress: validOrderData.shippingAddress,
+          paymentIntentId: 'pi_test_12345'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('shipping method');
+    });
+
+    it('should return 400 for missing payment intent', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          shippingAddress: validOrderData.shippingAddress,
+          shippingMethodId: testShippingMethod._id.toString()
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('payment intent');
+    });
+
+    it('should return 400 for empty cart', async () => {
+      // Clear cart
+      await Cart.findByIdAndUpdate(testCart._id, { items: [] });
+
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          ...validOrderData,
+          shippingMethodId: testShippingMethod._id.toString()
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Cart is empty');
+    });
+
+    it('should return 400 for invalid shipping method', async () => {
+      const invalidShippingMethodId = '507f1f77bcf86cd799439011';
+
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          ...validOrderData,
+          shippingMethodId: invalidShippingMethodId
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Invalid shipping method');
+    });
+
+    it('should return 400 for insufficient stock', async () => {
+      // Set product out of stock
+      await Product.findByIdAndUpdate(testProduct._id, { stockQuantity: 0 });
+
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          ...validOrderData,
+          shippingMethodId: testShippingMethod._id.toString()
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Insufficient stock');
+    });
+
+    it('should return 400 for invalid payment intent', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          ...validOrderData,
+          shippingMethodId: testShippingMethod._id.toString(),
+          paymentIntentId: 'pi_invalid_123'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Invalid payment intent');
+    });
+
+    it('should return 401 for unauthenticated request', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .send({
+          ...validOrderData,
+          shippingMethodId: testShippingMethod._id.toString()
+        })
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Access denied');
+    });
+
+    it('should require authentication for place order endpoint', async () => {
+      const response = await request(app)
+        .post('/api/user/orders/place-order')
+        .send(validOrderData)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBeDefined();
     });
   });
 });
