@@ -45,6 +45,7 @@ const CheckoutSteps = ({ currentStep }) => {
 
 const CartSummary = () => {
   const { cart } = useCart();
+  const { checkoutState, shippingCost, orderTotal } = useCheckout();
 
   return (
     <div className="bg-white rounded-lg shadow p-6 sticky top-4">
@@ -88,12 +89,27 @@ const CartSummary = () => {
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Shipping</span>
-          <span className="text-gray-900">Calculated at next step</span>
+          <span className="text-gray-900">
+            {checkoutState.shippingMethod ? (
+              checkoutState.shippingMethod.isFreeShipping ? (
+                <span className="text-green-600 font-medium">FREE</span>
+              ) : (
+                formatCurrency(shippingCost)
+              )
+            ) : (
+              'Calculated at next step'
+            )}
+          </span>
         </div>
+        {checkoutState.shippingMethod && (
+          <div className="text-xs text-gray-500">
+            via {checkoutState.shippingMethod.name}
+          </div>
+        )}
         <div className="border-t pt-3">
           <div className="flex justify-between text-lg font-semibold">
             <span className="text-gray-900">Total</span>
-            <span className="text-gray-900">{formatCurrency(cart.totalAmount)}</span>
+            <span className="text-gray-900">{formatCurrency(orderTotal)}</span>
           </div>
         </div>
       </div>
@@ -229,6 +245,37 @@ const ReviewSection = () => {
           </div>
         </div>
       </div>
+
+      {/* Shipping Method Review */}
+      {checkoutState.shippingMethod && (
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Shipping Method</h3>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-medium">{checkoutState.shippingMethod.name}</div>
+                <div className="text-sm text-gray-600">
+                  {checkoutState.shippingMethod.estimatedDelivery}
+                </div>
+                {checkoutState.shippingMethod.description && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    {checkoutState.shippingMethod.description}
+                  </div>
+                )}
+              </div>
+              <div className="text-right">
+                {checkoutState.shippingMethod.isFreeShipping ? (
+                  <span className="text-lg font-semibold text-green-600">FREE</span>
+                ) : (
+                  <span className="text-lg font-semibold text-gray-900">
+                    {formatCurrency(checkoutState.shippingMethod.cost)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Items Review */}
       <div className="mb-6">

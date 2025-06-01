@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getUserAddresses } from '../services/addressService';
+import { calculateShippingRates } from '../services/shippingService';
 import { useAuth } from './AuthContext';
+import { useCart } from './CartContext';
 
 const CheckoutContext = createContext();
 
@@ -18,6 +20,8 @@ export const CheckoutProvider = ({ children }) => {
     shippingAddress: null,
     billingAddress: null,
     useSameAsShipping: true,
+    shippingMethod: null,
+    shippingCost: 0,
     paymentMethod: null,
     orderNotes: ''
   });
@@ -26,7 +30,12 @@ export const CheckoutProvider = ({ children }) => {
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [addressesError, setAddressesError] = useState('');
   
+  const [shippingRates, setShippingRates] = useState([]);
+  const [shippingRatesLoading, setShippingRatesLoading] = useState(false);
+  const [shippingRatesError, setShippingRatesError] = useState('');
+  
   const { isAuthenticated } = useAuth();
+  const { cart } = useCart();
 
   // Load addresses when component mounts and user is authenticated
   useEffect(() => {
@@ -125,13 +134,72 @@ export const CheckoutProvider = ({ children }) => {
       shippingAddress: null,
       billingAddress: null,
       useSameAsShipping: true,
+      shippingMethod: null,
+      shippingCost: 0,
       paymentMethod: null,
       orderNotes: ''
     });
+    setShippingRates([]);
   };
 
   const refreshAddresses = () => {
     loadAddresses();
+  };
+
+  // Load shipping rates when shipping address or cart changes
+  const loadShippingRates = async (address = checkoutState.shippingAddress) => {
+    if (!address || !cart.items || cart.items.length === 0) {
+      setShippingRates([]);
+      return;
+    }
+
+    try {
+      setShippingRatesLoading(true);
+      setShippingRatesError('');
+      
+      // Prepare cart items for shipping calculation
+      const cartItems = cart.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }));
+
+      const response = await calculateShippingRates(cartItems, address);
+      setShippingRates(response.data.shippingRates || []);
+      
+      // If current shipping method is no longer available, clear it
+      if (checkoutState.shippingMethod) {
+        const isStillAvailable = response.data.shippingRates.find(
+          rate => rate.id === checkoutState.shippingMethod.id
+        );
+        if (!isStillAvailable) {
+          setShippingMethod(null);
+        }
+      }
+    } catch (err) {
+      setShippingRatesError(err.message || 'Failed to load shipping rates');
+      setShippingRates([]);
+    } finally {
+      setShippingRatesLoading(false);
+    }
+  };
+
+  // Effect to load shipping rates when shipping address or cart changes
+  useEffect(() => {
+    if (checkoutState.shippingAddress && cart.items.length > 0) {
+      loadShippingRates();
+    }
+  }, [checkoutState.shippingAddress, cart.items.length]);
+
+  const setShippingMethod = (method) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      shippingMethod: method,
+      shippingCost: method ? method.cost : 0
+    }));
+  };
+
+  const refreshShippingRates = () => {
+    loadShippingRates();
   };
 
   const contextValue = {
@@ -140,11 +208,15 @@ export const CheckoutProvider = ({ children }) => {
     addresses,
     addressesLoading,
     addressesError,
+    shippingRates,
+    shippingRatesLoading,
+    shippingRatesError,
     
     // Actions
     setShippingAddress,
     setBillingAddress,
     setUseSameAsShipping,
+    setShippingMethod,
     setPaymentMethod,
     setOrderNotes,
     goToStep,
@@ -152,14 +224,21 @@ export const CheckoutProvider = ({ children }) => {
     prevStep,
     resetCheckout,
     refreshAddresses,
+    refreshShippingRates,
     
     // Computed values
     canProceedToPayment: !!checkoutState.shippingAddress,
-    canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.paymentMethod && 
+    canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod &&
+      !!checkoutState.paymentMethod && 
       (checkoutState.useSameAsShipping || !!checkoutState.billingAddress),
     isShippingStep: checkoutState.step === 'shipping',
     isPaymentStep: checkoutState.step === 'payment',
-    isReviewStep: checkoutState.step === 'review'
+    isReviewStep: checkoutState.step === 'review',
+    
+    // Order totals
+    subtotal: parseFloat(cart.totalAmount || 0),
+    shippingCost: parseFloat(checkoutState.shippingCost || 0),
+    orderTotal: parseFloat(cart.totalAmount || 0) + parseFloat(checkoutState.shippingCost || 0)
   };
 
   return (

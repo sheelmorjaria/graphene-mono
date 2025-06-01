@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import { addUserAddress, updateUserAddress } from '../../services/addressService';
 import AddressForm from '../AddressForm';
+import ShippingMethodSection from './ShippingMethodSection';
 
 const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
   return (
@@ -243,13 +244,20 @@ const ShippingAddressSection = () => {
             </div>
           )}
 
+          {/* Shipping Method Section - shown after address is selected */}
+          {checkoutState.shippingAddress && (
+            <div className="mt-8">
+              <ShippingMethodSection />
+            </div>
+          )}
+
           {/* Continue button */}
           <div className="flex justify-end mt-6">
             <button
               onClick={handleContinueToPayment}
-              disabled={!canProceedToPayment}
+              disabled={!canProceedToPayment || !checkoutState.shippingMethod}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                canProceedToPayment
+                canProceedToPayment && checkoutState.shippingMethod
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}

@@ -81,9 +81,9 @@ export const getUserOrderDetails = async (orderId) => {
 
 // Format currency amount for display
 export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GBP',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount);

@@ -65,12 +65,39 @@ const productSchema = new mongoose.Schema({
       required: true
     }
   }],
+  // Shipping-related fields
+  weight: {
+    type: Number,
+    min: 0,
+    default: 100, // Default weight in grams
+    get: v => Math.round(v * 100) / 100, // Round to 2 decimal places
+    set: v => Math.round(v * 100) / 100
+  },
+  dimensions: {
+    length: {
+      type: Number,
+      min: 0,
+      default: 10 // Default length in cm
+    },
+    width: {
+      type: Number,
+      min: 0,
+      default: 10 // Default width in cm
+    },
+    height: {
+      type: Number,
+      min: 0,
+      default: 5 // Default height in cm
+    }
+  },
   isActive: {
     type: Boolean,
     default: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { getters: true },
+  toObject: { getters: true }
 });
 
 // Instance method to generate SEO-friendly URL
