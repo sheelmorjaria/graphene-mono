@@ -17,6 +17,11 @@ const orderItemSchema = new mongoose.Schema({
     required: [true, 'Product slug is required'],
     trim: true
   },
+  productImage: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
   quantity: {
     type: Number,
     required: [true, 'Quantity is required'],
@@ -148,12 +153,34 @@ const orderSchema = new mongoose.Schema({
     type: shippingAddressSchema,
     required: [true, 'Shipping address is required']
   },
+  billingAddress: {
+    type: shippingAddressSchema,
+    required: [true, 'Billing address is required']
+  },
   paymentMethod: {
     type: String,
     required: [true, 'Payment method is required'],
     enum: {
       values: ['credit_card', 'debit_card', 'paypal', 'bank_transfer'],
       message: 'Payment method must be one of: credit_card, debit_card, paypal, bank_transfer'
+    }
+  },
+  paymentDetails: {
+    cardType: {
+      type: String,
+      trim: true,
+      maxlength: 20
+    },
+    lastFourDigits: {
+      type: String,
+      trim: true,
+      maxlength: 4
+    },
+    paypalEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      maxlength: 255
     }
   },
   paymentStatus: {
@@ -170,6 +197,26 @@ const orderSchema = new mongoose.Schema({
     required: [true, 'Order date is required'],
     default: Date.now,
     index: true
+  },
+  discount: {
+    type: Number,
+    min: [0, 'Discount cannot be negative'],
+    default: 0
+  },
+  discountCode: {
+    type: String,
+    trim: true,
+    maxlength: 50
+  },
+  trackingNumber: {
+    type: String,
+    trim: true,
+    maxlength: 100
+  },
+  trackingUrl: {
+    type: String,
+    trim: true,
+    maxlength: 500
   },
   notes: {
     type: String,
@@ -192,9 +239,9 @@ orderSchema.pre('save', function(next) {
     this.orderNumber = `ORD-${timestamp}-${randomSuffix}`;
   }
   
-  // Calculate totalAmount from subtotal, tax, and shipping if not provided
+  // Calculate totalAmount from subtotal, tax, shipping, and discount if not provided
   if (!this.totalAmount) {
-    this.totalAmount = this.subtotal + this.tax + this.shipping;
+    this.totalAmount = this.subtotal + this.tax + this.shipping - this.discount;
   }
   
   next();
@@ -219,6 +266,32 @@ orderSchema.methods.getFormattedDate = function() {
     month: 'long',
     day: 'numeric'
   });
+};
+
+// Instance method to format payment method for display
+orderSchema.methods.getPaymentMethodDisplay = function() {
+  const methodMap = {
+    credit_card: 'Credit Card',
+    debit_card: 'Debit Card',
+    paypal: 'PayPal',
+    bank_transfer: 'Bank Transfer'
+  };
+  
+  let display = methodMap[this.paymentMethod] || this.paymentMethod;
+  
+  // Add card details if available
+  if ((this.paymentMethod === 'credit_card' || this.paymentMethod === 'debit_card') && 
+      this.paymentDetails && this.paymentDetails.lastFourDigits) {
+    const cardType = this.paymentDetails.cardType ? ` (${this.paymentDetails.cardType})` : '';
+    display += `${cardType} ending in ****${this.paymentDetails.lastFourDigits}`;
+  }
+  
+  // Add PayPal email if available
+  if (this.paymentMethod === 'paypal' && this.paymentDetails && this.paymentDetails.paypalEmail) {
+    display += ` (${this.paymentDetails.paypalEmail})`;
+  }
+  
+  return display;
 };
 
 // Static method to find orders by user with pagination

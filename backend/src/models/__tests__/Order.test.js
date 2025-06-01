@@ -38,6 +38,15 @@ describe('Order Model', () => {
       country: 'United States',
       phoneNumber: '+1 (555) 123-4567'
     },
+    billingAddress: {
+      fullName: 'John Doe',
+      addressLine1: '123 Main St',
+      city: 'New York',
+      stateProvince: 'NY',
+      postalCode: '10001',
+      country: 'United States',
+      phoneNumber: '+1 (555) 123-4567'
+    },
     paymentMethod: 'credit_card'
   };
 
@@ -115,6 +124,15 @@ describe('Order Model', () => {
 
       await expect(invalidOrder.save()).rejects.toThrow('Shipping address is required');
     });
+
+    it('should require billing address', async () => {
+      const invalidOrder = new Order({
+        ...validOrderData,
+        billingAddress: undefined
+      });
+
+      await expect(invalidOrder.save()).rejects.toThrow('Billing address is required');
+    });
   });
 
   describe('Order Number Generation', () => {
@@ -183,6 +201,21 @@ describe('Order Model', () => {
 
       expect(savedOrder.totalAmount).toBe(100.00);
     });
+
+    it('should calculate total amount with discount', async () => {
+      const orderData = {
+        ...validOrderData,
+        subtotal: 100.00,
+        tax: 8.25,
+        shipping: 10.00,
+        discount: 15.00
+      };
+
+      const order = new Order(orderData);
+      const savedOrder = await order.save();
+
+      expect(savedOrder.totalAmount).toBe(103.25); // 100 + 8.25 + 10 - 15
+    });
   });
 
   describe('Instance Methods', () => {
@@ -206,6 +239,25 @@ describe('Order Model', () => {
     it('should format order date correctly', () => {
       const formattedDate = savedOrder.getFormattedDate();
       expect(formattedDate).toMatch(/\w+ \d{1,2}, \d{4}/);
+    });
+
+    it('should format payment method display correctly', () => {
+      // Test basic payment method
+      expect(savedOrder.getPaymentMethodDisplay()).toBe('Credit Card');
+      
+      // Test with card details
+      savedOrder.paymentDetails = {
+        cardType: 'Visa',
+        lastFourDigits: '1234'
+      };
+      expect(savedOrder.getPaymentMethodDisplay()).toBe('Credit Card (Visa) ending in ****1234');
+      
+      // Test PayPal
+      savedOrder.paymentMethod = 'paypal';
+      savedOrder.paymentDetails = {
+        paypalEmail: 'user@example.com'
+      };
+      expect(savedOrder.getPaymentMethodDisplay()).toBe('PayPal (user@example.com)');
     });
   });
 

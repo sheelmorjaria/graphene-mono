@@ -63,6 +63,15 @@ describe('User Order Controller', () => {
         country: 'United States',
         phoneNumber: '+1 (555) 123-4567'
       },
+      billingAddress: {
+        fullName: 'John Doe',
+        addressLine1: '456 Oak Ave',
+        city: 'Los Angeles',
+        stateProvince: 'CA',
+        postalCode: '90210',
+        country: 'United States',
+        phoneNumber: '+1 (555) 987-6543'
+      },
       paymentMethod: 'credit_card'
     };
 
@@ -252,6 +261,14 @@ describe('User Order Controller', () => {
           postalCode: '90210',
           country: 'United States'
         },
+        billingAddress: {
+          fullName: 'Other User',
+          addressLine1: '456 Oak St',
+          city: 'Los Angeles',
+          stateProvince: 'CA',
+          postalCode: '90210',
+          country: 'United States'
+        },
         paymentMethod: 'credit_card'
       }).save();
 
@@ -283,10 +300,18 @@ describe('User Order Controller', () => {
       expect(order).toHaveProperty('orderNumber');
       expect(order).toHaveProperty('items');
       expect(order).toHaveProperty('shippingAddress');
+      expect(order).toHaveProperty('billingAddress');
       expect(order).toHaveProperty('paymentMethod');
+      expect(order).toHaveProperty('paymentMethodDisplay');
       expect(order).toHaveProperty('paymentStatus');
+      expect(order).toHaveProperty('discount');
+      expect(order.discount).toBe(0);
+      expect(order.trackingNumber).toBeUndefined();
+      expect(order.trackingUrl).toBeUndefined();
       expect(order.items).toHaveLength(1);
       expect(order.shippingAddress.fullName).toBe('John Doe');
+      expect(order.billingAddress.fullName).toBe('John Doe');
+      expect(order.paymentMethodDisplay).toBe('Credit Card');
     });
 
     it('should fail with invalid order ID format', async () => {

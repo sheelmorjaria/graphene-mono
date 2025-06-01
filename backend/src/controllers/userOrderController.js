@@ -78,7 +78,7 @@ export const getUserOrderDetails = async (req, res) => {
     const order = await Order.findOne({ 
       _id: orderId, 
       userId 
-    }).populate('items.productId', 'name slug images');
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -103,6 +103,7 @@ export const getUserOrderDetails = async (req, res) => {
             productId: item.productId,
             productName: item.productName,
             productSlug: item.productSlug,
+            productImage: item.productImage,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice
@@ -110,11 +111,20 @@ export const getUserOrderDetails = async (req, res) => {
           subtotal: order.subtotal,
           tax: order.tax,
           shipping: order.shipping,
+          discount: order.discount || 0,
+          discountCode: order.discountCode,
           totalAmount: order.totalAmount,
           shippingAddress: order.shippingAddress,
+          billingAddress: order.billingAddress,
           paymentMethod: order.paymentMethod,
+          paymentMethodDisplay: order.getPaymentMethodDisplay(),
+          paymentDetails: order.paymentDetails,
           paymentStatus: order.paymentStatus,
-          notes: order.notes
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          notes: order.notes,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt
         }
       }
     });
