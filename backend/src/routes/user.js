@@ -1,5 +1,6 @@
 import express from 'express';
 import { getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress } from '../controllers/userAddressController.js';
+import { getUserOrders, getUserOrderDetails } from '../controllers/userOrderController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -12,5 +13,9 @@ router.get('/addresses', getUserAddresses);
 router.post('/addresses', addUserAddress);
 router.put('/addresses/:addressId', updateUserAddress);
 router.delete('/addresses/:addressId', deleteUserAddress);
+
+// Order management routes
+router.get('/orders', getUserOrders);
+router.get('/orders/:orderId', getUserOrderDetails);
 
 export default router;
