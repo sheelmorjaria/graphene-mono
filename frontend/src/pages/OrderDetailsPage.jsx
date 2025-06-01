@@ -41,6 +41,29 @@ const OrderDetailsPage = () => {
     return cancellableStatuses.includes(status);
   };
 
+  const canRequestReturn = (order) => {
+    if (!order) return false;
+    
+    // Order must be delivered
+    if (order.status !== 'delivered') return false;
+    
+    // Must have a delivery date
+    if (!order.deliveryDate) return false;
+    
+    // Must be within return window (30 days)
+    const deliveryDate = new Date(order.deliveryDate);
+    const returnWindowEnd = new Date(deliveryDate);
+    returnWindowEnd.setDate(returnWindowEnd.getDate() + 30);
+    
+    const now = new Date();
+    if (now > returnWindowEnd) return false;
+    
+    // Cannot already have an active return request
+    if (order.hasReturnRequest) return false;
+    
+    return true;
+  };
+
   const handleCancelOrder = async () => {
     try {
       setCancelling(true);
@@ -300,6 +323,30 @@ const OrderDetailsPage = () => {
                       >
                         Cancel Order
                       </button>
+                    </div>
+                  )}
+
+                  {/* Request Return Button */}
+                  {canRequestReturn(order) && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <Link
+                        to={`/my-account/orders/${orderId}/return`}
+                        className="btn btn-secondary w-full sm:w-auto"
+                      >
+                        Request Return
+                      </Link>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Items can be returned within 30 days of delivery
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Return Request Status Message */}
+                  {order.hasReturnRequest && (
+                    <div className="alert alert-info mt-4">
+                      <p className="text-sm">
+                        📦 A return request has been submitted for this order. You will receive updates via email.
+                      </p>
                     </div>
                   )}
 
