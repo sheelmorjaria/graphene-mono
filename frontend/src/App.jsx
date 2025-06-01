@@ -15,6 +15,7 @@ import OrderDetailsPage from './pages/OrderDetailsPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import ContactUsPage from './pages/ContactUsPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
@@ -79,6 +80,13 @@ const AuthenticatedUserMenu = () => {
           >
             My Orders
           </Link>
+          <Link
+            to="/contact-us"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsDropdownOpen(false)}
+          >
+            Contact Us
+          </Link>
           <button
             onClick={handleLogout}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -121,6 +129,15 @@ const Header = () => {
                   className="hover:text-blue-300 transition-colors"
                 >
                   Products
+                </Link>
+              </li>
+              
+              <li>
+                <Link 
+                  to="/contact-us" 
+                  className="hover:text-blue-300 transition-colors"
+                >
+                  Contact Us
                 </Link>
               </li>
               
@@ -246,6 +263,9 @@ export const AppRoutes = () => {
           
           {/* Order confirmation page */}
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+          
+          {/* Contact Us page */}
+          <Route path="/contact-us" element={<ContactUsPage />} />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
