@@ -44,6 +44,44 @@ const emailService = {
     }
   },
 
+  // Send return request confirmation email
+  async sendReturnRequestConfirmationEmail(returnRequest, order) {
+    try {
+      const emailContent = {
+        to: returnRequest.customerEmail,
+        subject: `Return Request Confirmation - ${returnRequest.formattedRequestNumber}`,
+        template: 'return-request-confirmation',
+        data: {
+          customerName: order.shippingAddress.fullName,
+          returnRequestNumber: returnRequest.formattedRequestNumber,
+          orderNumber: order.orderNumber,
+          requestDate: returnRequest.requestDate,
+          totalRefundAmount: returnRequest.totalRefundAmount,
+          items: returnRequest.items,
+          returnShippingAddress: returnRequest.returnShippingAddress,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Return Request Confirmation Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `mock_${Date.now()}`,
+        message: 'Return request confirmation email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending return request confirmation email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
   // Send order confirmation email (for future use)
   async sendOrderConfirmationEmail(order) {
     try {

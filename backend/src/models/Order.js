@@ -273,6 +273,21 @@ const orderSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500
   },
+  // Delivery tracking
+  deliveryDate: {
+    type: Date,
+    index: true
+  },
+  // Return tracking
+  hasReturnRequest: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  returnRequestIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ReturnRequest'
+  }],
   statusHistory: [{
     status: {
       type: String,

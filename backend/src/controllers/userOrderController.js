@@ -581,3 +581,98 @@ export const cancelOrder = async (req, res) => {
     session.endSession();
   }
 };
+
+// Get eligible items for return from a specific order
+export const getEligibleReturnItems = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { orderId } = req.params;
+
+    // Validate orderId
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID'
+      });
+    }
+
+    // Find the order and verify ownership
+    const order = await Order.findOne({ 
+      _id: orderId, 
+      customerEmail: req.user.email 
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Check if order is eligible for returns
+    if (order.status !== 'delivered') {
+      return res.status(400).json({
+        success: false,
+        error: 'Only delivered orders are eligible for returns'
+      });
+    }
+
+    if (!order.deliveryDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unable to determine delivery date for this order'
+      });
+    }
+
+    // Check return window (30 days)
+    const returnWindow = 30;
+    const deliveryDate = new Date(order.deliveryDate);
+    const returnWindowEnd = new Date(deliveryDate);
+    returnWindowEnd.setDate(returnWindowEnd.getDate() + returnWindow);
+    
+    if (new Date() > returnWindowEnd) {
+      return res.status(400).json({
+        success: false,
+        error: 'The 30-day return window has expired for this order'
+      });
+    }
+
+    if (order.hasReturnRequest) {
+      return res.status(400).json({
+        success: false,
+        error: 'A return request has already been submitted for this order'
+      });
+    }
+
+    // For now, return all items as eligible
+    // In a more complex system, you might exclude items that have already been returned
+    const eligibleItems = order.items.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      productSlug: item.productSlug,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      productImage: item.productImage
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        deliveryDate: order.deliveryDate,
+        returnWindow: returnWindow,
+        eligibleItems
+      }
+    });
+
+  } catch (error) {
+    console.error('Get eligible return items error:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred while fetching eligible return items'
+    });
+  }
+};
