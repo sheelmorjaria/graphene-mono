@@ -12,7 +12,10 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@reduxjs/toolkit": "^2.8.2",
+    "@stripe/react-stripe-js": "^3.7.0",
+    "@stripe/stripe-js": "^7.3.1",
     "@tailwindcss/postcss": "^4.1.8",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",

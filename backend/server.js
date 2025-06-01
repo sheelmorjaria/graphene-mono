@@ -10,6 +10,7 @@ import authRouter from './src/routes/auth.js';
 import userRouter from './src/routes/user.js';
 import cartRouter from './src/routes/cart.js';
 import shippingRouter from './src/routes/shipping.js';
+import paymentRouter from './src/routes/payment.js';
 
 dotenv.config();
 
@@ -34,6 +35,11 @@ app.use(cors({
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
+
+// Stripe webhook endpoint (must be before express.json middleware)
+// Import handleStripeWebhook directly to avoid router conflicts
+import { handleStripeWebhook } from './src/controllers/paymentController.js';
+app.post('/api/payment/stripe-webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -61,6 +67,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/shipping', shippingRouter);
+app.use('/api/payment', paymentRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

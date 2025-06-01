@@ -26,6 +26,15 @@ export const CheckoutProvider = ({ children }) => {
     orderNotes: ''
   });
   
+  const [paymentState, setPaymentState] = useState({
+    stripe: null,
+    elements: null,
+    isReady: false,
+    error: null,
+    clientSecret: null,
+    paymentIntentId: null
+  });
+  
   const [addresses, setAddresses] = useState([]);
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [addressesError, setAddressesError] = useState('');
@@ -139,6 +148,14 @@ export const CheckoutProvider = ({ children }) => {
       paymentMethod: null,
       orderNotes: ''
     });
+    setPaymentState({
+      stripe: null,
+      elements: null,
+      isReady: false,
+      error: null,
+      clientSecret: null,
+      paymentIntentId: null
+    });
     setShippingRates([]);
   };
 
@@ -205,6 +222,7 @@ export const CheckoutProvider = ({ children }) => {
   const contextValue = {
     // State
     checkoutState,
+    paymentState,
     addresses,
     addressesLoading,
     addressesError,
@@ -218,6 +236,7 @@ export const CheckoutProvider = ({ children }) => {
     setUseSameAsShipping,
     setShippingMethod,
     setPaymentMethod,
+    setPaymentState,
     setOrderNotes,
     goToStep,
     nextStep,
@@ -227,18 +246,36 @@ export const CheckoutProvider = ({ children }) => {
     refreshShippingRates,
     
     // Computed values
-    canProceedToPayment: !!checkoutState.shippingAddress,
+    canProceedToPayment: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod,
     canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod &&
-      !!checkoutState.paymentMethod && 
+      !!checkoutState.paymentMethod && paymentState.isReady &&
       (checkoutState.useSameAsShipping || !!checkoutState.billingAddress),
     isShippingStep: checkoutState.step === 'shipping',
     isPaymentStep: checkoutState.step === 'payment',
     isReviewStep: checkoutState.step === 'review',
     
-    // Order totals
+    // Order totals and summary
     subtotal: parseFloat(cart.totalAmount || 0),
     shippingCost: parseFloat(checkoutState.shippingCost || 0),
-    orderTotal: parseFloat(cart.totalAmount || 0) + parseFloat(checkoutState.shippingCost || 0)
+    orderTotal: parseFloat(cart.totalAmount || 0) + parseFloat(checkoutState.shippingCost || 0),
+    orderSummary: {
+      cartTotal: parseFloat(cart.totalAmount || 0),
+      shippingCost: parseFloat(checkoutState.shippingCost || 0),
+      orderTotal: parseFloat(cart.totalAmount || 0) + parseFloat(checkoutState.shippingCost || 0),
+      currency: 'GBP',
+      items: cart.items || [],
+      shippingMethod: checkoutState.shippingMethod,
+      shippingAddress: checkoutState.shippingAddress,
+      billingAddress: checkoutState.useSameAsShipping ? checkoutState.shippingAddress : checkoutState.billingAddress
+    },
+    
+    // Convenience accessors
+    shippingAddress: checkoutState.shippingAddress,
+    billingAddress: checkoutState.useSameAsShipping ? checkoutState.shippingAddress : checkoutState.billingAddress,
+    shippingMethod: checkoutState.shippingMethod,
+    paymentMethod: checkoutState.paymentMethod,
+    useSameAsShipping: checkoutState.useSameAsShipping,
+    orderNotes: checkoutState.orderNotes
   };
 
   return (
