@@ -11,6 +11,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import MyAddressesPage from './pages/MyAddressesPage';
 import MyOrdersPage from './pages/MyOrdersPage';
+import OrderDetailsPage from './pages/OrderDetailsPage';
 import SearchBar from './components/SearchBar';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
 import './App.css';
@@ -223,6 +224,9 @@ export const AppRoutes = () => {
           
           {/* My orders page */}
           <Route path="/orders" element={<MyOrdersPage />} />
+          
+          {/* Order details page */}
+          <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
