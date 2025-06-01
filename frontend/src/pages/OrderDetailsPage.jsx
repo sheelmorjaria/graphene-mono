@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getUserOrderDetails, formatCurrency, getStatusColor } from '../services/orderService';
+import { getUserOrderDetails, formatCurrency, getStatusColor, cancelOrder } from '../services/orderService';
 import OrderStatusTimeline from '../components/OrderStatusTimeline';
 
 const OrderDetailsPage = () => {
@@ -8,6 +8,9 @@ const OrderDetailsPage = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   useEffect(() => {
     loadOrderDetails();
@@ -30,6 +33,31 @@ const OrderDetailsPage = () => {
       setError(err.message || 'Failed to load order details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const canCancelOrder = (status) => {
+    const cancellableStatuses = ['pending', 'processing'];
+    return cancellableStatuses.includes(status);
+  };
+
+  const handleCancelOrder = async () => {
+    try {
+      setCancelling(true);
+      setCancelError('');
+      
+      await cancelOrder(orderId);
+      
+      // Update local order state
+      setOrder(prev => ({ ...prev, status: 'cancelled' }));
+      setShowCancelModal(false);
+      
+      // Show success message (you might want to add a toast notification)
+      alert('Order cancelled successfully. Refund has been initiated.');
+    } catch (err) {
+      setCancelError(err.message || 'Failed to cancel order');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -261,6 +289,28 @@ const OrderDetailsPage = () => {
                       </p>
                     </div>
                   )}
+
+                  {/* Cancel Order Button */}
+                  {canCancelOrder(order.status) && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => setShowCancelModal(true)}
+                        className="btn btn-danger w-full sm:w-auto"
+                        disabled={cancelling}
+                      >
+                        Cancel Order
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Cancelled Status Message */}
+                  {order.status === 'cancelled' && (
+                    <div className="alert alert-error mt-4">
+                      <p className="text-sm">
+                        ❌ This order has been cancelled. If a refund was initiated, it should appear in your account within 5-10 business days.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -357,6 +407,47 @@ const OrderDetailsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Cancel Order Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Cancel Order
+            </h3>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to cancel this order? This action cannot be undone. 
+              If payment was processed, a refund will be initiated and should appear in your account within 5-10 business days.
+            </p>
+            
+            {cancelError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {cancelError}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelError('');
+                }}
+                className="btn btn-secondary"
+                disabled={cancelling}
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={handleCancelOrder}
+                className="btn btn-danger"
+                disabled={cancelling}
+              >
+                {cancelling ? 'Cancelling...' : 'Yes, Cancel Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

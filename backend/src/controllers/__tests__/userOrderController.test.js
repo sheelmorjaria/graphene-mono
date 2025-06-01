@@ -834,5 +834,208 @@ describe('User Order Controller', () => {
         }
       });
     });
+
+    describe('Order Cancellation', () => {
+      let pendingOrder, shippedOrder, testProduct;
+
+      beforeEach(async () => {
+        // Create a test product for stock tracking
+        testProduct = new Product({
+          name: 'Test Product',
+          slug: 'test-product',
+          price: 99.99,
+          stockQuantity: 10,
+          isActive: true
+        });
+        await testProduct.save();
+
+        // Create a pending order
+        pendingOrder = new Order({
+          orderNumber: 'TEST-PENDING-001',
+          customerEmail: testUser.email,
+          items: [{
+            productId: testProduct._id,
+            productName: 'Test Product',
+            productSlug: 'test-product',
+            quantity: 2,
+            unitPrice: 99.99,
+            totalPrice: 199.98
+          }],
+          subtotal: 199.98,
+          shipping: 5.99,
+          tax: 20.00,
+          totalAmount: 225.97,
+          status: 'pending',
+          paymentStatus: 'completed',
+          paymentIntentId: 'pi_test_pending',
+          shippingAddress: {
+            fullName: 'Test User',
+            addressLine1: '123 Test St',
+            city: 'Test City',
+            stateProvince: 'Test State',
+            postalCode: '12345',
+            country: 'GB'
+          },
+          billingAddress: {
+            fullName: 'Test User',
+            addressLine1: '123 Test St',
+            city: 'Test City',
+            stateProvince: 'Test State',
+            postalCode: '12345',
+            country: 'GB'
+          }
+        });
+        await pendingOrder.save();
+
+        // Create a shipped order (non-cancellable)
+        shippedOrder = new Order({
+          orderNumber: 'TEST-SHIPPED-001',
+          customerEmail: testUser.email,
+          items: [{
+            productId: testProduct._id,
+            productName: 'Test Product',
+            productSlug: 'test-product',
+            quantity: 1,
+            unitPrice: 99.99,
+            totalPrice: 99.99
+          }],
+          subtotal: 99.99,
+          shipping: 5.99,
+          tax: 10.00,
+          totalAmount: 115.98,
+          status: 'shipped',
+          paymentStatus: 'completed',
+          shippingAddress: {
+            fullName: 'Test User',
+            addressLine1: '123 Test St',
+            city: 'Test City',
+            stateProvince: 'Test State',
+            postalCode: '12345',
+            country: 'GB'
+          }
+        });
+        await shippedOrder.save();
+      });
+
+      it('should successfully cancel a pending order', async () => {
+        const initialStock = testProduct.stockQuantity;
+
+        const response = await request(app)
+          .post(`/api/user/orders/${pendingOrder._id}/cancel`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.message).toBe('Order cancelled successfully');
+        expect(response.body.data.status).toBe('cancelled');
+
+        // Verify order status updated in database
+        const updatedOrder = await Order.findById(pendingOrder._id);
+        expect(updatedOrder.status).toBe('cancelled');
+
+        // Verify stock was restored
+        const updatedProduct = await Product.findById(testProduct._id);
+        expect(updatedProduct.stockQuantity).toBe(initialStock + 2); // 2 was the quantity ordered
+      });
+
+      it('should not allow cancelling a shipped order', async () => {
+        const response = await request(app)
+          .post(`/api/user/orders/${shippedOrder._id}/cancel`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toContain('cannot be cancelled');
+        expect(response.body.error).toContain('shipped');
+
+        // Verify order status unchanged
+        const unchangedOrder = await Order.findById(shippedOrder._id);
+        expect(unchangedOrder.status).toBe('shipped');
+      });
+
+      it('should return 404 for non-existent order', async () => {
+        const fakeOrderId = new mongoose.Types.ObjectId();
+
+        const response = await request(app)
+          .post(`/api/user/orders/${fakeOrderId}/cancel`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(404);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toBe('Order not found');
+      });
+
+      it('should return 400 for invalid order ID', async () => {
+        const response = await request(app)
+          .post('/api/user/orders/invalid-id/cancel')
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(400);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toBe('Invalid order ID');
+      });
+
+      it('should not allow cancelling another user\'s order', async () => {
+        // Create another user
+        const otherUser = new User({
+          firstName: 'Other',
+          lastName: 'User',
+          email: 'other@test.com',
+          password: 'hashedpassword'
+        });
+        await otherUser.save();
+
+        // Create order for other user
+        const otherUserOrder = new Order({
+          orderNumber: 'TEST-OTHER-001',
+          customerEmail: otherUser.email,
+          items: [{
+            productId: testProduct._id,
+            productName: 'Test Product',
+            productSlug: 'test-product',
+            quantity: 1,
+            unitPrice: 99.99,
+            totalPrice: 99.99
+          }],
+          subtotal: 99.99,
+          shipping: 5.99,
+          tax: 10.00,
+          totalAmount: 115.98,
+          status: 'pending',
+          shippingAddress: {
+            fullName: 'Other User',
+            addressLine1: '456 Other St',
+            city: 'Other City',
+            stateProvince: 'Other State',
+            postalCode: '67890',
+            country: 'GB'
+          }
+        });
+        await otherUserOrder.save();
+
+        const response = await request(app)
+          .post(`/api/user/orders/${otherUserOrder._id}/cancel`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(404);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toBe('Order not found');
+      });
+
+      it('should handle Stripe refund initiation for paid orders', async () => {
+        const response = await request(app)
+          .post(`/api/user/orders/${pendingOrder._id}/cancel`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.refund).toBeDefined();
+        
+        // Check if refund information is included (will be error in test environment)
+        if (response.body.data.refund.error) {
+          expect(response.body.data.refund.error).toContain('Stripe');
+        }
+      });
+    });
   });
 });

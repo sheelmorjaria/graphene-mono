@@ -227,6 +227,21 @@ const orderSchema = new mongoose.Schema({
     },
     default: 'pending'
   },
+  // Refund information
+  refundId: {
+    type: String,
+    trim: true,
+    maxlength: 255
+  },
+  refundStatus: {
+    type: String,
+    enum: ['pending', 'succeeded', 'failed', 'canceled'],
+    trim: true
+  },
+  refundAmount: {
+    type: Number,
+    min: 0
+  },
   orderDate: {
     type: Date,
     required: [true, 'Order date is required'],
