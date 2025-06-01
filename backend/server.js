@@ -3,10 +3,12 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import productsRouter from './src/routes/products.js';
 import authRouter from './src/routes/auth.js';
 import userRouter from './src/routes/user.js';
+import cartRouter from './src/routes/cart.js';
 
 dotenv.config();
 
@@ -35,6 +37,7 @@ app.use(cors({
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Database connection
 const connectDB = async () => {
@@ -55,6 +58,7 @@ const connectDB = async () => {
 app.use('/api/products', productsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
+app.use('/api/cart', cartRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

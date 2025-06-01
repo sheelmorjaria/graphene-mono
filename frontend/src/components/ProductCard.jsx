@@ -1,8 +1,11 @@
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useCart } from '../contexts/CartContext';
 
 const ProductCard = ({ product }) => {
   const {
+    _id,
     name,
     slug,
     shortDescription,
@@ -10,15 +13,39 @@ const ProductCard = ({ product }) => {
     images,
     condition,
     stockStatus,
+    stockQuantity,
     category
   } = product;
+
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { addToCart } = useCart();
 
   // Get the main image or placeholder
   const mainImage = images && images.length > 0 ? images[0] : '/placeholder-product.jpg';
 
-  // Format price in GBP
+  // Format price in USD (updated from GBP)
   const formatPrice = (price) => {
-    return `£${price.toFixed(2)}`;
+    return `$${price.toFixed(2)}`;
+  };
+
+  // Handle add to cart
+  const handleAddToCart = async (e) => {
+    e.preventDefault(); // Prevent navigation if button is inside a link
+    e.stopPropagation();
+    
+    if (stockStatus === 'out_of_stock' || stockQuantity === 0 || isAddingToCart) {
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      const result = await addToCart(_id, 1);
+      if (result.success) {
+        // Could show a toast notification here
+      }
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   // Get condition badge styling
@@ -100,13 +127,27 @@ const ProductCard = ({ product }) => {
           </span>
         </div>
 
-        {/* View Details Button */}
-        <Link
-          to={`/products/${slug}`}
-          className="block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          View Details
-        </Link>
+        {/* Action Buttons */}
+        <div className="space-y-2">
+          <button
+            onClick={handleAddToCart}
+            disabled={stockStatus === 'out_of_stock' || stockQuantity === 0 || isAddingToCart}
+            className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              stockStatus === 'out_of_stock' || stockQuantity === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+            }`}
+          >
+            {isAddingToCart ? 'Adding...' : stockStatus === 'out_of_stock' || stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+          </button>
+          
+          <Link
+            to={`/products/${slug}`}
+            className="block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            View Details
+          </Link>
+        </div>
       </div>
     </article>
   );
@@ -114,7 +155,7 @@ const ProductCard = ({ product }) => {
 
 ProductCard.propTypes = {
   product: PropTypes.shape({
-    id: PropTypes.string.isRequired,
+    _id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     slug: PropTypes.string.isRequired,
     shortDescription: PropTypes.string,
@@ -122,8 +163,9 @@ ProductCard.propTypes = {
     images: PropTypes.arrayOf(PropTypes.string),
     condition: PropTypes.oneOf(['new', 'excellent', 'good', 'fair']).isRequired,
     stockStatus: PropTypes.oneOf(['in_stock', 'low_stock', 'out_of_stock']).isRequired,
+    stockQuantity: PropTypes.number,
     category: PropTypes.shape({
-      id: PropTypes.string,
+      _id: PropTypes.string,
       name: PropTypes.string,
       slug: PropTypes.string
     }),
