@@ -13,7 +13,9 @@ import MyAddressesPage from './pages/MyAddressesPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import SearchBar from './components/SearchBar';
+import CartIcon from './components/CartIcon';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
+import { CartProvider, useCart } from './contexts/CartContext';
 import './App.css';
 
 const AuthenticatedUserMenu = () => {
@@ -116,6 +118,10 @@ const Header = () => {
                 >
                   Products
                 </Link>
+              </li>
+              
+              <li>
+                <CartIcon />
               </li>
               
               {!isLoading && (
@@ -243,7 +249,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <CartProvider>
+          <AppRoutes />
+        </CartProvider>
       </AuthProvider>
     </Router>
   );
