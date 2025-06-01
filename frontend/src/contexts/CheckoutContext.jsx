@@ -16,6 +16,8 @@ export const CheckoutProvider = ({ children }) => {
   const [checkoutState, setCheckoutState] = useState({
     step: 'shipping', // shipping, payment, review
     shippingAddress: null,
+    billingAddress: null,
+    useSameAsShipping: true,
     paymentMethod: null,
     orderNotes: ''
   });
@@ -58,7 +60,25 @@ export const CheckoutProvider = ({ children }) => {
   const setShippingAddress = (address) => {
     setCheckoutState(prev => ({
       ...prev,
-      shippingAddress: address
+      shippingAddress: address,
+      // If using same as shipping, update billing address too
+      billingAddress: prev.useSameAsShipping ? address : prev.billingAddress
+    }));
+  };
+
+  const setBillingAddress = (address) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      billingAddress: address
+    }));
+  };
+
+  const setUseSameAsShipping = (useSame) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      useSameAsShipping: useSame,
+      // If switching to use shipping address, copy it to billing
+      billingAddress: useSame ? prev.shippingAddress : prev.billingAddress
     }));
   };
 
@@ -103,6 +123,8 @@ export const CheckoutProvider = ({ children }) => {
     setCheckoutState({
       step: 'shipping',
       shippingAddress: null,
+      billingAddress: null,
+      useSameAsShipping: true,
       paymentMethod: null,
       orderNotes: ''
     });
@@ -121,6 +143,8 @@ export const CheckoutProvider = ({ children }) => {
     
     // Actions
     setShippingAddress,
+    setBillingAddress,
+    setUseSameAsShipping,
     setPaymentMethod,
     setOrderNotes,
     goToStep,
@@ -131,7 +155,8 @@ export const CheckoutProvider = ({ children }) => {
     
     // Computed values
     canProceedToPayment: !!checkoutState.shippingAddress,
-    canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.paymentMethod,
+    canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.paymentMethod && 
+      (checkoutState.useSameAsShipping || !!checkoutState.billingAddress),
     isShippingStep: checkoutState.step === 'shipping',
     isPaymentStep: checkoutState.step === 'payment',
     isReviewStep: checkoutState.step === 'review'
