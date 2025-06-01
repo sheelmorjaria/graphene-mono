@@ -5,6 +5,7 @@ import { useCheckout } from '../contexts/CheckoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../services/cartService';
 import ShippingAddressSection from '../components/checkout/ShippingAddressSection';
+import BillingAddressSection from '../components/checkout/BillingAddressSection';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
@@ -101,33 +102,44 @@ const CartSummary = () => {
 };
 
 const PaymentSection = () => {
-  const { nextStep, prevStep } = useCheckout();
+  const { nextStep, prevStep, canProceedToReview } = useCheckout();
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">Payment Method</h2>
+    <div className="space-y-6">
+      {/* Billing Address Section */}
+      <BillingAddressSection />
       
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">🚧</div>
-        <h3 className="text-lg font-medium text-gray-700 mb-2">Payment Coming Soon</h3>
-        <p className="text-gray-600 mb-6">
-          Payment integration will be implemented in future stories.
-        </p>
-      </div>
+      {/* Payment Method Section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Payment Method</h2>
+        
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🚧</div>
+          <h3 className="text-lg font-medium text-gray-700 mb-2">Payment Coming Soon</h3>
+          <p className="text-gray-600 mb-6">
+            Payment integration will be implemented in future stories.
+          </p>
+        </div>
 
-      <div className="flex justify-between">
-        <button
-          onClick={prevStep}
-          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          Back to Shipping
-        </button>
-        <button
-          onClick={nextStep}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Continue to Review
-        </button>
+        <div className="flex justify-between">
+          <button
+            onClick={prevStep}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Back to Shipping
+          </button>
+          <button
+            onClick={nextStep}
+            disabled={!canProceedToReview}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              canProceedToReview
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Continue to Review
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -146,28 +158,77 @@ const ReviewSection = () => {
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Review Your Order</h2>
       
-      {/* Shipping Address Review */}
-      {checkoutState.shippingAddress && (
-        <div className="mb-6">
-          <h3 className="text-lg font-medium text-gray-800 mb-3">Shipping Address</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
-            <div className="text-sm text-gray-600 mt-1">
-              <div>{checkoutState.shippingAddress.addressLine1}</div>
-              {checkoutState.shippingAddress.addressLine2 && (
-                <div>{checkoutState.shippingAddress.addressLine2}</div>
-              )}
-              <div>
-                {checkoutState.shippingAddress.city}, {checkoutState.shippingAddress.stateProvince} {checkoutState.shippingAddress.postalCode}
+      {/* Address Review */}
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
+        {/* Shipping Address Review */}
+        {checkoutState.shippingAddress && (
+          <div>
+            <h3 className="text-lg font-medium text-gray-800 mb-3">Shipping Address</h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
+              <div className="text-sm text-gray-600 mt-1">
+                <div>{checkoutState.shippingAddress.addressLine1}</div>
+                {checkoutState.shippingAddress.addressLine2 && (
+                  <div>{checkoutState.shippingAddress.addressLine2}</div>
+                )}
+                <div>
+                  {checkoutState.shippingAddress.city}, {checkoutState.shippingAddress.stateProvince} {checkoutState.shippingAddress.postalCode}
+                </div>
+                <div>{checkoutState.shippingAddress.country}</div>
+                {checkoutState.shippingAddress.phoneNumber && (
+                  <div className="mt-1">Phone: {checkoutState.shippingAddress.phoneNumber}</div>
+                )}
               </div>
-              <div>{checkoutState.shippingAddress.country}</div>
-              {checkoutState.shippingAddress.phoneNumber && (
-                <div className="mt-1">Phone: {checkoutState.shippingAddress.phoneNumber}</div>
-              )}
             </div>
           </div>
+        )}
+
+        {/* Billing Address Review */}
+        <div>
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Billing Address</h3>
+          <div className="bg-gray-50 rounded-lg p-4">
+            {checkoutState.useSameAsShipping ? (
+              <div>
+                <div className="text-sm text-blue-600 font-medium mb-2">Same as shipping address</div>
+                {checkoutState.shippingAddress && (
+                  <>
+                    <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      <div>{checkoutState.shippingAddress.addressLine1}</div>
+                      {checkoutState.shippingAddress.addressLine2 && (
+                        <div>{checkoutState.shippingAddress.addressLine2}</div>
+                      )}
+                      <div>
+                        {checkoutState.shippingAddress.city}, {checkoutState.shippingAddress.stateProvince} {checkoutState.shippingAddress.postalCode}
+                      </div>
+                      <div>{checkoutState.shippingAddress.country}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : checkoutState.billingAddress ? (
+              <>
+                <div className="font-medium">{checkoutState.billingAddress.fullName}</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  <div>{checkoutState.billingAddress.addressLine1}</div>
+                  {checkoutState.billingAddress.addressLine2 && (
+                    <div>{checkoutState.billingAddress.addressLine2}</div>
+                  )}
+                  <div>
+                    {checkoutState.billingAddress.city}, {checkoutState.billingAddress.stateProvince} {checkoutState.billingAddress.postalCode}
+                  </div>
+                  <div>{checkoutState.billingAddress.country}</div>
+                  {checkoutState.billingAddress.phoneNumber && (
+                    <div className="mt-1">Phone: {checkoutState.billingAddress.phoneNumber}</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-500">No billing address selected</div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Order Items Review */}
       <div className="mb-6">
