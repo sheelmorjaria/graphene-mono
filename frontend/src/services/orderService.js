@@ -195,3 +195,31 @@ export const formatOrderDate = (dateString) => {
     minute: '2-digit'
   });
 };
+
+// Cancel order
+export const cancelOrder = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error('Order ID is required');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/user/orders/${orderId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to cancel order');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Cancel order error:', error);
+    throw error;
+  }
+};

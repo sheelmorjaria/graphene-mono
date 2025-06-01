@@ -1,6 +1,6 @@
 import express from 'express';
 import { getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress } from '../controllers/userAddressController.js';
-import { getUserOrders, getUserOrderDetails, placeOrder } from '../controllers/userOrderController.js';
+import { getUserOrders, getUserOrderDetails, placeOrder, cancelOrder } from '../controllers/userOrderController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -18,5 +18,6 @@ router.delete('/addresses/:addressId', deleteUserAddress);
 router.get('/orders', getUserOrders);
 router.get('/orders/:orderId', getUserOrderDetails);
 router.post('/orders/place-order', placeOrder);
+router.post('/orders/:orderId/cancel', cancelOrder);
 
 export default router;

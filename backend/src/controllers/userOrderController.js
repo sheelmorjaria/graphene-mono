@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import ShippingMethod from '../models/ShippingMethod.js';
+import emailService from '../services/emailService.js';
 import Stripe from 'stripe';
 import mongoose from 'mongoose';
 
@@ -463,6 +464,118 @@ export const placeOrder = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error occurred while placing order'
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+// Cancel order
+export const cancelOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    const userId = req.user._id;
+    const { orderId } = req.params;
+
+    // Validate orderId
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID'
+      });
+    }
+
+    // Find the order and verify ownership
+    const order = await Order.findOne({ 
+      _id: orderId, 
+      customerEmail: req.user.email 
+    }).session(session);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Check if order can be cancelled
+    const cancellableStatuses = ['pending', 'processing'];
+    if (!cancellableStatuses.includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        error: `Order cannot be cancelled. Current status: ${order.status}`
+      });
+    }
+
+    // Update order status to cancelled
+    order.status = 'cancelled';
+    await order.save({ session });
+
+    // Restore stock for all items in the order
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stockQuantity: item.quantity } },
+        { session }
+      );
+    }
+
+    // Initiate refund if payment was processed
+    let refundDetails = null;
+    if (order.paymentStatus === 'completed' && order.paymentIntentId) {
+      try {
+        const refund = await stripe.refunds.create({
+          payment_intent: order.paymentIntentId,
+          reason: 'requested_by_customer'
+        });
+        
+        refundDetails = {
+          refundId: refund.id,
+          amount: refund.amount / 100, // Convert from cents
+          status: refund.status
+        };
+
+        // Update order with refund information
+        order.refundId = refund.id;
+        order.refundStatus = refund.status;
+        await order.save({ session });
+      } catch (stripeError) {
+        console.error('Stripe refund error:', stripeError);
+        // Don't fail the entire cancellation if refund fails
+        refundDetails = { error: 'Refund initiation failed' };
+      }
+    }
+
+    await session.commitTransaction();
+
+    // Send cancellation email
+    try {
+      await emailService.sendOrderCancellationEmail(order, refundDetails);
+    } catch (emailError) {
+      console.error('Failed to send cancellation email:', emailError);
+      // Don't fail the entire operation if email fails
+    }
+    
+    res.json({
+      success: true,
+      message: 'Order cancelled successfully',
+      data: {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        refund: refundDetails
+      }
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Cancel order error:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred while cancelling order'
     });
   } finally {
     session.endSession();
