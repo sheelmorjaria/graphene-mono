@@ -1,19 +1,8 @@
-const API_BASE_URL = 'http://localhost:3000/api';
-
-// Get authentication token
-const getAuthToken = () => {
-  return localStorage.getItem('authToken');
-};
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 // Fetch user's order history with pagination and sorting
 export const getUserOrders = async (params = {}) => {
   try {
-    const token = getAuthToken();
-    
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     // Build query parameters
     const queryParams = new URLSearchParams();
     
@@ -28,8 +17,8 @@ export const getUserOrders = async (params = {}) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
+      credentials: 'include'
     });
 
     const data = await response.json();
@@ -48,12 +37,6 @@ export const getUserOrders = async (params = {}) => {
 // Fetch detailed information for a specific order
 export const getUserOrderDetails = async (orderId) => {
   try {
-    const token = getAuthToken();
-    
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     if (!orderId) {
       throw new Error('Order ID is required');
     }
@@ -62,8 +45,8 @@ export const getUserOrderDetails = async (orderId) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
+      credentials: 'include'
     });
 
     const data = await response.json();
@@ -111,4 +94,98 @@ export const getStatusColor = (status) => {
     cancelled: '#ef4444' // red
   };
   return colorMap[status] || '#6b7280'; // gray as default
+};
+
+// Place order
+export const placeOrder = async (orderData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/user/orders/place-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(orderData)
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to place order');
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error('Error placing order:', error);
+    throw error;
+  }
+};
+
+// Validate order data before placing
+export const validateOrderData = (orderData) => {
+  const errors = [];
+
+  if (!orderData.shippingAddress) {
+    errors.push('Shipping address is required');
+  }
+
+  if (!orderData.shippingMethodId) {
+    errors.push('Shipping method is required');
+  }
+
+  if (!orderData.paymentIntentId) {
+    errors.push('Payment intent is required');
+  }
+
+  // Validate shipping address fields
+  if (orderData.shippingAddress) {
+    const requiredFields = ['firstName', 'lastName', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
+    
+    for (const field of requiredFields) {
+      if (!orderData.shippingAddress[field]) {
+        errors.push(`Shipping address ${field} is required`);
+      }
+    }
+  }
+
+  // Validate billing address if provided separately
+  if (orderData.billingAddress && !orderData.useSameAsShipping) {
+    const requiredFields = ['firstName', 'lastName', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
+    
+    for (const field of requiredFields) {
+      if (!orderData.billingAddress[field]) {
+        errors.push(`Billing address ${field} is required`);
+      }
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+// Get order status color class for UI
+export const getOrderStatusColor = (status) => {
+  const colorMap = {
+    pending: 'text-yellow-600 bg-yellow-50',
+    processing: 'text-blue-600 bg-blue-50',
+    shipped: 'text-purple-600 bg-purple-50',
+    delivered: 'text-green-600 bg-green-50',
+    cancelled: 'text-red-600 bg-red-50'
+  };
+  
+  return colorMap[status] || 'text-gray-600 bg-gray-50';
+};
+
+// Format order date
+export const formatOrderDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };

@@ -14,6 +14,7 @@ import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
@@ -242,6 +243,9 @@ export const AppRoutes = () => {
           
           {/* Checkout page */}
           <Route path="/checkout" element={<CheckoutPage />} />
+          
+          {/* Order confirmation page */}
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />

@@ -157,30 +157,65 @@ const orderSchema = new mongoose.Schema({
     type: shippingAddressSchema,
     required: [true, 'Billing address is required']
   },
+  shippingMethod: {
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ShippingMethod',
+      required: [true, 'Shipping method ID is required']
+    },
+    name: {
+      type: String,
+      required: [true, 'Shipping method name is required'],
+      trim: true,
+      maxlength: 100
+    },
+    cost: {
+      type: Number,
+      required: [true, 'Shipping method cost is required'],
+      min: [0, 'Shipping cost cannot be negative']
+    },
+    estimatedDelivery: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    }
+  },
   paymentMethod: {
-    type: String,
-    required: [true, 'Payment method is required'],
-    enum: {
-      values: ['credit_card', 'debit_card', 'paypal', 'bank_transfer'],
-      message: 'Payment method must be one of: credit_card, debit_card, paypal, bank_transfer'
+    type: {
+      type: String,
+      required: [true, 'Payment method type is required'],
+      enum: {
+        values: ['card', 'paypal', 'apple_pay', 'google_pay'],
+        message: 'Payment method type must be one of: card, paypal, apple_pay, google_pay'
+      }
+    },
+    name: {
+      type: String,
+      required: [true, 'Payment method name is required'],
+      trim: true,
+      maxlength: 100
     }
   },
   paymentDetails: {
-    cardType: {
+    cardBrand: {
       type: String,
       trim: true,
       maxlength: 20
     },
-    lastFourDigits: {
+    last4: {
       type: String,
       trim: true,
       maxlength: 4
     },
-    paypalEmail: {
+    paymentIntentId: {
       type: String,
       trim: true,
-      lowercase: true,
-      maxlength: 255
+      maxlength: 100
+    },
+    stripeChargeId: {
+      type: String,
+      trim: true,
+      maxlength: 100
     }
   },
   paymentStatus: {
@@ -270,25 +305,12 @@ orderSchema.methods.getFormattedDate = function() {
 
 // Instance method to format payment method for display
 orderSchema.methods.getPaymentMethodDisplay = function() {
-  const methodMap = {
-    credit_card: 'Credit Card',
-    debit_card: 'Debit Card',
-    paypal: 'PayPal',
-    bank_transfer: 'Bank Transfer'
-  };
-  
-  let display = methodMap[this.paymentMethod] || this.paymentMethod;
+  let display = this.paymentMethod.name || this.paymentMethod.type;
   
   // Add card details if available
-  if ((this.paymentMethod === 'credit_card' || this.paymentMethod === 'debit_card') && 
-      this.paymentDetails && this.paymentDetails.lastFourDigits) {
-    const cardType = this.paymentDetails.cardType ? ` (${this.paymentDetails.cardType})` : '';
-    display += `${cardType} ending in ****${this.paymentDetails.lastFourDigits}`;
-  }
-  
-  // Add PayPal email if available
-  if (this.paymentMethod === 'paypal' && this.paymentDetails && this.paymentDetails.paypalEmail) {
-    display += ` (${this.paymentDetails.paypalEmail})`;
+  if (this.paymentMethod.type === 'card' && this.paymentDetails && this.paymentDetails.last4) {
+    const cardBrand = this.paymentDetails.cardBrand ? ` (${this.paymentDetails.cardBrand})` : '';
+    display += `${cardBrand} ending in ****${this.paymentDetails.last4}`;
   }
   
   return display;
