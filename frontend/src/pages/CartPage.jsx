@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { formatCurrency } from '../services/cartService';
 
@@ -154,6 +154,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
 const CartPage = () => {
   const { cart, loading, error, updateCartItem, removeFromCart, clearCart, clearError } = useCart();
   const [isUpdating, setIsUpdating] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = 'Shopping Cart - GrapheneOS Store';
@@ -385,6 +386,7 @@ const CartPage = () => {
                 </div>
 
                 <button
+                  onClick={() => navigate('/checkout')}
                   disabled={isUpdating}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                 >
