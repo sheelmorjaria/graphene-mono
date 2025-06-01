@@ -22,9 +22,15 @@ export const getProducts = async (req, res) => {
     // Build query filter
     const filter = { isActive: true };
 
-    // Add category filter
+    // Add category filter - look up category by slug
     if (category) {
-      filter.category = category;
+      const categoryDoc = await Category.findOne({ slug: category });
+      if (categoryDoc) {
+        filter.category = categoryDoc._id;
+      } else {
+        // If category slug not found, return empty results
+        filter.category = null;
+      }
     }
 
     // Add price range filter
