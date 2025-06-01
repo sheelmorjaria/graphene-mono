@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getCart, addToCart as addToCartService } from '../services/cartService';
+import { 
+  getCart, 
+  addToCart as addToCartService, 
+  updateCartItem as updateCartItemService,
+  removeFromCart as removeFromCartService,
+  clearCart as clearCartService
+} from '../services/cartService';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
@@ -78,6 +84,84 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const updateCartItem = async (productId, quantity) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await updateCartItemService(productId, quantity);
+      
+      // Reload cart to get updated state
+      await loadCart();
+      
+      return {
+        success: true,
+        message: response.message
+      };
+      
+    } catch (err) {
+      setError(err.message || 'Failed to update cart item');
+      return {
+        success: false,
+        error: err.message || 'Failed to update cart item'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFromCart = async (productId) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await removeFromCartService(productId);
+      
+      // Reload cart to get updated state
+      await loadCart();
+      
+      return {
+        success: true,
+        message: response.message
+      };
+      
+    } catch (err) {
+      setError(err.message || 'Failed to remove item from cart');
+      return {
+        success: false,
+        error: err.message || 'Failed to remove item from cart'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await clearCartService();
+      
+      // Reload cart to get updated state
+      await loadCart();
+      
+      return {
+        success: true,
+        message: response.message
+      };
+      
+    } catch (err) {
+      setError(err.message || 'Failed to clear cart');
+      return {
+        success: false,
+        error: err.message || 'Failed to clear cart'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshCart = () => {
     loadCart();
   };
@@ -91,6 +175,9 @@ export const CartProvider = ({ children }) => {
     loading,
     error,
     addToCart,
+    updateCartItem,
+    removeFromCart,
+    clearCart,
     refreshCart,
     clearError,
     // Computed values for easy access
