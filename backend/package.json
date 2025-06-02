@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
-    "seed": "node src/scripts/seedDatabase.js"
+    "seed": "node src/scripts/seedDatabase.js",
+    "create-admin": "node src/scripts/createAdminUser.js"
   },
   "keywords": [],
   "author": "",

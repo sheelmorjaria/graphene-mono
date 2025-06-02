@@ -14,6 +14,9 @@ import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import ReturnHistoryPage from './pages/ReturnHistoryPage';
 import ReturnDetailsPage from './pages/ReturnDetailsPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
@@ -282,6 +285,14 @@ export const AppRoutes = () => {
           
           {/* Contact Us page */}
           <Route path="/contact-us" element={<ContactUsPage />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/dashboard" element={
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
+          } />
           
           {/* Product details page */}
           <Route path="/products/:slug" element={<ProductDetailsPage />} />
