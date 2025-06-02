@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getUserOrderDetails, formatCurrency, getStatusColor, cancelOrder } from '../services/orderService';
+import { getUserReturnRequests, formatReturnStatus, getReturnStatusColorClass } from '../services/returnService';
 import OrderStatusTimeline from '../components/OrderStatusTimeline';
 
 const OrderDetailsPage = () => {
@@ -11,6 +12,8 @@ const OrderDetailsPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
+  const [returnRequest, setReturnRequest] = useState(null);
+  const [loadingReturn, setLoadingReturn] = useState(false);
 
   useEffect(() => {
     loadOrderDetails();
@@ -28,11 +31,35 @@ const OrderDetailsPage = () => {
       setError('');
       
       const response = await getUserOrderDetails(orderId);
-      setOrder(response.data.order);
+      const orderData = response.data.order;
+      setOrder(orderData);
+      
+      // If order has return request, fetch return details
+      if (orderData.hasReturnRequest) {
+        loadReturnRequest();
+      }
     } catch (err) {
       setError(err.message || 'Failed to load order details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadReturnRequest = async () => {
+    try {
+      setLoadingReturn(true);
+      
+      // Get all return requests and find the one for this order
+      const response = await getUserReturnRequests();
+      if (response.data && response.data.length > 0) {
+        // Get the most recent return request for this order
+        const returnReq = response.data.find(req => req.orderId === orderId);
+        setReturnRequest(returnReq);
+      }
+    } catch (err) {
+      console.error('Failed to load return request:', err);
+    } finally {
+      setLoadingReturn(false);
     }
   };
 
@@ -341,12 +368,55 @@ const OrderDetailsPage = () => {
                     </div>
                   )}
 
-                  {/* Return Request Status Message */}
+                  {/* Return Request Status Section */}
                   {order.hasReturnRequest && (
-                    <div className="alert alert-info mt-4">
-                      <p className="text-sm">
-                        📦 A return request has been submitted for this order. You will receive updates via email.
-                      </p>
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Return Request Status</h3>
+                      
+                      {loadingReturn ? (
+                        <div className="text-sm text-gray-600">Loading return request details...</div>
+                      ) : returnRequest ? (
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">
+                                Return Request: {returnRequest.formattedRequestNumber}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Submitted on {new Date(returnRequest.requestDate).toLocaleDateString('en-GB', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReturnStatusColorClass(returnRequest.status)}`}>
+                              {formatReturnStatus(returnRequest.status)}
+                            </span>
+                          </div>
+                          
+                          <div className="text-sm text-gray-600 mb-3">
+                            <span className="font-medium">{returnRequest.totalItemsCount}</span> item(s) - 
+                            Refund amount: <span className="font-medium">{formatCurrency(returnRequest.totalRefundAmount)}</span>
+                          </div>
+                          
+                          <Link
+                            to={`/my-account/returns/${returnRequest.id}`}
+                            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            View Return Details
+                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="alert alert-info">
+                          <p className="text-sm">
+                            📦 A return request has been submitted for this order. You will receive updates via email.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 

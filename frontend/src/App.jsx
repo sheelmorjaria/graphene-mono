@@ -12,6 +12,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import MyAddressesPage from './pages/MyAddressesPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+import ReturnHistoryPage from './pages/ReturnHistoryPage';
+import ReturnDetailsPage from './pages/ReturnDetailsPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
@@ -19,7 +21,7 @@ import ContactUsPage from './pages/ContactUsPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
-import { CartProvider, useCart } from './contexts/CartContext';
+import { CartProvider } from './contexts/CartContext';
 import { CheckoutProvider } from './contexts/CheckoutContext';
 //import './App.css';
 import './index.css'; // Import global styles
@@ -80,6 +82,13 @@ const AuthenticatedUserMenu = () => {
             onClick={() => setIsDropdownOpen(false)}
           >
             My Orders
+          </Link>
+          <Link
+            to="/my-account/returns"
+            className="block px-4 py-2 text-sm text-forest-800 hover:bg-forest-50 transition-colors duration-200"
+            onClick={() => setIsDropdownOpen(false)}
+          >
+            My Returns
           </Link>
           <Link
             to="/contact-us"
@@ -255,6 +264,12 @@ export const AppRoutes = () => {
           
           {/* Order details page */}
           <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+          
+          {/* Return history page */}
+          <Route path="/my-account/returns" element={<ReturnHistoryPage />} />
+          
+          {/* Return details page */}
+          <Route path="/my-account/returns/:returnRequestId" element={<ReturnDetailsPage />} />
           
           {/* Cart page */}
           <Route path="/cart" element={<CartPage />} />
