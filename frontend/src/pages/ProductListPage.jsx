@@ -95,9 +95,9 @@ const ProductListPage = () => {
         <div className="flex flex-col items-center justify-center min-h-64">
           <div 
             data-testid="loading-spinner" 
-            className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+            className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
           ></div>
-          <p className="mt-4 text-gray-600">Loading products...</p>
+          <p className="mt-4 text-muted-foreground">Loading products...</p>
         </div>
       </main>
     );
@@ -109,11 +109,11 @@ const ProductListPage = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center min-h-64">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error loading products</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Error loading products</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <button
               onClick={handleRetry}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary/90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transform hover:scale-105"
             >
               Try Again
             </button>
@@ -128,12 +128,12 @@ const ProductListPage = () => {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">GrapheneOS Smartphones</h1>
-          <p className="text-lg text-gray-600 mb-8">Privacy-focused smartphones with GrapheneOS pre-installed</p>
+          <h1 className="text-3xl font-bold text-foreground mb-4">GrapheneOS Smartphones</h1>
+          <p className="text-lg text-muted-foreground mb-8">Privacy-focused smartphones with GrapheneOS pre-installed</p>
           
           <div className="flex flex-col items-center justify-center min-h-64">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No products found</h2>
-            <p className="text-gray-600">We couldn't find any products matching your criteria.</p>
+            <h2 className="text-2xl font-bold text-foreground mb-2">No products found</h2>
+            <p className="text-muted-foreground">We couldn't find any products matching your criteria.</p>
           </div>
         </div>
       </main>
@@ -146,9 +146,9 @@ const ProductListPage = () => {
     <main className="container mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">GrapheneOS Smartphones</h1>
-        <p className="text-lg text-gray-600 mb-4">Privacy-focused smartphones with GrapheneOS pre-installed</p>
-        <p className="text-sm text-gray-500">{productCountText}</p>
+        <h1 className="text-3xl font-bold text-foreground mb-4 animate-wave">GrapheneOS Smartphones</h1>
+        <p className="text-lg text-muted-foreground mb-4">Privacy-focused smartphones with GrapheneOS pre-installed</p>
+        <p className="text-sm text-muted-foreground">{productCountText}</p>
       </div>
 
       {/* Main Content Layout */}

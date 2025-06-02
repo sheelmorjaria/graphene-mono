@@ -1,72 +1,72 @@
 @import "tailwindcss";
 
-/* ===== CSS VARIABLES ===== */
+/* ===== CSS VARIABLES - FOREST THEME ===== */
 :root {
-  /* Colors */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #dbeafe;
+  /* Forest-themed Primary Colors */
+  --color-primary: #2d7a2d; /* Deep forest green */
+  --color-primary-hover: #459945; /* Lighter forest green */
+  --color-primary-light: #e8f5e8; /* Light moss */
   
-  --color-secondary: #6b7280;
-  --color-secondary-hover: #4b5563;
-  --color-secondary-light: #f3f4f6;
+  --color-secondary: #5d4e37; /* Tree bark brown */
+  --color-secondary-hover: #7d8471; /* Moss gray */
+  --color-secondary-light: #f7fdf7; /* Misty forest */
   
-  --color-success: #059669;
-  --color-success-hover: #047857;
-  --color-success-light: #d1fae5;
+  --color-success: #059669; /* Emerald green */
+  --color-success-hover: #047857; /* Deep emerald */
+  --color-success-light: #d1fae5; /* Light mint */
   
-  --color-warning: #d97706;
-  --color-warning-hover: #b45309;
-  --color-warning-light: #fef3c7;
+  --color-warning: #d97706; /* Autumn orange */
+  --color-warning-hover: #b45309; /* Darker autumn */
+  --color-warning-light: #fed7aa; /* Light autumn */
   
-  --color-error: #dc2626;
-  --color-error-hover: #b91c1c;
-  --color-error-light: #fee2e2;
+  --color-error: #dc2626; /* Cardinal red */
+  --color-error-hover: #b91c1c; /* Deep cardinal */
+  --color-error-light: #fecaca; /* Light cardinal */
   
-  --color-info: #0891b2;
-  --color-info-hover: #0e7490;
-  --color-info-light: #cffafe;
+  --color-info: #047857; /* Pine green */
+  --color-info-hover: #065f46; /* Deep pine */
+  --color-info-light: #d1fae5; /* Light pine */
   
   /* Status Colors */
-  --color-status-pending: #f59e0b;
-  --color-status-pending-bg: #fef3c7;
-  --color-status-pending-border: #fcd34d;
+  --color-status-pending: #d97706;
+  --color-status-pending-bg: #fed7aa;
+  --color-status-pending-border: #fbbf24;
   
-  --color-status-processing: #3b82f6;
-  --color-status-processing-bg: #dbeafe;
-  --color-status-processing-border: #93c5fd;
+  --color-status-processing: #2d7a2d;
+  --color-status-processing-bg: #c6e6c6;
+  --color-status-processing-border: #6bb76b;
   
-  --color-status-shipped: #8b5cf6;
+  --color-status-shipped: #7c3aed;
   --color-status-shipped-bg: #ede9fe;
   --color-status-shipped-border: #c4b5fd;
   
-  --color-status-out-for-delivery: #f59e0b;
-  --color-status-out-for-delivery-bg: #fef3c7;
-  --color-status-out-for-delivery-border: #fcd34d;
+  --color-status-out-for-delivery: #d97706;
+  --color-status-out-for-delivery-bg: #fed7aa;
+  --color-status-out-for-delivery-border: #fbbf24;
   
-  --color-status-delivered: #10b981;
+  --color-status-delivered: #059669;
   --color-status-delivered-bg: #d1fae5;
   --color-status-delivered-border: #6ee7b7;
   
-  --color-status-cancelled: #ef4444;
-  --color-status-cancelled-bg: #fee2e2;
+  --color-status-cancelled: #dc2626;
+  --color-status-cancelled-bg: #fecaca;
   --color-status-cancelled-border: #fca5a5;
   
   --color-status-returned: #6b7280;
   --color-status-returned-bg: #f3f4f6;
   --color-status-returned-border: #d1d5db;
   
-  /* Gray Scale */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  /* Forest-themed Gray Scale */
+  --color-gray-50: #f7fdf7; /* Light moss */
+  --color-gray-100: #e8f5e8; /* Misty green */
+  --color-gray-200: #c6e6c6; /* Light forest */
+  --color-gray-300: #9dd09d; /* Sage green */
+  --color-gray-400: #6bb76b; /* Muted forest */
+  --color-gray-500: #459945; /* Forest green */
+  --color-gray-600: #2d7a2d; /* Deep forest */
+  --color-gray-700: #1e5f1e; /* Dark forest */
+  --color-gray-800: #154515; /* Deep woods */
+  --color-gray-900: #0d2e0d; /* Forest depths */
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -123,6 +123,28 @@
   --z-dropdown: 50;
   --z-modal: 100;
   --z-tooltip: 200;
+  
+  /* Forest Theme CSS Custom Properties for Tailwind */
+  --border: 120 20% 91%;
+  --input: 120 20% 91%;
+  --ring: 120 45% 32%;
+  --background: 120 40% 98%;
+  --foreground: 120 25% 15%;
+  --primary: 120 45% 32%;
+  --primary-foreground: 120 40% 98%;
+  --secondary: 30 25% 35%;
+  --secondary-foreground: 120 25% 15%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 120 40% 98%;
+  --muted: 120 16% 92%;
+  --muted-foreground: 120 13% 54%;
+  --accent: 160 84% 39%;
+  --accent-foreground: 120 25% 15%;
+  --popover: 120 40% 98%;
+  --popover-foreground: 120 25% 15%;
+  --card: 120 40% 98%;
+  --card-foreground: 120 25% 15%;
+  --radius: 0.5rem;
 }
 
 /* ===== BASE STYLES ===== */
@@ -134,7 +156,7 @@ body {
   font-family: var(--font-family-base);
   line-height: var(--line-height-normal);
   color: var(--color-gray-700);
-  background-color: var(--color-gray-50);
+  background: linear-gradient(135deg, #f7fdf7 0%, #c6e6c6 100%); /* Forest gradient background */
   margin: 0;
   padding: 0;
 }
@@ -293,6 +315,7 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-gray-500);
 }
+
 /* ===== CARDS ===== */
 .card {
   background-color: white;
@@ -370,6 +393,7 @@ body {
   color: var(--color-status-returned);
   border-color: var(--color-status-returned-border);
 }
+
 /* ===== ORDER TIMELINE ===== */
 .timeline {
   position: relative;
@@ -472,9 +496,10 @@ body {
   margin-top: var(--spacing-xs);
   font-style: italic;
 }
+
 /* ===== TRACKING INFORMATION ===== */
 .tracking-card {
-  background: linear-gradient(to right, var(--color-primary-light), #eef2ff);
+  background: linear-gradient(to right, var(--color-primary-light), #e8f5e8);
   border: 1px solid var(--color-status-processing-border);
   border-radius: var(--radius-lg);
 }
@@ -560,6 +585,7 @@ body {
   border-color: var(--color-status-cancelled-border);
   color: var(--color-error);
 }
+
 /* ===== ORDER DETAILS ===== */
 .order-header {
   background-color: white;
@@ -645,6 +671,7 @@ body {
   font-size: var(--font-size-sm);
   color: var(--color-gray-500);
 }
+
 /* ===== ORDER SUMMARY ===== */
 .order-summary {
   background-color: white;
@@ -749,6 +776,7 @@ body {
   background-color: var(--color-error-light);
   color: var(--color-error);
 }
+
 /* ===== LOADING STATES ===== */
 .loading-spinner {
   animation: spin 1s linear infinite;
@@ -840,6 +868,35 @@ body {
   }
 }
 
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes flow {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out;
 }
@@ -850,6 +907,18 @@ body {
 
 .animate-pulse-slow {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-wave {
+  animation: wave 2s ease-in-out infinite;
+}
+
+.animate-ripple {
+  animation: ripple 0.6s linear;
+}
+
+.animate-flow {
+  animation: flow 3s linear infinite;
 }
 
 /* ===== ORDER STATUS SPECIFIC STYLES ===== */
@@ -958,11 +1027,27 @@ body {
 }
 
 .bg-gradient-subtle {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d7a2d 0%, #459945 50%, #059669 100%); /* Forest canopy gradient */
+}
+
+.bg-gradient-forest {
+  background: linear-gradient(135deg, #0d2e0d 0%, #1e5f1e 25%, #2d7a2d 50%, #459945 75%, #6bb76b 100%);
+}
+
+.bg-gradient-deep-woods {
+  background: linear-gradient(to bottom, #0d2e0d 0%, #154515 50%, #1e5f1e 100%);
+}
+
+.bg-gradient-moss {
+  background: linear-gradient(45deg, #e8f5e8 0%, #c6e6c6 25%, #9dd09d 50%, #6bb76b 75%, #459945 100%);
 }
 
 .border-gradient {
-  border-image: linear-gradient(45deg, #667eea, #764ba2) 1;
+  border-image: linear-gradient(45deg, #2d7a2d, #459945, #059669) 1;
+}
+
+.border-forest {
+  border-image: linear-gradient(45deg, #0d2e0d, #2d7a2d, #459945) 1;
 }
 
 /* Custom scrollbar utilities */
