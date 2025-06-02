@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-const SearchBar = ({ 
-  className = '', 
+const SearchBar = ({
+  className = '',
   placeholder = 'Search products...',
-  onSearch = null 
+  onSearch = null
 }) => {
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
@@ -13,14 +13,12 @@ const SearchBar = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
       return;
     }
 
     const searchUrl = `/search?q=${encodeURIComponent(trimmedQuery)}`;
-    
     if (onSearch) {
       onSearch(trimmedQuery);
     } else {
@@ -38,12 +36,12 @@ const SearchBar = ({
   };
 
   return (
-    <div 
+    <div
       data-testid="search-bar"
       className={`relative flex items-center ${className}`}
       onClick={handleContainerClick}
     >
-      <form 
+      <form
         onSubmit={handleSubmit}
         role="search"
         className="relative flex items-center w-full"
@@ -51,7 +49,7 @@ const SearchBar = ({
         {/* Search Icon */}
         <div className="absolute left-3 pointer-events-none">
           <svg
-            className="w-5 h-5 text-gray-400"
+            className="w-5 h-5 text-forest-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -74,7 +72,7 @@ const SearchBar = ({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           aria-label="Search products"
-          className="w-full px-4 py-2 pl-10 pr-20 text-gray-900 placeholder-gray-500 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 pl-10 pr-20 text-forest-800 placeholder:text-forest-500 bg-forest-50 border border-forest-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all duration-200 hover:border-forest-600"
         />
 
         {/* Clear Button */}
@@ -83,7 +81,7 @@ const SearchBar = ({
             type="button"
             onClick={handleClear}
             aria-label="Clear search"
-            className="absolute right-12 p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            className="absolute right-12 p-1 text-forest-600 hover:text-forest-800 focus:outline-none focus:text-forest-800 transition-colors duration-200"
           >
             <svg
               className="w-4 h-4"
@@ -105,7 +103,7 @@ const SearchBar = ({
         <button
           type="submit"
           aria-label="Search"
-          className="absolute right-2 p-1.5 text-gray-400 hover:text-blue-600 focus:outline-none focus:text-blue-600 transition-colors"
+          className="absolute right-2 p-1.5 text-forest-600 hover:text-forest-800 focus:outline-none focus:text-forest-800 transition-colors duration-200"
         >
           <svg
             className="w-5 h-5"

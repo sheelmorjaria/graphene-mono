@@ -65,33 +65,33 @@ const FilterSidebar = ({
   };
 
   const getCategoryButtonClass = (categorySlug) => {
-    const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500";
+    const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500";
     if (selectedCategory === categorySlug) {
-      return `${baseClass} bg-blue-100 text-blue-800 font-medium`;
+      return `${baseClass} bg-forest-200 text-forest-800 font-medium border border-forest-300`;
     }
-    return `${baseClass} text-gray-700 hover:bg-gray-100`;
+    return `${baseClass} text-forest-700 hover:bg-forest-50 hover:text-forest-800`;
   };
 
   const getConditionButtonClass = (conditionValue) => {
-    const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500";
+    const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500";
     if (selectedCondition === conditionValue) {
-      return `${baseClass} bg-blue-100 text-blue-800 font-medium`;
+      return `${baseClass} bg-forest-200 text-forest-800 font-medium border border-forest-300`;
     }
-    return `${baseClass} text-gray-700 hover:bg-gray-100`;
+    return `${baseClass} text-forest-700 hover:bg-forest-50 hover:text-forest-800`;
   };
 
   return (
     <aside 
-      className="bg-white p-6 rounded-lg border border-gray-200 h-fit"
+      className="bg-white p-6 rounded-lg border border-forest-200 h-fit shadow-md transition-all duration-300 hover:shadow-lg hover:border-forest-300"
       aria-label="Filter products"
     >
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
+        <h2 className="text-lg font-semibold text-forest-900 mb-4">Filters</h2>
         
         {/* Clear Filters Button */}
         <button
           onClick={onClearFilters}
-          className="w-full mb-6 px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          className="w-full mb-6 px-4 py-2 text-sm text-forest-600 border border-forest-600 rounded-md hover:bg-forest-50 focus:outline-none focus:ring-2 focus:ring-forest-500 transition-all duration-200 transform hover:scale-105"
         >
           Clear All Filters
         </button>
@@ -99,7 +99,7 @@ const FilterSidebar = ({
 
       {/* Category Filter */}
       <div className="mb-6">
-        <h3 className="font-medium text-gray-900 mb-3">Category</h3>
+        <h3 className="font-medium text-forest-900 mb-3">Category</h3>
         <div className="space-y-1">
           <button
             onClick={() => onCategoryChange('')}
@@ -121,15 +121,15 @@ const FilterSidebar = ({
 
       {/* Price Range Filter */}
       <div className="mb-6">
-        <h3 className="font-medium text-gray-900 mb-3">Price Range</h3>
+        <h3 className="font-medium text-forest-900 mb-3">Price Range</h3>
         
         {/* Clear Price Range Button */}
         <button
           onClick={() => handlePresetPriceRange('', '')}
-          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 ${
+          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 mb-3 ${
             isPriceRangeActive('', '')
-              ? 'bg-blue-100 text-blue-800 font-medium'
-              : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
+              ? 'bg-forest-200 text-forest-800 font-medium border border-forest-300'
+              : 'text-forest-700 hover:bg-forest-50 hover:text-forest-800 border border-forest-200'
           }`}
         >
           Any Price
@@ -141,10 +141,10 @@ const FilterSidebar = ({
             <button
               key={index}
               onClick={() => handlePresetPriceRange(range.min, range.max)}
-              className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 ${
                 isPriceRangeActive(range.min, range.max)
-                  ? 'bg-blue-100 text-blue-800 font-medium'
-                  : 'text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-forest-200 text-forest-800 font-medium border border-forest-300'
+                  : 'text-forest-700 hover:bg-forest-50 hover:text-forest-800 border border-forest-200'
               }`}
             >
               {range.label}
@@ -153,8 +153,8 @@ const FilterSidebar = ({
         </div>
 
         {/* Custom Price Range Inputs */}
-        <div className="border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-600 mb-3">Or enter custom range:</p>
+        <div className="border-t border-forest-200 pt-4">
+          <p className="text-xs text-forest-600 mb-3">Or enter custom range:</p>
           <div className="space-y-3">
             <div>
               <label htmlFor="min-price" className="sr-only">Minimum price</label>
@@ -167,7 +167,7 @@ const FilterSidebar = ({
                 value={localPriceRange.min}
                 onChange={(e) => handlePriceChange('min', e.target.value)}
                 aria-label="Minimum price"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-forest-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-colors hover:border-forest-400 placeholder-forest-400"
               />
             </div>
             <div>
@@ -181,7 +181,7 @@ const FilterSidebar = ({
                 value={localPriceRange.max}
                 onChange={(e) => handlePriceChange('max', e.target.value)}
                 aria-label="Maximum price"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-forest-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-colors hover:border-forest-400 placeholder-forest-400"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ const FilterSidebar = ({
 
       {/* Condition Filter */}
       <div className="mb-4">
-        <h3 className="font-medium text-gray-900 mb-3">Condition</h3>
+        <h3 className="font-medium text-forest-900 mb-3">Condition</h3>
         <div className="space-y-1">
           <button
             onClick={() => onConditionChange('')}

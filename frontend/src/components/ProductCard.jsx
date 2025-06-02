@@ -48,34 +48,34 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  // Get condition badge styling
+  // Get condition badge styling with forest theme
   const getConditionBadgeClass = (condition) => {
     const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
     switch (condition) {
       case 'new':
-        return `${baseClasses} bg-green-100 text-green-800`;
+        return `${baseClasses} bg-forest-needle/20 text-forest-needle border border-forest-needle/30`;
       case 'excellent':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
+        return `${baseClasses} bg-forest-600/20 text-forest-600 border border-forest-600/30`;
       case 'good':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
+        return `${baseClasses} bg-forest-moss/20 text-forest-700 border border-forest-moss/30`;
       case 'fair':
-        return `${baseClasses} bg-orange-100 text-orange-800`;
+        return `${baseClasses} bg-coral/20 text-coral-dark border border-coral/30`;
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} bg-forest-200 text-forest-700 border border-forest-300`;
     }
   };
 
-  // Get stock status styling and text
+  // Get stock status styling and text with forest theme
   const getStockStatusDisplay = (stockStatus) => {
     switch (stockStatus) {
       case 'in_stock':
-        return { text: 'In Stock', className: 'text-green-600' };
+        return { text: 'In Stock', className: 'text-forest-600' };
       case 'low_stock':
-        return { text: 'Low Stock', className: 'text-yellow-600' };
+        return { text: 'Low Stock', className: 'text-sand-dark' };
       case 'out_of_stock':
-        return { text: 'Out of Stock', className: 'text-red-600' };
+        return { text: 'Out of Stock', className: 'text-coral' };
       default:
-        return { text: 'Unknown', className: 'text-gray-600' };
+        return { text: 'Unknown', className: 'text-forest-500' };
     }
   };
 
@@ -87,7 +87,7 @@ const ProductCard = ({ product }) => {
   const stockStatus_ = getStockStatusDisplay(stockStatus);
 
   return (
-    <article className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105 hover:shadow-lg">
+    <article className="bg-card rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-forest-600/20 animate-float border border-forest-200/50">
       {/* Product Image */}
       <div className="aspect-square overflow-hidden">
         <img
@@ -108,18 +108,18 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Product Name */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
+        <h3 className="text-lg font-semibold text-forest-800 mb-2 line-clamp-1">
           {name}
         </h3>
 
         {/* Short Description */}
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        <p className="text-forest-600 text-sm mb-3 line-clamp-2">
           {shortDescription}
         </p>
 
         {/* Price and Stock Status */}
         <div className="flex justify-between items-center mb-4">
-          <span className="text-xl font-bold text-gray-900">
+          <span className="text-xl font-bold text-forest-900">
             {formatPrice(price)}
           </span>
           <span className={`text-sm font-medium ${stockStatus_.className}`}>
@@ -132,10 +132,10 @@ const ProductCard = ({ product }) => {
           <button
             onClick={handleAddToCart}
             disabled={stockStatus === 'out_of_stock' || stockQuantity === 0 || isAddingToCart}
-            className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
               stockStatus === 'out_of_stock' || stockQuantity === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : 'bg-forest-600 hover:bg-forest-700 focus:ring-forest-500 animate-wave'
             }`}
           >
             {isAddingToCart ? 'Adding...' : stockStatus === 'out_of_stock' || stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
@@ -143,7 +143,7 @@ const ProductCard = ({ product }) => {
           
           <Link
             to={`/products/${slug}`}
-            className="block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="block w-full bg-forest-700  text-center py-2 px-4 rounded-md hover:bg-forest-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2 transform hover:scale-105"
           >
             View Details
           </Link>
