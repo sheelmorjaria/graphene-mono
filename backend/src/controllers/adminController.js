@@ -751,3 +751,164 @@ export const updateOrderStatus = async (req, res) => {
     await session.endSession();
   }
 };
+
+// Issue refund for an order
+export const issueRefund = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { orderId } = req.params;
+    const { refundAmount, refundReason } = req.body;
+    const adminId = req.user._id;
+
+    // Validate input
+    if (!refundAmount || !refundReason) {
+      return res.status(400).json({
+        success: false,
+        error: 'Refund amount and reason are required'
+      });
+    }
+
+    if (typeof refundAmount !== 'number' || refundAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Refund amount must be a positive number'
+      });
+    }
+
+    if (typeof refundReason !== 'string' || refundReason.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Refund reason is required'
+      });
+    }
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID format'
+      });
+    }
+
+    // Find the order
+    const order = await Order.findById(orderId).session(session);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Check if order is eligible for refund
+    if (order.paymentStatus !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot refund order with payment status: ' + order.paymentStatus
+      });
+    }
+
+    // Calculate maximum refundable amount using the model method
+    const maxRefundable = order.getMaxRefundableAmount();
+    if (refundAmount > maxRefundable) {
+      return res.status(400).json({
+        success: false,
+        error: `Refund amount (£${refundAmount.toFixed(2)}) exceeds maximum refundable amount (£${maxRefundable.toFixed(2)})`
+      });
+    }
+
+    // Generate refund ID (in a real system, this would come from payment gateway)
+    const refundId = `refund_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Add refund to history
+    const refundEntry = {
+      refundId: refundId,
+      amount: refundAmount,
+      date: new Date(),
+      reason: refundReason.trim(),
+      adminUserId: adminId,
+      status: 'succeeded' // In real system, this would be 'pending' initially
+    };
+
+    order.refundHistory.push(refundEntry);
+
+    // Update refund status and amount
+    const newTotalRefunded = (order.totalRefundedAmount || 0) + refundAmount;
+    order.totalRefundedAmount = newTotalRefunded;
+    
+    if (newTotalRefunded >= order.totalAmount) {
+      order.refundStatus = 'fully_refunded';
+      order.paymentStatus = 'refunded';
+      // Update order status to refunded if fully refunded
+      if (order.status !== 'refunded') {
+        order.status = 'refunded';
+        order.statusHistory.push({
+          status: 'refunded',
+          timestamp: new Date(),
+          updatedBy: adminId,
+          notes: `Order fully refunded - £${refundAmount.toFixed(2)}: ${refundReason}`
+        });
+      }
+    } else {
+      order.refundStatus = 'partial_refunded';
+    }
+
+    // Save the order
+    await order.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
+
+    // Fetch updated order for response
+    const updatedOrder = await Order.findById(orderId)
+      .populate('userId', 'firstName lastName email')
+      .populate('refundHistory.adminUserId', 'firstName lastName email')
+      .lean();
+
+    // Send refund confirmation email
+    try {
+      await emailService.sendRefundConfirmationEmail(updatedOrder, refundEntry);
+    } catch (emailError) {
+      console.error('Error sending refund confirmation email:', emailError);
+      // Don't fail the refund if email fails
+    }
+
+    res.json({
+      success: true,
+      message: `Refund of £${refundAmount.toFixed(2)} processed successfully`,
+      data: {
+        order: updatedOrder,
+        refund: refundEntry
+      }
+    });
+
+  } catch (error) {
+    console.error('Issue refund error:', error);
+    await session.abortTransaction();
+    
+    // Handle specific error types
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        error: error.message
+      });
+    }
+    
+    if (error.message.includes('refund amount') || 
+        error.message.includes('required') ||
+        error.message.includes('payment status')) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while processing refund'
+    });
+  } finally {
+    await session.endSession();
+  }
+};

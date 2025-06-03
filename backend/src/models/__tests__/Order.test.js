@@ -47,7 +47,16 @@ describe('Order Model', () => {
       country: 'United States',
       phoneNumber: '+1 (555) 123-4567'
     },
-    paymentMethod: 'credit_card'
+    shippingMethod: {
+      id: new mongoose.Types.ObjectId(),
+      name: 'Standard Shipping',
+      cost: 15.00,
+      estimatedDelivery: '3-5 business days'
+    },
+    paymentMethod: {
+      type: 'card',
+      name: 'Credit Card'
+    }
   };
 
   describe('Schema Validation', () => {
@@ -101,10 +110,13 @@ describe('Order Model', () => {
     it('should require valid payment method', async () => {
       const invalidOrder = new Order({
         ...validOrderData,
-        paymentMethod: 'invalid_method'
+        paymentMethod: {
+          type: 'invalid_method',
+          name: 'Invalid Payment'
+        }
       });
 
-      await expect(invalidOrder.save()).rejects.toThrow('Payment method must be one of');
+      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be one of');
     });
 
     it('should not allow negative amounts', async () => {
@@ -247,17 +259,56 @@ describe('Order Model', () => {
       
       // Test with card details
       savedOrder.paymentDetails = {
-        cardType: 'Visa',
-        lastFourDigits: '1234'
+        cardBrand: 'Visa',
+        last4: '1234'
       };
       expect(savedOrder.getPaymentMethodDisplay()).toBe('Credit Card (Visa) ending in ****1234');
       
       // Test PayPal
-      savedOrder.paymentMethod = 'paypal';
-      savedOrder.paymentDetails = {
-        paypalEmail: 'user@example.com'
+      savedOrder.paymentMethod = {
+        type: 'paypal',
+        name: 'PayPal'
       };
-      expect(savedOrder.getPaymentMethodDisplay()).toBe('PayPal (user@example.com)');
+      savedOrder.paymentDetails = {};
+      expect(savedOrder.getPaymentMethodDisplay()).toBe('PayPal');
+    });
+
+    it('should calculate maximum refundable amount correctly', () => {
+      expect(savedOrder.getMaxRefundableAmount()).toBe(1094.99); // Total amount - 0 refunded
+      
+      // Test with some refunded amount
+      savedOrder.totalRefundedAmount = 500;
+      expect(savedOrder.getMaxRefundableAmount()).toBe(594.99); // 1094.99 - 500
+      
+      // Test fully refunded
+      savedOrder.totalRefundedAmount = 1094.99;
+      expect(savedOrder.getMaxRefundableAmount()).toBe(0);
+      
+      // Test over-refunded (should not be negative)
+      savedOrder.totalRefundedAmount = 1200;
+      expect(savedOrder.getMaxRefundableAmount()).toBe(0);
+    });
+
+    it('should check refund eligibility correctly', () => {
+      // Order should be eligible when payment is completed and not fully refunded
+      savedOrder.paymentStatus = 'completed';
+      savedOrder.refundStatus = 'none';
+      savedOrder.totalRefundedAmount = 0;
+      expect(savedOrder.isRefundEligible()).toBe(true);
+      
+      // Not eligible if payment not completed
+      savedOrder.paymentStatus = 'pending';
+      expect(savedOrder.isRefundEligible()).toBe(false);
+      
+      // Not eligible if fully refunded
+      savedOrder.paymentStatus = 'completed';
+      savedOrder.refundStatus = 'fully_refunded';
+      expect(savedOrder.isRefundEligible()).toBe(false);
+      
+      // Not eligible if no refundable amount left
+      savedOrder.refundStatus = 'partial_refunded';
+      savedOrder.totalRefundedAmount = 1094.99;
+      expect(savedOrder.isRefundEligible()).toBe(false);
     });
   });
 

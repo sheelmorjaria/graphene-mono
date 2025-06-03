@@ -1,9 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const ADMIN_API_BASE = `${API_BASE_URL}/api/admin`;
 
 // Admin login
 export const adminLogin = async (credentials) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/login`, {
+    const response = await fetch(`${ADMIN_API_BASE}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +34,7 @@ export const getDashboardMetrics = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/dashboard-metrics`, {
+    const response = await fetch(`${ADMIN_API_BASE}/dashboard-metrics`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +70,7 @@ export const getAdminProfile = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/profile`, {
+    const response = await fetch(`${ADMIN_API_BASE}/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +193,7 @@ export const getAllOrders = async (filters = {}) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
+    const response = await fetch(`${ADMIN_API_BASE}/orders?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -228,7 +229,7 @@ export const getOrderById = async (orderId) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
+    const response = await fetch(`${ADMIN_API_BASE}/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -264,7 +265,7 @@ export const updateOrderStatus = async (orderId, statusData) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+    const response = await fetch(`${ADMIN_API_BASE}/orders/${orderId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -289,6 +290,45 @@ export const updateOrderStatus = async (orderId, statusData) => {
   }
 };
 
+// Issue refund for an order
+export const issueRefund = async (orderId, refundData) => {
+  try {
+    const token = getAdminToken();
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/orders/${orderId}/refund`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(refundData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // If unauthorized, clear token and redirect to login
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+        return;
+      }
+      
+      throw new Error(data.error || 'Failed to process refund');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Issue refund error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -301,5 +341,6 @@ export default {
   getAdminToken,
   getAllOrders,
   getOrderById,
-  updateOrderStatus
+  updateOrderStatus,
+  issueRefund
 };

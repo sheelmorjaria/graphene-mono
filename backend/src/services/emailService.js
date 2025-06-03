@@ -371,6 +371,45 @@ const emailService = {
     </body>
     </html>
     `;
+  },
+
+  // Send refund confirmation email
+  async sendRefundConfirmationEmail(order, refundEntry) {
+    try {
+      const emailContent = {
+        to: order.userId.email,
+        subject: `Refund Confirmation - ${order.orderNumber}`,
+        template: 'refund-confirmation',
+        data: {
+          customerName: `${order.userId.firstName} ${order.userId.lastName}`,
+          orderNumber: order.orderNumber,
+          orderDate: order.orderDate,
+          refundAmount: refundEntry.amount,
+          refundReason: refundEntry.reason,
+          refundId: refundEntry.refundId,
+          processedAt: refundEntry.processedAt,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Refund Confirmation Email:', JSON.stringify(emailContent, null, 2));
+      
+      // Simulate email sending delay
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `mock_${Date.now()}`,
+        message: 'Refund confirmation email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending refund confirmation email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 };
 

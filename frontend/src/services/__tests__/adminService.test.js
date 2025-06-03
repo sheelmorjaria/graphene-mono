@@ -7,7 +7,8 @@ import {
   adminLogout,
   formatCurrency,
   formatNumber,
-  getAdminUser
+  getAdminUser,
+  issueRefund
 } from '../adminService';
 
 // Mock fetch globally
@@ -281,6 +282,133 @@ describe('adminService', () => {
       localStorageMock.setItem('adminUser', 'invalid-json');
 
       expect(getAdminUser()).toBeNull();
+    });
+  });
+
+  describe('issueRefund', () => {
+    beforeEach(() => {
+      localStorageMock.setItem('adminToken', 'test-admin-token');
+    });
+
+    it('successfully issues a refund', async () => {
+      const mockRefundResponse = {
+        success: true,
+        message: 'Refund of £50.00 processed successfully',
+        data: {
+          order: {
+            _id: 'order123',
+            orderNumber: 'TEST-001',
+            refundAmount: 50,
+            refundHistory: [{
+              amount: 50,
+              reason: 'Customer request',
+              status: 'succeeded'
+            }]
+          },
+          refund: {
+            amount: 50,
+            reason: 'Customer request',
+            status: 'succeeded'
+          }
+        }
+      };
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValueOnce(mockRefundResponse)
+      });
+
+      const orderId = 'order123';
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      const result = await issueRefund(orderId, refundData);
+
+      expect(fetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/admin/orders/order123/refund',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer test-admin-token'
+          },
+          body: JSON.stringify(refundData)
+        }
+      );
+      expect(result).toEqual(mockRefundResponse);
+    });
+
+    it('handles unauthorized requests', async () => {
+      const mockErrorResponse = {
+        success: false,
+        error: 'Unauthorized'
+      };
+
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: vi.fn().mockResolvedValueOnce(mockErrorResponse)
+      });
+
+      const orderId = 'order123';
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      const result = await issueRefund(orderId, refundData);
+      
+      expect(result).toBeUndefined();
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('adminToken');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('adminUser');
+      expect(window.location.href).toBe('/admin/login');
+    });
+
+    it('handles refund amount validation errors', async () => {
+      const mockErrorResponse = {
+        success: false,
+        error: 'Refund amount exceeds maximum refundable amount'
+      };
+
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: vi.fn().mockResolvedValueOnce(mockErrorResponse)
+      });
+
+      const orderId = 'order123';
+      const refundData = {
+        refundAmount: 1000,
+        refundReason: 'Customer request'
+      };
+
+      await expect(issueRefund(orderId, refundData)).rejects.toThrow('Refund amount exceeds maximum refundable amount');
+    });
+
+    it('throws error when no authentication token', async () => {
+      localStorageMock.removeItem('adminToken');
+
+      const orderId = 'order123';
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      await expect(issueRefund(orderId, refundData)).rejects.toThrow('No authentication token found');
+    });
+
+    it('handles network errors', async () => {
+      fetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const orderId = 'order123';
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      await expect(issueRefund(orderId, refundData)).rejects.toThrow('Network error');
     });
   });
 });
