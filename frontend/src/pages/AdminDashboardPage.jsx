@@ -330,7 +330,7 @@ const AdminDashboardPage = () => {
             {/* Quick Actions */}
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Link 
                   to="/admin/orders"
                   className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
@@ -344,6 +344,21 @@ const AdminDashboardPage = () => {
                     <h3 className="ml-4 text-lg font-medium text-gray-900">Manage Orders</h3>
                   </div>
                   <p className="text-gray-600 text-sm">View and manage customer orders, update order status</p>
+                </Link>
+                
+                <Link 
+                  to="/admin/returns"
+                  className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m5 14-5-2a2 2 0 00-1.5 0l-5 2V7a2 2 0 012-2h4.5a2 2 0 011.5.65L16 7v8z" />
+                      </svg>
+                    </div>
+                    <h3 className="ml-4 text-lg font-medium text-gray-900">Manage Returns</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Process customer return requests and manage refunds</p>
                 </Link>
                 
                 <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow cursor-not-allowed opacity-60">

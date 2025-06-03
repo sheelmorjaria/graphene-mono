@@ -82,6 +82,131 @@ const emailService = {
     }
   },
 
+  // Send return approved email
+  async sendReturnApprovedEmail(returnRequest) {
+    try {
+      const customerName = returnRequest.userId ? 
+        `${returnRequest.userId.firstName} ${returnRequest.userId.lastName}` : 
+        'Valued Customer';
+      
+      const emailContent = {
+        to: returnRequest.customerEmail,
+        subject: `Return Request Approved - RET-${returnRequest.returnRequestNumber}`,
+        template: 'return-approved',
+        data: {
+          customerName,
+          returnRequestNumber: `RET-${returnRequest.returnRequestNumber}`,
+          orderNumber: returnRequest.orderId?.orderNumber || 'N/A',
+          approvedDate: returnRequest.approvedDate,
+          totalRefundAmount: returnRequest.totalRefundAmount,
+          items: returnRequest.items,
+          returnShippingAddress: returnRequest.returnShippingAddress,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Return Approved Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `mock_${Date.now()}`,
+        message: 'Return approved email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending return approved email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Send return rejected email
+  async sendReturnRejectedEmail(returnRequest, rejectionReason) {
+    try {
+      const customerName = returnRequest.userId ? 
+        `${returnRequest.userId.firstName} ${returnRequest.userId.lastName}` : 
+        'Valued Customer';
+      
+      const emailContent = {
+        to: returnRequest.customerEmail,
+        subject: `Return Request Update - RET-${returnRequest.returnRequestNumber}`,
+        template: 'return-rejected',
+        data: {
+          customerName,
+          returnRequestNumber: `RET-${returnRequest.returnRequestNumber}`,
+          orderNumber: returnRequest.orderId?.orderNumber || 'N/A',
+          requestDate: returnRequest.requestDate,
+          rejectionReason,
+          items: returnRequest.items,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Return Rejected Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `mock_${Date.now()}`,
+        message: 'Return rejected email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending return rejected email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Send return refunded email
+  async sendReturnRefundedEmail(returnRequest) {
+    try {
+      const customerName = returnRequest.userId ? 
+        `${returnRequest.userId.firstName} ${returnRequest.userId.lastName}` : 
+        'Valued Customer';
+      
+      const emailContent = {
+        to: returnRequest.customerEmail,
+        subject: `Refund Processed - RET-${returnRequest.returnRequestNumber}`,
+        template: 'return-refunded',
+        data: {
+          customerName,
+          returnRequestNumber: `RET-${returnRequest.returnRequestNumber}`,
+          orderNumber: returnRequest.orderId?.orderNumber || 'N/A',
+          refundProcessedDate: returnRequest.refundProcessedDate,
+          totalRefundAmount: returnRequest.totalRefundAmount,
+          refundId: returnRequest.refundId,
+          items: returnRequest.items,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Return Refunded Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `mock_${Date.now()}`,
+        message: 'Return refunded email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending return refunded email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
   // Send order confirmation email (for future use)
   async sendOrderConfirmationEmail(order) {
     try {

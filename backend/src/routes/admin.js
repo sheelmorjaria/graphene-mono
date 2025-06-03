@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus } from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -22,5 +22,10 @@ router.get('/orders', getAllOrders);
 router.get('/orders/:orderId', getOrderById);
 router.put('/orders/:orderId/status', updateOrderStatus);
 router.post('/orders/:orderId/refund', issueRefund);
+
+// Return requests management
+router.get('/returns', getAllReturnRequests);
+router.get('/returns/:returnRequestId', getReturnRequestById);
+router.put('/returns/:returnRequestId/status', updateReturnRequestStatus);
 
 export default router;

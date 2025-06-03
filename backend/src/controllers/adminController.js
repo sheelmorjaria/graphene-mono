@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import ReturnRequest from '../models/ReturnRequest.js';
 import emailService from '../services/emailService.js';
 
 // Admin login
@@ -907,6 +908,472 @@ export const issueRefund = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while processing refund'
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// Get all return requests (admin only)
+export const getAllReturnRequests = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerQuery,
+      startDate,
+      endDate,
+      sortBy = 'requestDate',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build filter object
+    const filter = {};
+
+    // Filter by status
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      filter.requestDate = {};
+      if (startDate) {
+        filter.requestDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // End of day
+        filter.requestDate.$lte = endDateTime;
+      }
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Create aggregation pipeline
+    let pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      {
+        $unwind: {
+          path: '$customer',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: 'orderId',
+          foreignField: '_id',
+          as: 'order'
+        }
+      },
+      {
+        $unwind: {
+          path: '$order',
+          preserveNullAndEmptyArrays: true
+        }
+      }
+    ];
+
+    // Filter by customer name/email if provided
+    if (customerQuery) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'customer.firstName': { $regex: customerQuery, $options: 'i' } },
+            { 'customer.lastName': { $regex: customerQuery, $options: 'i' } },
+            { 'customer.email': { $regex: customerQuery, $options: 'i' } },
+            {
+              $expr: {
+                $regexMatch: {
+                  input: { $concat: ['$customer.firstName', ' ', '$customer.lastName'] },
+                  regex: customerQuery,
+                  options: 'i'
+                }
+              }
+            }
+          ]
+        }
+      });
+    }
+
+    // Add sorting and pagination
+    pipeline.push({ $sort: sort });
+
+    // Get total count for pagination
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const countResult = await ReturnRequest.aggregate(countPipeline);
+    const totalReturnRequests = countResult[0]?.total || 0;
+
+    // Add pagination to main pipeline
+    pipeline.push(
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    );
+
+    // Add projection to format the response
+    pipeline.push({
+      $project: {
+        _id: 1,
+        returnRequestNumber: 1,
+        status: 1,
+        requestDate: 1,
+        totalRefundAmount: 1,
+        totalItemsCount: { $size: '$items' },
+        customer: {
+          _id: '$customer._id',
+          firstName: '$customer.firstName',
+          lastName: '$customer.lastName',
+          email: '$customer.email'
+        },
+        order: {
+          _id: '$order._id',
+          orderNumber: '$order.orderNumber'
+        }
+      }
+    });
+
+    // Execute the query
+    const returnRequests = await ReturnRequest.aggregate(pipeline);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalReturnRequests / parseInt(limit));
+    const hasNextPage = parseInt(page) < totalPages;
+    const hasPrevPage = parseInt(page) > 1;
+
+    res.json({
+      success: true,
+      data: {
+        returnRequests,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalReturnRequests,
+          hasNextPage,
+          hasPrevPage,
+          limit: parseInt(limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all return requests error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching return requests'
+    });
+  }
+};
+
+// Get single return request details (admin only)
+export const getReturnRequestById = async (req, res) => {
+  try {
+    const { returnRequestId } = req.params;
+
+    // Validate returnRequestId
+    if (!returnRequestId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Return request ID is required'
+      });
+    }
+
+    // Validate returnRequestId format
+    if (!mongoose.Types.ObjectId.isValid(returnRequestId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid return request ID format'
+      });
+    }
+
+    // Build aggregation pipeline to get comprehensive return request details
+    const pipeline = [
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(returnRequestId)
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      {
+        $unwind: {
+          path: '$customer',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: 'orderId',
+          foreignField: '_id',
+          as: 'order'
+        }
+      },
+      {
+        $unwind: {
+          path: '$order',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'processedBy',
+          foreignField: '_id',
+          as: 'processedByUser'
+        }
+      },
+      {
+        $unwind: {
+          path: '$processedByUser',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          returnRequestNumber: 1,
+          status: 1,
+          requestDate: 1,
+          approvedDate: 1,
+          itemReceivedDate: 1,
+          refundProcessedDate: 1,
+          totalRefundAmount: 1,
+          items: 1,
+          images: 1,
+          returnShippingAddress: 1,
+          adminNotes: 1,
+          refundId: 1,
+          refundStatus: 1,
+          returnWindow: 1,
+          isWithinReturnWindow: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          customer: {
+            _id: '$customer._id',
+            firstName: '$customer.firstName',
+            lastName: '$customer.lastName',
+            email: '$customer.email',
+            phone: '$customer.phone'
+          },
+          order: {
+            _id: '$order._id',
+            orderNumber: '$order.orderNumber',
+            createdAt: '$order.createdAt',
+            totalAmount: '$order.totalAmount',
+            status: '$order.status'
+          },
+          processedBy: {
+            _id: '$processedByUser._id',
+            firstName: '$processedByUser.firstName',
+            lastName: '$processedByUser.lastName',
+            email: '$processedByUser.email'
+          }
+        }
+      }
+    ];
+
+    // Execute the query
+    const returnRequestResult = await ReturnRequest.aggregate(pipeline);
+    
+    if (!returnRequestResult || returnRequestResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Return request not found'
+      });
+    }
+
+    const returnRequest = returnRequestResult[0];
+
+    res.json({
+      success: true,
+      data: {
+        returnRequest
+      }
+    });
+
+  } catch (error) {
+    console.error('Get return request by ID error:', error);
+    
+    // Handle invalid ObjectId
+    if (error.name === 'CastError' || error.message.includes('ObjectId')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid return request ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching return request details'
+    });
+  }
+};
+
+// Update return request status (admin only)
+export const updateReturnRequestStatus = async (req, res) => {
+  const session = await mongoose.startSession();
+  
+  try {
+    const { returnRequestId } = req.params;
+    const { newStatus, rejectionReason, adminNotes } = req.body;
+    const adminId = req.user._id;
+
+    // Validate input
+    if (!returnRequestId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Return request ID is required'
+      });
+    }
+
+    if (!newStatus) {
+      return res.status(400).json({
+        success: false,
+        error: 'New status is required'
+      });
+    }
+
+    // Validate returnRequestId format
+    if (!mongoose.Types.ObjectId.isValid(returnRequestId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid return request ID format'
+      });
+    }
+
+    // Validate status value
+    const validStatuses = ['pending_review', 'approved', 'rejected', 'item_received', 'processing_refund', 'refunded', 'closed'];
+    if (!validStatuses.includes(newStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status value'
+      });
+    }
+
+    // If status is 'rejected', rejection reason is required
+    if (newStatus === 'rejected' && (!rejectionReason || rejectionReason.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rejection reason is required when rejecting a return request'
+      });
+    }
+
+    await session.withTransaction(async () => {
+      // Find the return request
+      const returnRequest = await ReturnRequest.findById(returnRequestId).session(session);
+      if (!returnRequest) {
+        throw new Error('Return request not found');
+      }
+
+      // Store old status
+      const oldStatus = returnRequest.status;
+
+      // Update return request status
+      returnRequest.status = newStatus;
+      returnRequest.processedBy = adminId;
+
+      // Set timestamps based on status
+      if (newStatus === 'approved' && !returnRequest.approvedDate) {
+        returnRequest.approvedDate = new Date();
+      } else if (newStatus === 'item_received' && !returnRequest.itemReceivedDate) {
+        returnRequest.itemReceivedDate = new Date();
+      } else if (newStatus === 'refunded' && !returnRequest.refundProcessedDate) {
+        returnRequest.refundProcessedDate = new Date();
+      }
+
+      // Update admin notes if provided
+      if (adminNotes) {
+        const currentTime = new Date().toISOString();
+        const adminNote = `[${currentTime}] Status changed to ${newStatus}: ${adminNotes}`;
+        returnRequest.adminNotes = returnRequest.adminNotes 
+          ? `${returnRequest.adminNotes}\n\n${adminNote}`
+          : adminNote;
+      }
+
+      // If rejected, add rejection reason to admin notes
+      if (newStatus === 'rejected' && rejectionReason) {
+        const currentTime = new Date().toISOString();
+        const rejectionNote = `[${currentTime}] Rejection reason: ${rejectionReason}`;
+        returnRequest.adminNotes = returnRequest.adminNotes 
+          ? `${returnRequest.adminNotes}\n\n${rejectionNote}`
+          : rejectionNote;
+      }
+
+      // Save the return request
+      await returnRequest.save({ session });
+    });
+
+    // Fetch updated return request with full details for email
+    const returnRequestForEmail = await ReturnRequest.findById(returnRequestId)
+      .populate('userId', 'firstName lastName email')
+      .populate('orderId', 'orderNumber totalAmount')
+      .lean();
+
+    // Send email notification based on status
+    try {
+      if (newStatus === 'approved') {
+        await emailService.sendReturnApprovedEmail(returnRequestForEmail);
+      } else if (newStatus === 'rejected') {
+        await emailService.sendReturnRejectedEmail(returnRequestForEmail, rejectionReason);
+      } else if (newStatus === 'refunded') {
+        await emailService.sendReturnRefundedEmail(returnRequestForEmail);
+      }
+    } catch (emailError) {
+      console.error('Error sending return status update email:', emailError);
+      // Don't fail the status update if email fails
+    }
+
+    res.json({
+      success: true,
+      message: `Return request status updated to ${newStatus}`,
+      data: {
+        returnRequest: returnRequestForEmail
+      }
+    });
+
+  } catch (error) {
+    console.error('Update return request status error:', error);
+    
+    // Handle specific error types
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        error: error.message
+      });
+    }
+    
+    if (error.message.includes('required') || 
+        error.message.includes('Invalid')) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while updating return request status'
     });
   } finally {
     await session.endSession();
