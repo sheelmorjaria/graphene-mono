@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 
@@ -265,6 +266,170 @@ export const getAdminProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while fetching admin profile'
+    });
+  }
+};
+
+// Get single order details (admin only)
+export const getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Validate orderId
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    // Build aggregation pipeline to get comprehensive order details
+    const pipeline = [
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(orderId)
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      {
+        $unwind: {
+          path: '$customer',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      {
+        $addFields: {
+          items: {
+            $map: {
+              input: '$items',
+              as: 'item',
+              in: {
+                $mergeObjects: [
+                  '$$item',
+                  {
+                    productDetails: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: '$productDetails',
+                            cond: { $eq: ['$$this._id', '$$item.productId'] }
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          orderNumber: 1,
+          status: 1,
+          statusHistory: 1,
+          totalAmount: 1,
+          subtotalAmount: 1,
+          shippingCost: 1,
+          taxAmount: 1,
+          discountAmount: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          paymentMethod: 1,
+          paymentStatus: 1,
+          paymentIntentId: 1,
+          shippingAddress: 1,
+          billingAddress: 1,
+          shippingMethod: 1,
+          trackingNumber: 1,
+          trackingUrl: 1,
+          items: {
+            $map: {
+              input: '$items',
+              as: 'item',
+              in: {
+                _id: '$$item._id',
+                productId: '$$item.productId',
+                name: '$$item.name',
+                slug: '$$item.slug',
+                price: '$$item.price',
+                quantity: '$$item.quantity',
+                image: '$$item.image',
+                lineTotal: '$$item.lineTotal',
+                productDetails: {
+                  currentName: '$$item.productDetails.name',
+                  currentSlug: '$$item.productDetails.slug',
+                  currentImage: '$$item.productDetails.image',
+                  currentPrice: '$$item.productDetails.price'
+                }
+              }
+            }
+          },
+          customer: {
+            _id: '$customer._id',
+            firstName: '$customer.firstName',
+            lastName: '$customer.lastName',
+            email: '$customer.email',
+            phone: '$customer.phone'
+          },
+          refundStatus: 1,
+          refundHistory: 1,
+          notes: 1
+        }
+      }
+    ];
+
+    // Execute the query
+    const orderResult = await Order.aggregate(pipeline);
+    
+    if (!orderResult || orderResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    const order = orderResult[0];
+
+    res.json({
+      success: true,
+      data: {
+        order
+      }
+    });
+
+  } catch (error) {
+    console.error('Get order by ID error:', error);
+    
+    // Handle invalid ObjectId
+    if (error.name === 'CastError' || error.message.includes('ObjectId')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching order details'
     });
   }
 };

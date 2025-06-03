@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById } from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -19,5 +19,6 @@ router.get('/profile', getAdminProfile);
 
 // Orders management
 router.get('/orders', getAllOrders);
+router.get('/orders/:orderId', getOrderById);
 
 export default router;
