@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { getOrderById, isAdminAuthenticated, formatCurrency } from '../services/adminService';
+import { getOrderById, isAdminAuthenticated, formatCurrency, updateOrderStatus } from '../services/adminService';
 
 const AdminOrderDetailsPage = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingUrl, setTrackingUrl] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { orderId } = useParams();
   const navigate = useNavigate();
 
@@ -81,6 +86,77 @@ const AdminOrderDetailsPage = () => {
     }
     
     return paymentMethod.type || 'Unknown';
+  };
+
+  const getValidNextStatuses = (currentStatus) => {
+    const statusTransitions = {
+      'pending': ['processing', 'cancelled'],
+      'processing': ['awaiting_shipment', 'shipped', 'cancelled'],
+      'awaiting_shipment': ['shipped', 'cancelled'],
+      'shipped': ['delivered', 'cancelled'],
+      'delivered': ['refunded'],
+      'cancelled': [],
+      'refunded': []
+    };
+    return statusTransitions[currentStatus] || [];
+  };
+
+  const handleStatusChange = (e) => {
+    setSelectedStatus(e.target.value);
+    if (e.target.value !== 'shipped') {
+      setTrackingNumber('');
+      setTrackingUrl('');
+    }
+  };
+
+  const handleUpdateStatus = () => {
+    if (!selectedStatus) return;
+    
+    if (selectedStatus === 'shipped' && (!trackingNumber.trim() || !trackingUrl.trim())) {
+      setError('Tracking number and tracking URL are required when marking as shipped');
+      return;
+    }
+    
+    setShowConfirmDialog(true);
+  };
+
+  const confirmStatusUpdate = async () => {
+    try {
+      setStatusUpdateLoading(true);
+      setError('');
+      
+      const statusData = {
+        newStatus: selectedStatus
+      };
+      
+      // Add tracking info if status is 'shipped'
+      if (selectedStatus === 'shipped') {
+        statusData.trackingNumber = trackingNumber.trim();
+        statusData.trackingUrl = trackingUrl.trim();
+      }
+      
+      await updateOrderStatus(orderId, statusData);
+      
+      // Close dialog and reset form
+      setShowConfirmDialog(false);
+      setSelectedStatus('');
+      setTrackingNumber('');
+      setTrackingUrl('');
+      
+      // Reload order details to show updated status
+      await loadOrderDetails();
+    } catch (err) {
+      setError(err.message || 'Failed to update order status');
+    } finally {
+      setStatusUpdateLoading(false);
+    }
+  };
+
+  const cancelStatusUpdate = () => {
+    setShowConfirmDialog(false);
+    setSelectedStatus('');
+    setTrackingNumber('');
+    setTrackingUrl('');
   };
 
   if (loading) {
@@ -206,6 +282,78 @@ const AdminOrderDetailsPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Status Update Section */}
+            {order && getValidNextStatuses(order.status).length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-lg font-medium text-gray-900">Update Order Status</h2>
+                </div>
+                <div className="px-6 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
+                        New Status
+                      </label>
+                      <select
+                        id="status-select"
+                        value={selectedStatus}
+                        onChange={handleStatusChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select new status...</option>
+                        {getValidNextStatuses(order.status).map(status => (
+                          <option key={status} value={status}>
+                            {formatStatus(status)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {selectedStatus === 'shipped' && (
+                      <>
+                        <div>
+                          <label htmlFor="tracking-number" className="block text-sm font-medium text-gray-700 mb-2">
+                            Tracking Number *
+                          </label>
+                          <input
+                            type="text"
+                            id="tracking-number"
+                            value={trackingNumber}
+                            onChange={(e) => setTrackingNumber(e.target.value)}
+                            placeholder="Enter tracking number"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label htmlFor="tracking-url" className="block text-sm font-medium text-gray-700 mb-2">
+                            Tracking URL *
+                          </label>
+                          <input
+                            type="url"
+                            id="tracking-url"
+                            value={trackingUrl}
+                            onChange={(e) => setTrackingUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={handleUpdateStatus}
+                      disabled={!selectedStatus || statusUpdateLoading}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {statusUpdateLoading ? 'Updating...' : 'Update Status'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Order Items */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -482,6 +630,60 @@ const AdminOrderDetailsPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Status Update Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Confirm Status Update
+              </h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500 mb-4">
+                  Are you sure you want to change the order status to <strong>{formatStatus(selectedStatus)}</strong>?
+                </p>
+                {selectedStatus === 'cancelled' && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                    <p className="text-xs text-yellow-800">
+                      <strong>Warning:</strong> This will initiate a refund and restock items.
+                    </p>
+                  </div>
+                )}
+                {selectedStatus === 'shipped' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 text-left">
+                    <p className="text-xs text-blue-800 mb-2">
+                      <strong>Tracking Information:</strong>
+                    </p>
+                    <p className="text-xs text-blue-800">
+                      Number: {trackingNumber}
+                    </p>
+                    <p className="text-xs text-blue-800">
+                      URL: {trackingUrl}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="items-center px-4 py-3">
+                <button
+                  onClick={confirmStatusUpdate}
+                  disabled={statusUpdateLoading}
+                  className="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {statusUpdateLoading ? 'Updating...' : 'Confirm'}
+                </button>
+                <button
+                  onClick={cancelStatusUpdate}
+                  disabled={statusUpdateLoading}
+                  className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

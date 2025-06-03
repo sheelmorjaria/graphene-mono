@@ -199,6 +199,125 @@ const emailService = {
     }
   },
 
+  // Send order shipped email notification
+  async sendOrderShippedEmail(order) {
+    try {
+      const emailContent = {
+        to: order.customer?.email || order.customerEmail,
+        subject: `Your Order Has Shipped - ${order.orderNumber}`,
+        template: 'order-shipped',
+        data: {
+          customerName: order.customer?.firstName || order.shippingAddress?.firstName,
+          orderNumber: order.orderNumber,
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          shippingCarrier: order.shippingMethod?.name || 'Standard Shipping',
+          estimatedDelivery: order.shippingMethod?.estimatedDelivery,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Order Shipped Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `shipped_${Date.now()}`,
+        message: 'Order shipped email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending order shipped email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Send order delivered email notification
+  async sendOrderDeliveredEmail(order) {
+    try {
+      const emailContent = {
+        to: order.customer?.email || order.customerEmail,
+        subject: `Your Order Has Been Delivered - ${order.orderNumber}`,
+        template: 'order-delivered',
+        data: {
+          customerName: order.customer?.firstName || order.shippingAddress?.firstName,
+          orderNumber: order.orderNumber,
+          trackingNumber: order.trackingNumber,
+          deliveryDate: new Date().toLocaleDateString(),
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Order Delivered Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `delivered_${Date.now()}`,
+        message: 'Order delivered email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending order delivered email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Send order status update email notification
+  async sendOrderStatusUpdateEmail(order, newStatus, oldStatus) {
+    try {
+      const statusMessages = {
+        'processing': 'Your order is now being processed',
+        'awaiting_shipment': 'Your order is ready and awaiting shipment',
+        'shipped': 'Your order has been shipped',
+        'delivered': 'Your order has been delivered',
+        'cancelled': 'Your order has been cancelled',
+        'refunded': 'Your order refund has been processed'
+      };
+
+      const emailContent = {
+        to: order.customer?.email || order.customerEmail,
+        subject: `Order Status Update - ${order.orderNumber}`,
+        template: 'order-status-update',
+        data: {
+          customerName: order.customer?.firstName || order.shippingAddress?.firstName,
+          orderNumber: order.orderNumber,
+          newStatus: newStatus,
+          oldStatus: oldStatus,
+          statusMessage: statusMessages[newStatus],
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Order Status Update Email:', JSON.stringify(emailContent, null, 2));
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `status_update_${Date.now()}`,
+        message: 'Order status update email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending order status update email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
   // Generate HTML email template for order cancellation
   generateCancellationEmailHTML(data) {
     return `

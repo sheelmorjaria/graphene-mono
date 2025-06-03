@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
+import emailService from '../services/emailService.js';
 
 // Admin login
 export const adminLogin = async (req, res) => {
@@ -581,5 +583,171 @@ export const getAllOrders = async (req, res) => {
       success: false,
       error: 'Server error while fetching orders'
     });
+  }
+};
+
+// Status transition validation
+const getValidStatusTransitions = () => {
+  return {
+    'pending': ['processing', 'cancelled'],
+    'processing': ['awaiting_shipment', 'shipped', 'cancelled'],
+    'awaiting_shipment': ['shipped', 'cancelled'],
+    'shipped': ['delivered', 'cancelled'],
+    'delivered': ['refunded'],
+    'cancelled': [],
+    'refunded': []
+  };
+};
+
+const isValidStatusTransition = (currentStatus, newStatus) => {
+  const transitions = getValidStatusTransitions();
+  return transitions[currentStatus]?.includes(newStatus) || false;
+};
+
+// Update order status (admin only)
+export const updateOrderStatus = async (req, res) => {
+  const session = await mongoose.startSession();
+  
+  try {
+    const { orderId } = req.params;
+    const { newStatus, trackingNumber, trackingUrl } = req.body;
+
+    // Validate input
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    if (!newStatus) {
+      return res.status(400).json({
+        success: false,
+        error: 'New status is required'
+      });
+    }
+
+    // Validate orderId format
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID format'
+      });
+    }
+
+    await session.withTransaction(async () => {
+      // Find the order
+      const order = await Order.findById(orderId).session(session);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      // Validate status transition
+      if (!isValidStatusTransition(order.status, newStatus)) {
+        throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
+      }
+
+      // If status is 'shipped', validate tracking information
+      if (newStatus === 'shipped') {
+        if (!trackingNumber || !trackingUrl) {
+          throw new Error('Tracking number and tracking URL are required for shipped status');
+        }
+        
+        // Update tracking information
+        order.trackingNumber = trackingNumber.trim();
+        order.trackingUrl = trackingUrl.trim();
+      }
+
+      // If status is 'cancelled', handle stock restoration and refund
+      if (newStatus === 'cancelled') {
+        // Restore stock for each item
+        for (const item of order.items) {
+          await Product.findByIdAndUpdate(
+            item.productId,
+            { $inc: { stockQuantity: item.quantity } },
+            { session }
+          );
+        }
+
+        // TODO: Implement refund logic here
+        // This would depend on the payment method used
+        console.log(`TODO: Initiate refund for order ${order.orderNumber}`);
+      }
+
+      // Store old status for history
+      const oldStatus = order.status;
+
+      // Update order status
+      order.status = newStatus;
+
+      // Add to status history
+      if (!order.statusHistory) {
+        order.statusHistory = [];
+      }
+
+      order.statusHistory.push({
+        status: newStatus,
+        timestamp: new Date(),
+        updatedBy: req.user._id,
+        notes: `Status changed from ${oldStatus} to ${newStatus} by admin`
+      });
+
+      // Save the order
+      await order.save({ session });
+    });
+
+    // Fetch updated order with full details for email
+    const orderForEmail = await Order.findById(orderId)
+      .populate('userId', 'firstName lastName email')
+      .lean();
+
+    // Send email notification based on status
+    try {
+      if (newStatus === 'shipped') {
+        await emailService.sendOrderShippedEmail(orderForEmail);
+      } else if (newStatus === 'delivered') {
+        await emailService.sendOrderDeliveredEmail(orderForEmail);
+      } else if (['processing', 'awaiting_shipment', 'cancelled', 'refunded'].includes(newStatus)) {
+        const oldStatus = orderForEmail.statusHistory[orderForEmail.statusHistory.length - 2]?.status || 'unknown';
+        await emailService.sendOrderStatusUpdateEmail(orderForEmail, newStatus, oldStatus);
+      }
+    } catch (emailError) {
+      console.error('Error sending status update email:', emailError);
+      // Don't fail the status update if email fails
+    }
+
+    res.json({
+      success: true,
+      message: `Order status updated to ${newStatus}`,
+      data: {
+        order: orderForEmail
+      }
+    });
+
+  } catch (error) {
+    console.error('Update order status error:', error);
+    
+    // Handle specific error types
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        error: error.message
+      });
+    }
+    
+    if (error.message.includes('Invalid status transition') || 
+        error.message.includes('required')) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while updating order status'
+    });
+  } finally {
+    await session.endSession();
   }
 };

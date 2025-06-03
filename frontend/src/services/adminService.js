@@ -252,6 +252,43 @@ export const getOrderById = async (orderId) => {
   }
 };
 
+// Update order status (admin only)
+export const updateOrderStatus = async (orderId, statusData) => {
+  try {
+    if (!orderId) {
+      throw new Error('Order ID is required');
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(statusData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to update order status');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update order status error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -263,5 +300,6 @@ export default {
   getAdminUser,
   getAdminToken,
   getAllOrders,
-  getOrderById
+  getOrderById,
+  updateOrderStatus
 };
