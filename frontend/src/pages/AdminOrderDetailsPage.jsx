@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { getOrderById, isAdminAuthenticated, formatCurrency, updateOrderStatus } from '../services/adminService';
+import { getOrderById, isAdminAuthenticated, formatCurrency, updateOrderStatus, issueRefund } from '../services/adminService';
 
 const AdminOrderDetailsPage = () => {
   const [order, setOrder] = useState(null);
@@ -11,6 +11,10 @@ const AdminOrderDetailsPage = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundLoading, setRefundLoading] = useState(false);
   const { orderId } = useParams();
   const navigate = useNavigate();
 
@@ -157,6 +161,57 @@ const AdminOrderDetailsPage = () => {
     setSelectedStatus('');
     setTrackingNumber('');
     setTrackingUrl('');
+  };
+
+  const handleRefund = async () => {
+    try {
+      setRefundLoading(true);
+      setError('');
+      
+      const refundAmountNum = parseFloat(refundAmount);
+      if (isNaN(refundAmountNum) || refundAmountNum <= 0) {
+        setError('Please enter a valid refund amount');
+        return;
+      }
+      
+      if (!refundReason.trim()) {
+        setError('Please provide a reason for the refund');
+        return;
+      }
+      
+      const maxRefundable = order.totalAmount - (order.totalRefundedAmount || 0);
+      
+      if (refundAmountNum > maxRefundable) {
+        setError(`Refund amount cannot exceed ${formatCurrency(maxRefundable)}`);
+        return;
+      }
+      
+      const refundData = {
+        refundAmount: refundAmountNum,
+        refundReason: refundReason.trim()
+      };
+      
+      await issueRefund(orderId, refundData);
+      
+      // Close modal and reset form
+      setShowRefundModal(false);
+      setRefundAmount('');
+      setRefundReason('');
+      
+      // Reload order details to show updated refund info
+      await loadOrderDetails();
+    } catch (err) {
+      setError(err.message || 'Failed to process refund');
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
+  const cancelRefund = () => {
+    setShowRefundModal(false);
+    setRefundAmount('');
+    setRefundReason('');
+    setError('');
   };
 
   if (loading) {
@@ -351,6 +406,70 @@ const AdminOrderDetailsPage = () => {
                       {statusUpdateLoading ? 'Updating...' : 'Update Status'}
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Refund Section */}
+            {order && order.paymentStatus === 'completed' && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-lg font-medium text-gray-900">Issue Refund</h2>
+                </div>
+                <div className="px-6 py-4">
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Order Total: <span className="font-medium">{formatCurrency(order.finalAmount)}</span>
+                    </p>
+                    {order.refundHistory && order.refundHistory.length > 0 && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        Total Refunded: <span className="font-medium">
+                          {formatCurrency(order.totalRefundedAmount || 0)}
+                        </span>
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-600">
+                      Available to Refund: <span className="font-medium text-green-600">
+                        {formatCurrency(order.totalAmount - (order.totalRefundedAmount || 0))}
+                      </span>
+                    </p>
+                  </div>
+                  
+                  {order.refundHistory && order.refundHistory.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">Refund History</h3>
+                      <div className="bg-gray-50 rounded-md p-3">
+                        {order.refundHistory.map((refund, index) => (
+                          <div key={index} className="flex justify-between items-center py-1 text-sm">
+                            <span className="text-gray-600">
+                              {new Date(refund.date).toLocaleDateString()} - {refund.reason}
+                            </span>
+                            <span className={`font-medium ${
+                              refund.status === 'succeeded' ? 'text-green-600' : 
+                              refund.status === 'failed' ? 'text-red-600' : 'text-yellow-600'
+                            }`}>
+                              {formatCurrency(refund.amount)} ({refund.status})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      const maxRefundable = order.totalAmount - (order.totalRefundedAmount || 0);
+                      if (maxRefundable > 0) {
+                        setRefundAmount(maxRefundable.toString());
+                        setRefundReason('');
+                        setShowRefundModal(true);
+                      }
+                    }}
+                    disabled={(order.totalRefundedAmount || 0) >= order.totalAmount}
+                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Issue Refund
+                  </button>
                 </div>
               </div>
             )}
@@ -675,6 +794,86 @@ const AdminOrderDetailsPage = () => {
                 <button
                   onClick={cancelStatusUpdate}
                   disabled={statusUpdateLoading}
+                  className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">
+                Issue Refund
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="refund-amount" className="block text-sm font-medium text-gray-700 mb-2">
+                    Refund Amount (£)
+                  </label>
+                  <input
+                    type="number"
+                    id="refund-amount"
+                    step="0.01"
+                    min="0"
+                    max={order ? order.totalAmount - (order.totalRefundedAmount || 0) : 0}
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="0.00"
+                  />
+                  {order && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Maximum refundable: {formatCurrency(order.totalAmount - (order.totalRefundedAmount || 0))}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="refund-reason" className="block text-sm font-medium text-gray-700 mb-2">
+                    Refund Reason *
+                  </label>
+                  <select
+                    id="refund-reason"
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">Select reason...</option>
+                    <option value="Customer request">Customer request</option>
+                    <option value="Damaged item">Damaged item</option>
+                    <option value="Wrong item sent">Wrong item sent</option>
+                    <option value="Order cancellation">Order cancellation</option>
+                    <option value="Quality issue">Quality issue</option>
+                    <option value="Return approved">Return approved</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="items-center px-4 py-3 mt-6 text-center">
+                <button
+                  onClick={handleRefund}
+                  disabled={refundLoading || !refundAmount || !refundReason}
+                  className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                >
+                  {refundLoading ? 'Processing...' : 'Refund'}
+                </button>
+                <button
+                  onClick={cancelRefund}
+                  disabled={refundLoading}
                   className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
                 >
                   Cancel

@@ -228,20 +228,57 @@ const orderSchema = new mongoose.Schema({
     default: 'pending'
   },
   // Refund information
-  refundId: {
-    type: String,
-    trim: true,
-    maxlength: 255
-  },
   refundStatus: {
     type: String,
-    enum: ['pending', 'succeeded', 'failed', 'canceled'],
+    enum: {
+      values: ['none', 'partial_refunded', 'fully_refunded', 'pending_refund'],
+      message: 'Refund status must be one of: none, partial_refunded, fully_refunded, pending_refund'
+    },
+    default: 'none',
     trim: true
   },
-  refundAmount: {
+  totalRefundedAmount: {
     type: Number,
-    min: 0
+    min: [0, 'Total refunded amount cannot be negative'],
+    default: 0
   },
+  refundHistory: [{
+    refundId: {
+      type: String,
+      required: [true, 'Refund ID is required'],
+      trim: true,
+      maxlength: 255
+    },
+    amount: {
+      type: Number,
+      required: [true, 'Refund amount is required'],
+      min: [0, 'Refund amount cannot be negative']
+    },
+    date: {
+      type: Date,
+      required: [true, 'Refund date is required'],
+      default: Date.now
+    },
+    reason: {
+      type: String,
+      required: [true, 'Refund reason is required'],
+      trim: true,
+      maxlength: 500
+    },
+    adminUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Admin user ID is required']
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ['pending', 'succeeded', 'failed', 'canceled'],
+        message: 'Refund status must be one of: pending, succeeded, failed, canceled'
+      },
+      default: 'pending'
+    }
+  }],
   orderDate: {
     type: Date,
     required: [true, 'Order date is required'],
@@ -381,6 +418,18 @@ orderSchema.methods.getPaymentMethodDisplay = function() {
   }
   
   return display;
+};
+
+// Instance method to calculate maximum refundable amount
+orderSchema.methods.getMaxRefundableAmount = function() {
+  return Math.max(0, this.totalAmount - (this.totalRefundedAmount || 0));
+};
+
+// Instance method to check if order is eligible for refund
+orderSchema.methods.isRefundEligible = function() {
+  return this.paymentStatus === 'completed' && 
+         this.refundStatus !== 'fully_refunded' &&
+         this.getMaxRefundableAmount() > 0;
 };
 
 // Static method to find orders by user with pagination

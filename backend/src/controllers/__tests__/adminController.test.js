@@ -332,4 +332,206 @@ describe('Admin Controller', () => {
       expect(response.body.error).toBe('Insufficient permissions.');
     });
   });
+
+  describe('POST /api/admin/orders/:orderId/refund', () => {
+    let testOrder;
+    let customerUser;
+
+    beforeEach(async () => {
+      // Create customer user
+      customerUser = new User({
+        email: 'customer@test.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'customer',
+        emailVerified: true
+      });
+      await customerUser.save();
+
+      // Create test order
+      testOrder = new Order({
+        orderNumber: 'TEST-001',
+        userId: customerUser._id,
+        customerEmail: 'customer@test.com',
+        items: [{
+          productId: 'prod123',
+          name: 'Test Product',
+          price: 100,
+          quantity: 1
+        }],
+        subtotal: 100,
+        totalAmount: 110,
+        finalAmount: 110,
+        paymentStatus: 'completed',
+        paymentMethod: 'paypal',
+        status: 'processing',
+        shippingAddress: {
+          fullName: 'John Doe',
+          addressLine1: '123 Test St',
+          city: 'Test City',
+          postalCode: 'TE1 1ST',
+          country: 'United Kingdom'
+        },
+        billingAddress: {
+          fullName: 'John Doe',
+          addressLine1: '123 Test St',
+          city: 'Test City',
+          postalCode: 'TE1 1ST',
+          country: 'United Kingdom'
+        }
+      });
+      await testOrder.save();
+    });
+
+    it('should issue refund successfully', async () => {
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(refundData);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toContain('Refund of £50.00 processed successfully');
+      expect(response.body.data.refund).toMatchObject({
+        amount: 50,
+        reason: 'Customer request',
+        status: 'succeeded'
+      });
+    });
+
+    it('should reject refund for non-completed payment', async () => {
+      testOrder.paymentStatus = 'pending';
+      await testOrder.save();
+
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(refundData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Cannot refund order with payment status: pending');
+    });
+
+    it('should reject refund amount exceeding order total', async () => {
+      const refundData = {
+        refundAmount: 150, // More than order total of 110
+        refundReason: 'Customer request'
+      };
+
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(refundData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('exceeds maximum refundable amount');
+    });
+
+    it('should reject refund with missing required fields', async () => {
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          refundAmount: 50
+          // Missing refundReason
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Refund amount and reason are required');
+    });
+
+    it('should handle partial refunds correctly', async () => {
+      // First refund
+      await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          refundAmount: 30,
+          refundReason: 'First partial refund'
+        });
+
+      // Second refund
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          refundAmount: 40,
+          refundReason: 'Second partial refund'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      
+      // Check order has been updated
+      const updatedOrder = await Order.findById(testOrder._id);
+      expect(updatedOrder.refundAmount).toBe(70);
+      expect(updatedOrder.refundHistory).toHaveLength(2);
+    });
+
+    it('should update order status to refunded for full refund', async () => {
+      const refundData = {
+        refundAmount: 110, // Full order amount
+        refundReason: 'Full refund requested'
+      };
+
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(refundData);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      
+      // Check order status updated
+      const updatedOrder = await Order.findById(testOrder._id);
+      expect(updatedOrder.status).toBe('refunded');
+      expect(updatedOrder.paymentStatus).toBe('refunded');
+      expect(updatedOrder.refundStatus).toBe('succeeded');
+    });
+
+    it('should require admin authentication', async () => {
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      const response = await request(app)
+        .post(`/api/admin/orders/${testOrder._id}/refund`)
+        .send(refundData);
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Access denied. No token provided.');
+    });
+
+    it('should handle invalid order ID', async () => {
+      const refundData = {
+        refundAmount: 50,
+        refundReason: 'Customer request'
+      };
+
+      const response = await request(app)
+        .post('/api/admin/orders/invalid-id/refund')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(refundData);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Invalid order ID format');
+    });
+  });
 });

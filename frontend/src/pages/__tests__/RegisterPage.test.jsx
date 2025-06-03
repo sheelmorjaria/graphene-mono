@@ -1,7 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
 import RegisterPage from '../RegisterPage';
 
 // Mock useNavigate
@@ -22,11 +20,9 @@ vi.mock('../../services/authService', () => ({
 import { registerUser } from '../../services/authService';
 
 const renderRegisterPage = (initialRoute = '/register') => {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <RegisterPage />
-    </MemoryRouter>
-  );
+  return render(<RegisterPage />, {
+    initialEntries: [initialRoute]
+  });
 };
 
 describe('RegisterPage', () => {
@@ -78,7 +74,10 @@ describe('RegisterPage', () => {
       renderRegisterPage();
 
       const submitButton = screen.getByRole('button', { name: /create account/i });
-      await user.click(submitButton);
+      
+      await act(async () => {
+        await user.click(submitButton);
+      });
 
       expect(screen.getByText(/email is required/i)).toBeInTheDocument();
       expect(screen.getByText(/password is required/i)).toBeInTheDocument();
