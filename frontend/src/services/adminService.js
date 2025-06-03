@@ -329,6 +329,145 @@ export const issueRefund = async (orderId, refundData) => {
   }
 };
 
+// Get all return requests (admin only)
+export const getAllReturnRequests = async (filters = {}) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerQuery,
+      startDate,
+      endDate,
+      sortBy = 'requestDate',
+      sortOrder = 'desc'
+    } = filters;
+
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+
+    if (status && status !== 'all') {
+      params.append('status', status);
+    }
+
+    if (customerQuery) {
+      params.append('customerQuery', customerQuery);
+    }
+
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/returns?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch return requests');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get return requests error:', error);
+    throw error;
+  }
+};
+
+// Get single return request details (admin only)
+export const getReturnRequestById = async (returnRequestId) => {
+  try {
+    if (!returnRequestId) {
+      throw new Error('Return request ID is required');
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/returns/${returnRequestId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch return request details');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get return request by ID error:', error);
+    throw error;
+  }
+};
+
+// Update return request status (admin only)
+export const updateReturnRequestStatus = async (returnRequestId, statusData) => {
+  try {
+    if (!returnRequestId) {
+      throw new Error('Return request ID is required');
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/returns/${returnRequestId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(statusData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to update return request status');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update return request status error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -342,5 +481,8 @@ export default {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
-  issueRefund
+  issueRefund,
+  getAllReturnRequests,
+  getReturnRequestById,
+  updateReturnRequestStatus
 };
