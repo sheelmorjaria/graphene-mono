@@ -17,6 +17,7 @@ import ReturnDetailsPage from './pages/ReturnDetailsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminOrdersListPage from './pages/AdminOrdersListPage';
+import AdminOrderDetailsPage from './pages/AdminOrderDetailsPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -302,6 +303,11 @@ export const AppRoutes = () => {
           <Route path="/admin/orders" element={
             <AdminRoute>
               <AdminOrdersListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/orders/:orderId" element={
+            <AdminRoute>
+              <AdminOrderDetailsPage />
             </AdminRoute>
           } />
           

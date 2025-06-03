@@ -216,6 +216,42 @@ export const getAllOrders = async (filters = {}) => {
   }
 };
 
+// Get single order details (admin only)
+export const getOrderById = async (orderId) => {
+  try {
+    if (!orderId) {
+      throw new Error('Order ID is required');
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch order details');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get order by ID error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -226,5 +262,6 @@ export default {
   formatNumber,
   getAdminUser,
   getAdminToken,
-  getAllOrders
+  getAllOrders,
+  getOrderById
 };
