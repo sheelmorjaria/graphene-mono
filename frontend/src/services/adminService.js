@@ -145,6 +145,77 @@ export const getAdminUser = () => {
   }
 };
 
+// Get admin token
+export const getAdminToken = () => {
+  return localStorage.getItem('adminToken');
+};
+
+// Get all orders (admin only)
+export const getAllOrders = async (filters = {}) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerQuery,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = filters;
+
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+
+    if (status && status !== 'all') {
+      params.append('status', status);
+    }
+
+    if (customerQuery) {
+      params.append('customerQuery', customerQuery);
+    }
+
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch orders');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get orders error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -153,5 +224,7 @@ export default {
   adminLogout,
   formatCurrency,
   formatNumber,
-  getAdminUser
+  getAdminUser,
+  getAdminToken,
+  getAllOrders
 };

@@ -16,6 +16,7 @@ import ReturnHistoryPage from './pages/ReturnHistoryPage';
 import ReturnDetailsPage from './pages/ReturnDetailsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminOrdersListPage from './pages/AdminOrdersListPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -288,9 +289,19 @@ export const AppRoutes = () => {
           
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
+          } />
           <Route path="/admin/dashboard" element={
             <AdminRoute>
               <AdminDashboardPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/orders" element={
+            <AdminRoute>
+              <AdminOrdersListPage />
             </AdminRoute>
           } />
           
