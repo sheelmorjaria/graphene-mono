@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders } from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -16,5 +16,8 @@ router.get('/dashboard-metrics', getDashboardMetrics);
 
 // Admin profile
 router.get('/profile', getAdminProfile);
+
+// Orders management
+router.get('/orders', getAllOrders);
 
 export default router;

@@ -268,3 +268,153 @@ export const getAdminProfile = async (req, res) => {
     });
   }
 };
+
+// Get all orders (admin only)
+export const getAllOrders = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerQuery,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build filter object
+    const filter = {};
+
+    // Filter by status
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // End of day
+        filter.createdAt.$lte = endDateTime;
+      }
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Create aggregation pipeline
+    let pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'customer'
+        }
+      },
+      {
+        $unwind: {
+          path: '$customer',
+          preserveNullAndEmptyArrays: true
+        }
+      }
+    ];
+
+    // Filter by customer name/email if provided
+    if (customerQuery) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'customer.firstName': { $regex: customerQuery, $options: 'i' } },
+            { 'customer.lastName': { $regex: customerQuery, $options: 'i' } },
+            { 'customer.email': { $regex: customerQuery, $options: 'i' } },
+            {
+              $expr: {
+                $regexMatch: {
+                  input: { $concat: ['$customer.firstName', ' ', '$customer.lastName'] },
+                  regex: customerQuery,
+                  options: 'i'
+                }
+              }
+            }
+          ]
+        }
+      });
+    }
+
+    // Add sorting and pagination
+    pipeline.push({ $sort: sort });
+
+    // Get total count for pagination
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const countResult = await Order.aggregate(countPipeline);
+    const totalOrders = countResult[0]?.total || 0;
+
+    // Add pagination to main pipeline
+    pipeline.push(
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    );
+
+    // Add projection to format the response
+    pipeline.push({
+      $project: {
+        _id: 1,
+        orderNumber: 1,
+        status: 1,
+        totalAmount: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        paymentMethod: 1,
+        shippingAddress: 1,
+        items: 1,
+        customer: {
+          _id: '$customer._id',
+          firstName: '$customer.firstName',
+          lastName: '$customer.lastName',
+          email: '$customer.email'
+        }
+      }
+    });
+
+    // Execute the query
+    const orders = await Order.aggregate(pipeline);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalOrders / parseInt(limit));
+    const hasNextPage = parseInt(page) < totalPages;
+    const hasPrevPage = parseInt(page) > 1;
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalOrders,
+          hasNextPage,
+          hasPrevPage,
+          limit: parseInt(limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching orders'
+    });
+  }
+};
