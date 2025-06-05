@@ -15,6 +15,14 @@ const productSchema = new mongoose.Schema({
     trim: true,
     maxlength: 200
   },
+  sku: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true,
+    maxlength: 50
+  },
   shortDescription: {
     type: String,
     trim: true,
@@ -29,6 +37,25 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0
+  },
+  salePrice: {
+    type: Number,
+    min: 0,
+    validate: {
+      validator: function(value) {
+        return !value || value < this.price;
+      },
+      message: 'Sale price must be less than regular price'
+    }
+  },
+  lowStockThreshold: {
+    type: Number,
+    min: 0,
+    default: 10
+  },
+  tags: {
+    type: [String],
+    default: []
   },
   images: {
     type: [String],
@@ -90,6 +117,11 @@ const productSchema = new mongoose.Schema({
       default: 5 // Default height in cm
     }
   },
+  status: {
+    type: String,
+    enum: ['draft', 'active', 'archived'],
+    default: 'draft'
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -108,6 +140,18 @@ productSchema.methods.getUrl = function() {
 // Instance method to check if product is in stock
 productSchema.methods.isInStock = function() {
   return this.stockStatus === 'in_stock' || this.stockStatus === 'low_stock';
+};
+
+// Instance method to check if product is archived (soft deleted)
+productSchema.methods.isArchived = function() {
+  return this.status === 'archived';
+};
+
+// Instance method to soft delete (archive) product
+productSchema.methods.softDelete = function() {
+  this.status = 'archived';
+  this.isActive = false;
+  return this.save();
 };
 
 // Create text index for efficient search
@@ -129,6 +173,7 @@ productSchema.index({ category: 1 });
 productSchema.index({ condition: 1 });
 productSchema.index({ stockStatus: 1 });
 productSchema.index({ price: 1 });
+productSchema.index({ status: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ createdAt: -1 });
 

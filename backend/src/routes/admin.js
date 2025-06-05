@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { uploadProductImages, processProductImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
@@ -34,6 +34,7 @@ router.get('/products', getProducts);
 router.get('/products/:productId', getProductById);
 router.post('/products', uploadProductImages, processProductImages, createProduct, handleImageUploadError);
 router.put('/products/:productId', uploadProductImages, processProductImages, updateProduct, handleImageUploadError);
+router.delete('/products/:productId', deleteProduct);
 
 // Categories management
 router.get('/categories', getCategories);
