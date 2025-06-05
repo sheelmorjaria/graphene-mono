@@ -1413,9 +1413,12 @@ export const getProducts = async (req, res) => {
       query.category = category;
     }
 
-    // Filter by status
+    // Filter by status - exclude archived by default unless specifically requested
     if (status) {
       query.status = status;
+    } else {
+      // By default, exclude archived products
+      query.status = { $ne: 'archived' };
     }
 
     // Filter by price range
@@ -2215,6 +2218,63 @@ export const deleteCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while deleting category'
+    });
+  }
+};
+
+// Delete product (soft delete - archive)
+export const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product ID is required'
+      });
+    }
+
+    // Check if product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    // Check if product is already archived
+    if (product.isArchived()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product is already archived'
+      });
+    }
+
+    // Perform soft delete (archive the product)
+    await product.softDelete();
+
+    // Audit log
+    console.log(`Product ${productId} (${product.name}) archived by admin user ${req.user.userId} at ${new Date()}`);
+
+    res.json({
+      success: true,
+      message: 'Product archived successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete product error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while archiving product'
     });
   }
 };

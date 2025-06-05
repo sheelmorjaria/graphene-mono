@@ -627,6 +627,38 @@ export const updateProduct = async (productId, productData) => {
   }
 };
 
+// Delete product (soft delete - archive)
+export const deleteProduct = async (productId) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/products/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to delete product');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Delete product error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -647,5 +679,6 @@ export default {
   getProducts,
   getProductById,
   createProduct,
-  updateProduct
+  updateProduct,
+  deleteProduct
 };
