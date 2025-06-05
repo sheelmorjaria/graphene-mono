@@ -468,6 +468,51 @@ export const updateReturnRequestStatus = async (returnRequestId, statusData) => 
   }
 };
 
+// Get all products with filters
+export const getProducts = async (params = {}) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Build query string
+    const queryParams = new URLSearchParams();
+    
+    // Add all provided parameters to query string
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== '' && value !== undefined && value !== null) {
+        queryParams.append(key, value);
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const url = `${ADMIN_API_BASE}/products${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch products');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get products error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -484,5 +529,6 @@ export default {
   issueRefund,
   getAllReturnRequests,
   getReturnRequestById,
-  updateReturnRequestStatus
+  updateReturnRequestStatus,
+  getProducts
 };

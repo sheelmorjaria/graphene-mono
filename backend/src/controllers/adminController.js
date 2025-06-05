@@ -1379,3 +1379,110 @@ export const updateReturnRequestStatus = async (req, res) => {
     await session.endSession();
   }
 };
+
+// Get all products with filtering, searching, sorting, and pagination
+export const getProducts = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      searchQuery = '',
+      category = '',
+      status = '',
+      minPrice = '',
+      maxPrice = '',
+      stockStatus = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build query
+    const query = {};
+
+    // Search by name or SKU
+    if (searchQuery) {
+      query.$or = [
+        { name: { $regex: searchQuery, $options: 'i' } },
+        { sku: { $regex: searchQuery, $options: 'i' } }
+      ];
+    }
+
+    // Filter by category
+    if (category) {
+      query.category = category;
+    }
+
+    // Filter by status
+    if (status) {
+      query.status = status;
+    }
+
+    // Filter by price range
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseFloat(minPrice);
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+    }
+
+    // Filter by stock status
+    if (stockStatus) {
+      switch (stockStatus) {
+        case 'in_stock':
+          query.stockQuantity = { $gt: 0 };
+          break;
+        case 'out_of_stock':
+          query.stockQuantity = 0;
+          break;
+        case 'low_stock':
+          // Define low stock threshold (e.g., less than 10)
+          query.stockQuantity = { $gt: 0, $lte: 10 };
+          break;
+      }
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Execute query with pagination
+    const [products, totalCount] = await Promise.all([
+      Product.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .select('name sku price stockQuantity status category images createdAt updatedAt')
+        .lean(),
+      Product.countDocuments(query)
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / parseInt(limit));
+    const hasNextPage = parseInt(page) < totalPages;
+    const hasPrevPage = parseInt(page) > 1;
+
+    res.json({
+      success: true,
+      data: {
+        products,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalItems: totalCount,
+          itemsPerPage: parseInt(limit),
+          hasNextPage,
+          hasPrevPage
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get products error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching products'
+    });
+  }
+};
