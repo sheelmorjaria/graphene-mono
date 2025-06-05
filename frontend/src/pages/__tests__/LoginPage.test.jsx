@@ -19,6 +19,12 @@ vi.mock('../../services/authService', () => ({
   loginUser: vi.fn()
 }));
 
+// Mock auth context
+const mockLogin = vi.fn();
+vi.mock('../../contexts/AuthContext', () => ({
+  useLogin: () => mockLogin
+}));
+
 import { loginUser } from '../../services/authService';
 
 const renderLoginPage = (initialRoute = '/login') => {
@@ -32,6 +38,7 @@ const renderLoginPage = (initialRoute = '/login') => {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLogin.mockClear();
     document.title = 'Test';
   });
 
@@ -152,6 +159,26 @@ describe('LoginPage', () => {
     it('should handle login errors', async () => {
       const user = userEvent.setup();
       const errorMessage = 'Invalid email or password';
+      
+      loginUser.mockRejectedValue(new Error(errorMessage));
+      renderLoginPage();
+
+      // Fill and submit form
+      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      });
+
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should handle disabled account error', async () => {
+      const user = userEvent.setup();
+      const errorMessage = 'Account has been disabled. Please contact support for assistance.';
       
       loginUser.mockRejectedValue(new Error(errorMessage));
       renderLoginPage();

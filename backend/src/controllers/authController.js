@@ -199,6 +199,14 @@ export const login = async (req, res) => {
       });
     }
 
+    // Check if account status is disabled
+    if (user.accountStatus === 'disabled') {
+      return res.status(401).json({
+        success: false,
+        error: 'Account has been disabled. Please contact support for assistance.'
+      });
+    }
+
     // Verify password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {

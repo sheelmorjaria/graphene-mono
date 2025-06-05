@@ -535,6 +535,79 @@ const emailService = {
         error: error.message
       };
     }
+  },
+
+  // Send account disabled email notification
+  async sendAccountDisabledEmail(user, adminUser) {
+    try {
+      const emailContent = {
+        to: user.email,
+        subject: 'Account Status Update - GrapheneOS Store',
+        template: 'account-disabled',
+        data: {
+          customerName: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          disabledDate: new Date().toLocaleDateString(),
+          adminEmail: adminUser?.email || 'admin@grapheneos-store.com',
+          supportEmail: 'support@grapheneos-store.com'
+        }
+      };
+
+      console.log('📧 Account Disabled Email:', JSON.stringify(emailContent, null, 2));
+      
+      // Simulate email sending delay
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `account_disabled_${Date.now()}`,
+        message: 'Account disabled email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending account disabled email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  },
+
+  // Send account re-enabled email notification
+  async sendAccountReEnabledEmail(user, adminUser) {
+    try {
+      const emailContent = {
+        to: user.email,
+        subject: 'Account Re-enabled - GrapheneOS Store',
+        template: 'account-re-enabled',
+        data: {
+          customerName: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          reEnabledDate: new Date().toLocaleDateString(),
+          adminEmail: adminUser?.email || 'admin@grapheneos-store.com',
+          supportEmail: 'support@grapheneos-store.com',
+          loginUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login` : 'https://grapheneos-store.com/login'
+        }
+      };
+
+      console.log('📧 Account Re-enabled Email:', JSON.stringify(emailContent, null, 2));
+      
+      // Simulate email sending delay
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return {
+        success: true,
+        messageId: `account_reenabled_${Date.now()}`,
+        message: 'Account re-enabled email queued for delivery'
+      };
+      
+    } catch (error) {
+      console.error('Error sending account re-enabled email:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 };
 

@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus } from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { uploadProductImages, processProductImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
@@ -42,5 +42,10 @@ router.get('/categories/:categoryId', getCategoryById);
 router.post('/categories', createCategory);
 router.put('/categories/:categoryId', updateCategory);
 router.delete('/categories/:categoryId', deleteCategory);
+
+// User management
+router.get('/users', getAllUsers);
+router.get('/users/:userId', getUserById);
+router.put('/users/:userId/status', updateUserStatus);
 
 export default router;

@@ -37,11 +37,11 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Check if user is active
-    if (!user.isActive) {
+    // Check if user account is disabled
+    if (user.accountStatus === 'disabled') {
       return res.status(401).json({
         success: false,
-        error: 'Account has been deactivated'
+        error: 'Account has been disabled. Please contact support for assistance.'
       });
     }
 
@@ -2218,6 +2218,303 @@ export const deleteCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while deleting category'
+    });
+  }
+};
+
+// ===== User Management Functions =====
+
+// Get all users with filtering, searching, sorting, and pagination
+export const getAllUsers = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      searchQuery = '',
+      accountStatus = '',
+      emailVerified = '',
+      role = '',
+      startDate = '',
+      endDate = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build query
+    const query = {};
+
+    // Search by name or email
+    if (searchQuery) {
+      query.$or = [
+        { firstName: { $regex: searchQuery, $options: 'i' } },
+        { lastName: { $regex: searchQuery, $options: 'i' } },
+        { email: { $regex: searchQuery, $options: 'i' } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ['$firstName', ' ', '$lastName'] },
+              regex: searchQuery,
+              options: 'i'
+            }
+          }
+        }
+      ];
+    }
+
+    // Filter by account status
+    if (accountStatus) {
+      query.accountStatus = accountStatus;
+    }
+
+    // Filter by email verification status
+    if (emailVerified) {
+      query.emailVerified = emailVerified === 'true';
+    }
+
+    // Filter by role
+    if (role) {
+      query.role = role;
+    }
+
+    // Filter by registration date range
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // End of day
+        query.createdAt.$lte = endDateTime;
+      }
+    }
+
+    // Calculate pagination with validation
+    const validatedPage = Math.max(1, parseInt(page) || 1);
+    const validatedLimit = Math.min(Math.max(1, parseInt(limit) || 20), 100); // Limit max to 100
+    const skip = (validatedPage - 1) * validatedLimit;
+
+    // Build sort object with validation
+    const validSortFields = ['createdAt', 'firstName', 'lastName', 'email', 'accountStatus', 'emailVerified', 'role'];
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const safeSortOrder = ['asc', 'desc'].includes(sortOrder) ? sortOrder : 'desc';
+    
+    const sort = {};
+    sort[safeSortBy] = safeSortOrder === 'asc' ? 1 : -1;
+
+    // Execute query with pagination
+    const [users, totalCount] = await Promise.all([
+      User.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(validatedLimit)
+        .select('-password -emailVerificationToken -passwordResetToken -__v')
+        .lean(),
+      User.countDocuments(query)
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / validatedLimit);
+    const hasNextPage = validatedPage < totalPages;
+    const hasPrevPage = validatedPage > 1;
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          currentPage: validatedPage,
+          totalPages,
+          totalUsers: totalCount,
+          usersPerPage: validatedLimit,
+          hasNextPage,
+          hasPrevPage
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching users'
+    });
+  }
+};
+
+// Get single user by ID (admin only)
+export const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+
+    // Fetch user excluding sensitive data
+    const user = await User.findById(userId)
+      .select('-password -emailVerificationToken -passwordResetToken -__v')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Get additional user statistics
+    const [orderCount, totalSpent] = await Promise.all([
+      Order.countDocuments({ userId: userId }),
+      Order.aggregate([
+        { 
+          $match: { 
+            userId: new mongoose.Types.ObjectId(userId),
+            status: { $ne: 'cancelled' }
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ])
+    ]);
+
+    const userWithStats = {
+      ...user,
+      orderCount,
+      totalSpent: totalSpent[0]?.total || 0
+    };
+
+    res.json({
+      success: true,
+      data: { user: userWithStats }
+    });
+
+  } catch (error) {
+    console.error('Get user by ID error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching user'
+    });
+  }
+};
+
+// Update user account status (admin only)
+export const updateUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { newStatus } = req.body;
+    const adminId = req.user._id;
+
+    // Validate userId
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+
+    // Validate newStatus
+    if (!newStatus) {
+      return res.status(400).json({
+        success: false,
+        error: 'New status is required'
+      });
+    }
+
+    if (!['active', 'disabled'].includes(newStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status. Must be "active" or "disabled"'
+      });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Prevent admin from disabling themselves
+    if (user._id.toString() === adminId.toString() && newStatus === 'disabled') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot disable your own account'
+      });
+    }
+
+    // Check if status is already the same
+    if (user.accountStatus === newStatus) {
+      return res.status(400).json({
+        success: false,
+        error: `User account is already ${newStatus}`
+      });
+    }
+
+    const oldStatus = user.accountStatus;
+
+    // Update user status
+    user.accountStatus = newStatus;
+    await user.save();
+
+    // Audit log
+    console.log(`User ${userId} (${user.email}) status changed from ${oldStatus} to ${newStatus} by admin user ${adminId} at ${new Date()}`);
+
+    // Send email notification
+    try {
+      const adminUser = await User.findById(adminId);
+      
+      if (newStatus === 'disabled') {
+        await emailService.sendAccountDisabledEmail(user, adminUser);
+      } else if (newStatus === 'active') {
+        await emailService.sendAccountReEnabledEmail(user, adminUser);
+      }
+    } catch (emailError) {
+      console.error('Error sending status change email:', emailError);
+      // Don't fail the status update if email fails
+    }
+
+    res.json({
+      success: true,
+      message: `User account ${newStatus === 'disabled' ? 'disabled' : 'enabled'} successfully`,
+      data: {
+        user: {
+          _id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          accountStatus: user.accountStatus,
+          updatedAt: user.updatedAt
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Update user status error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while updating user status'
     });
   }
 };
