@@ -57,6 +57,11 @@ const userSchema = new mongoose.Schema({
     enum: ['customer', 'admin'],
     default: 'customer'
   },
+  accountStatus: {
+    type: String,
+    enum: ['active', 'disabled'],
+    default: 'active'
+  },
   lastLoginAt: {
     type: Date
   },

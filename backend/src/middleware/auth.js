@@ -36,11 +36,11 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Check if user is active
-    if (!user.isActive) {
+    // Check if user account is disabled
+    if (user.accountStatus === 'disabled') {
       return res.status(401).json({
         success: false,
-        error: 'Account has been deactivated.'
+        error: 'Account has been disabled. Please contact support for assistance.'
       });
     }
 
@@ -108,7 +108,7 @@ export const optionalAuth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
     
     const user = await User.findById(decoded.userId);
-    if (user && user.isActive) {
+    if (user && user.accountStatus === 'active') {
       req.user = user;
     }
 

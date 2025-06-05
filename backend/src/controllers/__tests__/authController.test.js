@@ -264,6 +264,23 @@ describe('Auth Controller', () => {
       expect(response.body.error).toContain('deactivated');
     });
 
+    it('should fail for disabled user account', async () => {
+      // Disable user account
+      testUser.accountStatus = 'disabled';
+      await testUser.save();
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'test@example.com',
+          password: 'TestPassword123!'
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Account has been disabled');
+    });
+
     it('should handle case-insensitive email login', async () => {
       const response = await request(app)
         .post('/api/auth/login')

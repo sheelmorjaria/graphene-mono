@@ -24,6 +24,8 @@ import AdminProductsListPage from './pages/AdminProductsListPage';
 import AdminProductFormPage from './pages/AdminProductFormPage';
 import AdminCategoriesListPage from './pages/AdminCategoriesListPage';
 import AdminCategoryFormPage from './pages/AdminCategoryFormPage';
+import AdminUsersListPage from './pages/AdminUsersListPage';
+import AdminUserDetailsPage from './pages/AdminUserDetailsPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -354,6 +356,16 @@ export const AppRoutes = () => {
           <Route path="/admin/categories/edit/:categoryId" element={
             <AdminRoute>
               <AdminCategoryFormPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/users" element={
+            <AdminRoute>
+              <AdminUsersListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/users/:userId" element={
+            <AdminRoute>
+              <AdminUserDetailsPage />
             </AdminRoute>
           } />
           

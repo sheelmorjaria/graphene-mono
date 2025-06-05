@@ -391,7 +391,10 @@ const AdminDashboardPage = () => {
                   <p className="text-gray-600 text-sm">Create and organize product categories and hierarchies</p>
                 </Link>
                 
-                <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow cursor-not-allowed opacity-60">
+                <Link 
+                  to="/admin/users"
+                  className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
+                >
                   <div className="flex items-center mb-4">
                     <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,8 +404,7 @@ const AdminDashboardPage = () => {
                     <h3 className="ml-4 text-lg font-medium text-gray-900">Manage Users</h3>
                   </div>
                   <p className="text-gray-600 text-sm">View and manage customer accounts and admin users</p>
-                  <p className="text-xs text-gray-500 mt-2">Coming Soon</p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>

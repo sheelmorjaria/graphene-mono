@@ -659,6 +659,116 @@ export const deleteProduct = async (productId) => {
   }
 };
 
+// Get all users with filters
+export const getAllUsers = async (params = {}) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Build query string
+    const queryParams = new URLSearchParams();
+    
+    // Add all provided parameters to query string
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== '' && value !== undefined && value !== null) {
+        queryParams.append(key, value);
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const url = `${ADMIN_API_BASE}/users${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch users');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get users error:', error);
+    throw error;
+  }
+};
+
+// Get single user by ID
+export const getUserById = async (userId) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/users/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch user');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get user by ID error:', error);
+    throw error;
+  }
+};
+
+// Update user status
+export const updateUserStatus = async (userId, statusData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/users/${userId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(statusData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to update user status');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update user status error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -680,5 +790,8 @@ export default {
   getProductById,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getAllUsers,
+  getUserById,
+  updateUserStatus
 };
