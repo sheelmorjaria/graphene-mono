@@ -20,6 +20,7 @@ import AdminOrdersListPage from './pages/AdminOrdersListPage';
 import AdminOrderDetailsPage from './pages/AdminOrderDetailsPage';
 import AdminReturnsListPage from './pages/AdminReturnsListPage';
 import AdminReturnDetailsPage from './pages/AdminReturnDetailsPage';
+import AdminProductsListPage from './pages/AdminProductsListPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -320,6 +321,11 @@ export const AppRoutes = () => {
           <Route path="/admin/returns/:returnRequestId" element={
             <AdminRoute>
               <AdminReturnDetailsPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/products" element={
+            <AdminRoute>
+              <AdminProductsListPage />
             </AdminRoute>
           } />
           
