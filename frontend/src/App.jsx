@@ -22,6 +22,8 @@ import AdminReturnsListPage from './pages/AdminReturnsListPage';
 import AdminReturnDetailsPage from './pages/AdminReturnDetailsPage';
 import AdminProductsListPage from './pages/AdminProductsListPage';
 import AdminProductFormPage from './pages/AdminProductFormPage';
+import AdminCategoriesListPage from './pages/AdminCategoriesListPage';
+import AdminCategoryFormPage from './pages/AdminCategoryFormPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -337,6 +339,21 @@ export const AppRoutes = () => {
           <Route path="/admin/products/edit/:productId" element={
             <AdminRoute>
               <AdminProductFormPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/categories" element={
+            <AdminRoute>
+              <AdminCategoriesListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/categories/new" element={
+            <AdminRoute>
+              <AdminCategoryFormPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/categories/edit/:categoryId" element={
+            <AdminRoute>
+              <AdminCategoryFormPage />
             </AdminRoute>
           } />
           

@@ -1842,3 +1842,379 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
+
+// ===== Category Management Functions =====
+
+// Get all categories
+export const getCategories = async (req, res) => {
+  try {
+    // Fetch all categories with parent information
+    const categories = await Category.find()
+      .populate('parentId', 'name slug')
+      .sort({ name: 1 })
+      .lean();
+
+    // Add product count for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const productCount = await Category.getProductCount(category._id);
+        return {
+          ...category,
+          productCount
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: {
+        categories: categoriesWithCounts
+      }
+    });
+
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching categories'
+    });
+  }
+};
+
+// Get single category by ID
+export const getCategoryById = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category ID is required'
+      });
+    }
+
+    const category = await Category.findById(categoryId)
+      .populate('parentId', 'name slug')
+      .lean();
+
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    // Add product count
+    const productCount = await Category.getProductCount(categoryId);
+
+    res.json({
+      success: true,
+      data: {
+        category: {
+          ...category,
+          productCount
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get category by ID error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid category ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching category'
+    });
+  }
+};
+
+// Create new category
+export const createCategory = async (req, res) => {
+  try {
+    const { name, slug, description, parentId } = req.body;
+
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category name is required'
+      });
+    }
+
+    // Validate parent category if provided
+    if (parentId) {
+      const parentCategory = await Category.findById(parentId);
+      if (!parentCategory) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid parent category ID'
+        });
+      }
+    }
+
+    // Generate slug if not provided or use provided slug
+    let finalSlug = slug ? slug.trim() : await Category.generateSlug(name.trim());
+    
+    // Ensure slug uniqueness if provided
+    if (slug && slug.trim()) {
+      const existingCategory = await Category.findOne({ slug: finalSlug });
+      if (existingCategory) {
+        return res.status(400).json({
+          success: false,
+          error: 'Category slug already exists. Please use a unique slug.'
+        });
+      }
+    }
+
+    // Create category data
+    const categoryData = {
+      name: name.trim(),
+      slug: finalSlug,
+      description: description?.trim() || '',
+      parentId: parentId || null
+    };
+
+    // Create the category
+    const category = new Category(categoryData);
+    await category.save();
+
+    // Populate parent for response
+    await category.populate('parentId', 'name slug');
+
+    // Audit log
+    console.log(`Category ${category._id} created by admin user ${req.user.userId} at ${new Date()}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Category created successfully',
+      data: { category }
+    });
+
+  } catch (error) {
+    console.error('Create category error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: validationErrors
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category with this slug already exists'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while creating category'
+    });
+  }
+};
+
+// Update existing category
+export const updateCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { name, slug, description, parentId } = req.body;
+
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category ID is required'
+      });
+    }
+
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category name is required'
+      });
+    }
+
+    // Check if category exists
+    const existingCategory = await Category.findById(categoryId);
+    if (!existingCategory) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    // Validate parent category if provided
+    if (parentId) {
+      const parentCategory = await Category.findById(parentId);
+      if (!parentCategory) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid parent category ID'
+        });
+      }
+
+      // Check for circular dependency
+      const hasCircularDep = await Category.checkCircularDependency(categoryId, parentId);
+      if (hasCircularDep) {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot set parent category: this would create a circular dependency'
+        });
+      }
+    }
+
+    // Handle slug
+    let finalSlug = existingCategory.slug;
+    if (slug !== undefined) {
+      if (slug.trim()) {
+        finalSlug = slug.trim();
+        // Check slug uniqueness (excluding current category)
+        const duplicateSlug = await Category.findOne({ 
+          slug: finalSlug, 
+          _id: { $ne: categoryId } 
+        });
+        if (duplicateSlug) {
+          return res.status(400).json({
+            success: false,
+            error: 'Category slug already exists. Please use a unique slug.'
+          });
+        }
+      } else {
+        // Generate new slug from updated name
+        finalSlug = await Category.generateSlug(name.trim(), categoryId);
+      }
+    }
+
+    // Update category data
+    const updateData = {
+      name: name.trim(),
+      slug: finalSlug,
+      description: description !== undefined ? (description?.trim() || '') : existingCategory.description,
+      parentId: parentId !== undefined ? (parentId || null) : existingCategory.parentId,
+      updatedAt: new Date()
+    };
+
+    // Update the category
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('parentId', 'name slug');
+
+    // Audit log
+    console.log(`Category ${categoryId} updated by admin user ${req.user.userId} at ${new Date()}`);
+
+    res.json({
+      success: true,
+      message: 'Category updated successfully',
+      data: { category: updatedCategory }
+    });
+
+  } catch (error) {
+    console.error('Update category error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid category ID format'
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: validationErrors
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category with this slug already exists'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while updating category'
+    });
+  }
+};
+
+// Delete category
+export const deleteCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category ID is required'
+      });
+    }
+
+    // Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    // Check for associated products
+    const productCount = await Category.getProductCount(categoryId);
+    if (productCount > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Cannot delete category. It has ${productCount} associated product(s). Please reassign products to another category first.`
+      });
+    }
+
+    // Check for child categories
+    const childCategories = await Category.getChildren(categoryId);
+    if (childCategories.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Cannot delete category. It has ${childCategories.length} child categor${childCategories.length === 1 ? 'y' : 'ies'}. Please reassign or delete child categories first.`
+      });
+    }
+
+    // Delete the category
+    await Category.findByIdAndDelete(categoryId);
+
+    // Audit log
+    console.log(`Category ${categoryId} (${category.name}) deleted by admin user ${req.user.userId} at ${new Date()}`);
+
+    res.json({
+      success: true,
+      message: 'Category deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete category error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid category ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while deleting category'
+    });
+  }
+};
