@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import ReturnRequest from '../models/ReturnRequest.js';
+import Category from '../models/Category.js';
 import emailService from '../services/emailService.js';
 
 // Admin login
@@ -1483,6 +1484,361 @@ export const getProducts = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while fetching products'
+    });
+  }
+};
+
+// Get single product by ID (for admin edit)
+export const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Validate productId
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product ID is required'
+      });
+    }
+
+    // Fetch product with populated category
+    const product = await Product.findById(productId)
+      .populate('category', 'name slug')
+      .lean();
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { product }
+    });
+
+  } catch (error) {
+    console.error('Get product by ID error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while fetching product'
+    });
+  }
+};
+
+// Create new product
+export const createProduct = async (req, res) => {
+  try {
+    const {
+      name,
+      slug,
+      sku,
+      shortDescription,
+      longDescription,
+      price,
+      salePrice,
+      stockQuantity,
+      lowStockThreshold,
+      category,
+      tags,
+      status,
+      condition,
+      stockStatus
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !sku || !price || stockQuantity === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name, SKU, price, and stock quantity are required'
+      });
+    }
+
+    // Validate SKU uniqueness
+    const existingProduct = await Product.findOne({ sku });
+    if (existingProduct) {
+      return res.status(400).json({
+        success: false,
+        error: 'SKU already exists. Please use a unique SKU.'
+      });
+    }
+
+    // Validate category if provided
+    if (category) {
+      const categoryExists = await Category.findById(category);
+      if (!categoryExists) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid category ID'
+        });
+      }
+    }
+
+    // Generate slug if not provided
+    let productSlug = slug;
+    if (!productSlug) {
+      productSlug = name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+
+    // Ensure slug uniqueness
+    let slugCounter = 1;
+    let finalSlug = productSlug;
+    while (await Product.findOne({ slug: finalSlug })) {
+      finalSlug = `${productSlug}-${slugCounter}`;
+      slugCounter++;
+    }
+
+    // Process tags if provided
+    let processedTags = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      } else if (Array.isArray(tags)) {
+        processedTags = tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0);
+      }
+    }
+
+    // Create product data
+    const productData = {
+      name: name.trim(),
+      slug: finalSlug,
+      sku: sku.trim().toUpperCase(),
+      shortDescription: shortDescription?.trim() || '',
+      longDescription: longDescription?.trim() || '',
+      price: parseFloat(price),
+      stockQuantity: parseInt(stockQuantity),
+      condition: condition || 'new',
+      status: status || 'draft',
+      tags: processedTags
+    };
+
+    // Add optional fields
+    if (salePrice) productData.salePrice = parseFloat(salePrice);
+    if (lowStockThreshold !== undefined) productData.lowStockThreshold = parseInt(lowStockThreshold);
+    if (category) productData.category = category;
+    if (stockStatus) productData.stockStatus = stockStatus;
+
+    // Handle image uploads
+    if (req.body.processedImages && req.body.processedImages.length > 0) {
+      productData.images = req.body.processedImages;
+    } else {
+      productData.images = [];
+    }
+
+    // Create the product
+    const product = new Product(productData);
+    await product.save();
+
+    // Populate category for response
+    await product.populate('category', 'name slug');
+
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      data: { product }
+    });
+
+  } catch (error) {
+    console.error('Create product error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: validationErrors
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while creating product'
+    });
+  }
+};
+
+// Update existing product
+export const updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const {
+      name,
+      slug,
+      sku,
+      shortDescription,
+      longDescription,
+      price,
+      salePrice,
+      stockQuantity,
+      lowStockThreshold,
+      category,
+      tags,
+      status,
+      condition,
+      stockStatus
+    } = req.body;
+
+    // Validate productId
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product ID is required'
+      });
+    }
+
+    // Find existing product
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    // Validate required fields
+    if (!name || !sku || !price || stockQuantity === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name, SKU, price, and stock quantity are required'
+      });
+    }
+
+    // Validate SKU uniqueness (excluding current product)
+    if (sku !== existingProduct.sku) {
+      const duplicateProduct = await Product.findOne({ 
+        sku, 
+        _id: { $ne: productId } 
+      });
+      if (duplicateProduct) {
+        return res.status(400).json({
+          success: false,
+          error: 'SKU already exists. Please use a unique SKU.'
+        });
+      }
+    }
+
+    // Validate category if provided
+    if (category) {
+      const categoryExists = await Category.findById(category);
+      if (!categoryExists) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid category ID'
+        });
+      }
+    }
+
+    // Generate slug if changed
+    let finalSlug = slug || existingProduct.slug;
+    if (slug && slug !== existingProduct.slug) {
+      // Ensure slug uniqueness
+      let slugCounter = 1;
+      let tempSlug = slug;
+      while (await Product.findOne({ slug: tempSlug, _id: { $ne: productId } })) {
+        tempSlug = `${slug}-${slugCounter}`;
+        slugCounter++;
+      }
+      finalSlug = tempSlug;
+    }
+
+    // Process tags if provided
+    let processedTags = existingProduct.tags || [];
+    if (tags !== undefined) {
+      processedTags = [];
+      if (tags) {
+        if (typeof tags === 'string') {
+          processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        } else if (Array.isArray(tags)) {
+          processedTags = tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0);
+        }
+      }
+    }
+
+    // Update product data
+    const updateData = {
+      name: name.trim(),
+      slug: finalSlug,
+      sku: sku.trim().toUpperCase(),
+      shortDescription: shortDescription?.trim() || '',
+      longDescription: longDescription?.trim() || '',
+      price: parseFloat(price),
+      stockQuantity: parseInt(stockQuantity),
+      condition: condition || existingProduct.condition,
+      status: status || existingProduct.status,
+      tags: processedTags,
+      updatedAt: new Date()
+    };
+
+    // Add optional fields
+    if (salePrice !== undefined) {
+      updateData.salePrice = salePrice ? parseFloat(salePrice) : null;
+    }
+    if (lowStockThreshold !== undefined) {
+      updateData.lowStockThreshold = lowStockThreshold ? parseInt(lowStockThreshold) : null;
+    }
+    if (category !== undefined) {
+      updateData.category = category || null;
+    }
+    if (stockStatus) {
+      updateData.stockStatus = stockStatus;
+    }
+
+    // Handle image uploads
+    if (req.body.processedImages && req.body.processedImages.length > 0) {
+      // For updates, we can either replace all images or append new ones
+      // For now, we'll replace all images with the new uploads
+      updateData.images = req.body.processedImages;
+    }
+
+    // Update the product
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('category', 'name slug');
+
+    // Audit log (basic implementation)
+    console.log(`Product ${productId} updated by admin user ${req.user.userId} at ${new Date()}`);
+
+    res.json({
+      success: true,
+      message: 'Product updated successfully',
+      data: { product: updatedProduct }
+    });
+
+  } catch (error) {
+    console.error('Update product error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format'
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: validationErrors
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Server error while updating product'
     });
   }
 };

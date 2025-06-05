@@ -513,6 +513,120 @@ export const getProducts = async (params = {}) => {
   }
 };
 
+// Get single product by ID
+export const getProductById = async (productId) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/products/${productId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch product');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get product by ID error:', error);
+    throw error;
+  }
+};
+
+// Create new product
+export const createProduct = async (productData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Determine if we need to use FormData for file uploads
+    const isFormData = productData instanceof FormData;
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+
+    // Only set Content-Type for JSON, let browser set it for FormData
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/products`, {
+      method: 'POST',
+      headers,
+      body: isFormData ? productData : JSON.stringify(productData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to create product');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Create product error:', error);
+    throw error;
+  }
+};
+
+// Update existing product
+export const updateProduct = async (productId, productData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    // Determine if we need to use FormData for file uploads
+    const isFormData = productData instanceof FormData;
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+
+    // Only set Content-Type for JSON, let browser set it for FormData
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/products/${productId}`, {
+      method: 'PUT',
+      headers,
+      body: isFormData ? productData : JSON.stringify(productData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to update product');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update product error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -530,5 +644,8 @@ export default {
   getAllReturnRequests,
   getReturnRequestById,
   updateReturnRequestStatus,
-  getProducts
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct
 };

@@ -1,0 +1,347 @@
+import { jest } from '@jest/globals';
+
+// Create a mock Product constructor
+const mockProductInstance = {
+  save: jest.fn(),
+  populate: jest.fn()
+};
+
+const MockProduct = jest.fn().mockImplementation(() => mockProductInstance);
+MockProduct.findById = jest.fn();
+MockProduct.findOne = jest.fn();
+MockProduct.findByIdAndUpdate = jest.fn();
+
+const mockProduct = MockProduct;
+
+const mockCategory = {
+  findById: jest.fn()
+};
+
+// Mock the models
+jest.unstable_mockModule('../../models/Product.js', () => ({
+  default: mockProduct
+}));
+
+jest.unstable_mockModule('../../models/Category.js', () => ({
+  default: mockCategory
+}));
+
+// Import the functions to test after mocking
+const { getProductById, createProduct, updateProduct } = await import('../adminController.js');
+
+describe('Admin Controller - Product CRUD Unit Tests', () => {
+  let req, res;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    req = {
+      params: {},
+      body: {},
+      user: { userId: 'admin123' }
+    };
+    
+    res = {
+      json: jest.fn(),
+      status: jest.fn().mockReturnThis()
+    };
+  });
+
+  describe('getProductById', () => {
+    test('should return product successfully', async () => {
+      const mockProductData = {
+        _id: 'product123',
+        name: 'Test Product',
+        sku: 'TEST-001',
+        price: 100,
+        category: { _id: 'cat123', name: 'Test Category' }
+      };
+
+      const mockPopulatedQuery = {
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockProductData)
+      };
+      
+      mockProduct.findById.mockReturnValue(mockPopulatedQuery);
+      req.params.productId = 'product123';
+
+      await getProductById(req, res);
+
+      expect(mockProduct.findById).toHaveBeenCalledWith('product123');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: { product: mockProductData }
+      });
+    });
+
+    test('should return 404 for non-existent product', async () => {
+      const mockPopulatedQuery = {
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(null)
+      };
+      
+      mockProduct.findById.mockReturnValue(mockPopulatedQuery);
+      req.params.productId = 'nonexistent';
+
+      await getProductById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Product not found'
+      });
+    });
+
+    test('should return 400 for missing product ID', async () => {
+      req.params.productId = '';
+
+      await getProductById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Product ID is required'
+      });
+    });
+
+    test('should handle invalid product ID format', async () => {
+      const error = new Error('Cast error');
+      error.name = 'CastError';
+      
+      mockProduct.findById.mockImplementation(() => {
+        throw error;
+      });
+      req.params.productId = 'invalid-id';
+
+      await getProductById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid product ID format'
+      });
+    });
+  });
+
+  describe('createProduct', () => {
+    test('should create product successfully', async () => {
+      const productData = {
+        name: 'New Product',
+        sku: 'NEW-001',
+        price: '150',
+        stockQuantity: '10',
+        category: 'cat123'
+      };
+
+      req.body = productData;
+
+      // Mock category validation
+      mockCategory.findById.mockResolvedValue({ _id: 'cat123', name: 'Test Category' });
+      
+      // Mock SKU uniqueness check
+      mockProduct.findOne.mockResolvedValueOnce(null); // SKU check
+      mockProduct.findOne.mockResolvedValueOnce(null); // Slug check
+
+      // Mock product creation
+      const mockNewProduct = {
+        _id: 'newproduct123',
+        name: 'New Product',
+        sku: 'NEW-001',
+        price: 150,
+        stockQuantity: 10,
+        category: 'cat123'
+      };
+
+      mockProductInstance.save.mockResolvedValue(mockNewProduct);
+      mockProductInstance.populate.mockResolvedValue(mockProductInstance);
+      
+      // Mock the product instance to return populated data
+      Object.assign(mockProductInstance, {
+        ...mockNewProduct,
+        category: { _id: 'cat123', name: 'Test Category' }
+      });
+
+      await createProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Product created successfully',
+        data: { 
+          product: expect.objectContaining({
+            name: 'New Product',
+            sku: 'NEW-001',
+            category: expect.objectContaining({
+              _id: 'cat123',
+              name: 'Test Category'
+            })
+          })
+        }
+      });
+    });
+
+    test('should return 400 for missing required fields', async () => {
+      req.body = { name: 'Product' }; // Missing SKU, price, stockQuantity
+
+      await createProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Name, SKU, price, and stock quantity are required'
+      });
+    });
+
+    test('should return 400 for duplicate SKU', async () => {
+      req.body = {
+        name: 'Product',
+        sku: 'EXISTING-001',
+        price: '100',
+        stockQuantity: '5'
+      };
+
+      // Mock existing product with same SKU
+      mockProduct.findOne.mockResolvedValue({ _id: 'existing', sku: 'EXISTING-001' });
+
+      await createProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'SKU already exists. Please use a unique SKU.'
+      });
+    });
+
+    test('should return 400 for invalid category', async () => {
+      req.body = {
+        name: 'Product',
+        sku: 'TEST-001',
+        price: '100',
+        stockQuantity: '5',
+        category: 'invalid-category'
+      };
+
+      mockProduct.findOne.mockResolvedValue(null); // SKU check passes
+      mockCategory.findById.mockResolvedValue(null); // Category not found
+
+      await createProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid category ID'
+      });
+    });
+  });
+
+  describe('updateProduct', () => {
+    test('should update product successfully', async () => {
+      const existingProduct = {
+        _id: 'product123',
+        name: 'Old Product',
+        sku: 'OLD-001',
+        price: 100,
+        stockQuantity: 5,
+        tags: ['old'],
+        condition: 'new',
+        status: 'active'
+      };
+
+      const updateData = {
+        name: 'Updated Product',
+        sku: 'OLD-001', // Same SKU
+        price: '120',
+        stockQuantity: '8'
+      };
+
+      req.params.productId = 'product123';
+      req.body = updateData;
+
+      mockProduct.findById.mockResolvedValue(existingProduct);
+      mockProduct.findOne.mockResolvedValue(null); // No duplicate SKU
+      
+      const updatedProduct = { ...existingProduct, ...updateData, price: 120, stockQuantity: 8 };
+      const mockPopulatedProduct = {
+        ...updatedProduct,
+        populate: jest.fn().mockReturnValue(updatedProduct)
+      };
+      
+      mockProduct.findByIdAndUpdate.mockReturnValue(mockPopulatedProduct);
+
+      await updateProduct(req, res);
+
+      expect(mockProduct.findByIdAndUpdate).toHaveBeenCalledWith(
+        'product123',
+        expect.objectContaining({
+          name: 'Updated Product',
+          price: 120,
+          stockQuantity: 8
+        }),
+        { new: true, runValidators: true }
+      );
+
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Product updated successfully',
+        data: { product: updatedProduct }
+      });
+    });
+
+    test('should return 404 for non-existent product', async () => {
+      req.params.productId = 'nonexistent';
+      req.body = { name: 'Test', sku: 'TEST', price: '100', stockQuantity: '5' };
+
+      mockProduct.findById.mockResolvedValue(null);
+
+      await updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Product not found'
+      });
+    });
+
+    test('should return 400 for missing required fields', async () => {
+      req.params.productId = 'product123';
+      req.body = { name: 'Product' }; // Missing SKU, price, stockQuantity
+
+      mockProduct.findById.mockResolvedValue({ _id: 'product123' });
+
+      await updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Name, SKU, price, and stock quantity are required'
+      });
+    });
+
+    test('should handle SKU uniqueness when changing SKU', async () => {
+      const existingProduct = {
+        _id: 'product123',
+        sku: 'OLD-001'
+      };
+
+      req.params.productId = 'product123';
+      req.body = {
+        name: 'Product',
+        sku: 'EXISTING-002', // Different SKU
+        price: '100',
+        stockQuantity: '5'
+      };
+
+      mockProduct.findById.mockResolvedValue(existingProduct);
+      // Mock that another product already has the new SKU
+      mockProduct.findOne.mockResolvedValue({ _id: 'other123', sku: 'EXISTING-002' });
+
+      await updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'SKU already exists. Please use a unique SKU.'
+      });
+    });
+  });
+});
