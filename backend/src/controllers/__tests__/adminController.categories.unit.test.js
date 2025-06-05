@@ -1,0 +1,427 @@
+import { jest } from '@jest/globals';
+
+// Create mock Category model
+const mockCategory = {
+  find: jest.fn(),
+  findById: jest.fn(),
+  findOne: jest.fn(),
+  findByIdAndUpdate: jest.fn(),
+  findByIdAndDelete: jest.fn(),
+  generateSlug: jest.fn(),
+  checkCircularDependency: jest.fn(),
+  getChildren: jest.fn(),
+  getProductCount: jest.fn()
+};
+
+// Create a mock category constructor
+const MockCategoryConstructor = jest.fn().mockImplementation((data) => ({
+  ...data,
+  save: jest.fn(),
+  populate: jest.fn()
+}));
+
+Object.assign(MockCategoryConstructor, mockCategory);
+
+// Mock the models
+jest.unstable_mockModule('../../models/Category.js', () => ({
+  default: MockCategoryConstructor
+}));
+
+// Import the functions to test after mocking
+const { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } = await import('../adminController.js');
+
+describe('Admin Controller - Category Management Unit Tests', () => {
+  let req, res;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    req = {
+      params: {},
+      body: {},
+      user: { userId: 'admin123' }
+    };
+    
+    res = {
+      json: jest.fn(),
+      status: jest.fn().mockReturnThis()
+    };
+  });
+
+  describe('getCategories', () => {
+    test('should return all categories with product counts', async () => {
+      const mockCategories = [
+        { _id: 'cat1', name: 'Electronics', slug: 'electronics', parentId: null },
+        { _id: 'cat2', name: 'Smartphones', slug: 'smartphones', parentId: { _id: 'cat1', name: 'Electronics' } }
+      ];
+
+      const mockQuery = {
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockCategories)
+      };
+
+      mockCategory.find.mockReturnValue(mockQuery);
+      mockCategory.getProductCount.mockResolvedValueOnce(5).mockResolvedValueOnce(3);
+
+      await getCategories(req, res);
+
+      expect(mockCategory.find).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          categories: [
+            { ...mockCategories[0], productCount: 5 },
+            { ...mockCategories[1], productCount: 3 }
+          ]
+        }
+      });
+    });
+
+    test('should handle database errors', async () => {
+      mockCategory.find.mockImplementation(() => {
+        throw new Error('Database connection failed');
+      });
+
+      await getCategories(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Server error while fetching categories'
+      });
+    });
+  });
+
+  describe('getCategoryById', () => {
+    test('should return category successfully', async () => {
+      const mockCategoryData = {
+        _id: 'cat123',
+        name: 'Test Category',
+        slug: 'test-category',
+        description: 'Test description',
+        parentId: { _id: 'parent123', name: 'Parent Category' }
+      };
+
+      const mockQuery = {
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockCategoryData)
+      };
+
+      mockCategory.findById.mockReturnValue(mockQuery);
+      mockCategory.getProductCount.mockResolvedValue(10);
+      req.params.categoryId = 'cat123';
+
+      await getCategoryById(req, res);
+
+      expect(mockCategory.findById).toHaveBeenCalledWith('cat123');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          category: { ...mockCategoryData, productCount: 10 }
+        }
+      });
+    });
+
+    test('should return 404 for non-existent category', async () => {
+      const mockQuery = {
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(null)
+      };
+
+      mockCategory.findById.mockReturnValue(mockQuery);
+      req.params.categoryId = 'nonexistent';
+
+      await getCategoryById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category not found'
+      });
+    });
+
+    test('should return 400 for missing category ID', async () => {
+      req.params.categoryId = '';
+
+      await getCategoryById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category ID is required'
+      });
+    });
+
+    test('should handle invalid category ID format', async () => {
+      const error = new Error('Cast error');
+      error.name = 'CastError';
+
+      mockCategory.findById.mockImplementation(() => {
+        throw error;
+      });
+      req.params.categoryId = 'invalid-id';
+
+      await getCategoryById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid category ID format'
+      });
+    });
+  });
+
+  describe('createCategory', () => {
+    test('should create category successfully', async () => {
+      const categoryData = {
+        name: 'New Category',
+        slug: 'new-category',
+        description: 'New category description',
+        parentId: null
+      };
+
+      req.body = categoryData;
+
+      // Mock slug generation
+      mockCategory.generateSlug.mockResolvedValue('new-category');
+
+      // Mock category creation
+      const mockNewCategory = {
+        _id: 'newcat123',
+        ...categoryData,
+        save: jest.fn().mockResolvedValue(true),
+        populate: jest.fn().mockResolvedValue({
+          _id: 'newcat123',
+          ...categoryData
+        })
+      };
+
+      MockCategoryConstructor.mockReturnValue(mockNewCategory);
+
+      await createCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Category created successfully',
+        data: { category: expect.any(Object) }
+      });
+    });
+
+    test('should return 400 for missing required fields', async () => {
+      req.body = {}; // Missing name
+
+      await createCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category name is required'
+      });
+    });
+
+    test('should return 400 for duplicate slug', async () => {
+      req.body = {
+        name: 'Test Category',
+        slug: 'existing-slug'
+      };
+
+      // Mock existing category with same slug
+      mockCategory.findOne.mockResolvedValue({ _id: 'existing', slug: 'existing-slug' });
+
+      await createCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category slug already exists. Please use a unique slug.'
+      });
+    });
+
+    test('should return 400 for invalid parent category', async () => {
+      req.body = {
+        name: 'Test Category',
+        parentId: 'invalid-parent'
+      };
+
+      mockCategory.findById.mockResolvedValue(null); // Parent not found
+
+      await createCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid parent category ID'
+      });
+    });
+  });
+
+  describe('updateCategory', () => {
+    test('should update category successfully', async () => {
+      const existingCategory = {
+        _id: 'cat123',
+        name: 'Old Category',
+        slug: 'old-category',
+        description: 'Old description'
+      };
+
+      const updateData = {
+        name: 'Updated Category',
+        slug: 'updated-category',
+        description: 'Updated description'
+      };
+
+      req.params.categoryId = 'cat123';
+      req.body = updateData;
+
+      mockCategory.findById.mockResolvedValue(existingCategory);
+      mockCategory.findOne.mockResolvedValue(null); // No duplicate slug
+
+      const updatedCategory = { ...existingCategory, ...updateData };
+      const mockPopulatedCategory = {
+        ...updatedCategory,
+        populate: jest.fn().mockReturnValue(updatedCategory)
+      };
+
+      mockCategory.findByIdAndUpdate.mockReturnValue(mockPopulatedCategory);
+
+      await updateCategory(req, res);
+
+      expect(mockCategory.findByIdAndUpdate).toHaveBeenCalledWith(
+        'cat123',
+        expect.objectContaining({
+          name: 'Updated Category',
+          slug: 'updated-category',
+          description: 'Updated description'
+        }),
+        { new: true, runValidators: true }
+      );
+
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Category updated successfully',
+        data: { category: updatedCategory }
+      });
+    });
+
+    test('should return 404 for non-existent category', async () => {
+      req.params.categoryId = 'nonexistent';
+      req.body = { name: 'Test', slug: 'test' };
+
+      mockCategory.findById.mockResolvedValue(null);
+
+      await updateCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category not found'
+      });
+    });
+
+    test('should return 400 for missing required fields', async () => {
+      req.params.categoryId = 'cat123';
+      req.body = {}; // Missing name
+
+      mockCategory.findById.mockResolvedValue({ _id: 'cat123' });
+
+      await updateCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category name is required'
+      });
+    });
+
+    test('should handle circular dependency prevention', async () => {
+      req.params.categoryId = 'cat123';
+      req.body = { name: 'Category', parentId: 'parent123' };
+
+      mockCategory.findById.mockResolvedValueOnce({ _id: 'cat123' }); // Existing category
+      mockCategory.findById.mockResolvedValueOnce({ _id: 'parent123' }); // Parent exists
+      mockCategory.checkCircularDependency.mockResolvedValue(true); // Would create circular dependency
+
+      await updateCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Cannot set parent category: this would create a circular dependency'
+      });
+    });
+  });
+
+  describe('deleteCategory', () => {
+    test('should delete category successfully', async () => {
+      const category = {
+        _id: 'cat123',
+        name: 'Test Category'
+      };
+
+      req.params.categoryId = 'cat123';
+
+      mockCategory.findById.mockResolvedValue(category);
+      mockCategory.getProductCount.mockResolvedValue(0); // No associated products
+      mockCategory.getChildren.mockResolvedValue([]); // No child categories
+      mockCategory.findByIdAndDelete.mockResolvedValue(category);
+
+      await deleteCategory(req, res);
+
+      expect(mockCategory.findByIdAndDelete).toHaveBeenCalledWith('cat123');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Category deleted successfully'
+      });
+    });
+
+    test('should return 404 for non-existent category', async () => {
+      req.params.categoryId = 'nonexistent';
+
+      mockCategory.findById.mockResolvedValue(null);
+
+      await deleteCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Category not found'
+      });
+    });
+
+    test('should prevent deletion when category has associated products', async () => {
+      req.params.categoryId = 'cat123';
+
+      mockCategory.findById.mockResolvedValue({ _id: 'cat123', name: 'Category' });
+      mockCategory.getProductCount.mockResolvedValue(5); // Has associated products
+
+      await deleteCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Cannot delete category. It has 5 associated product(s). Please reassign products to another category first.'
+      });
+    });
+
+    test('should prevent deletion when category has child categories', async () => {
+      req.params.categoryId = 'cat123';
+
+      mockCategory.findById.mockResolvedValue({ _id: 'cat123', name: 'Category' });
+      mockCategory.getProductCount.mockResolvedValue(0);
+      mockCategory.getChildren.mockResolvedValue([
+        { _id: 'child1', name: 'Child 1' },
+        { _id: 'child2', name: 'Child 2' }
+      ]);
+
+      await deleteCategory(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Cannot delete category. It has 2 child categories. Please reassign or delete child categories first.'
+      });
+    });
+  });
+});

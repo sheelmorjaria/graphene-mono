@@ -376,6 +376,21 @@ const AdminDashboardPage = () => {
                   <p className="text-gray-600 text-sm">Add, edit, and organize your product catalog</p>
                 </Link>
                 
+                <Link 
+                  to="/admin/categories"
+                  className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-6H5m14 12H5" />
+                      </svg>
+                    </div>
+                    <h3 className="ml-4 text-lg font-medium text-gray-900">Manage Categories</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Create and organize product categories and hierarchies</p>
+                </Link>
+                
                 <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow cursor-not-allowed opacity-60">
                   <div className="flex items-center mb-4">
                     <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
