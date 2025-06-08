@@ -185,8 +185,8 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: [true, 'Payment method type is required'],
       enum: {
-        values: ['paypal'],
-        message: 'Payment method type must be: paypal'
+        values: ['paypal', 'bitcoin'],
+        message: 'Payment method type must be: paypal, bitcoin'
       }
     },
     name: {
@@ -223,6 +223,41 @@ const orderSchema = new mongoose.Schema({
       trim: true,
       maxlength: 255
     },
+    // Bitcoin payment details
+    bitcoinAddress: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    },
+    bitcoinAmount: {
+      type: Number,
+      min: 0
+    },
+    bitcoinExchangeRate: {
+      type: Number,
+      min: 0
+    },
+    bitcoinExchangeRateTimestamp: {
+      type: Date
+    },
+    bitcoinTransactionHash: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    },
+    bitcoinConfirmations: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    bitcoinPaymentExpiry: {
+      type: Date
+    },
+    bitcoinAmountReceived: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
     // Generic transaction ID for any payment method
     transactionId: {
       type: String,
@@ -235,8 +270,8 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Payment status is required'],
     enum: {
-      values: ['pending', 'completed', 'failed', 'refunded'],
-      message: 'Payment status must be one of: pending, completed, failed, refunded'
+      values: ['pending', 'completed', 'failed', 'refunded', 'awaiting_confirmation', 'underpaid', 'expired'],
+      message: 'Payment status must be one of: pending, completed, failed, refunded, awaiting_confirmation, underpaid, expired'
     },
     default: 'pending'
   },

@@ -118,3 +118,64 @@ export const capturePayPalPayment = async ({ paypalOrderId, payerId }) => {
     throw error;
   }
 };
+
+// Bitcoin payment functions
+
+// Initialize Bitcoin payment
+export const initializeBitcoinPayment = async (orderId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/payment/bitcoin/initialize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ orderId })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to initialize Bitcoin payment');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error initializing Bitcoin payment:', error);
+    throw error;
+  }
+};
+
+// Get Bitcoin payment status
+export const getBitcoinPaymentStatus = async (orderId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/payment/bitcoin/status/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to get Bitcoin payment status');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error getting Bitcoin payment status:', error);
+    throw error;
+  }
+};
+
+// Helper function to format Bitcoin amount
+export const formatBitcoinAmount = (amount) => {
+  return parseFloat(amount.toFixed(8));
+};
+
+// Helper function to generate Bitcoin payment QR code data
+export const getBitcoinQRData = (address, amount) => {
+  return `bitcoin:${address}?amount=${amount}`;
+};

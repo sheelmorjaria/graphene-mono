@@ -59,6 +59,14 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
           error: paypalError
         });
       }
+    } else if (paymentMethod?.type === 'bitcoin') {
+      // Bitcoin is always ready once selected (payment happens externally)
+      if (onValidationChange) {
+        onValidationChange({
+          isValid: true,
+          error: null
+        });
+      }
     }
   }, [paymentMethod, paypalError, onValidationChange]);
 
@@ -183,6 +191,10 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
                       <div className="h-6 w-6 bg-blue-600 rounded flex items-center justify-center">
                         <span className="text-white text-xs font-bold">PP</span>
                       </div>
+                    ) : method.type === 'bitcoin' ? (
+                      <div className="h-6 w-6 bg-orange-500 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">₿</span>
+                      </div>
                     ) : (
                       <div className="h-6 w-6 bg-gray-400 rounded"></div>
                     )}
@@ -218,6 +230,33 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
                 onPaymentError={handlePayPalError}
                 onPaymentCancel={handlePayPalCancel}
               />
+            </div>
+          )}
+
+          {/* Bitcoin Payment Information */}
+          {paymentMethod?.type === 'bitcoin' && (
+            <div className="mt-6 border-t pt-6">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="h-8 w-8 bg-orange-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">₿</span>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-gray-900">Bitcoin Payment Process</h4>
+                    <div className="mt-2 text-sm text-gray-700">
+                      <p className="mb-2">When you proceed to checkout:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>You'll receive a unique Bitcoin address and exact amount</li>
+                        <li>Payment must be received within 24 hours</li>
+                        <li>Order confirmation after 2 network confirmations (~30 minutes)</li>
+                        <li>Current exchange rate will be locked for 15 minutes</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

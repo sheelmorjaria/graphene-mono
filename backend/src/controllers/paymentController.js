@@ -4,6 +4,7 @@ import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import { calculateShippingRates } from './shippingController.js';
+import bitcoinService from '../services/bitcoinService.js';
 
 // Initialize PayPal API
 const paypalEnvironment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'; // 'sandbox' or 'live'
@@ -68,6 +69,14 @@ export const getPaymentMethods = async (req, res) => {
         name: 'PayPal',
         description: 'Pay with your PayPal account',
         icon: 'paypal',
+        enabled: true
+      },
+      {
+        id: 'bitcoin',
+        type: 'bitcoin',
+        name: 'Bitcoin',
+        description: 'Pay with Bitcoin - private and secure',
+        icon: 'bitcoin',
         enabled: true
       }
     ];
@@ -524,5 +533,248 @@ const handleOrderApproved = async (webhookEvent) => {
     
   } catch (error) {
     console.error('Error handling order approved:', error);
+  }
+};
+
+// Bitcoin payment endpoints
+
+// Initialize Bitcoin payment
+export const initializeBitcoinPayment = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    // Find the order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Check if order is in correct state for Bitcoin payment
+    if (order.paymentStatus !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: 'Order is not in pending payment state'
+      });
+    }
+
+    // Create Bitcoin payment data
+    const bitcoinPaymentData = await bitcoinService.createBitcoinPayment(order.totalAmount);
+
+    // Update order with Bitcoin payment details
+    order.paymentMethod = {
+      type: 'bitcoin',
+      name: 'Bitcoin'
+    };
+    
+    Object.assign(order.paymentDetails, bitcoinPaymentData);
+    order.paymentStatus = 'awaiting_confirmation';
+    
+    await order.save();
+
+    console.log(`Bitcoin payment initialized for order ${orderId}:`, {
+      address: bitcoinPaymentData.bitcoinAddress,
+      amount: bitcoinPaymentData.bitcoinAmount,
+      expiry: bitcoinPaymentData.bitcoinPaymentExpiry
+    });
+
+    res.json({
+      success: true,
+      data: {
+        bitcoinAddress: bitcoinPaymentData.bitcoinAddress,
+        bitcoinAmount: bitcoinPaymentData.bitcoinAmount,
+        exchangeRate: bitcoinPaymentData.bitcoinExchangeRate,
+        exchangeRateTimestamp: bitcoinPaymentData.bitcoinExchangeRateTimestamp,
+        paymentExpiry: bitcoinPaymentData.bitcoinPaymentExpiry,
+        orderTotal: order.totalAmount,
+        currency: 'GBP'
+      }
+    });
+
+  } catch (error) {
+    console.error('Bitcoin payment initialization error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to initialize Bitcoin payment'
+    });
+  }
+};
+
+// Get Bitcoin payment status
+export const getBitcoinPaymentStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    if (order.paymentMethod.type !== 'bitcoin') {
+      return res.status(400).json({
+        success: false,
+        error: 'Order is not a Bitcoin payment'
+      });
+    }
+
+    const {
+      bitcoinAddress,
+      bitcoinAmount,
+      bitcoinExchangeRate,
+      bitcoinConfirmations,
+      bitcoinAmountReceived,
+      bitcoinTransactionHash,
+      bitcoinPaymentExpiry
+    } = order.paymentDetails;
+
+    // Check if payment is expired
+    const isExpired = bitcoinService.isPaymentExpired(bitcoinPaymentExpiry);
+    if (isExpired && order.paymentStatus === 'awaiting_confirmation') {
+      order.paymentStatus = 'expired';
+      await order.save();
+    }
+
+    res.json({
+      success: true,
+      data: {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        paymentStatus: order.paymentStatus,
+        bitcoinAddress,
+        bitcoinAmount,
+        bitcoinAmountReceived: bitcoinAmountReceived || 0,
+        bitcoinConfirmations: bitcoinConfirmations || 0,
+        bitcoinTransactionHash,
+        exchangeRate: bitcoinExchangeRate,
+        paymentExpiry: bitcoinPaymentExpiry,
+        isExpired,
+        isConfirmed: bitcoinService.isPaymentConfirmed(bitcoinConfirmations || 0),
+        requiresConfirmations: 2
+      }
+    });
+
+  } catch (error) {
+    console.error('Bitcoin payment status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get Bitcoin payment status'
+    });
+  }
+};
+
+// Blockonomics webhook handler
+export const handleBlockonomicsWebhook = async (req, res) => {
+  try {
+    const { addr, value, txid, confirmations } = req.body;
+
+    console.log('Blockonomics webhook received:', {
+      address: addr,
+      value,
+      txid,
+      confirmations
+    });
+
+    if (!addr || !txid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid webhook data'
+      });
+    }
+
+    // Find order by Bitcoin address
+    const order = await Order.findOne({
+      'paymentDetails.bitcoinAddress': addr,
+      'paymentMethod.type': 'bitcoin'
+    });
+
+    if (!order) {
+      console.log(`No order found for Bitcoin address: ${addr}`);
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found for this Bitcoin address'
+      });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Convert satoshis to BTC
+      const amountReceived = bitcoinService.satoshisToBtc(value);
+      const expectedAmount = order.paymentDetails.bitcoinAmount;
+
+      // Update payment details
+      order.paymentDetails.bitcoinAmountReceived = amountReceived;
+      order.paymentDetails.bitcoinConfirmations = confirmations || 0;
+      order.paymentDetails.bitcoinTransactionHash = txid;
+
+      // Check if payment is expired
+      if (bitcoinService.isPaymentExpired(order.paymentDetails.bitcoinPaymentExpiry)) {
+        order.paymentStatus = 'expired';
+        console.log(`Bitcoin payment expired for order ${order._id}`);
+      }
+      // Check if payment is sufficient
+      else if (!bitcoinService.isPaymentSufficient(amountReceived, expectedAmount)) {
+        order.paymentStatus = 'underpaid';
+        console.log(`Bitcoin underpayment for order ${order._id}: received ${amountReceived}, expected ${expectedAmount}`);
+      }
+      // Check if payment is confirmed (2+ confirmations)
+      else if (bitcoinService.isPaymentConfirmed(confirmations || 0)) {
+        order.paymentStatus = 'completed';
+        order.status = 'processing'; // Move order to processing
+        console.log(`Bitcoin payment confirmed for order ${order._id} with ${confirmations} confirmations`);
+      }
+      // Payment received but not yet confirmed
+      else {
+        order.paymentStatus = 'awaiting_confirmation';
+        console.log(`Bitcoin payment received for order ${order._id}, awaiting confirmations (${confirmations}/2)`);
+      }
+
+      await order.save({ session });
+      await session.commitTransaction();
+
+      console.log(`Bitcoin payment updated for order ${order._id}:`, {
+        status: order.paymentStatus,
+        confirmations: confirmations,
+        amountReceived
+      });
+
+      res.status(200).json({ 
+        success: true,
+        received: true 
+      });
+
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+
+  } catch (error) {
+    console.error('Blockonomics webhook error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Webhook processing failed'
+    });
   }
 };
