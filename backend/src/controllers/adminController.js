@@ -37,11 +37,11 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // Check if user account is disabled
-    if (user.accountStatus === 'disabled') {
+    // Check if user account is disabled or inactive
+    if (user.accountStatus === 'disabled' || !user.isActive) {
       return res.status(401).json({
         success: false,
-        error: 'Account has been disabled. Please contact support for assistance.'
+        error: 'Account has been deactivated'
       });
     }
 
@@ -2572,6 +2572,209 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Server error while archiving product'
+    });
+  }
+};
+
+// Sales Report
+export const getSalesReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Start date and end date are required'
+      });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // Include entire end date
+
+    // Aggregate sales data
+    const salesData = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: start, $lte: end },
+          status: { $ne: 'cancelled' }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$grandTotal' },
+          orderCount: { $sum: 1 },
+          averageOrderValue: { $avg: '$grandTotal' }
+        }
+      }
+    ]);
+
+    const result = salesData[0] || {
+      totalRevenue: 0,
+      orderCount: 0,
+      averageOrderValue: 0
+    };
+
+    res.json({
+      success: true,
+      totalRevenue: result.totalRevenue,
+      orderCount: result.orderCount,
+      averageOrderValue: result.averageOrderValue
+    });
+  } catch (error) {
+    console.error('Get sales report error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while generating sales report'
+    });
+  }
+};
+
+// Product Performance Report
+export const getProductPerformanceReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Start date and end date are required'
+      });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Get top selling products
+    const topProducts = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: start, $lte: end },
+          status: { $ne: 'cancelled' }
+        }
+      },
+      { $unwind: '$cartItems' },
+      {
+        $group: {
+          _id: '$cartItems.product',
+          quantitySold: { $sum: '$cartItems.quantity' },
+          revenue: { $sum: { $multiply: ['$cartItems.price', '$cartItems.quantity'] } }
+        }
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $project: {
+          _id: 1,
+          name: '$productInfo.name',
+          quantitySold: 1,
+          revenue: 1
+        }
+      }
+    ]);
+
+    // Get low stock products
+    const lowStockThreshold = 10;
+    const lowStockProducts = await Product.find({
+      stockQuantity: { $gt: 0, $lte: lowStockThreshold },
+      isActive: true
+    })
+      .select('name sku stockQuantity')
+      .sort({ stockQuantity: 1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      topProducts,
+      lowStockProducts
+    });
+  } catch (error) {
+    console.error('Get product performance report error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while generating product performance report'
+    });
+  }
+};
+
+// Customer Report
+export const getCustomerReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Start date and end date are required'
+      });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Count new customers
+    const newCustomerCount = await User.countDocuments({
+      createdAt: { $gte: start, $lte: end },
+      role: 'customer'
+    });
+
+    res.json({
+      success: true,
+      newCustomerCount
+    });
+  } catch (error) {
+    console.error('Get customer report error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while generating customer report'
+    });
+  }
+};
+
+// Inventory Summary Report
+export const getInventoryReport = async (req, res) => {
+  try {
+    const lowStockThreshold = 10;
+
+    // Count products by stock status
+    const [inStock, outOfStock, lowStock] = await Promise.all([
+      Product.countDocuments({ stockQuantity: { $gt: lowStockThreshold }, isActive: true }),
+      Product.countDocuments({ stockQuantity: 0, isActive: true }),
+      Product.countDocuments({ stockQuantity: { $gt: 0, $lte: lowStockThreshold }, isActive: true })
+    ]);
+
+    // Get low stock products list
+    const lowStockProducts = await Product.find({
+      stockQuantity: { $gt: 0, $lte: lowStockThreshold },
+      isActive: true
+    })
+      .select('name sku stockQuantity')
+      .sort({ stockQuantity: 1 });
+
+    res.json({
+      success: true,
+      inStockCount: inStock,
+      outOfStockCount: outOfStock,
+      lowStockCount: lowStock,
+      lowStockProducts
+    });
+  } catch (error) {
+    console.error('Get inventory report error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error while generating inventory report'
     });
   }
 };

@@ -47,6 +47,10 @@ jest.unstable_mockModule('mongoose', () => ({
     },
     Schema: class MockSchema {
       constructor() {}
+      index() { return this; }
+      pre() { return this; }
+      methods = {}
+      statics = {}
     },
     model: jest.fn()
   }

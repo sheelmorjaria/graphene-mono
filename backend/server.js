@@ -39,10 +39,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Stripe webhook endpoint (must be before express.json middleware)
-// Import handleStripeWebhook directly to avoid router conflicts
-import { handleStripeWebhook } from './src/controllers/paymentController.js';
-app.post('/api/payment/stripe-webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

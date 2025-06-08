@@ -213,6 +213,10 @@ userSchema.statics.findActiveUsers = function() {
   return this.find({ isActive: true });
 };
 
+// Indexes for customer reports
+userSchema.index({ createdAt: 1, role: 1 }); // For customer acquisition reports
+userSchema.index({ role: 1, accountStatus: 1 }); // For user management queries
+
 const User = mongoose.model('User', userSchema);
 
 export default User;

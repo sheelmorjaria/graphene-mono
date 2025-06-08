@@ -1,10 +1,30 @@
-import Stripe from 'stripe';
+import mongoose from 'mongoose';
+import { Client, Environment } from '@paypal/paypal-server-sdk';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
+import Order from '../models/Order.js';
 import { calculateShippingRates } from './shippingController.js';
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_fake_key_for_testing');
+// Initialize PayPal API
+const paypalEnvironment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'; // 'sandbox' or 'live'
+const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
+
+let paypalClient = null;
+if (paypalClientId && paypalClientSecret) {
+  try {
+    const environment = paypalEnvironment === 'live' ? Environment.Production : Environment.Sandbox;
+    paypalClient = new Client({
+      clientCredentialsAuthCredentials: {
+        oAuthClientId: paypalClientId,
+        oAuthClientSecret: paypalClientSecret
+      },
+      environment: environment
+    });
+  } catch (error) {
+    console.error('PayPal client initialization failed:', error);
+  }
+}
 
 // Helper function to find or create cart
 const findOrCreateCart = async (req) => {
@@ -33,10 +53,53 @@ const findOrCreateCart = async (req) => {
   }
 };
 
-// Create payment intent for Stripe
-export const createPaymentIntent = async (req, res) => {
+
+
+
+// Get available payment methods
+export const getPaymentMethods = async (req, res) => {
   try {
-    const { shippingAddress, shippingMethodId } = req.body;
+    // For now, return static payment methods
+    // In production, you might want to configure these dynamically
+    const paymentMethods = [
+      {
+        id: 'paypal',
+        type: 'paypal',
+        name: 'PayPal',
+        description: 'Pay with your PayPal account',
+        icon: 'paypal',
+        enabled: true
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: {
+        paymentMethods: paymentMethods.filter(method => method.enabled)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get payment methods error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred while fetching payment methods'
+    });
+  }
+};
+
+// Create PayPal order
+export const createPayPalOrder = async (req, res) => {
+  try {
+    const { shippingAddress, shippingMethodId, cartData } = req.body;
+
+    // Validate PayPal client availability
+    if (!paypalClient) {
+      return res.status(500).json({
+        success: false,
+        error: 'PayPal payment processing is not available'
+      });
+    }
 
     // Validate required fields
     if (!shippingAddress || !shippingMethodId) {
@@ -64,7 +127,7 @@ export const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Verify all cart items are still available and get current prices
+    // Calculate order total
     const productIds = cart.items.map(item => item.productId);
     const products = await Product.find({ 
       _id: { $in: productIds },
@@ -78,13 +141,12 @@ export const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Create product lookup map
+    // Create product lookup map and calculate total
     const productMap = new Map();
     products.forEach(product => {
       productMap.set(product._id.toString(), product);
     });
 
-    // Recalculate cart total with current prices
     let cartTotal = 0;
     const cartItems = [];
 
@@ -98,11 +160,10 @@ export const createPaymentIntent = async (req, res) => {
         });
       }
 
-      // Check stock availability
       if (product.stockQuantity < cartItem.quantity) {
         return res.status(400).json({
           success: false,
-          error: `Insufficient stock for product ${product.name}. Available: ${product.stockQuantity}, Requested: ${cartItem.quantity}`
+          error: `Insufficient stock for product ${product.name}`
         });
       }
 
@@ -114,15 +175,12 @@ export const createPaymentIntent = async (req, res) => {
         name: product.name,
         quantity: cartItem.quantity,
         unitPrice: product.price,
-        totalPrice: itemTotal,
-        weight: product.weight || 100
+        totalPrice: itemTotal
       });
     }
 
     // Calculate shipping cost
-    const { calculateShippingRates } = await import('./shippingController.js');
     const ShippingMethod = (await import('../models/ShippingMethod.js')).default;
-    
     const shippingMethod = await ShippingMethod.findOne({ 
       _id: shippingMethodId, 
       isActive: true 
@@ -135,13 +193,7 @@ export const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Calculate shipping cost for verification
-    const cartData = {
-      items: cartItems,
-      totalValue: cartTotal
-    };
-
-    const calculation = shippingMethod.calculateCost(cartData, shippingAddress);
+    const calculation = shippingMethod.calculateCost({ items: cartItems, totalValue: cartTotal }, shippingAddress);
     if (calculation === null) {
       return res.status(400).json({
         success: false,
@@ -152,213 +204,325 @@ export const createPaymentIntent = async (req, res) => {
     const shippingCost = calculation.cost;
     const orderTotal = cartTotal + shippingCost;
 
-    // Convert to smallest currency unit (pence for GBP)
-    const amountInPence = Math.round(orderTotal * 100);
-
-    // Create payment intent with Stripe
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountInPence,
-      currency: 'gbp',
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        userId: req.user?._id?.toString() || 'guest',
-        cartId: cart._id.toString(),
-        shippingMethodId: shippingMethodId,
-        cartTotal: cartTotal.toFixed(2),
-        shippingCost: shippingCost.toFixed(2),
-        orderTotal: orderTotal.toFixed(2)
+    // Create PayPal order request
+    const orderRequest = {
+      intent: 'CAPTURE',
+      purchase_units: [{
+        amount: {
+          currency_code: 'GBP',
+          value: orderTotal.toFixed(2),
+          breakdown: {
+            item_total: {
+              currency_code: 'GBP',
+              value: cartTotal.toFixed(2)
+            },
+            shipping: {
+              currency_code: 'GBP',
+              value: shippingCost.toFixed(2)
+            }
+          }
+        },
+        items: cartItems.map(item => ({
+          name: item.name,
+          unit_amount: {
+            currency_code: 'GBP',
+            value: item.unitPrice.toFixed(2)
+          },
+          quantity: item.quantity.toString()
+        })),
+        shipping: {
+          name: {
+            full_name: `${shippingAddress.firstName} ${shippingAddress.lastName}`
+          },
+          address: {
+            address_line_1: shippingAddress.addressLine1,
+            address_line_2: shippingAddress.addressLine2 || '',
+            admin_area_2: shippingAddress.city,
+            admin_area_1: shippingAddress.stateProvince,
+            postal_code: shippingAddress.postalCode,
+            country_code: shippingAddress.country === 'UK' ? 'GB' : shippingAddress.country
+          }
+        }
+      }],
+      application_context: {
+        brand_name: 'GrapheneOS Store',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+        return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout/success`,
+        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout`
       }
+    };
+
+    // Create PayPal order
+    const ordersController = paypalClient.ordersController;
+    const paypalOrder = await ordersController.ordersCreate({
+      body: orderRequest
     });
 
     res.json({
       success: true,
       data: {
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id,
+        paypalOrderId: paypalOrder.result.id,
         orderSummary: {
           cartTotal: cartTotal,
           shippingCost: shippingCost,
           orderTotal: orderTotal,
           currency: 'GBP',
-          items: cartItems.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice
-          })),
+          items: cartItems,
           shippingMethod: {
             id: shippingMethod._id,
             name: shippingMethod.name,
             cost: shippingCost
           },
           shippingAddress: shippingAddress
-        }
+        },
+        approvalUrl: paypalOrder.result.links.find(link => link.rel === 'approve')?.href
       }
     });
 
   } catch (error) {
-    console.error('Create payment intent error:', error);
-    
-    if (error.type === 'StripeError') {
-      return res.status(400).json({
-        success: false,
-        error: `Payment processing error: ${error.message}`
-      });
-    }
-
+    console.error('Create PayPal order error:', error);
     res.status(500).json({
       success: false,
-      error: 'Server error occurred while creating payment intent'
+      error: 'Server error occurred while creating PayPal order'
     });
   }
 };
 
-// Get payment intent details
-export const getPaymentIntent = async (req, res) => {
+// Capture PayPal payment
+export const capturePayPalPayment = async (req, res) => {
+  const session = await mongoose.startSession();
+  
   try {
-    const { paymentIntentId } = req.params;
+    const { paypalOrderId, payerId } = req.body;
 
-    if (!paymentIntentId) {
+    if (!paypalOrderId) {
       return res.status(400).json({
         success: false,
-        error: 'Payment intent ID is required'
+        error: 'PayPal order ID is required'
       });
     }
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!paypalClient) {
+      return res.status(500).json({
+        success: false,
+        error: 'PayPal payment processing is not available'
+      });
+    }
+
+    // Capture the PayPal payment
+    const ordersController = paypalClient.ordersController;
+    const captureResponse = await ordersController.ordersCapture({
+      id: paypalOrderId
+    });
+
+    if (captureResponse.result.status !== 'COMPLETED') {
+      return res.status(400).json({
+        success: false,
+        error: 'PayPal payment capture failed'
+      });
+    }
+
+    // Extract payment details
+    const paymentDetails = captureResponse.result;
+    const purchaseUnit = paymentDetails.purchase_units?.[0];
+    const capture = purchaseUnit?.payments?.captures?.[0];
+
+    if (!capture) {
+      return res.status(400).json({
+        success: false,
+        error: 'PayPal payment capture information not found'
+      });
+    }
+
+    await session.withTransaction(async () => {
+      // Get user's cart to create order
+      let cart;
+      try {
+        cart = await findOrCreateCart(req);
+      } catch (cartError) {
+        throw new Error(cartError.message);
+      }
+      
+      if (!cart || !cart.items || cart.items.length === 0) {
+        throw new Error('Cart is empty');
+      }
+
+      // Get shipping info from PayPal response or cart metadata
+      // Note: In a real implementation, you'd store this info when creating the PayPal order
+      const shippingInfo = purchaseUnit?.shipping || {};
+      
+      // Create order in database
+      const orderData = {
+        userId: req.user?._id || cart.userId,
+        customerEmail: req.user?.email || paymentDetails.payer?.email_address,
+        items: cart.items.map(item => ({
+          productId: item.productId,
+          productName: item.productName || 'Product',
+          productSlug: item.productSlug || 'product',
+          quantity: item.quantity,
+          unitPrice: item.unitPrice || item.price,
+          totalPrice: (item.unitPrice || item.price) * item.quantity
+        })),
+        subtotal: parseFloat(purchaseUnit.amount.breakdown?.item_total?.value || 0),
+        shipping: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0),
+        tax: parseFloat(purchaseUnit.amount.breakdown?.tax_total?.value || 0),
+        totalAmount: parseFloat(purchaseUnit.amount.value),
+        paymentMethod: {
+          type: 'paypal',
+          name: 'PayPal'
+        },
+        paymentDetails: {
+          paypalOrderId: paypalOrderId,
+          paypalPaymentId: capture.id,
+          paypalPayerId: payerId,
+          paypalTransactionId: capture.id,
+          paypalPayerEmail: paymentDetails.payer?.email_address,
+          transactionId: capture.id
+        },
+        paymentStatus: 'completed',
+        status: 'processing',
+        shippingAddress: {
+          fullName: shippingInfo.name?.full_name || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim() || 'Customer',
+          addressLine1: shippingInfo.address?.address_line_1 || 'Address Line 1',
+          addressLine2: shippingInfo.address?.address_line_2 || '',
+          city: shippingInfo.address?.admin_area_2 || 'City',
+          stateProvince: shippingInfo.address?.admin_area_1 || 'State',
+          postalCode: shippingInfo.address?.postal_code || '00000',
+          country: shippingInfo.address?.country_code || 'GB',
+          phoneNumber: req.user?.phone || ''
+        },
+        billingAddress: {
+          fullName: shippingInfo.name?.full_name || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim() || 'Customer',
+          addressLine1: shippingInfo.address?.address_line_1 || 'Address Line 1',
+          addressLine2: shippingInfo.address?.address_line_2 || '',
+          city: shippingInfo.address?.admin_area_2 || 'City',
+          stateProvince: shippingInfo.address?.admin_area_1 || 'State',
+          postalCode: shippingInfo.address?.postal_code || '00000',
+          country: shippingInfo.address?.country_code || 'GB',
+          phoneNumber: req.user?.phone || ''
+        },
+        shippingMethod: {
+          id: new mongoose.Types.ObjectId(), // Default shipping method
+          name: 'Standard Shipping',
+          cost: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0)
+        }
+      };
+
+      const order = new Order(orderData);
+      
+      // Generate order number
+      const orderCount = await Order.countDocuments({});
+      order.orderNumber = `ORD${Date.now()}${(orderCount + 1).toString().padStart(4, '0')}`;
+      
+      await order.save({ session });
+
+      // Clear the cart after successful order creation
+      await cart.clearCart({ session });
+
+      return order;
+    });
+
+    // Fetch the created order for response
+    const newOrder = await Order.findOne({ 
+      'paymentDetails.paypalOrderId': paypalOrderId 
+    }).lean();
 
     res.json({
       success: true,
       data: {
-        paymentIntent: {
-          id: paymentIntent.id,
-          status: paymentIntent.status,
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          metadata: paymentIntent.metadata
-        }
+        orderId: newOrder?._id,
+        orderNumber: newOrder?.orderNumber,
+        amount: parseFloat(purchaseUnit.amount.value),
+        paymentMethod: 'paypal',
+        paymentDetails: captureResponse.result,
+        status: 'captured'
       }
     });
 
   } catch (error) {
-    console.error('Get payment intent error:', error);
-    
-    if (error.type === 'StripeError') {
-      return res.status(400).json({
-        success: false,
-        error: `Payment processing error: ${error.message}`
-      });
-    }
-
+    console.error('Capture PayPal payment error:', error);
     res.status(500).json({
       success: false,
-      error: 'Server error occurred while retrieving payment intent'
+      error: error.message || 'Server error occurred while capturing PayPal payment'
     });
+  } finally {
+    await session.endSession();
   }
 };
 
-// Stripe webhook handler
-export const handleStripeWebhook = async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-
+// PayPal webhook handler
+export const handlePayPalWebhook = async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    const webhookEvent = req.body;
+    const eventType = webhookEvent.event_type;
 
-  try {
-    // Handle the event
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        console.log('PaymentIntent succeeded:', paymentIntent.id);
-        
-        // TODO: Create order in database
-        // This will be implemented when we have the Order model
-        // await createOrderFromPaymentIntent(paymentIntent);
-        
+    console.log('PayPal webhook received:', eventType);
+
+    switch (eventType) {
+      case 'PAYMENT.CAPTURE.COMPLETED':
+        await handlePaymentCaptureCompleted(webhookEvent);
         break;
-        
-      case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object;
-        console.log('Payment failed:', failedPayment.id);
-        
-        // TODO: Handle failed payment
-        // Maybe send notification or update order status
-        
+      
+      case 'PAYMENT.CAPTURE.DENIED':
+        await handlePaymentCaptureDenied(webhookEvent);
         break;
-        
+      
+      case 'CHECKOUT.ORDER.APPROVED':
+        await handleOrderApproved(webhookEvent);
+        break;
+      
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`Unhandled PayPal webhook event: ${eventType}`);
     }
 
-    res.json({ received: true });
-    
+    res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('PayPal webhook error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 };
 
-// Get available payment methods
-export const getPaymentMethods = async (req, res) => {
+// Helper functions for PayPal webhook events
+const handlePaymentCaptureCompleted = async (webhookEvent) => {
   try {
-    // For now, return static payment methods
-    // In production, you might want to configure these dynamically
-    const paymentMethods = [
-      {
-        id: 'card',
-        type: 'card',
-        name: 'Credit or Debit Card',
-        description: 'Pay securely with your credit or debit card',
-        icon: 'credit-card',
-        enabled: true
-      },
-      {
-        id: 'paypal',
-        type: 'paypal',
-        name: 'PayPal',
-        description: 'Pay with your PayPal account',
-        icon: 'paypal',
-        enabled: false // Not implemented yet
-      },
-      {
-        id: 'apple_pay',
-        type: 'apple_pay',
-        name: 'Apple Pay',
-        description: 'Pay with Touch ID or Face ID',
-        icon: 'apple',
-        enabled: false // Not implemented yet
-      },
-      {
-        id: 'google_pay',
-        type: 'google_pay',
-        name: 'Google Pay',
-        description: 'Pay with Google Pay',
-        icon: 'google',
-        enabled: false // Not implemented yet
-      }
-    ];
-
-    res.json({
-      success: true,
-      data: {
-        paymentMethods: paymentMethods.filter(method => method.enabled)
-      }
-    });
-
+    const resource = webhookEvent.resource;
+    const orderId = resource.supplementary_data?.related_ids?.order_id;
+    
+    console.log(`PayPal payment captured for order: ${orderId}`);
+    
+    // TODO: Update order status in database
+    // This will be implemented when we have Order model updates
+    
   } catch (error) {
-    console.error('Get payment methods error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error occurred while fetching payment methods'
-    });
+    console.error('Error handling payment capture completed:', error);
+  }
+};
+
+const handlePaymentCaptureDenied = async (webhookEvent) => {
+  try {
+    const resource = webhookEvent.resource;
+    const orderId = resource.supplementary_data?.related_ids?.order_id;
+    
+    console.log(`PayPal payment denied for order: ${orderId}`);
+    
+    // TODO: Update order status in database
+    
+  } catch (error) {
+    console.error('Error handling payment capture denied:', error);
+  }
+};
+
+const handleOrderApproved = async (webhookEvent) => {
+  try {
+    const resource = webhookEvent.resource;
+    const orderId = resource.id;
+    
+    console.log(`PayPal order approved: ${orderId}`);
+    
+    // TODO: Update order status in database
+    
+  } catch (error) {
+    console.error('Error handling order approved:', error);
   }
 };

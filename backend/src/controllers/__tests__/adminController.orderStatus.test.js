@@ -40,12 +40,13 @@ describe('Admin Order Status Update', () => {
     testProduct = new Product({
       name: 'Test Phone',
       slug: 'test-phone',
-      description: 'A test phone',
+      sku: 'TEST-PHONE-001',
+      shortDescription: 'A test phone',
       price: 500,
       stockQuantity: 10,
-      category: 'phones',
-      image: 'test-image.jpg',
-      isActive: true
+      category: new mongoose.Types.ObjectId(),
+      images: ['test-image.jpg'],
+      condition: 'new'
     });
     await testProduct.save();
 

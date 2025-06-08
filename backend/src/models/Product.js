@@ -177,4 +177,8 @@ productSchema.index({ status: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ createdAt: -1 });
 
+// Indexes for inventory reports
+productSchema.index({ stockQuantity: 1, isActive: 1 }); // For stock status queries
+productSchema.index({ isActive: 1, stockQuantity: 1 }); // For product counts
+
 export default mongoose.model('Product', productSchema);

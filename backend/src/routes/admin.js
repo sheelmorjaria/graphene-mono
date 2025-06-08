@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { uploadProductImages, processProductImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
@@ -47,5 +47,11 @@ router.delete('/categories/:categoryId', deleteCategory);
 router.get('/users', getAllUsers);
 router.get('/users/:userId', getUserById);
 router.put('/users/:userId/status', updateUserStatus);
+
+// Reports
+router.get('/reports/sales-summary', getSalesReport);
+router.get('/reports/product-performance', getProductPerformanceReport);
+router.get('/reports/customer-acquisition', getCustomerReport);
+router.get('/reports/inventory-summary', getInventoryReport);
 
 export default router;

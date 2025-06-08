@@ -31,7 +31,6 @@ const AddToCartButton = ({
 
   const isOutOfStock = stockStatus === 'out_of_stock' || stockQuantity === 0;
   const isLowStock = stockStatus === 'low_stock';
-  const isInStock = stockStatus === 'in_stock' && stockQuantity > 0;
 
   const handleAddToCart = () => {
     if (!disabled && !isLoading && !isOutOfStock) {

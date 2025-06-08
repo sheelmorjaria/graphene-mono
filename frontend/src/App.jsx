@@ -26,9 +26,11 @@ import AdminCategoriesListPage from './pages/AdminCategoriesListPage';
 import AdminCategoryFormPage from './pages/AdminCategoryFormPage';
 import AdminUsersListPage from './pages/AdminUsersListPage';
 import AdminUserDetailsPage from './pages/AdminUserDetailsPage';
+import AdminReportsPage from './pages/AdminReportsPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import ContactUsPage from './pages/ContactUsPage';
 import SearchBar from './components/SearchBar';
@@ -290,6 +292,9 @@ export const AppRoutes = () => {
           {/* Checkout page */}
           <Route path="/checkout" element={<CheckoutPage />} />
           
+          {/* Checkout success page (PayPal redirect) */}
+          <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+          
           {/* Order confirmation page */}
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
           
@@ -366,6 +371,11 @@ export const AppRoutes = () => {
           <Route path="/admin/users/:userId" element={
             <AdminRoute>
               <AdminUserDetailsPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/reports" element={
+            <AdminRoute>
+              <AdminReportsPage />
             </AdminRoute>
           } />
           

@@ -1,109 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { CreditCardIcon, ShieldCheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import { getPaymentMethods, getStripe, formatCurrency } from '../../services/paymentService';
+import { ShieldCheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { getPaymentMethods, formatCurrency } from '../../services/paymentService';
 import { useCheckout } from '../../contexts/CheckoutContext';
-
-// Card element styling
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#374151',
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      '::placeholder': {
-        color: '#9CA3AF',
-      },
-      iconColor: '#6B7280',
-    },
-    invalid: {
-      color: '#EF4444',
-      iconColor: '#EF4444',
-    },
-  },
-  hidePostalCode: true,
-};
-
-// Payment form component (needs to be inside Elements provider)
-const PaymentForm = ({ onPaymentMethodReady, isProcessing, orderSummary }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [cardComplete, setCardComplete] = useState(false);
-  const [cardError, setCardError] = useState(null);
-
-  const handleCardChange = (event) => {
-    setCardComplete(event.complete);
-    setCardError(event.error ? event.error.message : null);
-    
-    // Notify parent component about card readiness
-    if (onPaymentMethodReady) {
-      onPaymentMethodReady({
-        isReady: event.complete && !event.error,
-        stripe,
-        elements,
-        error: event.error
-      });
-    }
-  };
-
-  useEffect(() => {
-    // Initial state notification
-    if (onPaymentMethodReady) {
-      onPaymentMethodReady({
-        isReady: false,
-        stripe,
-        elements,
-        error: null
-      });
-    }
-  }, [stripe, elements, onPaymentMethodReady]);
-
-  return (
-    <div className="space-y-4">
-      {/* Order summary */}
-      {orderSummary && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex justify-between items-center text-lg font-semibold">
-            <span>Total:</span>
-            <span>{formatCurrency(orderSummary.orderTotal)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Card input */}
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Card Information
-        </label>
-        <CardElement
-          options={cardElementOptions}
-          onChange={handleCardChange}
-        />
-      </div>
-
-      {/* Error message */}
-      {cardError && (
-        <div className="text-red-600 text-sm flex items-center">
-          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-          {cardError}
-        </div>
-      )}
-
-      {/* Security notices */}
-      <div className="bg-blue-50 p-3 rounded-lg">
-        <div className="flex items-start">
-          <LockClosedIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium">Secure Payment</p>
-            <p className="text-blue-600">Your payment information is encrypted and secure. We never store your card details.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import PayPalPayment from './PayPalPayment';
 
 const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => {
   const { 
@@ -117,25 +16,24 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stripeInstance, setStripeInstance] = useState(null);
+  const [paypalError, setPaypalError] = useState(null);
 
-  // Load Stripe and payment methods
+  // Load payment methods
   useEffect(() => {
     const loadPaymentData = async () => {
       try {
         setLoading(true);
         
-        // Load Stripe instance
-        const stripe = await getStripe();
-        setStripeInstance(stripe);
-        
         // Load available payment methods
         const methods = await getPaymentMethods();
         setAvailablePaymentMethods(methods.paymentMethods || []);
         
-        // Set default payment method if none selected
+        // Set default payment method to PayPal if none selected
         if (!paymentMethod && methods.paymentMethods?.length > 0) {
-          setPaymentMethod(methods.paymentMethods[0]);
+          const paypalMethod = methods.paymentMethods.find(method => method.type === 'paypal');
+          if (paypalMethod) {
+            setPaymentMethod(paypalMethod);
+          }
         }
         
       } catch (err) {
@@ -149,136 +47,223 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
     loadPaymentData();
   }, [paymentMethod, setPaymentMethod]);
 
-  // Handle payment method selection
+  // Update validation state based on payment method and readiness
+  useEffect(() => {
+    if (paymentMethod?.type === 'paypal') {
+      // PayPal is always ready once selected (no additional validation needed)
+      const isValid = !paypalError;
+      
+      if (onValidationChange) {
+        onValidationChange({
+          isValid,
+          error: paypalError
+        });
+      }
+    }
+  }, [paymentMethod, paypalError, onValidationChange]);
+
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
+    setPaypalError(null);
+    
+    // Reset payment state when changing methods
     setPaymentState({
-      ...paymentState,
-      isReady: false,
+      isProcessing: false,
       error: null
     });
   };
 
-  // Handle payment method readiness from Stripe Elements
-  const handlePaymentMethodReady = (readyState) => {
+  const handlePayPalSuccess = (paymentData) => {
+    console.log('PayPal payment successful:', paymentData);
     setPaymentState({
-      stripe: readyState.stripe,
-      elements: readyState.elements,
-      isReady: readyState.isReady,
-      error: readyState.error
+      isProcessing: false,
+      error: null,
+      paymentData
     });
+  };
 
-    // Notify parent about validation state
-    if (onValidationChange) {
-      onValidationChange({
-        isValid: readyState.isReady && !readyState.error,
-        error: readyState.error?.message
-      });
-    }
+  const handlePayPalError = (error) => {
+    console.error('PayPal payment error:', error);
+    setPaypalError(error.message || 'PayPal payment failed');
+    setPaymentState({
+      isProcessing: false,
+      error: error.message || 'PayPal payment failed'
+    });
+  };
+
+  const handlePayPalCancel = () => {
+    console.log('PayPal payment cancelled');
+    setPaymentState({
+      isProcessing: false,
+      error: null
+    });
   };
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">Payment Method</h3>
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-20 bg-gray-200 rounded"></div>
+          </div>
         </div>
-        <div className="text-gray-500">Loading payment methods...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Payment Method</h3>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-red-800">
-                Failed to load payment methods: {error}
-              </p>
-            </div>
-          </div>
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-red-200">
+        <div className="text-red-600">
+          <h3 className="font-medium mb-2">Payment Methods Unavailable</h3>
+          <p className="text-sm">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-3 text-sm text-red-600 hover:text-red-800 underline"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">Payment Method</h3>
-        {isCompleted && (
-          <div className="flex items-center text-green-600">
-            <ShieldCheckIcon className="h-5 w-5 mr-1" />
-            <span className="text-sm">Configured</span>
+    <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-200 ${
+      isActive ? 'border-2 border-blue-500' : 'border border-gray-200'
+    } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}>
+      
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+            isCompleted ? 'bg-green-500 text-white' : 
+            isActive ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
+          }`}>
+            {isCompleted ? '✓' : '3'}
           </div>
+          <h2 className="ml-3 text-lg font-medium text-gray-900">Payment Method</h2>
+        </div>
+        
+        {isCompleted && (
+          <span className="text-sm text-green-600 font-medium">Selected</span>
         )}
       </div>
 
-      {/* Payment method selection */}
-      <div className="space-y-3">
-        {availablePaymentMethods.map((method) => (
-          <div
-            key={method.id}
-            className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-              paymentMethod?.id === method.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onClick={() => handlePaymentMethodSelect(method)}
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CreditCardIcon className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="ml-3 flex-1">
-                <h4 className="text-sm font-medium text-gray-900">{method.name}</h4>
-                <p className="text-sm text-gray-500">{method.description}</p>
-              </div>
-              <div className="flex-shrink-0">
+      {/* Payment Methods */}
+      {isActive && (
+        <div className="space-y-4">
+          
+          {/* Payment Method Selection */}
+          <div className="space-y-3">
+            {availablePaymentMethods.map((method) => (
+              <label
+                key={method.id}
+                className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                  paymentMethod?.id === method.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
                 <input
                   type="radio"
                   name="paymentMethod"
                   value={method.id}
                   checked={paymentMethod?.id === method.id}
                   onChange={() => handlePaymentMethodSelect(method)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  className="sr-only"
                 />
+                
+                <div className="flex items-center flex-1">
+                  {/* Payment Method Icon */}
+                  <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">
+                    {method.type === 'paypal' ? (
+                      <div className="h-6 w-6 bg-blue-600 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">PP</span>
+                      </div>
+                    ) : (
+                      <div className="h-6 w-6 bg-gray-400 rounded"></div>
+                    )}
+                  </div>
+
+                  {/* Payment Method Details */}
+                  <div className="ml-4 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-900">{method.name}</p>
+                      <div className={`w-4 h-4 rounded-full border-2 ${
+                        paymentMethod?.id === method.id
+                          ? 'border-blue-500 bg-blue-500'
+                          : 'border-gray-300'
+                      }`}>
+                        {paymentMethod?.id === method.id && (
+                          <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">{method.description}</p>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {/* PayPal Payment Component */}
+          {paymentMethod?.type === 'paypal' && orderSummary && (
+            <div className="mt-6 border-t pt-6">
+              <PayPalPayment
+                orderSummary={orderSummary}
+                onPaymentSuccess={handlePayPalSuccess}
+                onPaymentError={handlePayPalError}
+                onPaymentCancel={handlePayPalCancel}
+              />
+            </div>
+          )}
+
+          {/* Security Information */}
+          <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-start">
+              <ShieldCheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                  <LockClosedIcon className="h-4 w-4 mr-1" />
+                  Secure Payment
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  Your payment information is encrypted and secure. We use industry-standard security measures to protect your data.
+                </p>
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Payment form for selected method */}
-      {isActive && paymentMethod?.type === 'card' && stripeInstance && (
-        <Elements stripe={stripeInstance}>
-          <PaymentForm
-            onPaymentMethodReady={handlePaymentMethodReady}
-            orderSummary={orderSummary}
-          />
-        </Elements>
+          {/* Order Summary */}
+          {orderSummary && (
+            <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Order Summary</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-medium">{formatCurrency(orderSummary.cartTotal || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Shipping:</span>
+                  <span className="font-medium">{formatCurrency(orderSummary.shippingCost || 0)}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between">
+                  <span className="font-medium text-gray-900">Total:</span>
+                  <span className="font-bold text-lg">{formatCurrency(orderSummary.orderTotal || 0)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Payment method not implemented notice */}
-      {isActive && paymentMethod?.type !== 'card' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex">
-            <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                {paymentMethod?.name} is not yet available. Please select a different payment method.
-              </p>
-            </div>
-          </div>
+      {/* Completed State Display */}
+      {isCompleted && paymentMethod && (
+        <div className="text-sm text-gray-600">
+          <p>Selected payment method: <span className="font-medium">{paymentMethod.name}</span></p>
         </div>
       )}
     </div>

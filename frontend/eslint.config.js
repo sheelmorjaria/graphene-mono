@@ -30,4 +30,33 @@ export default [
       ],
     },
   },
+  {
+    files: ['**/*.test.{js,jsx}', '**/__tests__/**/*.{js,jsx}', '**/test/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.jest,
+        global: 'readonly',
+        process: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly'
+      },
+    },
+  },
+  {
+    files: ['tailwind.config.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        require: 'readonly'
+      },
+    },
+  },
 ]

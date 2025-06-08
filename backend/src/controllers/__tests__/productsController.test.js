@@ -1,44 +1,42 @@
 import request from 'supertest';
 import express from 'express';
+import mongoose from 'mongoose';
 import { getProducts } from '../productsController.js';
-
-// Mock the Product model
-jest.mock('../../models/Product.js', () => ({
-  default: {
-    find: jest.fn(),
-    countDocuments: jest.fn()
-  }
-}));
-
 import Product from '../../models/Product.js';
 
 describe('Products Controller', () => {
   let app;
 
-  beforeEach(() => {
+  beforeAll(async () => {
+    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
+  });
+
+  afterAll(async () => {
+    await Product.deleteMany({});
+    await mongoose.connection.close();
+  });
+
+  beforeEach(async () => {
+    await Product.deleteMany({});
     app = express();
     app.use(express.json());
     app.get('/api/products', getProducts);
-    
-    // Clear all mocks
-    jest.clearAllMocks();
   });
 
   describe('GET /api/products', () => {
     it('should return paginated products with default parameters', async () => {
-      const mockProducts = [
+      // Create real test products
+      await Product.create([
         {
-          _id: '1',
           name: 'GrapheneOS Pixel 9 Pro',
           slug: 'grapheneos-pixel-9-pro',
           shortDescription: 'Privacy-focused smartphone',
+          longDescription: 'A detailed description',
           price: 899.99,
           images: ['image1.jpg'],
           condition: 'new',
           stockStatus: 'in_stock',
-          isActive: true,
-          createdAt: new Date(),
-          toObject: function() { return this; }
+          isActive: true
         },
         {
           _id: '2',

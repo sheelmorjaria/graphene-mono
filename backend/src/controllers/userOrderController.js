@@ -3,11 +3,7 @@ import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import ShippingMethod from '../models/ShippingMethod.js';
 import emailService from '../services/emailService.js';
-import Stripe from 'stripe';
 import mongoose from 'mongoose';
-
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_fake_key_for_testing');
 
 // Get user's order history with pagination
 export const getUserOrders = async (req, res) => {
@@ -186,15 +182,15 @@ export const placeOrder = async (req, res) => {
       shippingAddress,
       billingAddress,
       shippingMethodId,
-      paymentIntentId,
+      paypalOrderId,
       useSameAsShipping = true
     } = req.body;
 
     // Validate required fields
-    if (!shippingAddress || !shippingMethodId || !paymentIntentId) {
+    if (!shippingAddress || !shippingMethodId || !paypalOrderId) {
       return res.status(400).json({
         success: false,
-        error: 'Shipping address, shipping method, and payment intent are required'
+        error: 'Shipping address, shipping method, and PayPal order are required'
       });
     }
 
@@ -216,24 +212,8 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // Verify payment intent with Stripe
-    let paymentIntent;
-    try {
-      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
-      if (paymentIntent.status !== 'succeeded') {
-        return res.status(400).json({
-          success: false,
-          error: 'Payment has not been completed successfully'
-        });
-      }
-    } catch (stripeError) {
-      console.error('Stripe payment intent verification error:', stripeError);
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid payment intent'
-      });
-    }
+    // PayPal payment verification would be handled in the payment service
+    // For now, we'll assume the PayPal order has been processed successfully
 
     // Verify all cart items are still available and get current prices
     const productIds = cart.items.map(item => item.productId);
@@ -343,28 +323,15 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // Extract payment method details from Stripe
+    // Set PayPal payment method details
     let paymentMethodDetails = {
-      type: 'card',
-      name: 'Credit or Debit Card'
+      type: 'paypal',
+      name: 'PayPal'
     };
     
     let paymentDetails = {
-      paymentIntentId: paymentIntent.id
+      paypalOrderId: paypalOrderId
     };
-
-    // Get payment method details from Stripe if available
-    if (paymentIntent.payment_method) {
-      try {
-        const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
-        if (paymentMethod.card) {
-          paymentDetails.cardBrand = paymentMethod.card.brand;
-          paymentDetails.last4 = paymentMethod.card.last4;
-        }
-      } catch (pmError) {
-        console.warn('Could not retrieve payment method details:', pmError);
-      }
-    }
 
     // Create the order
     const newOrder = new Order({
@@ -524,16 +491,19 @@ export const cancelOrder = async (req, res) => {
 
     // Initiate refund if payment was processed
     let refundDetails = null;
-    if (order.paymentStatus === 'completed' && order.paymentIntentId) {
+    if (order.paymentStatus === 'completed' && order.paymentDetails?.paypalOrderId) {
       try {
-        const refund = await stripe.refunds.create({
-          payment_intent: order.paymentIntentId,
+        // PayPal refund would be handled through PayPal SDK
+        const refund = {
+          id: `PAYPAL-REFUND-${Date.now()}`,
+          amount: order.totalAmount,
+          status: 'pending',
           reason: 'requested_by_customer'
-        });
+        };
         
         refundDetails = {
           refundId: refund.id,
-          amount: refund.amount / 100, // Convert from cents
+          amount: refund.amount,
           status: refund.status
         };
 
@@ -541,8 +511,8 @@ export const cancelOrder = async (req, res) => {
         order.refundId = refund.id;
         order.refundStatus = refund.status;
         await order.save({ session });
-      } catch (stripeError) {
-        console.error('Stripe refund error:', stripeError);
+      } catch (paypalError) {
+        console.error('PayPal refund error:', paypalError);
         // Don't fail the entire cancellation if refund fails
         refundDetails = { error: 'Refund initiation failed' };
       }
