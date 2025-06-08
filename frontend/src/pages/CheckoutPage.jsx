@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useCheckout } from '../contexts/CheckoutContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -181,14 +181,13 @@ const ReviewSection = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderError, setOrderError] = useState(null);
 
+  const navigate = useNavigate();
+
   const handlePlaceOrder = async () => {
     try {
       setIsProcessing(true);
       setOrderError(null);
 
-      // For PayPal, the payment processing happens in the PayPalPayment component
-      // This function is mainly for validation before the user proceeds to PayPal
-      
       // Validate required data
       if (!shippingAddress || !shippingMethod || !paymentMethod) {
         throw new Error('Please complete all required fields before proceeding.');
@@ -198,6 +197,36 @@ const ReviewSection = () => {
         // For PayPal, we don't place the order here - PayPal handles the payment
         // and redirects to our success page which then creates the order
         setOrderError('Please use the PayPal button above to complete your payment.');
+        return;
+      }
+
+      if (paymentMethod.type === 'bitcoin') {
+        // For Bitcoin, create the order first, then redirect to Bitcoin payment page
+        const orderData = {
+          shippingAddress,
+          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
+          shippingMethod,
+          paymentMethod,
+          items: cart.items
+        };
+
+        // Validate order data
+        const validation = validateOrderData(orderData);
+        if (!validation.isValid) {
+          throw new Error(validation.errors.join(', '));
+        }
+
+        // Create the order
+        const orderResponse = await placeOrder(orderData);
+        
+        if (orderResponse.success) {
+          // Clear cart and redirect to Bitcoin payment page
+          clearCart();
+          resetCheckout();
+          navigate(`/bitcoin-payment/${orderResponse.data.order._id}`);
+        } else {
+          throw new Error(orderResponse.error || 'Failed to create order');
+        }
         return;
       }
 
