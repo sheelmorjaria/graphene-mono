@@ -13,8 +13,7 @@ const ProductCard = ({ product }) => {
     images,
     condition,
     stockStatus,
-    stockQuantity,
-    category
+    stockQuantity
   } = product;
 
   const [isAddingToCart, setIsAddingToCart] = useState(false);

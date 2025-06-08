@@ -1,23 +1,25 @@
 import express from 'express';
 import { 
-  createPaymentIntent, 
-  getPaymentIntent,
-  getPaymentMethods
+  getPaymentMethods,
+  createPayPalOrder,
+  capturePayPalPayment,
+  handlePayPalWebhook
 } from '../controllers/paymentController.js';
-import { optionalAuth, authenticate } from '../middleware/auth.js';
+import { optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Get available payment methods (public)
 router.get('/methods', getPaymentMethods);
 
-// Create payment intent (requires authentication or valid session)
-router.post('/create-intent', optionalAuth, createPaymentIntent);
+// PayPal payment routes
+// Create PayPal order (requires authentication or valid session)
+router.post('/paypal/create-order', optionalAuth, createPayPalOrder);
 
-// Get payment intent details (requires authentication or valid session)
-router.get('/intent/:paymentIntentId', optionalAuth, getPaymentIntent);
+// Capture PayPal payment (requires authentication or valid session)
+router.post('/paypal/capture', optionalAuth, capturePayPalPayment);
 
-// Note: Stripe webhook is handled directly in server.js before JSON middleware
-// to ensure raw body access for signature verification
+// PayPal webhook (public endpoint for PayPal callbacks)
+router.post('/paypal/webhook', handlePayPalWebhook);
 
 export default router;

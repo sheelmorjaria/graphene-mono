@@ -8,7 +8,6 @@ import ShippingAddressSection from '../components/checkout/ShippingAddressSectio
 import BillingAddressSection from '../components/checkout/BillingAddressSection';
 import PaymentMethodSection from '../components/checkout/PaymentMethodSection';
 import { placeOrder, validateOrderData } from '../services/orderService';
-import { createPaymentIntent, processPayment, getStripe, generateBillingDetails } from '../services/paymentService';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
@@ -187,93 +186,26 @@ const ReviewSection = () => {
       setIsProcessing(true);
       setOrderError(null);
 
-      // Validate that we have all required data
-      if (!paymentState.stripe || !paymentState.elements || !paymentState.isReady) {
-        throw new Error('Payment method is not ready. Please go back and complete the payment setup.');
+      // For PayPal, the payment processing happens in the PayPalPayment component
+      // This function is mainly for validation before the user proceeds to PayPal
+      
+      // Validate required data
+      if (!shippingAddress || !shippingMethod || !paymentMethod) {
+        throw new Error('Please complete all required fields before proceeding.');
       }
 
-      if (!paymentState.clientSecret) {
-        // Create payment intent first
-        const paymentIntentData = await createPaymentIntent({
-          shippingAddress,
-          shippingMethodId: shippingMethod.id
-        });
-
-        if (!paymentIntentData.clientSecret) {
-          throw new Error('Failed to create payment intent');
-        }
-
-        // Process payment with Stripe
-        const billingDetails = generateBillingDetails(billingAddress);
-        const paymentResult = await processPayment(
-          paymentState.stripe, 
-          paymentState.elements, 
-          paymentIntentData.clientSecret,
-          billingDetails
-        );
-
-        if (paymentResult.status !== 'succeeded') {
-          throw new Error('Payment was not successful');
-        }
-
-        // Prepare order data
-        const orderData = {
-          shippingAddress,
-          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
-          shippingMethodId: shippingMethod.id,
-          paymentIntentId: paymentResult.id,
-          useSameAsShipping
-        };
-
-        // Validate order data
-        const validation = validateOrderData(orderData);
-        if (!validation.isValid) {
-          throw new Error(validation.errors.join(', '));
-        }
-
-        // Place the order
-        const orderResult = await placeOrder(orderData);
-
-        // Clear the cart
-        await clearCart();
-
-        // Reset checkout state
-        resetCheckout();
-
-        // Redirect to order confirmation
-        window.location.href = `/order-confirmation/${orderResult.orderId}`;
-
-      } else {
-        // We already have a payment intent, just place the order
-        const orderData = {
-          shippingAddress,
-          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
-          shippingMethodId: shippingMethod.id,
-          paymentIntentId: paymentState.paymentIntentId,
-          useSameAsShipping
-        };
-
-        // Validate order data
-        const validation = validateOrderData(orderData);
-        if (!validation.isValid) {
-          throw new Error(validation.errors.join(', '));
-        }
-
-        // Place the order
-        const orderResult = await placeOrder(orderData);
-
-        // Clear the cart
-        await clearCart();
-
-        // Reset checkout state
-        resetCheckout();
-
-        // Redirect to order confirmation
-        window.location.href = `/order-confirmation/${orderResult.orderId}`;
+      if (paymentMethod.type === 'paypal') {
+        // For PayPal, we don't place the order here - PayPal handles the payment
+        // and redirects to our success page which then creates the order
+        setOrderError('Please use the PayPal button above to complete your payment.');
+        return;
       }
+
+      // If we add other payment methods in the future, handle them here
+      throw new Error('Selected payment method is not supported.');
 
     } catch (error) {
-      console.error('Order placement error:', error);
+      console.error('Order validation error:', error);
       setOrderError(error.message);
     } finally {
       setIsProcessing(false);

@@ -355,21 +355,35 @@ describe('Admin Controller', () => {
         userId: customerUser._id,
         customerEmail: 'customer@test.com',
         items: [{
-          productId: 'prod123',
-          name: 'Test Product',
-          price: 100,
+          productId: new mongoose.Types.ObjectId(),
+          productName: 'Test Product',
+          productSlug: 'test-product',
+          productImage: 'test-image.jpg',
+          unitPrice: 100,
+          totalPrice: 100,
           quantity: 1
         }],
         subtotal: 100,
+        tax: 10,
+        shipping: 0,
         totalAmount: 110,
-        finalAmount: 110,
         paymentStatus: 'completed',
-        paymentMethod: 'paypal',
+        paymentMethod: {
+          type: 'paypal',
+          name: 'PayPal'
+        },
+        shippingMethod: {
+          id: new mongoose.Types.ObjectId(),
+          name: 'Standard Delivery',
+          cost: 0,
+          estimatedDelivery: '3-5 business days'
+        },
         status: 'processing',
         shippingAddress: {
           fullName: 'John Doe',
           addressLine1: '123 Test St',
           city: 'Test City',
+          stateProvince: 'Test State',
           postalCode: 'TE1 1ST',
           country: 'United Kingdom'
         },
@@ -377,6 +391,7 @@ describe('Admin Controller', () => {
           fullName: 'John Doe',
           addressLine1: '123 Test St',
           city: 'Test City',
+          stateProvince: 'Test State',
           postalCode: 'TE1 1ST',
           country: 'United Kingdom'
         }

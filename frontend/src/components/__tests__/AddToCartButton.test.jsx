@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import AddToCartButton from '../AddToCartButton';
 
@@ -275,7 +275,7 @@ describe('AddToCartButton', () => {
     expect(screen.getByRole('button', { name: /buy now/i })).toBeInTheDocument();
     
     // Test out of stock text
-    const { rerender } = render(
+    render(
       <AddToCartButton 
         {...defaultProps} 
         stockStatus="out_of_stock" 

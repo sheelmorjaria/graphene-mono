@@ -185,8 +185,8 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: [true, 'Payment method type is required'],
       enum: {
-        values: ['card', 'paypal', 'apple_pay', 'google_pay'],
-        message: 'Payment method type must be one of: card, paypal, apple_pay, google_pay'
+        values: ['paypal'],
+        message: 'Payment method type must be: paypal'
       }
     },
     name: {
@@ -197,25 +197,38 @@ const orderSchema = new mongoose.Schema({
     }
   },
   paymentDetails: {
-    cardBrand: {
-      type: String,
-      trim: true,
-      maxlength: 20
-    },
-    last4: {
-      type: String,
-      trim: true,
-      maxlength: 4
-    },
-    paymentIntentId: {
+    // PayPal payment details
+    paypalOrderId: {
       type: String,
       trim: true,
       maxlength: 100
     },
-    stripeChargeId: {
+    paypalPaymentId: {
       type: String,
       trim: true,
       maxlength: 100
+    },
+    paypalPayerId: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    },
+    paypalTransactionId: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    },
+    paypalPayerEmail: {
+      type: String,
+      trim: true,
+      maxlength: 255
+    },
+    // Generic transaction ID for any payment method
+    transactionId: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      index: true
     }
   },
   paymentStatus: {
@@ -352,6 +365,11 @@ const orderSchema = new mongoose.Schema({
 // Compound index for efficient querying by user and date
 orderSchema.index({ userId: 1, orderDate: -1 });
 
+// Indexes for report aggregations
+orderSchema.index({ createdAt: 1, orderStatus: 1 }); // For sales reports
+orderSchema.index({ 'cartItems.product': 1, createdAt: 1 }); // For product performance
+orderSchema.index({ orderStatus: 1, createdAt: -1 }); // For order queries
+
 // Pre-save middleware to generate order number and calculate total
 orderSchema.pre('save', function(next) {
   // Generate order number if not provided
@@ -409,15 +427,7 @@ orderSchema.methods.getFormattedDate = function() {
 
 // Instance method to format payment method for display
 orderSchema.methods.getPaymentMethodDisplay = function() {
-  let display = this.paymentMethod.name || this.paymentMethod.type;
-  
-  // Add card details if available
-  if (this.paymentMethod.type === 'card' && this.paymentDetails && this.paymentDetails.last4) {
-    const cardBrand = this.paymentDetails.cardBrand ? ` (${this.paymentDetails.cardBrand})` : '';
-    display += `${cardBrand} ending in ****${this.paymentDetails.last4}`;
-  }
-  
-  return display;
+  return this.paymentMethod.name || this.paymentMethod.type;
 };
 
 // Instance method to calculate maximum refundable amount

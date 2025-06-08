@@ -795,3 +795,146 @@ export default {
   getUserById,
   updateUserStatus
 };
+
+// Sales Report
+export const getSalesReport = async (startDate, endDate) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetch(`${ADMIN_API_BASE}/reports/sales-summary?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+      }
+      throw new Error(data.error || 'Failed to fetch sales report');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get sales report error:', error);
+    throw error;
+  }
+};
+
+// Product Performance Report
+export const getProductPerformanceReport = async (startDate, endDate) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetch(`${ADMIN_API_BASE}/reports/product-performance?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+      }
+      throw new Error(data.error || 'Failed to fetch product performance report');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get product performance report error:', error);
+    throw error;
+  }
+};
+
+// Customer Report
+export const getCustomerReport = async (startDate, endDate) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams({ startDate, endDate });
+    const response = await fetch(`${ADMIN_API_BASE}/reports/customer-acquisition?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+      }
+      throw new Error(data.error || 'Failed to fetch customer report');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get customer report error:', error);
+    throw error;
+  }
+};
+
+// Inventory Report
+export const getInventoryReport = async () => {
+  try {
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${ADMIN_API_BASE}/reports/inventory-summary`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+      }
+      throw new Error(data.error || 'Failed to fetch inventory report');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get inventory report error:', error);
+    throw error;
+  }
+};

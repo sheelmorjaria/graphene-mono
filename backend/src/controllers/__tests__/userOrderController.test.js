@@ -9,8 +9,6 @@ import Product from '../../models/Product.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 
 // Set up environment variables for testing
-process.env.STRIPE_SECRET_KEY = 'sk_test_fake_key_for_testing';
-process.env.STRIPE_WEBHOOK_SECRET = 'whsec_fake_webhook_secret_for_testing';
 
 describe('User Order Controller', () => {
   let testUser;
@@ -86,12 +84,8 @@ describe('User Order Controller', () => {
         estimatedDelivery: '3-5 business days'
       },
       paymentMethod: {
-        type: 'card',
-        name: 'Credit or Debit Card'
-      },
-      paymentDetails: {
-        cardBrand: 'visa',
-        last4: '4242'
+        type: 'paypal',
+        name: 'PayPal'
       },
       paymentStatus: 'completed'
     };
@@ -297,12 +291,8 @@ describe('User Order Controller', () => {
           estimatedDelivery: '3-5 business days'
         },
         paymentMethod: {
-          type: 'card',
-          name: 'Credit or Debit Card'
-        },
-        paymentDetails: {
-          cardBrand: 'visa',
-          last4: '1234'
+          type: 'paypal',
+          name: 'PayPal'
         },
         paymentStatus: 'completed'
       }).save();
@@ -346,7 +336,7 @@ describe('User Order Controller', () => {
       expect(order.items).toHaveLength(1);
       expect(order.shippingAddress.fullName).toBe('John Doe');
       expect(order.billingAddress.fullName).toBe('John Doe');
-      expect(order.paymentMethodDisplay).toBe('Credit or Debit Card (visa) ending in ****4242');
+      expect(order.paymentMethodDisplay).toBe('PayPal');
     });
 
     it('should fail with invalid order ID format', async () => {
@@ -480,7 +470,7 @@ describe('User Order Controller', () => {
         phoneNumber: '+44 20 7946 0958'
       },
       useSameAsShipping: true,
-      paymentIntentId: 'pi_test_12345'
+      paypalOrderId: 'PAYPAL-TEST-12345'
     };
 
     it('should return 400 for missing required fields', async () => {
@@ -500,7 +490,7 @@ describe('User Order Controller', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           shippingMethodId: testShippingMethod._id.toString(),
-          paymentIntentId: 'pi_test_12345'
+          paypalOrderId: 'PAYPAL-TEST-12345'
         })
         .expect(400);
 
@@ -514,7 +504,7 @@ describe('User Order Controller', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           shippingAddress: validOrderData.shippingAddress,
-          paymentIntentId: 'pi_test_12345'
+          paypalOrderId: 'PAYPAL-TEST-12345'
         })
         .expect(400);
 
@@ -522,7 +512,7 @@ describe('User Order Controller', () => {
       expect(response.body.error).toContain('shipping method');
     });
 
-    it('should return 400 for missing payment intent', async () => {
+    it('should return 400 for missing PayPal order', async () => {
       const response = await request(app)
         .post('/api/user/orders/place-order')
         .set('Authorization', `Bearer ${authToken}`)
@@ -533,7 +523,7 @@ describe('User Order Controller', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('payment intent');
+      expect(response.body.error).toContain('PayPal order');
     });
 
     it('should return 400 for empty cart', async () => {
@@ -586,19 +576,19 @@ describe('User Order Controller', () => {
       expect(response.body.error).toContain('Insufficient stock');
     });
 
-    it('should return 400 for invalid payment intent', async () => {
+    it('should return 400 for invalid PayPal order', async () => {
       const response = await request(app)
         .post('/api/user/orders/place-order')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           ...validOrderData,
           shippingMethodId: testShippingMethod._id.toString(),
-          paymentIntentId: 'pi_invalid_123'
+          paypalOrderId: 'INVALID-PAYPAL-123'
         })
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('Invalid payment intent');
+      expect(response.body.error).toContain('Invalid PayPal order');
     });
 
     it('should return 401 for unauthenticated request', async () => {
@@ -672,12 +662,8 @@ describe('User Order Controller', () => {
           estimatedDelivery: '3-5 business days'
         },
         paymentMethod: {
-          type: 'card',
-          name: 'Credit or Debit Card'
-        },
-        paymentDetails: {
-          cardBrand: 'visa',
-          last4: '4242'
+          type: 'paypal',
+          name: 'PayPal'
         },
         paymentStatus: 'completed'
       });
@@ -867,7 +853,7 @@ describe('User Order Controller', () => {
           totalAmount: 225.97,
           status: 'pending',
           paymentStatus: 'completed',
-          paymentIntentId: 'pi_test_pending',
+          paypalOrderId: 'PAYPAL-TEST-PENDING',
           shippingAddress: {
             fullName: 'Test User',
             addressLine1: '123 Test St',
@@ -1022,7 +1008,7 @@ describe('User Order Controller', () => {
         expect(response.body.error).toBe('Order not found');
       });
 
-      it('should handle Stripe refund initiation for paid orders', async () => {
+      it('should handle refund initiation for paid orders', async () => {
         const response = await request(app)
           .post(`/api/user/orders/${pendingOrder._id}/cancel`)
           .set('Authorization', `Bearer ${authToken}`)
@@ -1033,7 +1019,7 @@ describe('User Order Controller', () => {
         
         // Check if refund information is included (will be error in test environment)
         if (response.body.data.refund.error) {
-          expect(response.body.data.refund.error).toContain('Stripe');
+          expect(response.body.data.refund.error).toBeDefined();
         }
       });
     });

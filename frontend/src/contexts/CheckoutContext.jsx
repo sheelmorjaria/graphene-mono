@@ -27,12 +27,9 @@ export const CheckoutProvider = ({ children }) => {
   });
   
   const [paymentState, setPaymentState] = useState({
-    stripe: null,
-    elements: null,
-    isReady: false,
+    isProcessing: false,
     error: null,
-    clientSecret: null,
-    paymentIntentId: null
+    paymentData: null
   });
   
   const [addresses, setAddresses] = useState([]);
@@ -149,12 +146,9 @@ export const CheckoutProvider = ({ children }) => {
       orderNotes: ''
     });
     setPaymentState({
-      stripe: null,
-      elements: null,
-      isReady: false,
+      isProcessing: false,
       error: null,
-      clientSecret: null,
-      paymentIntentId: null
+      paymentData: null
     });
     setShippingRates([]);
   };

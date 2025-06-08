@@ -89,7 +89,7 @@ describe('Support Controller', () => {
           paymentMethod: {
             id: 'test-payment',
             name: 'Test Payment',
-            type: 'stripe'
+            type: 'paypal'
           },
           paymentStatus: 'pending',
           shippingMethod: {

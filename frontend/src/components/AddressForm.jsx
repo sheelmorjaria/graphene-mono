@@ -43,7 +43,7 @@ const AddressForm = ({
     }
 
     if (name === 'phoneNumber' && value.trim()) {
-      const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{0,20}$/;
+      const phoneRegex = /^[+]?[1-9][\d\s\-()]{0,20}$/;
       if (!phoneRegex.test(value.trim())) {
         return 'Please enter a valid phone number';
       }

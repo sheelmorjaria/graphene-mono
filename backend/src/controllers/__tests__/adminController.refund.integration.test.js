@@ -111,8 +111,8 @@ describe('Admin Refund Integration Tests', () => {
         estimatedDelivery: '3-5 business days'
       },
       paymentMethod: {
-        type: 'card',
-        name: 'Credit Card'
+        type: 'paypal',
+        name: 'PayPal'
       },
       paymentStatus: 'completed'
     });
@@ -174,7 +174,7 @@ describe('Admin Refund Integration Tests', () => {
       // Note: In a real implementation, we would also verify:
       // - Product stock was incremented (stock restoration logic)
       // - Email was sent (mock email service verification)
-      // - Payment gateway refund was initiated (mock Stripe API)
+      // - Payment gateway refund was initiated (mock PayPal API)
     });
   });
 

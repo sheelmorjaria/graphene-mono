@@ -7,9 +7,14 @@ import Order from '../../models/Order.js';
 import { getOrderById } from '../adminController.js';
 import { authenticate, requireRole } from '../../middleware/auth.js';
 
-// Mock the models
-jest.mock('../../models/User.js');
-jest.mock('../../models/Order.js');
+// Mock the models - ES modules compatible
+const mockUser = {
+  findById: jest.fn()
+};
+
+const mockOrder = {
+  findById: jest.fn()
+};
 
 const app = express();
 app.use(express.json());

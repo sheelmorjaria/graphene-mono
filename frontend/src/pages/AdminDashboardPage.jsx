@@ -405,6 +405,21 @@ const AdminDashboardPage = () => {
                   </div>
                   <p className="text-gray-600 text-sm">View and manage customer accounts and admin users</p>
                 </Link>
+                
+                <Link 
+                  to="/admin/reports"
+                  className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="p-3 bg-teal-50 text-teal-600 rounded-lg">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <h3 className="ml-4 text-lg font-medium text-gray-900">View Reports</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">View sales, product performance, and business analytics</p>
+                </Link>
               </div>
             </div>
           </div>

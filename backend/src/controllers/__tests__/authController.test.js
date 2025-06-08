@@ -5,14 +5,6 @@ import User from '../../models/User.js';
 import jwt from 'jsonwebtoken';
 
 describe('Auth Controller', () => {
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
-
   beforeEach(async () => {
     await User.deleteMany({});
   });

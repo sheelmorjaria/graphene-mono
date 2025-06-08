@@ -98,7 +98,7 @@ describe('Support API Integration Tests', () => {
           paymentMethod: {
             id: 'test-payment',
             name: 'Test Payment',
-            type: 'stripe'
+            type: 'paypal'
           },
           paymentStatus: 'pending',
           shippingMethod: {

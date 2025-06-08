@@ -5,10 +5,14 @@ import { getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus }
 import ReturnRequest from '../../models/ReturnRequest.js';
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
-import emailService from '../../services/emailService.js';
 
 // Mock email service
-jest.mock('../../services/emailService.js');
+const emailService = {
+  sendEmail: jest.fn().mockResolvedValue(true),
+  sendReturnStatusUpdateEmail: jest.fn().mockResolvedValue(true),
+  sendReturnApprovalEmail: jest.fn().mockResolvedValue(true),
+  sendReturnRejectionEmail: jest.fn().mockResolvedValue(true)
+};
 
 describe('Admin Controller - Return Management', () => {
   let mongoServer;
@@ -18,11 +22,19 @@ describe('Admin Controller - Return Management', () => {
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
+    
+    // Disconnect if already connected
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    
     await mongoose.connect(mongoUri);
   });
 
   afterAll(async () => {
-    await mongoose.disconnect();
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
     await mongoServer.stop();
   });
 

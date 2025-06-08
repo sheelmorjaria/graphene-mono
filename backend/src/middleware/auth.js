@@ -36,11 +36,11 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Check if user account is disabled
-    if (user.accountStatus === 'disabled') {
+    // Check if user account is disabled or inactive
+    if (user.accountStatus === 'disabled' || !user.isActive) {
       return res.status(401).json({
         success: false,
-        error: 'Account has been disabled. Please contact support for assistance.'
+        error: 'Account has been deactivated. Please contact support for assistance.'
       });
     }
 

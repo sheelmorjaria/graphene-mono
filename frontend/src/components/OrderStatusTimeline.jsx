@@ -48,7 +48,6 @@ const OrderStatusTimeline = ({ currentStatus, statusHistory = [] }) => {
           {statusFlow.map((step, index) => {
             const isCompleted = index <= currentIndex;
             const isCurrent = index === currentIndex;
-            const isUpcoming = index > currentIndex;
             
             // Find the corresponding history entry
             const historyEntry = statusHistory.find(entry => entry.status === step.key);
