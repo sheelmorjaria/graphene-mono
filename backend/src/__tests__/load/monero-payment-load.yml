@@ -1,0 +1,105 @@
+# Artillery Load Testing Configuration for Monero Payment System
+config:
+  target: 'http://localhost:5000'
+  phases:
+    # Ramp up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    # Steady load phase  
+    - duration: 120
+      arrivalRate: 10
+      name: "Steady load"
+    # Spike phase
+    - duration: 60
+      arrivalRate: 25
+      name: "Spike load"
+    # Cool down phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool down"
+  variables:
+    authToken: "test-jwt-token"
+    orderId: "64f1234567890abcdef12345"
+
+scenarios:
+  - name: "Exchange Rate Caching Test"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "testuser@example.com"
+            password: "testpassword123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - get:
+          url: "/api/payments/monero/exchange-rate"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            - hasProperty: "rate"
+          think: 1
+
+  - name: "Payment Creation Load Test"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "testuser@example.com"
+            password: "testpassword123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - post:
+          url: "/api/payments/monero/create"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            Content-Type: "application/json"
+          json:
+            orderId: "{{ orderId }}"
+          expect:
+            - statusCode: [200, 400, 404] # Accept various responses
+          think: 2
+
+  - name: "Payment Status Polling"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "testuser@example.com"
+            password: "testpassword123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - loop:
+          - get:
+              url: "/api/payments/monero/status/{{ orderId }}"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              expect:
+                - statusCode: [200, 404]
+              think: 30 # 30 second intervals like real polling
+          count: 5
+
+  - name: "Webhook Processing"
+    weight: 5
+    flow:
+      - post:
+          url: "/api/payments/monero/webhook"
+          headers:
+            X-GloBee-Signature: "sha256=test-signature"
+            Content-Type: "application/json"
+          json:
+            id: "globee-payment-123"
+            status: "paid"
+            confirmations: 12
+            paid_amount: 1.5
+            total_amount: 1.5
+            order_id: "{{ orderId }}"
+          expect:
+            - statusCode: [200, 401] # May fail signature verification

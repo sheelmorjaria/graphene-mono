@@ -3,6 +3,7 @@ import { ShieldCheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { getPaymentMethods, formatCurrency } from '../../services/paymentService';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import PayPalPayment from './PayPalPayment';
+import MoneroPayment from './MoneroPayment';
 
 const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => {
   const { 
@@ -61,6 +62,14 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
       }
     } else if (paymentMethod?.type === 'bitcoin') {
       // Bitcoin is always ready once selected (payment happens externally)
+      if (onValidationChange) {
+        onValidationChange({
+          isValid: true,
+          error: null
+        });
+      }
+    } else if (paymentMethod?.type === 'monero') {
+      // Monero is always ready once selected (payment happens externally)
       if (onValidationChange) {
         onValidationChange({
           isValid: true,
@@ -195,6 +204,10 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
                       <div className="h-6 w-6 bg-orange-500 rounded flex items-center justify-center">
                         <span className="text-white text-xs font-bold">₿</span>
                       </div>
+                    ) : method.type === 'monero' ? (
+                      <div className="h-6 w-6 bg-orange-600 rounded flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">ɱ</span>
+                      </div>
                     ) : (
                       <div className="h-6 w-6 bg-gray-400 rounded"></div>
                     )}
@@ -252,6 +265,34 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
                         <li>Payment must be received within 24 hours</li>
                         <li>Order confirmation after 2 network confirmations (~30 minutes)</li>
                         <li>Current exchange rate will be locked for 15 minutes</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Monero Payment Information */}
+          {paymentMethod?.type === 'monero' && (
+            <div className="mt-6 border-t pt-6">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="h-8 w-8 bg-orange-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">ɱ</span>
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-gray-900">Monero Payment Process</h4>
+                    <div className="mt-2 text-sm text-gray-700">
+                      <p className="mb-2">When you proceed to checkout:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>You'll receive a unique Monero address and exact XMR amount</li>
+                        <li>Payment must be received within 24 hours</li>
+                        <li>Order confirmation after 10 network confirmations (~20 minutes)</li>
+                        <li>Current exchange rate will be locked for 5 minutes</li>
+                        <li>Completely private and untraceable payment</li>
                       </ul>
                     </div>
                   </div>

@@ -73,6 +73,25 @@ const cartSchema = new mongoose.Schema({
     default: 0,
     min: [0, 'Total amount cannot be negative']
   },
+  appliedPromotion: {
+    promotionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Promotion'
+    },
+    code: {
+      type: String,
+      uppercase: true
+    },
+    type: {
+      type: String,
+      enum: ['percentage', 'fixed_amount', 'free_shipping']
+    },
+    value: Number,
+    discountAmount: {
+      type: Number,
+      min: 0
+    }
+  },
   lastModified: {
     type: Date,
     default: Date.now

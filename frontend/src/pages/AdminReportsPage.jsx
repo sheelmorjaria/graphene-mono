@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminService } from '../services/adminService';
+import { getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../services/adminService';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const formatCurrency = (amount) => {
@@ -62,10 +62,10 @@ const AdminReportsPage = () => {
       const { startDate, endDate } = getDateRange();
       
       const [sales, products, customers, inventory] = await Promise.all([
-        adminService.getSalesReport(startDate, endDate),
-        adminService.getProductPerformanceReport(startDate, endDate),
-        adminService.getCustomerReport(startDate, endDate),
-        adminService.getInventoryReport()
+        getSalesReport(startDate, endDate),
+        getProductPerformanceReport(startDate, endDate),
+        getCustomerReport(startDate, endDate),
+        getInventoryReport()
       ]);
 
       setSalesData(sales);

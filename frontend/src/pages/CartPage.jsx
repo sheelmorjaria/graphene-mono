@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
-import { formatCurrency } from '../services/cartService';
+import { formatCurrency, applyPromotion, removePromotion } from '../services/cartService';
 
 const QuantitySelector = ({ item, onUpdateQuantity, isUpdating }) => {
   const [quantity, setQuantity] = useState(item.quantity);
@@ -152,8 +152,12 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
 };
 
 const CartPage = () => {
-  const { cart, loading, error, updateCartItem, removeFromCart, clearCart, clearError } = useCart();
+  const { cart, loading, error, updateCartItem, removeFromCart, clearCart, clearError, refreshCart } = useCart();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -186,6 +190,42 @@ const CartPage = () => {
       } finally {
         setIsUpdating(false);
       }
+    }
+  };
+
+  const handleApplyPromotion = async (e) => {
+    e.preventDefault();
+    if (!promoCode.trim()) return;
+
+    setApplyingPromo(true);
+    setPromoError('');
+    setPromoSuccess('');
+
+    try {
+      const response = await applyPromotion(promoCode.trim());
+      setPromoSuccess(response.message || 'Promotion applied successfully!');
+      setPromoCode('');
+      await refreshCart();
+    } catch (err) {
+      setPromoError(err.message || 'Failed to apply promotion code');
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromotion = async () => {
+    setApplyingPromo(true);
+    setPromoError('');
+    setPromoSuccess('');
+
+    try {
+      const response = await removePromotion();
+      setPromoSuccess(response.message || 'Promotion removed successfully!');
+      await refreshCart();
+    } catch (err) {
+      setPromoError(err.message || 'Failed to remove promotion');
+    } finally {
+      setApplyingPromo(false);
     }
   };
 
@@ -370,20 +410,74 @@ const CartPage = () => {
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Items ({cart.totalItems})</span>
+                    <span className="text-gray-600">Subtotal ({cart.totalItems})</span>
                     <span className="text-gray-900">{formatCurrency(cart.totalAmount)}</span>
                   </div>
+                  
+                  {cart.appliedPromotion && (
+                    <div className="flex justify-between text-green-600">
+                      <span>
+                        Discount ({cart.appliedPromotion.code})
+                        <button
+                          onClick={handleRemovePromotion}
+                          disabled={applyingPromo}
+                          className="ml-2 text-red-500 hover:text-red-700 text-xs"
+                          title="Remove promotion"
+                        >
+                          ×
+                        </button>
+                      </span>
+                      <span>-{formatCurrency(cart.appliedPromotion.discountAmount)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-600">Shipping</span>
                     <span className="text-gray-900">Calculated at checkout</span>
                   </div>
+                  
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-lg font-semibold">
                       <span className="text-gray-900">Total</span>
-                      <span className="text-gray-900">{formatCurrency(cart.totalAmount)}</span>
+                      <span className="text-gray-900">
+                        {formatCurrency(cart.finalTotal || cart.totalAmount)}
+                      </span>
                     </div>
                   </div>
                 </div>
+
+                {/* Promotion Code Section */}
+                {!cart.appliedPromotion && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Promotion Code</h3>
+                    <form onSubmit={handleApplyPromotion} className="space-y-2">
+                      <div className="flex">
+                        <input
+                          type="text"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                          placeholder="Enter code"
+                          disabled={applyingPromo}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                        />
+                        <button
+                          type="submit"
+                          disabled={applyingPromo || !promoCode.trim()}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {applyingPromo ? 'Applying...' : 'Apply'}
+                        </button>
+                      </div>
+                    </form>
+                    
+                    {promoError && (
+                      <p className="text-red-600 text-xs mt-1">{promoError}</p>
+                    )}
+                    {promoSuccess && (
+                      <p className="text-green-600 text-xs mt-1">{promoSuccess}</p>
+                    )}
+                  </div>
+                )}
 
                 <button
                   onClick={() => navigate('/checkout')}

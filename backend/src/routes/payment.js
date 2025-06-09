@@ -6,7 +6,10 @@ import {
   handlePayPalWebhook,
   initializeBitcoinPayment,
   getBitcoinPaymentStatus,
-  handleBlockonomicsWebhook
+  handleBlockonomicsWebhook,
+  createMoneroPayment,
+  checkMoneroPaymentStatus,
+  handleMoneroWebhook
 } from '../controllers/paymentController.js';
 import { optionalAuth } from '../middleware/auth.js';
 
@@ -34,5 +37,15 @@ router.get('/bitcoin/status/:orderId', optionalAuth, getBitcoinPaymentStatus);
 
 // Blockonomics webhook (public endpoint for Bitcoin payment notifications)
 router.post('/bitcoin/webhook', handleBlockonomicsWebhook);
+
+// Monero payment routes
+// Create Monero payment (requires authentication or valid session)
+router.post('/monero/create', optionalAuth, createMoneroPayment);
+
+// Check Monero payment status (requires authentication or valid session)
+router.get('/monero/status/:orderId', optionalAuth, checkMoneroPaymentStatus);
+
+// GloBee webhook (public endpoint for Monero payment notifications)
+router.post('/monero/webhook', handleMoneroWebhook);
 
 export default router;
