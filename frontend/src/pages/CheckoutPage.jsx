@@ -223,7 +223,37 @@ const ReviewSection = () => {
           // Clear cart and redirect to Bitcoin payment page
           clearCart();
           resetCheckout();
-          navigate(`/bitcoin-payment/${orderResponse.data.order._id}`);
+          navigate(`/payment/bitcoin/${orderResponse.data.order._id}`);
+        } else {
+          throw new Error(orderResponse.error || 'Failed to create order');
+        }
+        return;
+      }
+
+      if (paymentMethod.type === 'monero') {
+        // For Monero, create the order first, then redirect to Monero payment page
+        const orderData = {
+          shippingAddress,
+          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
+          shippingMethod,
+          paymentMethod,
+          items: cart.items
+        };
+
+        // Validate order data
+        const validation = validateOrderData(orderData);
+        if (!validation.isValid) {
+          throw new Error(validation.errors.join(', '));
+        }
+
+        // Create the order
+        const orderResponse = await placeOrder(orderData);
+        
+        if (orderResponse.success) {
+          // Clear cart and redirect to Monero payment page
+          clearCart();
+          resetCheckout();
+          navigate(`/payment/monero/${orderResponse.data.order._id}`);
         } else {
           throw new Error(orderResponse.error || 'Failed to create order');
         }

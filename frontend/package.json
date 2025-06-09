@@ -18,14 +18,18 @@
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/vite": "^4.1.8",
     "prop-types": "^15.8.1",
+    "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.1",
     "redux": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

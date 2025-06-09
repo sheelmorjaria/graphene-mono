@@ -27,11 +27,15 @@ import AdminCategoryFormPage from './pages/AdminCategoryFormPage';
 import AdminUsersListPage from './pages/AdminUsersListPage';
 import AdminUserDetailsPage from './pages/AdminUserDetailsPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import AdminPromotionsListPage from './pages/AdminPromotionsListPage';
+import AdminPromotionFormPage from './pages/AdminPromotionFormPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import BitcoinPaymentPage from './pages/BitcoinPaymentPage';
+import MoneroPaymentPage from './pages/MoneroPaymentPage';
 import ContactUsPage from './pages/ContactUsPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
@@ -298,6 +302,10 @@ export const AppRoutes = () => {
           {/* Order confirmation page */}
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
           
+          {/* Payment pages */}
+          <Route path="/payment/bitcoin/:orderId" element={<BitcoinPaymentPage />} />
+          <Route path="/payment/monero/:orderId" element={<MoneroPaymentPage />} />
+          
           {/* Contact Us page */}
           <Route path="/contact-us" element={<ContactUsPage />} />
           
@@ -376,6 +384,21 @@ export const AppRoutes = () => {
           <Route path="/admin/reports" element={
             <AdminRoute>
               <AdminReportsPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/promotions" element={
+            <AdminRoute>
+              <AdminPromotionsListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/promotions/new" element={
+            <AdminRoute>
+              <AdminPromotionFormPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/promotions/:promoId/edit" element={
+            <AdminRoute>
+              <AdminPromotionFormPage />
             </AdminRoute>
           } />
           

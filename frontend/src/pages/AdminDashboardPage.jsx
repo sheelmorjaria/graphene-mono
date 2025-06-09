@@ -392,6 +392,21 @@ const AdminDashboardPage = () => {
                 </Link>
                 
                 <Link 
+                  to="/admin/promotions"
+                  className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="p-3 bg-yellow-50 text-yellow-600 rounded-lg">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                    </div>
+                    <h3 className="ml-4 text-lg font-medium text-gray-900">Manage Promotions</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">Create and manage discount codes and promotional offers</p>
+                </Link>
+                
+                <Link 
                   to="/admin/users"
                   className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow block"
                 >

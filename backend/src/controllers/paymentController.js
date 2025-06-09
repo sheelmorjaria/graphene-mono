@@ -3,8 +3,10 @@ import { Client, Environment } from '@paypal/paypal-server-sdk';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import Promotion from '../models/Promotion.js';
 import { calculateShippingRates } from './shippingController.js';
 import bitcoinService from '../services/bitcoinService.js';
+import moneroService from '../services/moneroService.js';
 
 // Initialize PayPal API
 const paypalEnvironment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'; // 'sandbox' or 'live'
@@ -77,6 +79,14 @@ export const getPaymentMethods = async (req, res) => {
         name: 'Bitcoin',
         description: 'Pay with Bitcoin - private and secure',
         icon: 'bitcoin',
+        enabled: true
+      },
+      {
+        id: 'monero',
+        type: 'monero',
+        name: 'Monero',
+        description: 'Pay with Monero - private and untraceable',
+        icon: 'monero',
         enabled: true
       }
     ];
@@ -376,6 +386,7 @@ export const capturePayPalPayment = async (req, res) => {
         subtotal: parseFloat(purchaseUnit.amount.breakdown?.item_total?.value || 0),
         shipping: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0),
         tax: parseFloat(purchaseUnit.amount.breakdown?.tax_total?.value || 0),
+        discount: cart.appliedPromotion ? cart.appliedPromotion.discountAmount : 0,
         totalAmount: parseFloat(purchaseUnit.amount.value),
         paymentMethod: {
           type: 'paypal',
@@ -418,6 +429,17 @@ export const capturePayPalPayment = async (req, res) => {
         }
       };
 
+      // Add promotion details if applied
+      if (cart.appliedPromotion) {
+        orderData.appliedPromotion = {
+          promotionId: cart.appliedPromotion.promotionId,
+          code: cart.appliedPromotion.code,
+          type: cart.appliedPromotion.type,
+          value: cart.appliedPromotion.value,
+          discountAmount: cart.appliedPromotion.discountAmount
+        };
+      }
+
       const order = new Order(orderData);
       
       // Generate order number
@@ -425,6 +447,14 @@ export const capturePayPalPayment = async (req, res) => {
       order.orderNumber = `ORD${Date.now()}${(orderCount + 1).toString().padStart(4, '0')}`;
       
       await order.save({ session });
+
+      // Record promotion usage if applied
+      if (cart.appliedPromotion && cart.appliedPromotion.promotionId) {
+        const promotion = await Promotion.findById(cart.appliedPromotion.promotionId);
+        if (promotion && req.user?._id) {
+          await promotion.recordUsage(req.user._id);
+        }
+      }
 
       // Clear the cart after successful order creation
       await cart.clearCart({ session });
@@ -776,5 +806,329 @@ export const handleBlockonomicsWebhook = async (req, res) => {
       success: false,
       error: 'Webhook processing failed'
     });
+  }
+};
+
+// Create Monero payment
+export const createMoneroPayment = async (req, res) => {
+  const session = await mongoose.startSession();
+  
+  try {
+    const { orderId, shippingAddress, billingAddress, shippingMethodId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    await session.withTransaction(async () => {
+      // Get user's cart to create order if orderId is 'new'
+      let order;
+      
+      if (orderId === 'new') {
+        // Create new order from cart
+        let cart;
+        try {
+          cart = await findOrCreateCart(req);
+        } catch (cartError) {
+          throw new Error(cartError.message);
+        }
+        
+        if (!cart || !cart.items || cart.items.length === 0) {
+          throw new Error('Cart is empty');
+        }
+
+        // Calculate totals
+        const subtotal = cart.totalAmount;
+        const discountAmount = cart.appliedPromotion ? cart.appliedPromotion.discountAmount : 0;
+        const finalSubtotal = subtotal - discountAmount;
+
+        // Calculate shipping cost (simplified)
+        const shippingCost = 10.00; // Default shipping cost
+        const totalAmount = finalSubtotal + shippingCost;
+
+        // Get Monero exchange rate and calculate XMR amount
+        const { xmrAmount, exchangeRate, validUntil } = await moneroService.convertGbpToXmr(totalAmount);
+
+        // Create order data
+        const orderData = {
+          userId: req.user?._id || cart.userId,
+          customerEmail: req.user?.email || req.body.customerEmail,
+          items: cart.items.map(item => ({
+            productId: item.productId,
+            productName: item.productName || 'Product',
+            productSlug: item.productSlug || 'product',
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || item.price,
+            totalPrice: (item.unitPrice || item.price) * item.quantity
+          })),
+          subtotal: subtotal,
+          shipping: shippingCost,
+          tax: 0,
+          discount: discountAmount,
+          totalAmount: totalAmount,
+          paymentMethod: {
+            type: 'monero',
+            name: 'Monero (XMR)'
+          },
+          paymentDetails: {
+            xmrAmount: xmrAmount,
+            exchangeRate: exchangeRate,
+            exchangeRateValidUntil: validUntil,
+            paymentWindow: moneroService.getPaymentWindowHours(),
+            requiredConfirmations: moneroService.getRequiredConfirmations()
+          },
+          paymentStatus: 'pending',
+          status: 'pending',
+          shippingAddress: shippingAddress || {},
+          billingAddress: billingAddress || {},
+          shippingMethod: {
+            id: shippingMethodId || new mongoose.Types.ObjectId(),
+            name: 'Standard Shipping',
+            cost: shippingCost
+          }
+        };
+
+        // Add promotion details if applied
+        if (cart.appliedPromotion) {
+          orderData.appliedPromotion = {
+            promotionId: cart.appliedPromotion.promotionId,
+            code: cart.appliedPromotion.code,
+            type: cart.appliedPromotion.type,
+            value: cart.appliedPromotion.value,
+            discountAmount: cart.appliedPromotion.discountAmount
+          };
+        }
+
+        order = new Order(orderData);
+        
+        // Generate order number
+        const orderCount = await Order.countDocuments({});
+        order.orderNumber = `ORD${Date.now()}${(orderCount + 1).toString().padStart(4, '0')}`;
+        
+        await order.save({ session });
+
+        // Record promotion usage if applied
+        if (cart.appliedPromotion && cart.appliedPromotion.promotionId && req.user?._id) {
+          const promotion = await Promotion.findById(cart.appliedPromotion.promotionId);
+          if (promotion) {
+            await promotion.recordUsage(req.user._id);
+          }
+        }
+
+        // Clear the cart after successful order creation
+        await cart.clearCart({ session });
+      } else {
+        // Get existing order
+        order = await Order.findById(orderId);
+        if (!order) {
+          throw new Error('Order not found');
+        }
+
+        // Recalculate XMR amount with current rate if needed
+        const { xmrAmount, exchangeRate, validUntil } = await moneroService.convertGbpToXmr(order.totalAmount);
+        
+        // Update payment details
+        order.paymentDetails = {
+          ...order.paymentDetails,
+          xmrAmount: xmrAmount,
+          exchangeRate: exchangeRate,
+          exchangeRateValidUntil: validUntil
+        };
+        
+        await order.save({ session });
+      }
+
+      // Create Monero payment request via GloBee
+      const paymentRequest = await moneroService.createPaymentRequest({
+        orderId: order._id.toString(),
+        amount: order.paymentDetails.xmrAmount,
+        currency: 'XMR',
+        customerEmail: order.customerEmail
+      });
+
+      // Update order with GloBee payment details
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        globeePaymentId: paymentRequest.paymentId,
+        moneroAddress: paymentRequest.address,
+        paymentUrl: paymentRequest.paymentUrl,
+        expirationTime: paymentRequest.expirationTime
+      };
+      
+      await order.save({ session });
+
+      return order;
+    });
+
+    // Fetch the created/updated order for response
+    const finalOrder = await Order.findById(order._id).lean();
+
+    res.json({
+      success: true,
+      data: {
+        orderId: finalOrder._id,
+        orderNumber: finalOrder.orderNumber,
+        moneroAddress: finalOrder.paymentDetails.moneroAddress,
+        xmrAmount: finalOrder.paymentDetails.xmrAmount,
+        exchangeRate: finalOrder.paymentDetails.exchangeRate,
+        validUntil: finalOrder.paymentDetails.exchangeRateValidUntil,
+        paymentUrl: finalOrder.paymentDetails.paymentUrl,
+        expirationTime: finalOrder.paymentDetails.expirationTime,
+        requiredConfirmations: finalOrder.paymentDetails.requiredConfirmations,
+        paymentWindowHours: finalOrder.paymentDetails.paymentWindow
+      }
+    });
+
+  } catch (error) {
+    console.error('Create Monero payment error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error occurred while creating Monero payment'
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// Check Monero payment status
+export const checkMoneroPaymentStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    if (order.paymentMethod.type !== 'monero') {
+      return res.status(400).json({
+        success: false,
+        error: 'Order is not a Monero payment'
+      });
+    }
+
+    // Check if we have a GloBee payment ID
+    if (!order.paymentDetails.globeePaymentId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No Monero payment request found'
+      });
+    }
+
+    // Get current status from GloBee
+    const paymentStatus = await moneroService.getPaymentStatus(order.paymentDetails.globeePaymentId);
+
+    res.json({
+      success: true,
+      data: {
+        orderId: order._id,
+        paymentStatus: paymentStatus.status,
+        confirmations: paymentStatus.confirmations,
+        paidAmount: paymentStatus.paid_amount,
+        transactionHash: paymentStatus.transaction_hash,
+        isExpired: moneroService.isPaymentExpired(order.createdAt),
+        requiredConfirmations: moneroService.getRequiredConfirmations()
+      }
+    });
+
+  } catch (error) {
+    console.error('Check Monero payment status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred while checking payment status'
+    });
+  }
+};
+
+// GloBee webhook handler for Monero payments
+export const handleMoneroWebhook = async (req, res) => {
+  const session = await mongoose.startSession();
+  
+  try {
+    const signature = req.headers['x-globee-signature'];
+    const payload = JSON.stringify(req.body);
+
+    // Verify webhook signature
+    if (!moneroService.verifyWebhookSignature(payload, signature)) {
+      console.error('Invalid GloBee webhook signature');
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid signature'
+      });
+    }
+
+    console.log('GloBee webhook received:', req.body);
+
+    const webhookData = moneroService.processWebhookNotification(req.body);
+    
+    if (!webhookData.orderId) {
+      console.error('No order ID in GloBee webhook');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid webhook data'
+      });
+    }
+
+    await session.withTransaction(async () => {
+      const order = await Order.findById(webhookData.orderId).session(session);
+      
+      if (!order) {
+        throw new Error(`Order ${webhookData.orderId} not found`);
+      }
+
+      // Update payment details
+      order.paymentDetails = {
+        ...order.paymentDetails,
+        confirmations: webhookData.confirmations,
+        paidAmount: webhookData.paidAmount,
+        transactionHash: webhookData.transactionHash,
+        lastWebhookUpdate: new Date()
+      };
+
+      // Update payment status based on webhook data
+      if (webhookData.status === 'confirmed') {
+        order.paymentStatus = 'completed';
+        order.status = 'processing'; // Move order to processing
+        console.log(`Monero payment confirmed for order ${order._id} with ${webhookData.confirmations} confirmations`);
+      } else if (webhookData.status === 'partially_confirmed') {
+        order.paymentStatus = 'awaiting_confirmation';
+        console.log(`Monero payment partially confirmed for order ${order._id} (${webhookData.confirmations}/${moneroService.getRequiredConfirmations()} confirmations)`);
+      } else if (webhookData.status === 'underpaid') {
+        order.paymentStatus = 'underpaid';
+        console.log(`Monero underpayment for order ${order._id}: received ${webhookData.paidAmount}, expected ${webhookData.totalAmount}`);
+      } else if (webhookData.status === 'failed') {
+        order.paymentStatus = 'failed';
+        console.log(`Monero payment failed for order ${order._id}`);
+      }
+
+      await order.save({ session });
+
+      console.log(`Monero payment updated for order ${order._id}:`, {
+        status: order.paymentStatus,
+        confirmations: webhookData.confirmations,
+        paidAmount: webhookData.paidAmount
+      });
+    });
+
+    res.status(200).json({ 
+      success: true,
+      received: true 
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('GloBee webhook error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Webhook processing failed'
+    });
+  } finally {
+    await session.endSession();
   }
 };

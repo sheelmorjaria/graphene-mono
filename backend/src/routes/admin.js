@@ -1,5 +1,6 @@
 import express from 'express';
 import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
+import { getAllPromotions, createPromotion, updatePromotion, updatePromotionStatus, deletePromotion, checkCodeUniqueness, getPromotionById } from '../controllers/promotionController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { uploadProductImages, processProductImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
@@ -53,5 +54,14 @@ router.get('/reports/sales-summary', getSalesReport);
 router.get('/reports/product-performance', getProductPerformanceReport);
 router.get('/reports/customer-acquisition', getCustomerReport);
 router.get('/reports/inventory-summary', getInventoryReport);
+
+// Promotions management
+router.get('/promotions', getAllPromotions);
+router.get('/promotions/check-code', checkCodeUniqueness);
+router.get('/promotions/:promoId', getPromotionById);
+router.post('/promotions', createPromotion);
+router.put('/promotions/:promoId', updatePromotion);
+router.put('/promotions/:promoId/status', updatePromotionStatus);
+router.delete('/promotions/:promoId', deletePromotion);
 
 export default router;
