@@ -7,12 +7,12 @@ const mockOrder = {
 };
 
 // Set up the mock before any imports
-jest.unstable_mockModule('../../models/Order.js', () => ({
+jest.mock('../../models/Order.js', () => ({
   default: mockOrder
 }));
 
-// Dynamic import to ensure the mock is in place
-const { getAllOrders } = await import('../adminController.js');
+// Import after mocking
+import { getAllOrders } from '../adminController.js';
 
 describe('Admin Controller - getAllOrders', () => {
   let req, res;

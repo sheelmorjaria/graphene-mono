@@ -12,13 +12,13 @@ const mockEmailService = {
 };
 
 // Set up mocks before imports
-jest.unstable_mockModule('../services/emailService.js', () => ({
+jest.mock('../services/emailService.js', () => ({
   default: mockEmailService
 }));
 
 // Dynamic imports after mocking
-const { default: app } = await import('../../server.js');
-const { default: User } = await import('../models/User.js');
+import '../../server.js';
+import '../models/User.js';
 
 describe('User Management Integration Tests', () => {
   let adminUser;

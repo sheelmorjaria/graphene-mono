@@ -1,6 +1,22 @@
 import express from 'express';
 import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
 import { getAllPromotions, createPromotion, updatePromotion, updatePromotionStatus, deletePromotion, checkCodeUniqueness, getPromotionById } from '../controllers/promotionController.js';
+import { 
+  getGeneralSettings, 
+  updateGeneralSettings, 
+  getShippingSettings, 
+  createShippingMethod, 
+  updateShippingMethod, 
+  deleteShippingMethod,
+  getTaxSettings,
+  createTaxRate,
+  updateTaxRate,
+  deleteTaxRate,
+  getPaymentSettings,
+  updatePaymentGateway,
+  createPaymentGateway,
+  togglePaymentGateway
+} from '../controllers/settingsController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { uploadProductImages, processProductImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
@@ -63,5 +79,28 @@ router.post('/promotions', createPromotion);
 router.put('/promotions/:promoId', updatePromotion);
 router.put('/promotions/:promoId/status', updatePromotionStatus);
 router.delete('/promotions/:promoId', deletePromotion);
+
+// Settings management
+// General settings
+router.get('/settings/general', getGeneralSettings);
+router.put('/settings/general', updateGeneralSettings);
+
+// Shipping settings
+router.get('/settings/shipping', getShippingSettings);
+router.post('/settings/shipping', createShippingMethod);
+router.put('/settings/shipping/:methodId', updateShippingMethod);
+router.delete('/settings/shipping/:methodId', deleteShippingMethod);
+
+// Tax settings
+router.get('/settings/taxes', getTaxSettings);
+router.post('/settings/taxes', createTaxRate);
+router.put('/settings/taxes/:taxRateId', updateTaxRate);
+router.delete('/settings/taxes/:taxRateId', deleteTaxRate);
+
+// Payment settings
+router.get('/settings/payments', getPaymentSettings);
+router.post('/settings/payments', createPaymentGateway);
+router.put('/settings/payments/:gatewayId', updatePaymentGateway);
+router.put('/settings/payments/:gatewayId/toggle', togglePaymentGateway);
 
 export default router;

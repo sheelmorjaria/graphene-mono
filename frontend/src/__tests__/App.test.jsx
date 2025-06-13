@@ -1,7 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, userEvent } from '../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from '../App';
 
 // Mock the page components

@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import logger, { logError } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,7 +95,7 @@ export const processProductImages = async (req, res, next) => {
         });
 
       } catch (imageError) {
-        console.error('Error processing image:', imageError);
+        logError(imageError, { context: 'image_processing', filename: file.filename });
         // Continue with other images if one fails
       }
     }
@@ -104,7 +105,7 @@ export const processProductImages = async (req, res, next) => {
     next();
 
   } catch (error) {
-    console.error('Image processing error:', error);
+    logError(error, { context: 'image_processing_middleware' });
     return res.status(400).json({
       success: false,
       error: 'Error processing uploaded images'
@@ -130,7 +131,7 @@ export const deleteProductImages = async (images) => {
         await fs.unlink(thumbnailPath);
       }
     } catch (error) {
-      console.error('Error deleting image file:', error);
+      logError(error, { context: 'image_file_deletion', path: imagePath });
       // Continue with other files
     }
   }

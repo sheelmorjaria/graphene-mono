@@ -29,6 +29,7 @@ import AdminUserDetailsPage from './pages/AdminUserDetailsPage';
 import AdminReportsPage from './pages/AdminReportsPage';
 import AdminPromotionsListPage from './pages/AdminPromotionsListPage';
 import AdminPromotionFormPage from './pages/AdminPromotionFormPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -399,6 +400,11 @@ export const AppRoutes = () => {
           <Route path="/admin/promotions/:promoId/edit" element={
             <AdminRoute>
               <AdminPromotionFormPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <AdminRoute>
+              <AdminSettingsPage />
             </AdminRoute>
           } />
           

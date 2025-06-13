@@ -1,22 +1,20 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import CheckoutPage from '../CheckoutPage';
-import { AuthProvider } from '../../contexts/AuthContext';
-import { CartProvider } from '../../contexts/CartContext';
 import { CheckoutProvider } from '../../contexts/CheckoutContext';
 
+import { vi } from 'vitest';
+
 // Mock services
-jest.mock('../../services/addressService', () => ({
-  getUserAddresses: jest.fn(),
-  addUserAddress: jest.fn(),
-  updateUserAddress: jest.fn()
+vi.mock('../../services/addressService', () => ({
+  getUserAddresses: vi.fn(),
+  addUserAddress: vi.fn(),
+  updateUserAddress: vi.fn()
 }));
 
-jest.mock('../../services/cartService', () => ({
-  getCart: jest.fn(),
-  formatCurrency: jest.fn((amount) => `£${amount.toFixed(2)}`)
+vi.mock('../../services/cartService', () => ({
+  getCart: vi.fn(),
+  formatCurrency: vi.fn((amount) => `£${amount.toFixed(2)}`)
 }));
 
 import { getUserAddresses } from '../../services/addressService';
@@ -76,31 +74,11 @@ const mockCart = {
   totalAmount: 2899.97
 };
 
-const renderWithProviders = (authState = {}, cartState = {}) => {
-  const defaultAuthState = {
-    isAuthenticated: true,
-    isLoading: false,
-    user: { _id: '1', email: 'test@example.com', firstName: 'Test' },
-    ...authState
-  };
-
-  const defaultCartState = {
-    cart: mockCart,
-    loading: false,
-    error: '',
-    ...cartState
-  };
-
+const renderWithProviders = () => {
   return render(
-    <BrowserRouter>
-      <AuthProvider value={defaultAuthState}>
-        <CartProvider value={defaultCartState}>
-          <CheckoutProvider>
-            <CheckoutPage />
-          </CheckoutProvider>
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <CheckoutProvider>
+      <CheckoutPage />
+    </CheckoutProvider>
   );
 };
 

@@ -11,7 +11,11 @@ import emailService from '../../services/emailService.js';
 import jwt from 'jsonwebtoken';
 
 // Mock email service
-jest.mock('../../services/emailService.js');
+jest.mock('../../services/emailService.js', () => ({
+  sendEmail: jest.fn().mockResolvedValue(true),
+  sendReturnRequestEmail: jest.fn().mockResolvedValue(true),
+  sendReturnUpdateEmail: jest.fn().mockResolvedValue(true)
+}));
 
 describe('Admin Returns Integration Tests', () => {
   let app;

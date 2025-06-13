@@ -1,7 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
 import SearchBar from '../SearchBar';
 
 const mockNavigate = vi.fn();

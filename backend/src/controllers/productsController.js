@@ -35,18 +35,22 @@ export const getProducts = async (req, res) => {
 
     // Add price range filter
     if (minPrice || maxPrice) {
-      filter.price = {};
+      const priceFilter = {};
       if (minPrice) {
         const min = parseFloat(minPrice);
         if (!isNaN(min)) {
-          filter.price.$gte = min;
+          priceFilter.$gte = min;
         }
       }
       if (maxPrice) {
         const max = parseFloat(maxPrice);
         if (!isNaN(max)) {
-          filter.price.$lte = max;
+          priceFilter.$lte = max;
         }
+      }
+      // Only add price filter if at least one valid price was provided
+      if (Object.keys(priceFilter).length > 0) {
+        filter.price = priceFilter;
       }
     }
 

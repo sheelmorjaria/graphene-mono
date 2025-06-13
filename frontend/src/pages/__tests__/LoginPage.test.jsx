@@ -1,7 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
 import LoginPage from '../LoginPage';
 
 // Mock useNavigate
@@ -28,11 +26,9 @@ vi.mock('../../contexts/AuthContext', () => ({
 import { loginUser } from '../../services/authService';
 
 const renderLoginPage = (initialRoute = '/login') => {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <LoginPage />
-    </MemoryRouter>
-  );
+  return render(<LoginPage />, {
+    initialEntries: [initialRoute]
+  });
 };
 
 describe('LoginPage', () => {

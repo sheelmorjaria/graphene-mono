@@ -3,23 +3,14 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../server.js';
 import Order from '../../models/Order.js';
+import { mockRateLimiting } from '../../test/helpers/mockSetup.js';
 
 describe('Support API Integration Tests', () => {
-  beforeAll(async () => {
-    // Connect to test database
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/graphene-store-test');
-    }
-  });
+  // Using global test setup for MongoDB connection
 
   beforeEach(async () => {
     // Clear database before each test
     await Order.deleteMany({});
-  });
-
-  afterAll(async () => {
-    // Close database connection
-    await mongoose.connection.close();
   });
 
   describe('POST /api/support/contact', () => {
@@ -70,21 +61,27 @@ describe('Support API Integration Tests', () => {
       it('should handle order number validation', async () => {
         // Test with valid order number
         const testOrder = new Order({
+          userId: new mongoose.Types.ObjectId(),
           orderNumber: 'ORD-VALID-123',
           customerEmail: 'john@example.com',
-          orderDate: new Date(),
           status: 'pending',
+          subtotal: 599.99,
+          tax: 0,
+          shipping: 0,
           totalAmount: 599.99,
           items: [{
             productId: new mongoose.Types.ObjectId(),
-            name: 'Google Pixel 8',
-            price: 599.99,
-            quantity: 1
+            productName: 'Google Pixel 8',
+            productSlug: 'google-pixel-8',
+            unitPrice: 599.99,
+            quantity: 1,
+            totalPrice: 599.99
           }],
           shippingAddress: {
             fullName: 'John Doe',
             addressLine1: '123 Test St',
             city: 'Test City',
+            stateProvince: 'Test State',
             postalCode: '12345',
             country: 'GB'
           },
@@ -92,19 +89,14 @@ describe('Support API Integration Tests', () => {
             fullName: 'John Doe',
             addressLine1: '123 Test St',
             city: 'Test City',
+            stateProvince: 'Test State',
             postalCode: '12345',
             country: 'GB'
           },
-          paymentMethod: {
-            id: 'test-payment',
-            name: 'Test Payment',
-            type: 'paypal'
-          },
-          paymentStatus: 'pending',
           shippingMethod: {
-            id: 'standard',
+            id: new mongoose.Types.ObjectId(),
             name: 'Standard Shipping',
-            cost: 5.99
+            cost: 0
           }
         });
         await testOrder.save();
@@ -166,9 +158,11 @@ describe('Support API Integration Tests', () => {
       });
 
       it('should sanitize input data', async () => {
+        await mockRateLimiting.addDelay(500); // Add delay to prevent rate limiting
+        
         const maliciousData = {
           fullName: '<script>alert("xss")</script>John Doe',
-          email: 'john@example.com',
+          email: `sanitize-${Date.now()}@example.com`,
           subject: 'product-question',
           message: '<img src=x onerror=alert("xss")>This is a test message'
         };
@@ -182,15 +176,19 @@ describe('Support API Integration Tests', () => {
       });
 
       it('should handle different subject types', async () => {
+        await mockRateLimiting.addDelay(500); // Add delay to prevent rate limiting
+        
         const subjects = ['order-inquiry', 'product-question', 'technical-issue', 'other'];
 
         for (const subject of subjects) {
+          await mockRateLimiting.addDelay(300); // Add delay between each request
+          
           const response = await request(app)
             .post('/api/support/contact')
             .send({
               ...validContactData,
               subject,
-              email: `${subject}@example.com` // Unique email to avoid rate limiting
+              email: `${subject}-${Date.now()}-${Math.random()}@example.com` // Unique email to avoid rate limiting
             })
             .expect(200);
 
@@ -199,6 +197,7 @@ describe('Support API Integration Tests', () => {
       });
 
       it('should handle large message content', async () => {
+        await mockRateLimiting.addDelay(500);
         const largeMessage = 'A'.repeat(2000); // 2KB message
         
         const response = await request(app)
@@ -206,7 +205,7 @@ describe('Support API Integration Tests', () => {
           .send({
             ...validContactData,
             message: largeMessage,
-            email: 'largemessage@example.com'
+            email: `largemessage-${Date.now()}-${Math.random()}@example.com`
           })
           .expect(200);
 
@@ -214,12 +213,14 @@ describe('Support API Integration Tests', () => {
       });
 
       it('should capture request metadata', async () => {
+        await mockRateLimiting.addDelay(500);
+        
         const response = await request(app)
           .post('/api/support/contact')
           .set('User-Agent', 'Test-Browser/1.0')
           .send({
             ...validContactData,
-            email: 'metadata@example.com'
+            email: `metadata-${Date.now()}-${Math.random()}@example.com`
           })
           .expect(200);
 

@@ -5,6 +5,7 @@ import express from 'express';
 import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
 import { searchProducts } from '../searchController.js';
+import { createValidProductData, createValidCategoryData } from '../../test/helpers/testData.js';
 
 // Create Express app for testing
 const app = express();
@@ -12,16 +13,10 @@ app.use(express.json());
 app.get('/api/products/search', searchProducts);
 
 describe('Search Controller', () => {
+  // Using global test setup for MongoDB connection
+  
   let categoryId;
   let sampleProducts;
-
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   beforeEach(async () => {
     // Clear database
@@ -29,17 +24,17 @@ describe('Search Controller', () => {
     await Category.deleteMany({});
 
     // Create test category
-    const category = new Category({
+    const category = new Category(createValidCategoryData({
       name: 'Smartphones',
       slug: 'smartphones',
       description: 'Privacy-focused smartphones'
-    });
+    }));
     const savedCategory = await category.save();
     categoryId = savedCategory._id;
 
     // Create test products
     sampleProducts = [
-      {
+      createValidProductData({
         name: 'GrapheneOS Pixel 9 Pro',
         slug: 'grapheneos-pixel-9-pro',
         shortDescription: 'Premium privacy-focused smartphone with GrapheneOS',
@@ -51,8 +46,8 @@ describe('Search Controller', () => {
         stockStatus: 'in_stock',
         stockQuantity: 15,
         isActive: true
-      },
-      {
+      }),
+      createValidProductData({
         name: 'GrapheneOS Pixel 9',
         slug: 'grapheneos-pixel-9',
         shortDescription: 'High-performance privacy smartphone',
@@ -64,8 +59,8 @@ describe('Search Controller', () => {
         stockStatus: 'in_stock',
         stockQuantity: 20,
         isActive: true
-      },
-      {
+      }),
+      createValidProductData({
         name: 'Privacy Case Set',
         slug: 'privacy-case-set',
         shortDescription: 'Protection accessories for your smartphone',
@@ -77,7 +72,7 @@ describe('Search Controller', () => {
         stockStatus: 'in_stock',
         stockQuantity: 50,
         isActive: true
-      }
+      })
     ];
 
     // Save all products
@@ -307,7 +302,7 @@ describe('Search Controller', () => {
 
     it('should only search active products', async () => {
       // Create an inactive product
-      const inactiveProduct = new Product({
+      const inactiveProduct = new Product(createValidProductData({
         name: 'Inactive Pixel Device',
         slug: 'inactive-pixel-device',
         shortDescription: 'This should not appear in search',
@@ -317,7 +312,7 @@ describe('Search Controller', () => {
         stockStatus: 'in_stock',
         stockQuantity: 5,
         isActive: false // inactive
-      });
+      }));
       await inactiveProduct.save();
 
       const response = await request(app)

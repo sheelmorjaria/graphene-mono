@@ -8,6 +8,7 @@ import Order from '../../models/Order.js';
 import User from '../../models/User.js';
 import Cart from '../../models/Cart.js';
 import Product from '../../models/Product.js';
+import Category from '../../models/Category.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 
 // PayPal API Integration Tests
@@ -17,6 +18,7 @@ describe('PayPal Payment API Integration Tests', () => {
   let testOrder;
   let testUser;
   let testProduct;
+  let testCategory;
   let testShippingMethod;
   let testCart;
 
@@ -40,32 +42,41 @@ describe('PayPal Payment API Integration Tests', () => {
       isEmailVerified: true
     });
 
+    // Create test category
+    testCategory = await Category.create({
+      name: 'Test Category',
+      slug: 'test-category',
+      description: 'A category for testing PayPal payments'
+    });
+
     // Create test product
     testProduct = await Product.create({
       name: 'PayPal Payment Test Product',
       slug: 'paypal-payment-test-product',
-      description: 'A product for testing PayPal payments',
+      sku: 'PAYPAL-TEST-001',
+      shortDescription: 'A product for testing PayPal payments',
+      longDescription: 'A detailed product for testing PayPal payment integration',
       price: 299.99,
-      category: 'test',
+      category: testCategory._id,
       stockQuantity: 100,
+      status: 'active',
       isActive: true,
-      images: ['test-image.jpg'],
-      specifications: {
-        'Payment Methods': 'PayPal, Bitcoin',
-        'Test Product': 'Yes'
-      }
+      images: ['test-image.jpg']
     });
 
     // Create test shipping method
     testShippingMethod = await ShippingMethod.create({
       name: 'PayPal Test Shipping',
+      code: 'PAYPAL_TEST',
       description: 'Test shipping method for PayPal tests',
-      cost: 12.99,
-      estimatedDays: '2-4',
+      baseCost: 12.99,
+      estimatedDeliveryDays: {
+        min: 2,
+        max: 4
+      },
       isActive: true,
-      availableCountries: ['UK', 'US'],
-      calculateCost: function(cart, address) {
-        return { cost: this.cost, available: true };
+      criteria: {
+        supportedCountries: ['GB', 'US']
       }
     });
 
@@ -78,7 +89,7 @@ describe('PayPal Payment API Integration Tests', () => {
         productSlug: testProduct.slug,
         quantity: 1,
         unitPrice: testProduct.price,
-        price: testProduct.price
+        subtotal: testProduct.price
       }],
       totalAmount: testProduct.price,
       totalItems: 1
@@ -98,7 +109,9 @@ describe('PayPal Payment API Integration Tests', () => {
         totalPrice: testProduct.price
       }],
       subtotal: testProduct.price,
-      orderTotal: testProduct.price + testShippingMethod.cost,
+      totalAmount: testProduct.price + testShippingMethod.baseCost,
+      tax: 0,
+      shipping: testShippingMethod.baseCost,
       shippingAddress: {
         fullName: 'PayPal User',
         addressLine1: '123 PayPal Avenue',
@@ -118,7 +131,7 @@ describe('PayPal Payment API Integration Tests', () => {
       shippingMethod: {
         id: testShippingMethod._id,
         name: testShippingMethod.name,
-        cost: testShippingMethod.cost
+        cost: testShippingMethod.baseCost
       },
       paymentMethod: {
         type: 'paypal',
@@ -515,7 +528,7 @@ describe('PayPal Payment API Integration Tests', () => {
         expect(foundOrder.orderNumber).toBe('ORD-PAYPAL-TEST-123');
         expect(foundOrder.customerEmail).toBe('paypal@test.com');
         expect(foundOrder.items).toHaveLength(1);
-        expect(foundOrder.orderTotal).toBe(testProduct.price + testShippingMethod.cost);
+        expect(foundOrder.totalAmount).toBe(testProduct.price + testShippingMethod.baseCost);
         expect(foundOrder.paymentMethod.type).toBe('paypal');
       }
     });
@@ -562,8 +575,12 @@ describe('PayPal Payment API Integration Tests', () => {
       const outOfStockProduct = await Product.create({
         name: 'Out of Stock Product',
         slug: 'out-of-stock-product',
+        sku: 'OOS-TEST-001',
+        shortDescription: 'Out of stock test product',
         price: 199.99,
+        category: testCategory._id,
         stockQuantity: 0,
+        status: 'active',
         isActive: true
       });
 
@@ -576,7 +593,7 @@ describe('PayPal Payment API Integration Tests', () => {
           productSlug: outOfStockProduct.slug,
           quantity: 1,
           unitPrice: outOfStockProduct.price,
-          price: outOfStockProduct.price
+          subtotal: outOfStockProduct.price
         }],
         totalAmount: outOfStockProduct.price,
         totalItems: 1

@@ -1,5 +1,9 @@
 export default {
   testEnvironment: 'node',
+  transform: {},
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
     '!src/**/*.test.{js,jsx}',
@@ -12,4 +16,9 @@ export default {
   ],
   testTimeout: 30000,
   maxWorkers: 1, // Run tests sequentially to avoid MongoDB conflicts
+  bail: false, // Don't stop on first failure
+  forceExit: true, // Force exit after tests complete
+  detectOpenHandles: true, // Detect handles that may prevent Jest from exiting
+  verbose: false, // Reduce noise unless debugging
+  silent: false // Allow console output for debugging
 };

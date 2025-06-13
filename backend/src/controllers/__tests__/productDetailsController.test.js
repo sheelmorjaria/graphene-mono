@@ -5,6 +5,7 @@ import express from 'express';
 import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
 import { getProductBySlug } from '../productDetailsController.js';
+import { createValidProductData, createValidCategoryData } from '../../test/helpers/testData.js';
 
 // Create Express app for testing
 const app = express();
@@ -12,16 +13,10 @@ app.use(express.json());
 app.get('/api/products/:slug', getProductBySlug);
 
 describe('Product Details Controller', () => {
+  // Using global test setup for MongoDB connection
+  
   let categoryId;
   let sampleProduct;
-
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   beforeEach(async () => {
     // Clear database
@@ -29,16 +24,16 @@ describe('Product Details Controller', () => {
     await Category.deleteMany({});
 
     // Create test category
-    const category = new Category({
+    const category = new Category(createValidCategoryData({
       name: 'Smartphones',
       slug: 'smartphones',
       description: 'Privacy-focused smartphones'
-    });
+    }));
     const savedCategory = await category.save();
     categoryId = savedCategory._id;
 
     // Create test product
-    sampleProduct = {
+    sampleProduct = createValidProductData({
       name: 'GrapheneOS Pixel 9 Pro',
       slug: 'grapheneos-pixel-9-pro',
       shortDescription: 'Privacy-focused smartphone with GrapheneOS',
@@ -60,7 +55,7 @@ describe('Product Details Controller', () => {
         { name: 'Display', value: '6.3" OLED' }
       ],
       isActive: true
-    };
+    });
 
     const product = new Product(sampleProduct);
     await product.save();
@@ -116,11 +111,12 @@ describe('Product Details Controller', () => {
 
     it('should return 404 for inactive product', async () => {
       // Create inactive product
-      const inactiveProduct = new Product({
+      const inactiveProduct = new Product(createValidProductData({
         ...sampleProduct,
         slug: 'inactive-product',
+        sku: 'INACTIVE-PRODUCT-001',
         isActive: false
-      });
+      }));
       await inactiveProduct.save();
 
       const response = await request(app)
@@ -150,12 +146,17 @@ describe('Product Details Controller', () => {
 
     it('should return product with empty arrays for missing optional fields', async () => {
       // Create product with minimal data
-      const minimalProduct = new Product({
+      const minimalProduct = new Product(createValidProductData({
         name: 'Minimal Product',
         slug: 'minimal-product',
+        sku: 'MINIMAL-PRODUCT-001',
         price: 99.99,
-        category: categoryId
-      });
+        category: categoryId,
+        shortDescription: undefined,
+        longDescription: undefined,
+        images: [],
+        attributes: []
+      }));
       await minimalProduct.save();
 
       const response = await request(app)

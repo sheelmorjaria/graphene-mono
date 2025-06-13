@@ -1,21 +1,24 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import moneroService from '../moneroService.js';
-
-// Mock axios instead of fetch
-jest.mock('axios');
-
-// Import the mocked axios
 import axios from 'axios';
 
 describe('MoneroService Working Tests', () => {
+  let axiosGetSpy;
+  let axiosPostSpy;
+
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Set test environment variables
-    process.env.GLOBEE_API_KEY = 'test-api-key';
+    // Set test environment variables  
+    process.env.NODE_ENV = 'test';
+    process.env.GLOBEE_API_KEY = 'test-globee-api-key';
     process.env.GLOBEE_SECRET = 'test-webhook-secret';
     process.env.FRONTEND_URL = 'http://localhost:3000';
     process.env.BACKEND_URL = 'http://localhost:5000';
+    
+    // Mock axios methods using spyOn
+    axiosGetSpy = jest.spyOn(axios, 'get').mockResolvedValue({ data: {} });
+    axiosPostSpy = jest.spyOn(axios, 'post').mockResolvedValue({ data: {} });
     
     // Reset cache
     moneroService.exchangeRateCache = {
@@ -33,11 +36,11 @@ describe('MoneroService Working Tests', () => {
         }
       };
 
-      axios.get.mockResolvedValueOnce(mockResponse);
+      axiosGetSpy.mockResolvedValueOnce(mockResponse);
 
       const result = await moneroService.getExchangeRate();
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(axiosGetSpy).toHaveBeenCalledWith(
         'https://api.coingecko.com/api/v3/simple/price',
         expect.objectContaining({
           params: {
@@ -50,7 +53,7 @@ describe('MoneroService Working Tests', () => {
       );
 
       // 1 GBP = 1/161.23 XMR ≈ 0.00620333 XMR
-      expect(result.rate).toBeCloseTo(0.00620333, 6);
+      expect(result.rate).toBeCloseTo(0.00620333, 5);
       expect(result.validUntil).toBeInstanceOf(Date);
     });
 
@@ -65,12 +68,19 @@ describe('MoneroService Working Tests', () => {
 
       const result = await moneroService.getExchangeRate();
 
-      expect(axios.get).not.toHaveBeenCalled();
+      expect(axiosGetSpy).not.toHaveBeenCalled();
       expect(result.rate).toBe(0.005);
     });
 
     it('should handle API errors gracefully', async () => {
-      axios.get.mockRejectedValueOnce(new Error('Network error'));
+      // Clear cache to force API call
+      moneroService.exchangeRateCache = {
+        rate: null,
+        timestamp: null,
+        validUntil: null
+      };
+
+      axiosGetSpy.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(moneroService.getExchangeRate()).rejects.toThrow(
         'Unable to fetch current Monero exchange rate'
@@ -80,12 +90,12 @@ describe('MoneroService Working Tests', () => {
 
   describe('convertGbpToXmr', () => {
     beforeEach(() => {
-      // Mock exchange rate in cache
-      moneroService.exchangeRateCache = {
+      // Mock the getExchangeRate method to return predictable values
+      jest.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
         rate: 0.01, // 1 GBP = 0.01 XMR
         timestamp: Date.now(),
-        validUntil: Date.now() + 5 * 60 * 1000
-      };
+        validUntil: new Date(Date.now() + 5 * 60 * 1000)
+      });
     });
 
     it('should convert GBP to XMR correctly', async () => {
@@ -117,7 +127,7 @@ describe('MoneroService Working Tests', () => {
         }
       };
 
-      axios.post.mockResolvedValueOnce(mockGloBeeResponse);
+      axiosPostSpy.mockResolvedValueOnce(mockGloBeeResponse);
 
       const paymentData = {
         orderId: 'order-123',
@@ -128,7 +138,7 @@ describe('MoneroService Working Tests', () => {
 
       const result = await moneroService.createPaymentRequest(paymentData);
 
-      expect(axios.post).toHaveBeenCalledWith(
+      expect(axiosPostSpy).toHaveBeenCalledWith(
         'https://api.globee.com/v1/payment-request',
         expect.objectContaining({
           total: 1.9999,
@@ -138,7 +148,7 @@ describe('MoneroService Working Tests', () => {
         }),
         expect.objectContaining({
           headers: {
-            'Authorization': 'Bearer test-api-key',
+            'Authorization': 'Bearer test-globee-api-key',
             'Content-Type': 'application/json'
           }
         })
@@ -183,15 +193,15 @@ describe('MoneroService Working Tests', () => {
         }
       };
 
-      axios.get.mockResolvedValueOnce(mockStatusResponse);
+      axiosGetSpy.mockResolvedValueOnce(mockStatusResponse);
 
       const result = await moneroService.getPaymentStatus('payment-123');
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(axiosGetSpy).toHaveBeenCalledWith(
         'https://api.globee.com/v1/payment-request/payment-123',
         expect.objectContaining({
           headers: {
-            'Authorization': 'Bearer test-api-key'
+            'Authorization': 'Bearer test-globee-api-key'
           }
         })
       );

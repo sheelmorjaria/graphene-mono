@@ -1,5 +1,6 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import app from '../../../server.js';
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
@@ -58,20 +59,44 @@ describe('Admin Orders API Integration Tests', () => {
     const order1 = new Order({
       orderNumber: 'ORD-001',
       userId: customer1._id,
+      customerEmail: customer1.email,
       status: 'pending',
+      subtotal: 999.99,
+      tax: 0,
+      shipping: 0,
       totalAmount: 999.99,
-      paymentMethod: 'paypal',
       items: [{
-        productId: 'prod1',
-        name: 'Google Pixel 8',
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Google Pixel 8',
+        productSlug: 'google-pixel-8',
         quantity: 1,
-        price: 999.99
+        unitPrice: 999.99,
+        totalPrice: 999.99
       }],
       shippingAddress: {
-        street: '123 Test St',
+        fullName: 'John Doe',
+        addressLine1: '123 Test St',
         city: 'London',
+        stateProvince: 'London',
         postalCode: 'SW1A 1AA',
         country: 'United Kingdom'
+      },
+      billingAddress: {
+        fullName: 'John Doe',
+        addressLine1: '123 Test St',
+        city: 'London',
+        stateProvince: 'London',
+        postalCode: 'SW1A 1AA',
+        country: 'United Kingdom'
+      },
+      shippingMethod: {
+        id: new mongoose.Types.ObjectId(),
+        name: 'Standard Shipping',
+        cost: 0
+      },
+      paymentMethod: {
+        type: 'paypal',
+        name: 'PayPal'
       },
       createdAt: new Date('2024-01-15')
     });
@@ -79,20 +104,44 @@ describe('Admin Orders API Integration Tests', () => {
     const order2 = new Order({
       orderNumber: 'ORD-002',
       userId: customer2._id,
+      customerEmail: customer2.email,
       status: 'shipped',
+      subtotal: 1299.99,
+      tax: 0,
+      shipping: 0,
       totalAmount: 1299.99,
-      paymentMethod: 'bitcoin',
       items: [{
-        productId: 'prod2',
-        name: 'Google Pixel 8 Pro',
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Google Pixel 8 Pro',
+        productSlug: 'google-pixel-8-pro',
         quantity: 1,
-        price: 1299.99
+        unitPrice: 1299.99,
+        totalPrice: 1299.99
       }],
       shippingAddress: {
-        street: '456 Test Ave',
+        fullName: 'Jane Smith',
+        addressLine1: '456 Test Ave',
         city: 'Manchester',
+        stateProvince: 'Manchester',
         postalCode: 'M1 1AA',
         country: 'United Kingdom'
+      },
+      billingAddress: {
+        fullName: 'Jane Smith',
+        addressLine1: '456 Test Ave',
+        city: 'Manchester',
+        stateProvince: 'Manchester',
+        postalCode: 'M1 1AA',
+        country: 'United Kingdom'
+      },
+      shippingMethod: {
+        id: new mongoose.Types.ObjectId(),
+        name: 'Standard Shipping',
+        cost: 0
+      },
+      paymentMethod: {
+        type: 'bitcoin',
+        name: 'Bitcoin'
       },
       createdAt: new Date('2024-01-20')
     });
@@ -100,20 +149,44 @@ describe('Admin Orders API Integration Tests', () => {
     const order3 = new Order({
       orderNumber: 'ORD-003',
       userId: customer1._id,
+      customerEmail: customer1.email,
       status: 'delivered',
+      subtotal: 1599.99,
+      tax: 0,
+      shipping: 0,
       totalAmount: 1599.99,
-      paymentMethod: 'monero',
       items: [{
-        productId: 'prod3',
-        name: 'Google Pixel 8 Pro Max',
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Google Pixel 8 Pro Max',
+        productSlug: 'google-pixel-8-pro-max',
         quantity: 1,
-        price: 1599.99
+        unitPrice: 1599.99,
+        totalPrice: 1599.99
       }],
       shippingAddress: {
-        street: '789 Test Rd',
+        fullName: 'John Doe',
+        addressLine1: '789 Test Rd',
         city: 'Birmingham',
+        stateProvince: 'Birmingham',
         postalCode: 'B1 1AA',
         country: 'United Kingdom'
+      },
+      billingAddress: {
+        fullName: 'John Doe',
+        addressLine1: '789 Test Rd',
+        city: 'Birmingham',
+        stateProvince: 'Birmingham',
+        postalCode: 'B1 1AA',
+        country: 'United Kingdom'
+      },
+      shippingMethod: {
+        id: new mongoose.Types.ObjectId(),
+        name: 'Standard Shipping',
+        cost: 0
+      },
+      paymentMethod: {
+        type: 'monero',
+        name: 'Monero'
       },
       createdAt: new Date('2024-02-01')
     });

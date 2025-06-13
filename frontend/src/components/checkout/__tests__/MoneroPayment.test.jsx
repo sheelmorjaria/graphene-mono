@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, act, userEvent } from '../../../test/test-utils';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import MoneroPayment from '../MoneroPayment';
 

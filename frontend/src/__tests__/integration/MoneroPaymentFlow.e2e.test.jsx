@@ -8,13 +8,15 @@ import { CheckoutProvider } from '../../contexts/CheckoutContext';
 import App from '../../App';
 
 // Mock all external dependencies
-jest.mock('qrcode', () => ({
-  toDataURL: jest.fn(() => Promise.resolve('data:image/png;base64,mockedqrcode'))
+import { vi } from 'vitest';
+
+vi.mock('qrcode', () => ({
+  toDataURL: vi.fn(() => Promise.resolve('data:image/png;base64,mockedqrcode'))
 }));
 
-jest.mock('../../services/paymentService', () => ({
-  formatCurrency: jest.fn((amount) => `£${amount.toFixed(2)}`),
-  getPaymentMethods: jest.fn(() => Promise.resolve({
+vi.mock('../../services/paymentService', () => ({
+  formatCurrency: vi.fn((amount) => `£${amount.toFixed(2)}`),
+  getPaymentMethods: vi.fn(() => Promise.resolve({
     paymentMethods: [
       {
         id: 'paypal',
@@ -33,8 +35,8 @@ jest.mock('../../services/paymentService', () => ({
 }));
 
 // Mock cart service
-jest.mock('../../services/cartService', () => ({
-  getCart: jest.fn(() => Promise.resolve({
+vi.mock('../../services/cartService', () => ({
+  getCart: vi.fn(() => Promise.resolve({
     items: [
       {
         _id: 'item1',
@@ -49,15 +51,15 @@ jest.mock('../../services/cartService', () => ({
     ],
     cartTotal: 599.99
   })),
-  addToCart: jest.fn(),
-  removeFromCart: jest.fn(),
-  clearCart: jest.fn(),
-  formatCurrency: jest.fn((amount) => `£${amount.toFixed(2)}`)
+  addToCart: vi.fn(),
+  removeFromCart: vi.fn(),
+  clearCart: vi.fn(),
+  formatCurrency: vi.fn((amount) => `£${amount.toFixed(2)}`)
 }));
 
 // Mock order service
-jest.mock('../../services/orderService', () => ({
-  placeOrder: jest.fn(() => Promise.resolve({
+vi.mock('../../services/orderService', () => ({
+  placeOrder: vi.fn(() => Promise.resolve({
     success: true,
     data: {
       order: {
@@ -66,12 +68,12 @@ jest.mock('../../services/orderService', () => ({
       }
     }
   })),
-  validateOrderData: jest.fn(() => ({ isValid: true, errors: [] }))
+  validateOrderData: vi.fn(() => ({ isValid: true, errors: [] }))
 }));
 
 // Mock shipping service
-jest.mock('../../services/shippingService', () => ({
-  getShippingMethods: jest.fn(() => Promise.resolve([
+vi.mock('../../services/shippingService', () => ({
+  getShippingMethods: vi.fn(() => Promise.resolve([
     {
       _id: 'standard',
       name: 'Standard Shipping',
@@ -89,18 +91,18 @@ const mockUser = {
   email: 'john.doe@example.com'
 };
 
-jest.mock('../../contexts/AuthContext', () => ({
+vi.mock('../../contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({
     isAuthenticated: true,
     user: mockUser,
     isLoading: false
   }),
-  useLogout: () => jest.fn()
+  useLogout: () => vi.fn()
 }));
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('Monero Payment End-to-End Flow', () => {
   let user;

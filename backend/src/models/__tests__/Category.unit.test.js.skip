@@ -23,27 +23,23 @@ const mockCategoryMethods = {
 };
 
 // Mock the Category model
-jest.unstable_mockModule('../Category.js', () => ({
-  default: mockCategoryMethods
-}));
+jest.mock('../Category.js', () => mockCategoryMethods);
 
 // Mock Product model for product count method
 const mockProduct = {
   countDocuments: jest.fn()
 };
 
-jest.unstable_mockModule('mongoose', () => ({
-  default: {
-    ...mockMongoose,
-    model: jest.fn((name) => {
-      if (name === 'Product') return mockProduct;
-      return mockCategoryMethods;
-    })
-  }
+jest.mock('mongoose', () => ({
+  ...mockMongoose,
+  model: jest.fn((name) => {
+    if (name === 'Product') return mockProduct;
+    return mockCategoryMethods;
+  })
 }));
 
-// Import the actual Category model to test static methods
-const Category = await import('../Category.js');
+// Import after mocking
+import Category from '../Category.js';
 
 describe('Category Model Unit Tests', () => {
   beforeEach(() => {

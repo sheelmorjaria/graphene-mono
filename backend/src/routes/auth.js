@@ -2,6 +2,14 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { register, login, logout, getProfile, updateProfile, changePassword, forgotPassword, resetPassword } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
+import { handleValidationErrors } from '../middleware/validation.js';
+import {
+  registerValidation,
+  loginValidation,
+  changePasswordValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation
+} from '../validators/authValidators.js';
 
 const router = express.Router();
 
@@ -29,15 +37,15 @@ const registerLimiter = process.env.NODE_ENV === 'test' ? (req, res, next) => ne
 });
 
 // Public routes
-router.post('/register', registerLimiter, register);
-router.post('/login', authLimiter, login);
-router.post('/forgot-password', authLimiter, forgotPassword);
-router.post('/reset-password', authLimiter, resetPassword);
+router.post('/register', registerLimiter, registerValidation, handleValidationErrors, register);
+router.post('/login', authLimiter, loginValidation, handleValidationErrors, login);
+router.post('/forgot-password', authLimiter, forgotPasswordValidation, handleValidationErrors, forgotPassword);
+router.post('/reset-password', authLimiter, resetPasswordValidation, handleValidationErrors, resetPassword);
 
 // Protected routes
 router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfile);
-router.put('/password', authenticate, changePassword);
+router.put('/password', authenticate, changePasswordValidation, handleValidationErrors, changePassword);
 router.post('/logout', authenticate, logout);
 
 export default router;

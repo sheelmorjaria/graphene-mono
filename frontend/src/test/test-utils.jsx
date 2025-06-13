@@ -65,11 +65,15 @@ function render(
     )
   }
 
-  let result
-  act(() => {
-    result = rtlRender(ui, { wrapper: Wrapper, ...renderOptions })
+  // Use async act to handle async state updates
+  return rtlRender(ui, { wrapper: Wrapper, ...renderOptions })
+}
+
+// Helper to wait for async operations
+export async function waitForLoadingToFinish() {
+  await act(async () => {
+    await new Promise(resolve => setTimeout(resolve, 0))
   })
-  return result
 }
 
 // Re-export everything

@@ -11,14 +11,11 @@ const mockEmailService = {
   sendAccountReEnabledEmail: mockSendAccountReEnabledEmail
 };
 
-// Set up mocks before imports
-jest.unstable_mockModule('../../services/emailService.js', () => ({
-  default: mockEmailService
-}));
-
-// Dynamic imports after mocking
-const { default: app } = await import('../../../server.js');
-const { default: User } = await import('../../models/User.js');
+// Dynamic imports - mocking will be handled in beforeEach
+import app from '../../../server.js';
+import User from '../../models/User.js';
+import emailService from '../../services/emailService.js';
+import { createValidUserData } from '../../test/helpers/testData.js';
 
 describe('Admin Controller - User Management', () => {
   let adminUser;
@@ -28,9 +25,13 @@ describe('Admin Controller - User Management', () => {
   beforeEach(async () => {
     // Clear all mocks
     jest.clearAllMocks();
+    
+    // Mock email service methods
+    jest.spyOn(emailService, 'sendAccountDisabledEmail').mockImplementation(mockSendAccountDisabledEmail);
+    jest.spyOn(emailService, 'sendAccountReEnabledEmail').mockImplementation(mockSendAccountReEnabledEmail);
 
     // Create admin user
-    adminUser = new User({
+    adminUser = new User(createValidUserData({
       email: 'admin@test.com',
       password: 'password123',
       firstName: 'Admin',
@@ -38,11 +39,11 @@ describe('Admin Controller - User Management', () => {
       role: 'admin',
       emailVerified: true,
       accountStatus: 'active'
-    });
+    }));
     await adminUser.save();
 
     // Create test user
-    testUser = new User({
+    testUser = new User(createValidUserData({
       email: 'test@user.com',
       password: 'password123',
       firstName: 'Test',
@@ -50,7 +51,7 @@ describe('Admin Controller - User Management', () => {
       role: 'customer',
       emailVerified: true,
       accountStatus: 'active'
-    });
+    }));
     await testUser.save();
 
     // Generate admin token

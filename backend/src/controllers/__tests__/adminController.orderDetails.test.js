@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import jwt from 'jsonwebtoken';
@@ -7,14 +8,9 @@ import Order from '../../models/Order.js';
 import { getOrderById } from '../adminController.js';
 import { authenticate, requireRole } from '../../middleware/auth.js';
 
-// Mock the models - ES modules compatible
-const mockUser = {
-  findById: jest.fn()
-};
-
-const mockOrder = {
-  findById: jest.fn()
-};
+// Mock the models using jest.mock
+jest.mock('../../models/User.js');
+jest.mock('../../models/Order.js');
 
 const app = express();
 app.use(express.json());
