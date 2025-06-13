@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import useProductDetails from '../hooks/useProductDetails';
 import ImageGallery from '../components/ImageGallery';
@@ -6,7 +6,6 @@ import AddToCartButton from '../components/AddToCartButton';
 
 const ProductDetailsPage = () => {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const { product, loading, error, refetch } = useProductDetails(slug);
 
   // Set page title when product loads

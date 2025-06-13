@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { ClipboardIcon, CheckIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { 
@@ -22,7 +22,7 @@ const BitcoinPayment = ({ orderId, orderTotal, onPaymentStatusChange }) => {
     if (orderId && !paymentData) {
       initializePayment();
     }
-  }, [orderId, paymentData]);
+  }, [orderId, paymentData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll for payment status updates
   useEffect(() => {
@@ -33,7 +33,7 @@ const BitcoinPayment = ({ orderId, orderTotal, onPaymentStatusChange }) => {
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [paymentData]);
+  }, [paymentData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update countdown timer
   useEffect(() => {
@@ -59,7 +59,7 @@ const BitcoinPayment = ({ orderId, orderTotal, onPaymentStatusChange }) => {
     return () => clearInterval(timer);
   }, [paymentData]);
 
-  const initializePayment = async () => {
+  const initializePayment = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -77,9 +77,9 @@ const BitcoinPayment = ({ orderId, orderTotal, onPaymentStatusChange }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, onPaymentStatusChange]);
 
-  const checkPaymentStatus = async () => {
+  const checkPaymentStatus = useCallback(async () => {
     try {
       const response = await getBitcoinPaymentStatus(orderId);
       const status = response.data;
@@ -93,7 +93,7 @@ const BitcoinPayment = ({ orderId, orderTotal, onPaymentStatusChange }) => {
     } catch (err) {
       console.error('Error checking Bitcoin payment status:', err);
     }
-  };
+  }, [orderId, onPaymentStatusChange]);
 
   const copyToClipboard = async (text, field) => {
     try {

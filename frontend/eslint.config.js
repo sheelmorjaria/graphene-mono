@@ -51,11 +51,12 @@ export default [
     },
   },
   {
-    files: ['tailwind.config.js'],
+    files: ['tailwind.config.js', 'playwright.config.js'],
     languageOptions: {
       globals: {
         ...globals.node,
-        require: 'readonly'
+        require: 'readonly',
+        process: 'readonly'
       },
     },
   },

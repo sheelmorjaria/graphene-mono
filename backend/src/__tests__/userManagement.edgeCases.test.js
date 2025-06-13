@@ -1,7 +1,6 @@
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
 
 // Mock email service
 const mockSendAccountDisabledEmail = jest.fn();
@@ -110,7 +109,7 @@ describe('User Management Edge Cases and Error Scenarios', () => {
         { newStatus: [] },
         { newStatus: '' },
         { newStatus: 'DISABLED' }, // Wrong case
-        { newStatus: 'active ', }, // Trailing space
+        { newStatus: 'active ' }, // Trailing space
         { newStatus: ' disabled' }, // Leading space
         { newStatus: 'enable' }, // Wrong value
         { newStatus: 'true' }, // Wrong type
@@ -261,7 +260,7 @@ describe('User Management Edge Cases and Error Scenarios', () => {
       await testUser.save();
 
       // Temporarily close database connection to simulate connection issues
-      const originalConnection = mongoose.connection.readyState;
+      // const originalConnection = mongoose.connection.readyState; // For future connection testing
       
       // This is tricky to test without actually breaking the connection
       // In a real scenario, you might use database mocking or connection pooling

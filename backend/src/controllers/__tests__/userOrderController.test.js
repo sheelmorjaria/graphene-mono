@@ -341,8 +341,6 @@ describe('User Order Controller', () => {
       expect(order).toHaveProperty('paymentMethod');
       expect(order).toHaveProperty('paymentMethodDisplay');
       expect(order).toHaveProperty('paymentStatus');
-      expect(order).toHaveProperty('discount');
-      expect(order.discount).toBe(0);
       expect(order.trackingNumber).toBeUndefined();
       expect(order.trackingUrl).toBeUndefined();
       expect(order.items).toHaveLength(1);

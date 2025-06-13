@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
@@ -386,7 +386,7 @@ describe('SearchResultsPage', () => {
     const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
-    const prevButton = screen.getByRole('button', { name: /previous page/i });
+    const _prevButton = screen.getByRole('button', { name: /previous page/i });
     await user.tab(); // Focus on prev button
     await user.keyboard('{Enter}');
 

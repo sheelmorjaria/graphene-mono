@@ -38,10 +38,6 @@ const mockValidProduct = {
   }
 };
 
-const mockNotFoundResponse = {
-  success: false,
-  error: 'Product not found'
-};
 
 describe('Product Details API Integration Tests', () => {
   beforeEach(() => {

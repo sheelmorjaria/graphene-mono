@@ -1,7 +1,6 @@
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import mongoose from 'mongoose';
 import { getProducts } from '../productsController.js';
 import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
@@ -12,7 +11,7 @@ describe('Products Controller - Integration Tests', () => {
   
   let app;
   let testCategory;
-  let testProducts;
+  // let testProducts; // For future use in complex test scenarios
 
   beforeAll(() => {
     app = express();

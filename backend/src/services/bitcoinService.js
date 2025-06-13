@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import logger, { logPaymentEvent, logError } from '../utils/logger.js';
+import logger, { logError } from '../utils/logger.js';
 
 class BitcoinService {
   constructor() {
@@ -78,7 +78,19 @@ class BitcoinService {
 
     } catch (error) {
       logError(error, { context: 'btc_exchange_rate_fetch' });
-      throw new Error('Failed to fetch Bitcoin exchange rate');
+      
+      // If we have a cached rate, use it even if expired as fallback
+      if (this.rateCache.rate && this.rateCache.timestamp) {
+        logger.warn('Using expired cached Bitcoin rate due to API failure');
+        return {
+          rate: this.rateCache.rate,
+          timestamp: new Date(this.rateCache.timestamp),
+          cached: true,
+          expired: true
+        };
+      }
+      
+      throw new Error('Bitcoin exchange rate service temporarily unavailable');
     }
   }
 

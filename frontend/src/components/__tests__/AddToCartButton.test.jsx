@@ -1,4 +1,4 @@
-import { render, screen, userEvent } from '../../test/test-utils';
+import { render, screen, userEvent, act } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AddToCartButton from '../AddToCartButton';
 
@@ -63,7 +63,9 @@ describe('AddToCartButton', () => {
     render(<AddToCartButton {...defaultProps} onAddToCart={mockOnAddToCart} />);
     
     const button = screen.getByRole('button', { name: /add to cart/i });
-    await user.click(button);
+    await act(async () => {
+      await user.click(button);
+    });
     
     expect(mockOnAddToCart).toHaveBeenCalledTimes(1);
     expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1);
@@ -95,12 +97,16 @@ describe('AddToCartButton', () => {
     expect(quantitySelect).toHaveValue('1');
     
     // Change quantity
-    await user.selectOptions(quantitySelect, '3');
+    await act(async () => {
+      await user.selectOptions(quantitySelect, '3');
+    });
     expect(quantitySelect).toHaveValue('3');
     
     // Click add to cart
     const button = screen.getByRole('button', { name: /add to cart/i });
-    await user.click(button);
+    await act(async () => {
+      await user.click(button);
+    });
     
     expect(defaultProps.onAddToCart).toHaveBeenCalledWith('product-123', 3);
   });
@@ -155,12 +161,16 @@ describe('AddToCartButton', () => {
     button.focus();
     expect(button).toHaveFocus();
     
-    await user.keyboard('{Enter}');
+    await act(async () => {
+      await user.keyboard('{Enter}');
+    });
     expect(mockOnAddToCart).toHaveBeenCalledTimes(1);
     expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1);
     
     // Press Space
-    await user.keyboard(' ');
+    await act(async () => {
+      await user.keyboard(' ');
+    });
     expect(mockOnAddToCart).toHaveBeenCalledTimes(2);
     expect(mockOnAddToCart).toHaveBeenLastCalledWith('product-123', 1);
   });

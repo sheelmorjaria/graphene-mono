@@ -93,7 +93,7 @@ describe('PayPal Webhook Security Tests', () => {
     app.use(express.json({ limit: '10mb' }));
     
     // Add error handling middleware
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       console.error('Test app error:', err);
       res.status(500).json({ error: 'Internal server error', message: err.message });
     });
@@ -123,7 +123,7 @@ describe('PayPal Webhook Security Tests', () => {
         { resource: { id: 'test' } }, // Missing event_type
         { event_type: null, resource: { id: 'test' } }, // Null event_type
         { event_type: '', resource: { id: 'test' } }, // Empty event_type
-        { event_type: 'VALID.EVENT', resource: null }, // Null resource
+        { event_type: 'VALID.EVENT', resource: null } // Null resource
       ];
 
       for (const payload of incompletePayloads) {
@@ -188,7 +188,7 @@ describe('PayPal Webhook Security Tests', () => {
       const jsonInjectionPayloads = [
         '{"event_type": "PAYMENT.CAPTURE.COMPLETED", "__proto__": {"isAdmin": true}}',
         '{"event_type": "PAYMENT.CAPTURE.COMPLETED", "constructor": {"prototype": {"isAdmin": true}}}',
-        '{"event_type": "PAYMENT.CAPTURE.COMPLETED", "resource": {"amount": {"value": 1e308}}}', // Number overflow
+        '{"event_type": "PAYMENT.CAPTURE.COMPLETED", "resource": {"amount": {"value": 1e308}}}' // Number overflow
       ];
 
       for (const jsonString of jsonInjectionPayloads) {
@@ -525,10 +525,10 @@ describe('PayPal Webhook Security Tests', () => {
         { value: '99999999.99', valid: true }, // Very large payment
         { value: '-10.00', valid: false }, // Negative payment
         { value: '10.001', valid: false }, // Too many decimal places
-        { value: 'abc', valid: false }, // Non-numeric
+        { value: 'abc', valid: false } // Non-numeric
       ];
 
-      for (const { value, valid } of boundaryTests) {
+      for (const { value } of boundaryTests) {
         const payload = {
           event_type: 'PAYMENT.CAPTURE.COMPLETED',
           resource: {
@@ -559,7 +559,7 @@ describe('PayPal Webhook Security Tests', () => {
         { code: '', valid: false }
       ];
 
-      for (const { code, valid } of currencyTests) {
+      for (const { code } of currencyTests) {
         const payload = {
           event_type: 'PAYMENT.CAPTURE.COMPLETED',
           resource: {

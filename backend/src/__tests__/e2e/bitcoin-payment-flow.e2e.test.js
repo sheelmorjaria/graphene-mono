@@ -110,7 +110,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
   describe('Complete Bitcoin Payment Journey', () => {
     it('should complete a full Bitcoin payment flow from cart to confirmation', async () => {
       // Step 1: User authentication (simulate login)
-      const authResponse = await request(app)
+      await request(app)
         .post('/api/auth/login')
         .send({
           email: testUser.email,
@@ -155,7 +155,6 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         subtotal: cart.totalAmount,
         shipping: testShippingMethod.cost,
         tax: 0,
-        discount: 0,
         orderTotal: cart.totalAmount + testShippingMethod.cost,
         shippingAddress: {
           fullName: `${testUser.firstName} ${testUser.lastName}`,
@@ -616,7 +615,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
       });
 
       // Record initial state
-      const initialOrderState = await Order.findById(consistencyOrder._id);
+      await Order.findById(consistencyOrder._id);
       
       // Attempt initialization
       const initResponse = await request(app)

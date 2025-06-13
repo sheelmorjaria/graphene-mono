@@ -27,8 +27,6 @@ import AdminCategoryFormPage from './pages/AdminCategoryFormPage';
 import AdminUsersListPage from './pages/AdminUsersListPage';
 import AdminUserDetailsPage from './pages/AdminUserDetailsPage';
 import AdminReportsPage from './pages/AdminReportsPage';
-import AdminPromotionsListPage from './pages/AdminPromotionsListPage';
-import AdminPromotionFormPage from './pages/AdminPromotionFormPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import AdminRoute from './components/AdminRoute';
 import CartPage from './pages/CartPage';
@@ -385,21 +383,6 @@ export const AppRoutes = () => {
           <Route path="/admin/reports" element={
             <AdminRoute>
               <AdminReportsPage />
-            </AdminRoute>
-          } />
-          <Route path="/admin/promotions" element={
-            <AdminRoute>
-              <AdminPromotionsListPage />
-            </AdminRoute>
-          } />
-          <Route path="/admin/promotions/new" element={
-            <AdminRoute>
-              <AdminPromotionFormPage />
-            </AdminRoute>
-          } />
-          <Route path="/admin/promotions/:promoId/edit" element={
-            <AdminRoute>
-              <AdminPromotionFormPage />
             </AdminRoute>
           } />
           <Route path="/admin/settings" element={

@@ -1,4 +1,4 @@
-import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../contexts/AuthContext';
@@ -116,11 +116,15 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Fill out the login form
-    await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+    });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+    });
 
     // Verify login service was called with correct data
     await waitFor(() => {
@@ -156,11 +160,15 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Fill out the form
-    await user.type(screen.getByLabelText(/email address/i), 'wrong@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email address/i), 'wrong@example.com');
+      await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+    });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+    });
 
     // Should show error message
     await waitFor(() => {
@@ -192,7 +200,9 @@ describe('Login Flow Integration Tests', () => {
 
     // Click Login link in header
     const loginLink = screen.getByRole('link', { name: /login/i });
-    await user.click(loginLink);
+    await act(async () => {
+      await user.click(loginLink);
+    });
 
     // Should navigate to login page
     await waitFor(() => {
@@ -206,7 +216,9 @@ describe('Login Flow Integration Tests', () => {
     renderIntegrationTest('/login');
 
     // Try to submit empty form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+    });
 
     // Wait for validation to complete
     await waitFor(() => {
@@ -235,14 +247,18 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Fill out the form
-    await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
-    
-    // Check remember me
-    await user.click(screen.getByLabelText(/remember me/i));
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+      
+      // Check remember me
+      await user.click(screen.getByLabelText(/remember me/i));
+    });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+    });
 
     // Verify login service was called with correct data
     await waitFor(() => {
@@ -275,9 +291,11 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Fill out and submit login form
-    await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+    });
 
     // Verify login service was called
     await waitFor(() => {
@@ -320,10 +338,14 @@ describe('Login Flow Integration Tests', () => {
     }, { timeout: 5000 });
 
     // Click on user dropdown to open menu
-    await user.click(screen.getByText('Welcome, John'));
+    await act(async () => {
+      await user.click(screen.getByText('Welcome, John'));
+    });
 
     // Click sign out
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign out/i }));
+    });
 
     // Verify logout service was called
     await waitFor(() => {
@@ -350,8 +372,10 @@ describe('Login Flow Integration Tests', () => {
 
     // Enter invalid email
     const emailInput = screen.getByLabelText(/email address/i);
-    await user.type(emailInput, 'invalid-email');
-    await user.tab(); // Trigger blur event
+    await act(async () => {
+      await user.type(emailInput, 'invalid-email');
+      await user.tab(); // Trigger blur event
+    });
 
     // Should show validation error
     await waitFor(() => {
@@ -397,11 +421,15 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Fill out the form
-    await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+    await act(async () => {
+      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+    });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign in/i }));
+    });
 
     // Verify login service was called
     await waitFor(() => {
@@ -427,8 +455,10 @@ describe('Login Flow Integration Tests', () => {
 
     // Enter invalid email to trigger error
     const emailInput = screen.getByLabelText(/email address/i);
-    await user.type(emailInput, 'invalid');
-    await user.tab();
+    await act(async () => {
+      await user.type(emailInput, 'invalid');
+      await user.tab();
+    });
 
     // Should show validation error
     await waitFor(() => {
@@ -436,7 +466,9 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Start typing again
-    await user.type(emailInput, '@example.com');
+    await act(async () => {
+      await user.type(emailInput, '@example.com');
+    });
 
     // Error should be cleared
     await waitFor(() => {

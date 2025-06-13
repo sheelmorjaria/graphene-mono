@@ -12,7 +12,7 @@ const levels = {
   warn: 1,
   info: 2,
   http: 3,
-  debug: 4,
+  debug: 4
 };
 
 // Define log colors
@@ -21,7 +21,7 @@ const colors = {
   warn: 'yellow',
   info: 'green',
   http: 'magenta',
-  debug: 'white',
+  debug: 'white'
 };
 
 winston.addColors(colors);
@@ -46,7 +46,7 @@ if (process.env.NODE_ENV !== 'test') {
         winston.format.printf(
           (info) => `${info.timestamp} ${info.level}: ${info.message}`
         )
-      ),
+      )
     })
   );
 } else {
@@ -68,7 +68,7 @@ if (process.env.NODE_ENV !== 'test') {
       zippedArchive: true,
       maxSize: '20m',
       maxFiles: '14d',
-      level: 'error',
+      level: 'error'
     })
   );
 
@@ -79,7 +79,7 @@ if (process.env.NODE_ENV !== 'test') {
       datePattern: 'YYYY-MM-DD',
       zippedArchive: true,
       maxSize: '20m',
-      maxFiles: '14d',
+      maxFiles: '14d'
     })
   );
 }
@@ -90,12 +90,12 @@ const logger = winston.createLogger({
   levels,
   format,
   transports,
-  exitOnError: false,
+  exitOnError: false
 });
 
 // Create a stream object for Morgan HTTP logger
 logger.stream = {
-  write: (message) => logger.http(message.trim()),
+  write: (message) => logger.http(message.trim())
 };
 
 // Helper functions for specific use cases
@@ -103,7 +103,7 @@ export const logError = (error, context = {}) => {
   logger.error({
     message: error.message,
     stack: error.stack,
-    ...context,
+    ...context
   });
 };
 
@@ -111,7 +111,7 @@ export const logPaymentEvent = (event, data) => {
   logger.info({
     message: `Payment event: ${event}`,
     category: 'payment',
-    ...data,
+    ...data
   });
 };
 
@@ -120,7 +120,7 @@ export const logAuthEvent = (event, userId, details = {}) => {
     message: `Auth event: ${event}`,
     category: 'auth',
     userId,
-    ...details,
+    ...details
   });
 };
 
@@ -128,7 +128,7 @@ export const logSecurityEvent = (event, details) => {
   logger.warn({
     message: `Security event: ${event}`,
     category: 'security',
-    ...details,
+    ...details
   });
 };
 

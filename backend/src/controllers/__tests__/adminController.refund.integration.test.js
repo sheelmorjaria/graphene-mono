@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import express from 'express';
@@ -45,13 +44,15 @@ describe('Admin Refund Integration Tests', () => {
       lastName: 'User',
       email: 'admin@example.com',
       password: 'AdminPass123!',
-      role: 'admin'
+      role: 'admin',
+      isActive: true,
+      emailVerified: true
     });
     await adminUser.save();
 
     // Generate admin token
     adminToken = jwt.sign(
-      { _id: adminUser._id, role: adminUser.role },
+      { userId: adminUser._id, role: adminUser.role },
       process.env.JWT_SECRET || 'test-secret'
     );
 

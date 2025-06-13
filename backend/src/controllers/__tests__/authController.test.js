@@ -1,5 +1,4 @@
 import request from 'supertest';
-import mongoose from 'mongoose';
 import app from '../../../server.js';
 import User from '../../models/User.js';
 import jwt from 'jsonwebtoken';
@@ -434,7 +433,6 @@ describe('Auth Controller', () => {
 
   describe('POST /api/auth/logout', () => {
     let authToken;
-    let userId;
 
     beforeEach(async () => {
       // Create a test user and get auth token
@@ -451,7 +449,7 @@ describe('Auth Controller', () => {
         .send(userData);
 
       authToken = registerResponse.body.data.token;
-      userId = registerResponse.body.data.user.id;
+      // userId = registerResponse.body.data.user.id; // Not used in tests
     });
 
     it('should logout user successfully', async () => {
@@ -802,7 +800,6 @@ describe('Auth Controller', () => {
 
   describe('PUT /api/auth/password', () => {
     let authToken;
-    let userId;
 
     beforeEach(async () => {
       // Create a test user and get auth token
@@ -819,7 +816,7 @@ describe('Auth Controller', () => {
         .send(userData);
 
       authToken = registerResponse.body.data.token;
-      userId = registerResponse.body.data.user.id;
+      // userId = registerResponse.body.data.user.id; // Not used in tests
     });
 
     it('should change password successfully with valid data', async () => {

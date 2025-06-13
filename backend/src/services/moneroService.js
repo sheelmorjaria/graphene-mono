@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import logger, { logPaymentEvent, logError } from '../utils/logger.js';
+import logger, { logError } from '../utils/logger.js';
 
 // GloBee API configuration
 const GLOBEE_API_URL = process.env.GLOBEE_API_URL || 'https://api.globee.com/v1';

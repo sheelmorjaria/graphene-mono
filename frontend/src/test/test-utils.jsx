@@ -1,13 +1,16 @@
 import React from 'react'
 import { render as rtlRender, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { vi, beforeAll, afterAll } from 'vitest'
-import { AuthProvider } from '../contexts/AuthContext'
-import { CartProvider } from '../contexts/CartContext'
+import { vi } from 'vitest'
+import { AuthProvider, AuthStateContext, AuthDispatchContext } from '../contexts/AuthContext'
+import { CartProvider, CartContext } from '../contexts/CartContext'
 
 // Mock auth service to prevent real API calls
 vi.mock('../services/authService', () => ({
-  getCurrentUser: vi.fn().mockResolvedValue(null),
+  getCurrentUser: vi.fn().mockImplementation(() => {
+    // Return a promise that resolves immediately to avoid act warnings
+    return Promise.resolve(null)
+  }),
   loginUser: vi.fn(),
   registerUser: vi.fn(),
   logoutUser: vi.fn(),
@@ -17,31 +20,50 @@ vi.mock('../services/authService', () => ({
 
 // Mock cart service to prevent real API calls
 vi.mock('../services/cartService', () => ({
-  getCart: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+  getCart: vi.fn().mockImplementation(() => {
+    // Return a promise that resolves immediately to avoid act warnings
+    return Promise.resolve({ items: [], total: 0 })
+  }),
   addToCart: vi.fn(),
   updateCartItem: vi.fn(),
   removeFromCart: vi.fn(),
   clearCart: vi.fn()
 }))
 
-// Suppress act warnings in tests by default
-const originalError = console.error
-beforeAll(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: An update to') &&
-      args[0].includes('inside a test was not wrapped in act')
-    ) {
-      return
-    }
-    originalError.call(console, ...args)
-  }
-})
+// React act warnings are now properly handled in test files
 
-afterAll(() => {
-  console.error = originalError
-})
+// Test-specific AuthProvider that doesn't make async calls
+const TestAuthProvider = ({ children }) => {
+  const [state] = React.useState({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null
+  })
+
+  return (
+    <AuthStateContext.Provider value={state}>
+      <AuthDispatchContext.Provider value={() => {}}>
+        {children}
+      </AuthDispatchContext.Provider>
+    </AuthStateContext.Provider>
+  )
+}
+
+// Test-specific CartProvider that doesn't make async calls  
+const TestCartProvider = ({ children }) => {
+  const [cart] = React.useState({
+    items: [],
+    total: 0,
+    count: 0
+  })
+
+  return (
+    <CartContext.Provider value={{ cart, dispatch: () => {} }}>
+      {children}
+    </CartContext.Provider>
+  )
+}
 
 // Custom render function that includes necessary providers
 function render(
@@ -56,16 +78,15 @@ function render(
   function Wrapper({ children }) {
     return (
       <MemoryRouter initialEntries={initialEntries} initialIndex={initialIndex}>
-        <AuthProvider>
-          <CartProvider>
+        <TestAuthProvider>
+          <TestCartProvider>
             {children}
-          </CartProvider>
-        </AuthProvider>
+          </TestCartProvider>
+        </TestAuthProvider>
       </MemoryRouter>
     )
   }
 
-  // Use async act to handle async state updates
   return rtlRender(ui, { wrapper: Wrapper, ...renderOptions })
 }
 

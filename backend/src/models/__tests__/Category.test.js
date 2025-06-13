@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+// import mongoose from 'mongoose'; // For future database-specific tests
 import Category from '../Category.js';
 
 describe('Category Model', () => {

@@ -416,7 +416,7 @@ const seedDatabase = async () => {
     }, {});
 
     // Update products with category IDs and add missing fields
-    const productsWithCategories = sampleProducts.map((product, index) => ({
+    const productsWithCategories = sampleProducts.map((product, _index) => ({
       ...product,
       category: categoryMap[product.category],
       // Add stockQuantity if not present

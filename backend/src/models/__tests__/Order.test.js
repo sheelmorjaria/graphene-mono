@@ -212,20 +212,6 @@ describe('Order Model', () => {
       expect(savedOrder.totalAmount).toBe(100.00);
     });
 
-    it('should calculate total amount with discount', async () => {
-      const orderData = {
-        ...getValidOrderData(),
-        subtotal: 100.00,
-        tax: 8.25,
-        shipping: 10.00,
-        discount: 15.00
-      };
-
-      const order = new Order(orderData);
-      const savedOrder = await order.save();
-
-      expect(savedOrder.totalAmount).toBe(103.25); // 100 + 8.25 + 10 - 15
-    });
   });
 
   describe('Instance Methods', () => {
@@ -312,13 +298,13 @@ describe('Order Model', () => {
 
   describe('Static Methods', () => {
     let userId;
-    let orders;
+    // let orders; // For future test expansion
 
     beforeEach(async () => {
       userId = new mongoose.Types.ObjectId();
       
       // Create multiple orders for the same user
-      orders = await Promise.all([
+      await Promise.all([
         new Order({
           ...getValidOrderData(),
           userId,

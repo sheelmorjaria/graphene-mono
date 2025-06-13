@@ -1,6 +1,5 @@
 import ReturnRequest from '../models/ReturnRequest.js';
 import Order from '../models/Order.js';
-import Product from '../models/Product.js';
 import emailService from '../services/emailService.js';
 import mongoose from 'mongoose';
 

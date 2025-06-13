@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../../server.js';
 import User from '../../models/User.js';
-import GeneralSettings from '../../models/GeneralSettings.js';
+// import GeneralSettings from '../../models/GeneralSettings.js'; // For future settings tests
 import TaxRate from '../../models/TaxRate.js';
 import PaymentGateway from '../../models/PaymentGateway.js';
 import ShippingMethod from '../../models/ShippingMethod.js';

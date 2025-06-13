@@ -50,7 +50,7 @@ export const defaultHandlers = [
     return HttpResponse.json({}, { status: 400 });
   }),
 
-  http.get('https://www.blockonomics.co/api/tx_detail/:txHash', ({ params }) => {
+  http.get('https://www.blockonomics.co/api/tx_detail/:txHash', ({ params: _params }) => {
     return HttpResponse.json({
       confirmations: 6,
       block_height: 700000,

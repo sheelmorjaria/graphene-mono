@@ -162,68 +162,6 @@ export const clearCart = async () => {
   }
 };
 
-// Apply promotion code to cart
-export const applyPromotion = async (code) => {
-  try {
-    const token = getAuthToken();
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/cart/apply-promotion`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: JSON.stringify({ code }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to apply promotion');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Apply promotion error:', error);
-    throw error;
-  }
-};
-
-// Remove promotion from cart
-export const removePromotion = async () => {
-  try {
-    const token = getAuthToken();
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/cart/remove-promotion`, {
-      method: 'DELETE',
-      headers,
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to remove promotion');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Remove promotion error:', error);
-    throw error;
-  }
-};
 
 // Format currency amount for display
 export const formatCurrency = (amount) => {

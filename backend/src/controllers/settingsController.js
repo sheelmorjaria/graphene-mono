@@ -83,7 +83,7 @@ export const getShippingSettings = async (req, res) => {
     const { page = 1, limit = 50, search = '' } = req.query;
     const skip = (page - 1) * limit;
     
-    let query = {};
+    const query = {};
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -229,7 +229,7 @@ export const getTaxSettings = async (req, res) => {
     const { page = 1, limit = 50, country, isActive } = req.query;
     const skip = (page - 1) * limit;
     
-    let query = {};
+    const query = {};
     if (country) query.country = country.toUpperCase();
     if (isActive !== undefined) query.isActive = isActive === 'true';
     

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const GeneralSettings = ({ onMessage }) => {
   const [settings, setSettings] = useState({
@@ -61,11 +61,7 @@ const GeneralSettings = ({ onMessage }) => {
     'Australia/Sydney'
   ];
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
@@ -91,7 +87,11 @@ const GeneralSettings = ({ onMessage }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [onMessage]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const validateForm = () => {
     const newErrors = {};

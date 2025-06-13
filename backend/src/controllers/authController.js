@@ -123,11 +123,9 @@ export const register = async (req, res) => {
     // Generate JWT token for automatic login
     const token = generateToken(user._id);
 
-    // Generate email verification token
-    const emailVerificationToken = user.generateEmailVerificationToken();
-    await user.save();
-
-    // TODO: Send welcome email with verification link
+    // TODO: Generate email verification token and send welcome email
+    // const emailVerificationToken = user.generateEmailVerificationToken();
+    // await user.save();
     // await sendWelcomeEmail(user.email, emailVerificationToken);
 
     // Return success response with token and user data

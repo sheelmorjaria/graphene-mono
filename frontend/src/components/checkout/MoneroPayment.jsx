@@ -134,7 +134,7 @@ const MoneroPayment = ({ paymentData, onPaymentUpdate, onError }) => {
         clearInterval(interval);
       }
     };
-  }, [paymentData?.orderId, onPaymentUpdate, onError, pollingInterval]);
+  }, [paymentData?.orderId, onPaymentUpdate, onError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getStatusIcon = () => {
     switch (paymentStatus) {

@@ -84,7 +84,7 @@ vi.mock('../../services/shippingService', () => ({
 }));
 
 // Mock authentication
-const mockUser = {
+const _mockUser = {
   _id: 'user123',
   firstName: 'John',
   lastName: 'Doe',
@@ -95,7 +95,7 @@ vi.mock('../../contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({
     isAuthenticated: true,
-    user: mockUser,
+    user: _mockUser,
     isLoading: false
   }),
   useLogout: () => vi.fn()
@@ -424,8 +424,8 @@ describe('Monero Payment End-to-End Flow', () => {
   describe('Error Scenarios', () => {
     it('should handle order creation failures', async () => {
       // Mock order creation failure
-      const orderService = require('../../services/orderService');
-      orderService.placeOrder.mockRejectedValue(new Error('Payment service unavailable'));
+      const { placeOrder } = await import('../../services/orderService');
+      placeOrder.mockRejectedValue(new Error('Payment service unavailable'));
 
       renderApp();
       window.history.pushState({}, '', '/checkout');
@@ -464,8 +464,8 @@ describe('Monero Payment End-to-End Flow', () => {
     });
 
     it('should handle QR code generation failures gracefully', async () => {
-      const QRCode = require('qrcode');
-      QRCode.toDataURL.mockRejectedValue(new Error('QR generation failed'));
+      const QRCode = await import('qrcode');
+      QRCode.default.toDataURL.mockRejectedValue(new Error('QR generation failed'));
 
       renderApp();
       window.history.pushState({}, '', '/payment/monero/order-123');

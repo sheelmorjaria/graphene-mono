@@ -116,7 +116,7 @@ describe('Exchange Rate Caching Load Tests', () => {
     });
 
     const iterations = 100;
-    const startTime = Date.now();
+    Date.now(); // Record start time
 
     // Test cache hit performance
     await moneroService.getExchangeRate(); // Prime the cache

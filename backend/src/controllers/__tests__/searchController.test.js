@@ -1,5 +1,4 @@
-import { jest } from '@jest/globals';
-import mongoose from 'mongoose';
+// import { jest } from '@jest/globals'; // For future mock implementations
 import request from 'supertest';
 import express from 'express';
 import Product from '../../models/Product.js';

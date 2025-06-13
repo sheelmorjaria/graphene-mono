@@ -88,7 +88,7 @@ describe('BitcoinService Unit Tests', () => {
       });
 
       await expect(bitcoinService.getBtcExchangeRate())
-        .rejects.toThrow('Failed to fetch Bitcoin exchange rate');
+        .rejects.toThrow('Bitcoin exchange rate service temporarily unavailable');
     });
   });
 

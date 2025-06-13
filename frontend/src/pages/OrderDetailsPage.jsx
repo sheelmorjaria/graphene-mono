@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getUserOrderDetails, formatCurrency, getStatusColor, cancelOrder } from '../services/orderService';
+import { getUserOrderDetails, formatCurrency, cancelOrder } from '../services/orderService';
 import { getUserReturnRequests, formatReturnStatus, getReturnStatusColorClass } from '../services/returnService';
 import OrderStatusTimeline from '../components/OrderStatusTimeline';
 
@@ -15,17 +15,7 @@ const OrderDetailsPage = () => {
   const [returnRequest, setReturnRequest] = useState(null);
   const [loadingReturn, setLoadingReturn] = useState(false);
 
-  useEffect(() => {
-    loadOrderDetails();
-  }, [orderId]);
-
-  useEffect(() => {
-    document.title = order 
-      ? `Order ${order.orderNumber} - GrapheneOS Store`
-      : 'Order Details - GrapheneOS Store';
-  }, [order]);
-
-  const loadOrderDetails = async () => {
+  const loadOrderDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -43,9 +33,9 @@ const OrderDetailsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, loadReturnRequest]);
 
-  const loadReturnRequest = async () => {
+  const loadReturnRequest = useCallback(async () => {
     try {
       setLoadingReturn(true);
       
@@ -61,7 +51,17 @@ const OrderDetailsPage = () => {
     } finally {
       setLoadingReturn(false);
     }
-  };
+  }, [orderId]);
+
+  useEffect(() => {
+    loadOrderDetails();
+  }, [loadOrderDetails]);
+
+  useEffect(() => {
+    document.title = order 
+      ? `Order ${order.orderNumber} - GrapheneOS Store`
+      : 'Order Details - GrapheneOS Store';
+  }, [order]);
 
   const canCancelOrder = (status) => {
     const cancellableStatuses = ['pending', 'processing'];
@@ -459,17 +459,6 @@ const OrderDetailsPage = () => {
                   <span className="order-summary-label">Tax</span>
                   <span className="order-summary-value">{formatCurrency(order.tax)}</span>
                 </div>
-                {order.discount > 0 && (
-                  <div className="order-summary-line order-discount">
-                    <span>
-                      Discount
-                      {order.discountCode && (
-                        <span className="text-xs ml-1">({order.discountCode})</span>
-                      )}
-                    </span>
-                    <span>-{formatCurrency(order.discount)}</span>
-                  </div>
-                )}
                 <div className="order-summary-total">
                   <div className="order-summary-line">
                     <span className="order-summary-label">Total</span>

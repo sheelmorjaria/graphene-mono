@@ -714,9 +714,6 @@ body {
   color: var(--color-gray-900);
 }
 
-.order-discount {
-  color: var(--color-success);
-}
 
 /* ===== ADDRESS DISPLAY ===== */
 .address-card {

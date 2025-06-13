@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getUserOrderDetails } from '../services/orderService';
-import { getEligibleReturnItems, submitReturnRequest } from '../services/returnService';
+import { submitReturnRequest } from '../services/returnService';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const ReturnRequestPage = () => {

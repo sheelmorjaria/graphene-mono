@@ -7,19 +7,7 @@ import Product from '../../models/Product.js';
 import User from '../../models/User.js';
 import jwt from 'jsonwebtoken';
 
-// Mock the Product and User models
-jest.mock('../../models/Product.js', () => ({
-  default: {
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-    deleteOne: jest.fn()
-  }
-}));
-jest.mock('../../models/User.js', () => ({
-  default: {
-    findById: jest.fn()
-  }
-}));
+// Will mock models using spies in beforeEach to work with ES modules
 
 const app = express();
 app.use(express.json());
@@ -54,6 +42,12 @@ describe('Admin Routes - Delete Product Integration Tests', () => {
     // Reset all mocks
     jest.clearAllMocks();
 
+    // Setup spies for models
+    jest.spyOn(Product, 'findById').mockResolvedValue(null);
+    jest.spyOn(Product, 'findByIdAndUpdate').mockResolvedValue(null);
+    jest.spyOn(Product, 'deleteOne').mockResolvedValue({ deletedCount: 1 });
+    jest.spyOn(User, 'findById').mockResolvedValue(adminUser);
+
     // Setup mock product
     mockProduct = {
       _id: new mongoose.Types.ObjectId(),
@@ -71,12 +65,13 @@ describe('Admin Routes - Delete Product Integration Tests', () => {
     // Mock console.log for audit logging
     jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    // Mock User.findById for authentication middleware
+    // Set default behavior for User.findById
     User.findById.mockResolvedValue(adminUser);
   });
 
   afterEach(() => {
     console.log.mockRestore();
+    jest.restoreAllMocks();
   });
 
   describe('DELETE /api/admin/products/:productId', () => {
@@ -220,7 +215,7 @@ describe('Admin Routes - Delete Product Integration Tests', () => {
     describe('Validation Errors', () => {
       test('should return 400 for missing product ID', async () => {
         // Act
-        const response = await request(app)
+        await request(app)
           .delete('/api/admin/products/')
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(404); // Express returns 404 for route not found

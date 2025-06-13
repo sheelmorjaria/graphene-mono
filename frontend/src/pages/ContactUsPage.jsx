@@ -41,12 +41,13 @@ const ContactUsPage = () => {
     switch (name) {
       case "fullName":
         return value.trim() ? "" : "Full name is required";
-      case "email":
+      case "email": {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!value.trim()) return "Email is required";
         if (!emailRegex.test(value))
           return "Please enter a valid email address";
         return "";
+      }
       case "subject":
         return value ? "" : "Please select a subject";
       case "message":
@@ -96,7 +97,7 @@ const ContactUsPage = () => {
     setErrors({});
 
     try {
-      const response = await submitContactForm(formData);
+      const _response = await submitContactForm(formData);
 
       setIsSubmitted(true);
       setFormData({

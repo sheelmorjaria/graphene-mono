@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
@@ -24,7 +24,7 @@ vi.mock('../../services/authService', () => ({
   loginUser: vi.fn()
 }));
 
-import { getCurrentUser, logoutUser, loginUser } from '../../services/authService';
+import { getCurrentUser, logoutUser } from '../../services/authService';
 
 const mockUser = {
   id: '123',
@@ -116,7 +116,9 @@ describe('Logout Flow Integration Tests', () => {
     });
 
     // Click on user dropdown to open menu
-    await user.click(screen.getByText('Welcome, John'));
+    await act(async () => {
+      await user.click(screen.getByText('Welcome, John'));
+    });
 
     // Wait for dropdown to appear
     await waitFor(() => {
@@ -124,7 +126,9 @@ describe('Logout Flow Integration Tests', () => {
     });
 
     // Click sign out
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign out/i }));
+    });
 
     // Verify logout service was called
     await waitFor(() => {
@@ -157,10 +161,14 @@ describe('Logout Flow Integration Tests', () => {
     });
 
     // Click on user dropdown
-    await user.click(screen.getByText('Welcome, John'));
+    await act(async () => {
+      await user.click(screen.getByText('Welcome, John'));
+    });
 
     // Click sign out
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign out/i }));
+    });
 
     // Even with logout error, user should be logged out locally
     await waitFor(() => {
@@ -205,7 +213,9 @@ describe('Logout Flow Integration Tests', () => {
     });
 
     // Click on user dropdown to open menu
-    await user.click(screen.getByText('Welcome, John'));
+    await act(async () => {
+      await user.click(screen.getByText('Welcome, John'));
+    });
 
     // Verify dropdown content is visible
     await waitFor(() => {
@@ -215,7 +225,9 @@ describe('Logout Flow Integration Tests', () => {
     });
 
     // Click sign out
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /sign out/i }));
+    });
 
     // After logout, dropdown should be closed and user menu gone
     await waitFor(() => {

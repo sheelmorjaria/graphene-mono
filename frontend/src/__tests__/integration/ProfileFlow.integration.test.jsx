@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
@@ -101,14 +101,18 @@ describe('Profile Flow Integration Tests', () => {
     });
 
     // Click on user dropdown to open menu
-    await user.click(screen.getByText('Welcome, John'));
+    await act(async () => {
+      await user.click(screen.getByText('Welcome, John'));
+    });
 
     // Wait for dropdown to appear and click Profile
     await waitFor(() => {
       expect(screen.getByRole('link', { name: /profile/i })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('link', { name: /profile/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('link', { name: /profile/i }));
+    });
 
     // Should navigate to profile page
     await waitFor(() => {
@@ -146,19 +150,27 @@ describe('Profile Flow Integration Tests', () => {
 
     // Update first name
     const firstNameInput = screen.getByLabelText(/first name/i);
-    await user.clear(firstNameInput);
-    await user.type(firstNameInput, 'Jane');
+    await act(async () => {
+      await user.clear(firstNameInput);
+      await user.type(firstNameInput, 'Jane');
+    });
 
     // Update phone number
     const phoneInput = screen.getByLabelText(/phone number/i);
-    await user.clear(phoneInput);
-    await user.type(phoneInput, '+441234567890');
+    await act(async () => {
+      await user.clear(phoneInput);
+      await user.type(phoneInput, '+441234567890');
+    });
 
     // Enable marketing opt-in
-    await user.click(screen.getByLabelText(/receive marketing emails/i));
+    await act(async () => {
+      await user.click(screen.getByLabelText(/receive marketing emails/i));
+    });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+    });
 
     // Verify API was called with correct data
     await waitFor(() => {
@@ -196,7 +208,9 @@ describe('Profile Flow Integration Tests', () => {
     });
 
     // Submit the form without changes to trigger an error
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+    });
 
     // Should show error message
     await waitFor(() => {
@@ -224,10 +238,14 @@ describe('Profile Flow Integration Tests', () => {
 
     // Clear required field
     const firstNameInput = screen.getByLabelText(/first name/i);
-    await user.clear(firstNameInput);
+    await act(async () => {
+      await user.clear(firstNameInput);
+    });
 
     // Try to submit
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+    });
 
     // Should not call update API
     expect(updateUserProfile).not.toHaveBeenCalled();
@@ -282,9 +300,11 @@ describe('Profile Flow Integration Tests', () => {
 
     // Enter invalid phone number
     const phoneInput = screen.getByLabelText(/phone number/i);
-    await user.clear(phoneInput);
-    await user.type(phoneInput, 'invalid-phone');
-    await user.tab(); // Trigger blur
+    await act(async () => {
+      await user.clear(phoneInput);
+      await user.type(phoneInput, 'invalid-phone');
+      await user.tab(); // Trigger blur
+    });
 
     // Should show validation error
     await waitFor(() => {
@@ -312,7 +332,9 @@ describe('Profile Flow Integration Tests', () => {
     });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+    });
 
     // Should show loading state
     await waitFor(() => {

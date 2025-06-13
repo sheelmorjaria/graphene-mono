@@ -181,7 +181,7 @@ describe('Simple Bitcoin Tests', () => {
       
       paymentStates.forEach(state => {
         const expectedStatus = state.confirmations >= 2 ? 'confirmed' : 
-                               state.confirmations === 1 ? 'partially_confirmed' : 'unconfirmed';
+          state.confirmations === 1 ? 'partially_confirmed' : 'unconfirmed';
         const actualStatus = getPaymentStatus(state.confirmations);
         expect(actualStatus).toBe(expectedStatus);
       });

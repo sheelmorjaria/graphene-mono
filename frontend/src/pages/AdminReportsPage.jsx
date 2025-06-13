@@ -29,7 +29,7 @@ const AdminReportsPage = () => {
         startDate = new Date(now.setHours(0, 0, 0, 0));
         endDate = new Date(now.setHours(23, 59, 59, 999));
         break;
-      case 'weekly':
+      case 'weekly': {
         const dayOfWeek = now.getDay();
         const diff = now.getDate() - dayOfWeek;
         startDate = new Date(now.setDate(diff));
@@ -37,6 +37,7 @@ const AdminReportsPage = () => {
         endDate = new Date(now.setDate(diff + 6));
         endDate.setHours(23, 59, 59, 999);
         break;
+      }
       case 'monthly':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);

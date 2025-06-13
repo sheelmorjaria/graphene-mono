@@ -9,7 +9,7 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
   const { 
     paymentMethod, 
     setPaymentMethod,
-    paymentState,
+    paymentState: _paymentState,
     setPaymentState,
     orderSummary 
   } = useCheckout();
@@ -46,7 +46,8 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
     };
 
     loadPaymentData();
-  }, [paymentMethod, setPaymentMethod]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: Only want to load payment methods once on mount, not when paymentMethod changes
 
   // Update validation state based on payment method and readiness
   useEffect(() => {

@@ -25,7 +25,9 @@
     "create-admin": "node src/scripts/createAdminUser.js",
     "test:email": "node src/scripts/testEmailService.js",
     "test:email:simple": "node src/scripts/testEmailServiceSimple.js",
-    "test:ses": "node src/scripts/testEmailServiceSES.js"
+    "test:ses": "node src/scripts/testEmailServiceSES.js",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +37,8 @@
     "@aws-sdk/client-ses": "^3.826.0",
     "@aws-sdk/credential-providers": "^3.826.0",
     "@paypal/paypal-server-sdk": "^1.1.0",
+    "@sentry/node": "^9.29.0",
+    "@sentry/profiling-node": "^9.29.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -50,6 +54,7 @@
     "mongoose": "^8.15.1",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
+    "newrelic": "^12.21.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.3",
     "qrcode.react": "^4.2.0",
@@ -63,6 +68,7 @@
   "devDependencies": {
     "@jest/globals": "^30.0.0-beta.3",
     "artillery": "^2.0.23",
+    "eslint": "^8.57.1",
     "jest": "^29.7.0",
     "mongodb-memory-server": "^10.1.4",
     "msw": "^2.10.2",

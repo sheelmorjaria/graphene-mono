@@ -236,7 +236,7 @@ describe('Admin Reports API', () => {
         isActive: true
       });
 
-      const product3 = await Product.create({
+      await Product.create({
         name: 'Pixel 6a',
         slug: 'pixel-6a',
         sku: 'PIX6A',

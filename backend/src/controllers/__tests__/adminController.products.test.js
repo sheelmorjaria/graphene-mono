@@ -11,7 +11,6 @@ import Order from '../../models/Order.js';
 import ReturnRequest from '../../models/ReturnRequest.js';
 import emailService from '../../services/emailService.js';
 import adminRouter from '../../routes/admin.js';
-import { createValidProductData, createValidUserData } from '../../test/helpers/testData.js';
 
 // Create Express app
 const app = express();

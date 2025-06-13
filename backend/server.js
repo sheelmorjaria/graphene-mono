@@ -7,7 +7,9 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import crypto from 'crypto';
+import * as Sentry from '@sentry/node';
 import logger, { logError } from './src/utils/logger.js';
+import { initializeSentry, initializeNewRelic, metrics } from './src/config/monitoring.js';
 import { globalSanitization } from './src/middleware/validation.js';
 import productsRouter from './src/routes/products.js';
 import authRouter from './src/routes/auth.js';
@@ -20,6 +22,10 @@ import internalOrderRouter from './src/routes/internalOrderRoutes.js';
 import adminRouter from './src/routes/admin.js';
 
 dotenv.config();
+
+// Initialize monitoring services
+initializeSentry();
+initializeNewRelic();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,6 +62,11 @@ app.use(cookieParser());
 
 // Global input sanitization
 app.use(globalSanitization);
+
+// Sentry middleware is automatically set up by the expressIntegration in monitoring.js
+
+// Add custom metrics middleware
+app.use(metrics.responseTime);
 
 // Static file serving for uploaded images with security headers
 app.use('/uploads', express.static('src/uploads', {
@@ -195,8 +206,13 @@ app.use((req, res) => {
   });
 });
 
+// Add Sentry error handler before our custom error handler
+if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Global error handler
-app.use((error, req, res, next) => {
+app.use((error, req, res, _next) => {
   // Generate request ID for tracking
   const requestId = crypto.randomBytes(16).toString('hex');
   

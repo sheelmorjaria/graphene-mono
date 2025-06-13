@@ -74,8 +74,8 @@ const authReducer = (state, action) => {
 };
 
 // Create contexts
-const AuthStateContext = createContext();
-const AuthDispatchContext = createContext();
+export const AuthStateContext = createContext();
+export const AuthDispatchContext = createContext();
 
 // Custom hook to use auth state
 export const useAuthState = () => {
@@ -171,6 +171,7 @@ export const AuthProvider = ({ children }) => {
 };
 
 // Higher-order component for protected routes
+// eslint-disable-next-line no-unused-vars
 export const withAuth = (WrappedComponent) => {
   return function AuthenticatedComponent(props) {
     const { isAuthenticated, isLoading } = useAuthState();

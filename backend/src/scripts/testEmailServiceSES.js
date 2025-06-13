@@ -46,14 +46,14 @@ if (connectionResult.success) {
   
   if (process.env.EMAIL_SERVICE !== 'ses') {
     console.log(`${colors.magenta}📌 To enable AWS SES:${colors.reset}`);
-    console.log(`   1. Ensure EMAIL_SERVICE=ses in your .env file`);
-    console.log(`   2. Add your AWS credentials\n`);
+    console.log('   1. Ensure EMAIL_SERVICE=ses in your .env file');
+    console.log('   2. Add your AWS credentials\n');
   } else if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
     console.log(`${colors.magenta}📌 To fix this:${colors.reset}`);
-    console.log(`   1. Create an IAM user with SES permissions in AWS Console`);
-    console.log(`   2. Generate access keys for the IAM user`);
-    console.log(`   3. Update AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in .env`);
-    console.log(`   4. Verify your sender email in AWS SES console\n`);
+    console.log('   1. Create an IAM user with SES permissions in AWS Console');
+    console.log('   2. Generate access keys for the IAM user');
+    console.log('   3. Update AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in .env');
+    console.log('   4. Verify your sender email in AWS SES console\n');
   }
 }
 
@@ -99,21 +99,21 @@ console.log(`\n${colors.bright}${colors.blue}=== Test Complete ===${colors.reset
 // Show next steps
 if (!connectionResult.success || testResult.messageId?.startsWith('mock_')) {
   console.log(`${colors.yellow}Next Steps:${colors.reset}`);
-  console.log(`1. Set up AWS SES credentials in your .env file`);
-  console.log(`2. Verify your sender email address in AWS SES console`);
-  console.log(`3. If in sandbox mode, verify recipient emails too`);
+  console.log('1. Set up AWS SES credentials in your .env file');
+  console.log('2. Verify your sender email address in AWS SES console');
+  console.log('3. If in sandbox mode, verify recipient emails too');
   console.log(`4. Run ${colors.cyan}npm run test:email${colors.reset} to test all email templates`);
-  console.log(`5. Request production access to remove sandbox restrictions\n`);
+  console.log('5. Request production access to remove sandbox restrictions\n');
   console.log(`For detailed instructions, see: ${colors.cyan}backend/AWS_SES_SETUP.md${colors.reset}\n`);
 } else {
   console.log(`${colors.green}✅ AWS SES integration is working!${colors.reset}`);
   console.log(`Run ${colors.cyan}npm run test:email${colors.reset} to test all email templates.\n`);
   
   console.log(`${colors.yellow}Important AWS SES Notes:${colors.reset}`);
-  console.log(`- If in sandbox mode, you can only send to verified emails`);
-  console.log(`- Request production access to send to any email address`);
-  console.log(`- Monitor your sending quota in AWS Console`);
-  console.log(`- Set up SNS notifications for bounces and complaints\n`);
+  console.log('- If in sandbox mode, you can only send to verified emails');
+  console.log('- Request production access to send to any email address');
+  console.log('- Monitor your sending quota in AWS Console');
+  console.log('- Set up SNS notifications for bounces and complaints\n');
 }
 
 process.exit(0);

@@ -8,8 +8,8 @@ import Order from '../../models/Order.js';
 describe('Admin Orders API Integration Tests', () => {
   let adminToken;
   let adminUser;
-  let testOrders = [];
-  let testUsers = [];
+  const testOrders = [];
+  const testUsers = [];
 
   beforeAll(async () => {
     // Create admin user
@@ -19,16 +19,15 @@ describe('Admin Orders API Integration Tests', () => {
       email: 'admin@test.com',
       password: 'adminpass123',
       role: 'admin',
-      isActive: true
+      isActive: true,
+      accountStatus: 'active'
     });
     await adminUser.save();
 
-    // Generate admin token
+    // Generate admin token with correct payload structure
     adminToken = jwt.sign(
       { 
-        userId: adminUser._id,
-        role: adminUser.role,
-        email: adminUser.email
+        userId: adminUser._id.toString()
       },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '8h' }

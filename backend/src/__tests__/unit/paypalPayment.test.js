@@ -1,22 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
 describe('PayPal Payment Unit Tests', () => {
-  let req, res;
-  
   beforeEach(() => {
-    // Setup mock request and response objects
-    req = {
-      body: {},
-      user: {
-        _id: 'user123',
-        email: 'test@example.com'
-      }
-    };
-    
-    res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
-    };
+    // Setup mock request and response objects (prepared for future tests)
+    // const req = { body: {}, user: { _id: 'user123', email: 'test@example.com' } };
+    // const res = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
     
     jest.clearAllMocks();
   });

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, userEvent } from '../../test/test-utils';
+import { render, screen, fireEvent, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SearchBar from '../SearchBar';
 
@@ -13,21 +13,13 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const renderWithRouter = (component, initialRoute = '/') => {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      {component}
-    </MemoryRouter>
-  );
-};
-
 describe('SearchBar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should render search input with placeholder text', () => {
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     expect(searchInput).toBeInTheDocument();
@@ -35,7 +27,7 @@ describe('SearchBar', () => {
   });
 
   it('should render search button with search icon', () => {
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchButton = screen.getByRole('button', { name: /search/i });
     expect(searchButton).toBeInTheDocument();
@@ -44,7 +36,7 @@ describe('SearchBar', () => {
 
   it('should handle text input changes', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
@@ -55,7 +47,7 @@ describe('SearchBar', () => {
 
   it('should navigate to search page on form submission', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
@@ -68,7 +60,7 @@ describe('SearchBar', () => {
 
   it('should navigate to search page when search button is clicked', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchButton = screen.getByRole('button', { name: /search/i });
@@ -81,7 +73,7 @@ describe('SearchBar', () => {
 
   it('should handle Enter key press to submit search', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
@@ -92,8 +84,7 @@ describe('SearchBar', () => {
   });
 
   it('should not submit empty search', async () => {
-    const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
@@ -106,7 +97,7 @@ describe('SearchBar', () => {
 
   it('should not submit whitespace-only search', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
@@ -119,7 +110,7 @@ describe('SearchBar', () => {
 
   it('should clear input when clear button is clicked', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
@@ -135,7 +126,7 @@ describe('SearchBar', () => {
   });
 
   it('should not show clear button when input is empty', () => {
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const clearButton = screen.queryByRole('button', { name: /clear search/i });
     expect(clearButton).not.toBeInTheDocument();
@@ -143,7 +134,7 @@ describe('SearchBar', () => {
 
   it('should URL encode search query properly', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
@@ -156,7 +147,7 @@ describe('SearchBar', () => {
 
   it('should focus input when search button container is clicked', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchContainer = searchInput.closest('[data-testid="search-bar"]');
@@ -169,7 +160,7 @@ describe('SearchBar', () => {
   });
 
   it('should have proper accessibility attributes', () => {
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchButton = screen.getByRole('button', { name: /search/i });
@@ -183,7 +174,7 @@ describe('SearchBar', () => {
   });
 
   it('should be responsive with proper CSS classes', () => {
-    const { container } = renderWithRouter(<SearchBar />);
+    const { container } = render(<SearchBar />);
     
     const searchBar = container.querySelector('[data-testid="search-bar"]');
     expect(searchBar).toHaveClass('relative', 'flex', 'items-center');
@@ -194,7 +185,7 @@ describe('SearchBar', () => {
 
   it('should support custom className prop', () => {
     const customClass = 'custom-search-bar';
-    const { container } = renderWithRouter(<SearchBar className={customClass} />);
+    const { container } = render(<SearchBar className={customClass} />);
     
     const searchBar = container.querySelector('[data-testid="search-bar"]');
     expect(searchBar).toHaveClass(customClass);
@@ -202,7 +193,7 @@ describe('SearchBar', () => {
 
   it('should support custom placeholder prop', () => {
     const customPlaceholder = 'Find your perfect device...';
-    renderWithRouter(<SearchBar placeholder={customPlaceholder} />);
+    render(<SearchBar placeholder={customPlaceholder} />);
     
     const searchInput = screen.getByPlaceholderText(customPlaceholder);
     expect(searchInput).toBeInTheDocument();
@@ -210,7 +201,7 @@ describe('SearchBar', () => {
 
   it('should handle rapid successive inputs without issues', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
@@ -226,7 +217,7 @@ describe('SearchBar', () => {
 
   it('should maintain focus after clearing input', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
@@ -240,7 +231,7 @@ describe('SearchBar', () => {
 
   it('should handle keyboard navigation properly', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<SearchBar />);
+    render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchButton = screen.getByRole('button', { name: /search/i });

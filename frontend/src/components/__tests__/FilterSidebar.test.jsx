@@ -164,8 +164,6 @@ describe('FilterSidebar', () => {
   });
 
   it('should validate price inputs are numeric', async () => {
-    const user = userEvent.setup();
-    
     render(<FilterSidebar {...defaultProps} />);
     
     const minInput = screen.getByPlaceholderText('Min price');

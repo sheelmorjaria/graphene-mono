@@ -1,5 +1,3 @@
-import User from '../models/User.js';
-
 // Get all user addresses
 export const getUserAddresses = async (req, res) => {
   try {

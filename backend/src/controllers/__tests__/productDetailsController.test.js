@@ -1,5 +1,3 @@
-import { jest } from '@jest/globals';
-import mongoose from 'mongoose';
 import request from 'supertest';
 import express from 'express';
 import Product from '../../models/Product.js';
@@ -128,7 +126,7 @@ describe('Product Details Controller', () => {
     });
 
     it('should validate slug parameter format', async () => {
-      const response = await request(app)
+      await request(app)
         .get('/api/products/')
         .expect(404);
 

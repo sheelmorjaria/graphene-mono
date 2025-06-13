@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Cart from '../Cart.js';
-import Product from '../Product.js';
+// import Product from '../Product.js'; // For future cart-product integration tests
 
 describe('Cart Model', () => {
   // Using global test setup for MongoDB connection

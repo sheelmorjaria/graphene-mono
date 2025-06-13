@@ -53,7 +53,7 @@ describe('PayPal Load Tests', () => {
       estimatedDays: '1-3',
       isActive: true,
       availableCountries: ['UK', 'US'],
-      calculateCost: function(cart, address) {
+      calculateCost: function(_cart, _address) {
         return { cost: this.cost, available: true };
       }
     });
@@ -408,7 +408,7 @@ describe('PayPal Load Tests', () => {
 
     it('should handle database stress under PayPal load', async () => {
       const iterations = 100;
-      const concurrency = 5;
+      // const concurrency = 5; // Can be used for limiting parallel operations
       
       // Create multiple test orders for database stress testing
       const orderPromises = Array(50).fill(null).map((_, index) => 
@@ -682,7 +682,7 @@ describe('PayPal Load Tests', () => {
 
     it('should handle extreme webhook burst scenario', async () => {
       const burstSize = 500;
-      const burstDuration = 5000; // 5 seconds
+      // const burstDuration = 5000; // 5 seconds - can be used for timing
       
       const eventTypes = [
         'PAYMENT.CAPTURE.COMPLETED',

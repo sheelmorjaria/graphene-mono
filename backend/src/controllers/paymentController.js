@@ -3,8 +3,6 @@ import { Client, Environment } from '@paypal/paypal-server-sdk';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
-import Promotion from '../models/Promotion.js';
-import { calculateShippingRates } from './shippingController.js';
 import bitcoinService from '../services/bitcoinService.js';
 import moneroService from '../services/moneroService.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
@@ -49,7 +47,7 @@ const findOrCreateCart = async (req) => {
       throw new Error('No cart session found');
     }
     
-    let cart = await Cart.findBySessionId(sessionId);
+    const cart = await Cart.findBySessionId(sessionId);
     if (!cart) {
       throw new Error('Cart not found');
     }
@@ -111,7 +109,7 @@ export const getPaymentMethods = async (req, res) => {
 // Create PayPal order
 export const createPayPalOrder = async (req, res) => {
   try {
-    const { shippingAddress, shippingMethodId, cartData } = req.body;
+    const { shippingAddress, shippingMethodId } = req.body;
 
     // Validate PayPal client availability
     if (!paypalClient) {
@@ -274,10 +272,21 @@ export const createPayPalOrder = async (req, res) => {
     };
 
     // Create PayPal order
-    const ordersController = paypalClient.ordersController;
-    const paypalOrder = await ordersController.ordersCreate({
-      body: orderRequest
-    });
+    let paypalOrder;
+    try {
+      const ordersController = paypalClient.ordersController;
+      paypalOrder = await ordersController.ordersCreate({
+        body: orderRequest
+      });
+    } catch (paypalError) {
+      // Handle PayPal API specific errors
+      logError(paypalError, { context: 'paypal_api_error', orderRequest });
+      return res.status(503).json({
+        success: false,
+        error: 'PayPal service is temporarily unavailable. Please try again later or use an alternative payment method.',
+        alternatives: ['bitcoin', 'monero']
+      });
+    }
 
     res.json({
       success: true,
@@ -387,7 +396,6 @@ export const capturePayPalPayment = async (req, res) => {
         subtotal: parseFloat(purchaseUnit.amount.breakdown?.item_total?.value || 0),
         shipping: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0),
         tax: parseFloat(purchaseUnit.amount.breakdown?.tax_total?.value || 0),
-        discount: cart.appliedPromotion ? cart.appliedPromotion.discountAmount : 0,
         totalAmount: parseFloat(purchaseUnit.amount.value),
         paymentMethod: {
           type: 'paypal',
@@ -430,16 +438,6 @@ export const capturePayPalPayment = async (req, res) => {
         }
       };
 
-      // Add promotion details if applied
-      if (cart.appliedPromotion) {
-        orderData.appliedPromotion = {
-          promotionId: cart.appliedPromotion.promotionId,
-          code: cart.appliedPromotion.code,
-          type: cart.appliedPromotion.type,
-          value: cart.appliedPromotion.value,
-          discountAmount: cart.appliedPromotion.discountAmount
-        };
-      }
 
       const order = new Order(orderData);
       
@@ -449,13 +447,6 @@ export const capturePayPalPayment = async (req, res) => {
       
       await order.save({ session });
 
-      // Record promotion usage if applied
-      if (cart.appliedPromotion && cart.appliedPromotion.promotionId) {
-        const promotion = await Promotion.findById(cart.appliedPromotion.promotionId);
-        if (promotion && req.user?._id) {
-          await promotion.recordUsage(req.user._id);
-        }
-      }
 
       // Clear the cart after successful order creation
       await cart.clearCart({ session });
@@ -500,20 +491,20 @@ export const handlePayPalWebhook = async (req, res) => {
     logPaymentEvent('paypal_webhook_received', { eventType });
 
     switch (eventType) {
-      case 'PAYMENT.CAPTURE.COMPLETED':
-        await handlePaymentCaptureCompleted(webhookEvent);
-        break;
+    case 'PAYMENT.CAPTURE.COMPLETED':
+      await handlePaymentCaptureCompleted(webhookEvent);
+      break;
       
-      case 'PAYMENT.CAPTURE.DENIED':
-        await handlePaymentCaptureDenied(webhookEvent);
-        break;
+    case 'PAYMENT.CAPTURE.DENIED':
+      await handlePaymentCaptureDenied(webhookEvent);
+      break;
       
-      case 'CHECKOUT.ORDER.APPROVED':
-        await handleOrderApproved(webhookEvent);
-        break;
+    case 'CHECKOUT.ORDER.APPROVED':
+      await handleOrderApproved(webhookEvent);
+      break;
       
-      default:
-        logger.warn(`Unhandled PayPal webhook event: ${eventType}`);
+    default:
+      logger.warn(`Unhandled PayPal webhook event: ${eventType}`);
     }
 
     res.status(200).json({ received: true });
@@ -843,12 +834,10 @@ export const createMoneroPayment = async (req, res) => {
 
         // Calculate totals
         const subtotal = cart.totalAmount;
-        const discountAmount = cart.appliedPromotion ? cart.appliedPromotion.discountAmount : 0;
-        const finalSubtotal = subtotal - discountAmount;
 
         // Calculate shipping cost (simplified)
         const shippingCost = 10.00; // Default shipping cost
-        const totalAmount = finalSubtotal + shippingCost;
+        const totalAmount = subtotal + shippingCost;
 
         // Get Monero exchange rate and calculate XMR amount
         const { xmrAmount, exchangeRate, validUntil } = await moneroService.convertGbpToXmr(totalAmount);
@@ -868,7 +857,6 @@ export const createMoneroPayment = async (req, res) => {
           subtotal: subtotal,
           shipping: shippingCost,
           tax: 0,
-          discount: discountAmount,
           totalAmount: totalAmount,
           paymentMethod: {
             type: 'monero',
@@ -892,16 +880,6 @@ export const createMoneroPayment = async (req, res) => {
           }
         };
 
-        // Add promotion details if applied
-        if (cart.appliedPromotion) {
-          orderData.appliedPromotion = {
-            promotionId: cart.appliedPromotion.promotionId,
-            code: cart.appliedPromotion.code,
-            type: cart.appliedPromotion.type,
-            value: cart.appliedPromotion.value,
-            discountAmount: cart.appliedPromotion.discountAmount
-          };
-        }
 
         order = new Order(orderData);
         
@@ -911,13 +889,6 @@ export const createMoneroPayment = async (req, res) => {
         
         await order.save({ session });
 
-        // Record promotion usage if applied
-        if (cart.appliedPromotion && cart.appliedPromotion.promotionId && req.user?._id) {
-          const promotion = await Promotion.findById(cart.appliedPromotion.promotionId);
-          if (promotion) {
-            await promotion.recordUsage(req.user._id);
-          }
-        }
 
         // Clear the cart after successful order creation
         await cart.clearCart({ session });

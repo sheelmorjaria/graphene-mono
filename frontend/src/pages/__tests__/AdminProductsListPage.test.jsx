@@ -72,7 +72,8 @@ const mockResponse = {
 describe('AdminProductsListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    adminService.formatCurrency = vi.fn((amount) => `£${amount}`);
+    // Mock formatCurrency function
+    vi.mocked(adminService.formatCurrency).mockImplementation((amount) => `£${amount}`);
   });
 
   const renderComponent = () => {

@@ -1,5 +1,6 @@
 import { render, screen } from '../../test/test-utils';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import ProductCard from '../ProductCard';
 
 const mockProduct = {

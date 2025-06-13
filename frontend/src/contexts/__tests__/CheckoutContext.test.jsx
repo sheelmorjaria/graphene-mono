@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
 import { CheckoutProvider, useCheckout } from '../CheckoutContext';
 
 // Mock addressService
@@ -172,7 +172,9 @@ describe('CheckoutContext', () => {
       });
       
       const refreshButton = screen.getByText('Refresh Addresses');
-      await userEvent.click(refreshButton);
+      await act(async () => {
+        await userEvent.click(refreshButton);
+      });
       
       await waitFor(() => {
         expect(getUserAddresses).toHaveBeenCalledTimes(2);
@@ -185,7 +187,9 @@ describe('CheckoutContext', () => {
       renderWithProviders();
       
       const setAddressButton = screen.getByText('Set Address');
-      await userEvent.click(setAddressButton);
+      await act(async () => {
+        await userEvent.click(setAddressButton);
+      });
       
       expect(screen.getByTestId('shipping-address')).toHaveTextContent('Test User');
       expect(screen.getByTestId('can-proceed-payment')).toHaveTextContent('true');
@@ -195,7 +199,9 @@ describe('CheckoutContext', () => {
       renderWithProviders();
       
       const setPaymentButton = screen.getByText('Set Payment');
-      await userEvent.click(setPaymentButton);
+      await act(async () => {
+        await userEvent.click(setPaymentButton);
+      });
       
       expect(screen.getByTestId('payment-method')).toHaveTextContent('credit-card');
     });
@@ -204,7 +210,9 @@ describe('CheckoutContext', () => {
       renderWithProviders();
       
       const setNotesButton = screen.getByText('Set Notes');
-      await userEvent.click(setNotesButton);
+      await act(async () => {
+        await userEvent.click(setNotesButton);
+      });
       
       expect(screen.getByTestId('order-notes')).toHaveTextContent('Test notes');
     });
@@ -215,8 +223,10 @@ describe('CheckoutContext', () => {
       const setAddressButton = screen.getByText('Set Address');
       const setPaymentButton = screen.getByText('Set Payment');
       
-      await userEvent.click(setAddressButton);
-      await userEvent.click(setPaymentButton);
+      await act(async () => {
+        await userEvent.click(setAddressButton);
+        await userEvent.click(setPaymentButton);
+      });
       
       expect(screen.getByTestId('can-proceed-review')).toHaveTextContent('true');
     });
@@ -227,7 +237,9 @@ describe('CheckoutContext', () => {
       renderWithProviders();
       
       const goToPaymentButton = screen.getByText('Go to Payment');
-      await userEvent.click(goToPaymentButton);
+      await act(async () => {
+        await userEvent.click(goToPaymentButton);
+      });
       
       expect(screen.getByTestId('current-step')).toHaveTextContent('payment');
       expect(screen.getByTestId('is-payment-step')).toHaveTextContent('true');
@@ -237,7 +249,9 @@ describe('CheckoutContext', () => {
       renderWithProviders();
       
       const nextButton = screen.getByText('Next Step');
-      await userEvent.click(nextButton);
+      await act(async () => {
+        await userEvent.click(nextButton);
+      });
       
       expect(screen.getByTestId('current-step')).toHaveTextContent('payment');
     });
@@ -247,11 +261,15 @@ describe('CheckoutContext', () => {
       
       // Go to payment first
       const goToPaymentButton = screen.getByText('Go to Payment');
-      await userEvent.click(goToPaymentButton);
+      await act(async () => {
+        await userEvent.click(goToPaymentButton);
+      });
       
       // Then go back
       const prevButton = screen.getByText('Prev Step');
-      await userEvent.click(prevButton);
+      await act(async () => {
+        await userEvent.click(prevButton);
+      });
       
       expect(screen.getByTestId('current-step')).toHaveTextContent('shipping');
     });
@@ -261,11 +279,15 @@ describe('CheckoutContext', () => {
       
       // Go to review step
       const goToPaymentButton = screen.getByText('Go to Payment');
-      await userEvent.click(goToPaymentButton);
+      await act(async () => {
+        await userEvent.click(goToPaymentButton);
+      });
       
       const nextButton = screen.getByText('Next Step');
-      await userEvent.click(nextButton); // Go to review
-      await userEvent.click(nextButton); // Try to go beyond
+      await act(async () => {
+        await userEvent.click(nextButton); // Go to review
+        await userEvent.click(nextButton); // Try to go beyond
+      });
       
       expect(screen.getByTestId('current-step')).toHaveTextContent('review');
     });
@@ -274,7 +296,9 @@ describe('CheckoutContext', () => {
       renderWithProviders();
       
       const prevButton = screen.getByText('Prev Step');
-      await userEvent.click(prevButton);
+      await act(async () => {
+        await userEvent.click(prevButton);
+      });
       
       expect(screen.getByTestId('current-step')).toHaveTextContent('shipping');
     });
@@ -289,13 +313,17 @@ describe('CheckoutContext', () => {
       const setPaymentButton = screen.getByText('Set Payment');
       const goToPaymentButton = screen.getByText('Go to Payment');
       
-      await userEvent.click(setAddressButton);
-      await userEvent.click(setPaymentButton);
-      await userEvent.click(goToPaymentButton);
+      await act(async () => {
+        await userEvent.click(setAddressButton);
+        await userEvent.click(setPaymentButton);
+        await userEvent.click(goToPaymentButton);
+      });
       
       // Reset
       const resetButton = screen.getByText('Reset');
-      await userEvent.click(resetButton);
+      await act(async () => {
+        await userEvent.click(resetButton);
+      });
       
       expect(screen.getByTestId('current-step')).toHaveTextContent('shipping');
       expect(screen.getByTestId('shipping-address')).toHaveTextContent('None');

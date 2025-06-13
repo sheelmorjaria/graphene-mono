@@ -1,25 +1,18 @@
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import express from 'express';
 import adminRoutes from '../admin.js';
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
 import ReturnRequest from '../../models/ReturnRequest.js';
-import emailService from '../../services/emailService.js';
 import jwt from 'jsonwebtoken';
+import emailService from '../../services/emailService.js';
 
-// Mock email service
-jest.mock('../../services/emailService.js', () => ({
-  sendEmail: jest.fn().mockResolvedValue(true),
-  sendReturnRequestEmail: jest.fn().mockResolvedValue(true),
-  sendReturnUpdateEmail: jest.fn().mockResolvedValue(true)
-}));
+// Will mock email service methods in beforeEach with spies
 
 describe('Admin Returns Integration Tests', () => {
   let app;
-  let mongoServer;
   let adminUser;
   let customerUser;
   let order;
@@ -27,19 +20,10 @@ describe('Admin Returns Integration Tests', () => {
   let adminToken;
 
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-
-    // Setup Express app
+    // Setup Express app (DB connection handled by global test setup)
     app = express();
     app.use(express.json());
     app.use('/api/admin', adminRoutes);
-  });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
   });
 
   beforeEach(async () => {
@@ -50,6 +34,14 @@ describe('Admin Returns Integration Tests', () => {
 
     // Reset mocks
     jest.clearAllMocks();
+    
+    // Mock email service methods
+    jest.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true });
+    
+    // Mock additional methods if they exist, or create them for testing
+    emailService.sendReturnApprovedEmail = jest.fn().mockResolvedValue({ success: true });
+    emailService.sendReturnRejectedEmail = jest.fn().mockResolvedValue({ success: true });
+    emailService.sendReturnRefundedEmail = jest.fn().mockResolvedValue({ success: true });
 
     // Create admin user
     adminUser = await User.create({

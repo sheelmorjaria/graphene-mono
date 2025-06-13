@@ -116,8 +116,6 @@ export const getUserOrderDetails = async (req, res) => {
           subtotal: order.subtotal,
           tax: order.tax,
           shipping: order.shipping,
-          discount: order.discount || 0,
-          discountCode: order.discountCode,
           totalAmount: order.totalAmount,
           shippingAddress: order.shippingAddress,
           billingAddress: order.billingAddress,
@@ -151,7 +149,7 @@ const findOrCreateCart = async (req) => {
   
   if (userId) {
     // Authenticated user
-    let cart = await Cart.findByUserId(userId);
+    const cart = await Cart.findByUserId(userId);
     if (!cart) {
       throw new Error('Cart not found');
     }
@@ -163,7 +161,7 @@ const findOrCreateCart = async (req) => {
       throw new Error('No cart session found');
     }
     
-    let cart = await Cart.findBySessionId(sessionId);
+    const cart = await Cart.findBySessionId(sessionId);
     if (!cart) {
       throw new Error('Cart not found');
     }
@@ -345,12 +343,12 @@ export const placeOrder = async (req, res) => {
     // For testing, we'll just ensure the paymentIntent is properly set
 
     // Set PayPal payment method details
-    let paymentMethodDetails = {
+    const paymentMethodDetails = {
       type: 'paypal',
       name: 'PayPal'
     };
     
-    let paymentDetails = {
+    const paymentDetails = {
       paypalOrderId: paypalOrderId
     };
 
@@ -363,7 +361,6 @@ export const placeOrder = async (req, res) => {
       tax: 0, // Tax calculation can be added later
       shipping: shippingCost,
       totalAmount: orderTotal,
-      discount: 0, // Discount handling can be added later
       shippingAddress: {
         fullName: `${shippingAddress.firstName} ${shippingAddress.lastName}`,
         addressLine1: shippingAddress.addressLine1,
@@ -464,7 +461,6 @@ export const cancelOrder = async (req, res) => {
   session.startTransaction();
   
   try {
-    const userId = req.user._id;
     const { orderId } = req.params;
 
     // Validate orderId
@@ -586,7 +582,6 @@ export const cancelOrder = async (req, res) => {
 // Get eligible items for return from a specific order
 export const getEligibleReturnItems = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { orderId } = req.params;
 
     // Validate orderId

@@ -4,9 +4,7 @@ import {
   addToCart, 
   updateCartItem, 
   removeFromCart, 
-  clearCart,
-  applyPromotion,
-  removePromotion
+  clearCart
 } from '../controllers/cartController.js';
 import { optionalAuth } from '../middleware/auth.js';
 
@@ -22,8 +20,5 @@ router.put('/item/:productId', updateCartItem);
 router.delete('/item/:productId', removeFromCart);
 router.delete('/clear', clearCart);
 
-// Promotion routes
-router.post('/apply-promotion', applyPromotion);
-router.delete('/remove-promotion', removePromotion);
 
 export default router;

@@ -6,7 +6,7 @@ export const retryTest = async (testFn, options = {}) => {
     maxRetries = 3,
     delay = 1000,
     backoff = 1.5,
-    shouldRetry = (error) => true
+    shouldRetry = (_error) => true
   } = options;
 
   let lastError;

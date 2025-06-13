@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import mongoose from 'mongoose';
+// import mongoose from 'mongoose'; // For future database integration tests
 import Product from '../Product.js';
 
 describe('Product Model - Soft Delete Functionality', () => {
@@ -380,7 +380,7 @@ describe('Product Model - Soft Delete Functionality', () => {
     test('should not modify timestamps unnecessarily', async () => {
       // Arrange
       const originalCreatedAt = product.createdAt;
-      const originalUpdatedAt = product.updatedAt;
+      // const originalUpdatedAt = product.updatedAt; // For future timestamp validation
 
       // Act
       await product.softDelete();
