@@ -98,7 +98,7 @@ describe('OrderDetailsPage - Return Status Integration', () => {
       return statusMap[status] || status;
     });
     
-    returnService.getReturnStatusColorClass.mockImplementation((status) => {
+    returnService.getReturnStatusColorClass.mockImplementation(() => {
       return 'text-green-600 bg-green-50';
     });
   });

@@ -11,7 +11,6 @@ import User from '../../models/User.js';
 describe('Bitcoin Webhook Security Tests', () => {
   let app;
   let mongoServer;
-  let testOrder;
   let testUser;
   const testBitcoinAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
   
@@ -95,7 +94,7 @@ describe('Bitcoin Webhook Security Tests', () => {
     app.use(express.json({ limit: '10mb' }));
     
     // Add error handling middleware
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       console.error('Test app error:', err);
       res.status(500).json({ error: 'Internal server error', message: err.message });
     });
@@ -123,7 +122,7 @@ describe('Bitcoin Webhook Security Tests', () => {
         { txid: 'test123' }, // Missing addr
         { addr: null, txid: 'test123' }, // Null values
         { addr: '', txid: '' }, // Empty strings
-        { addr: testBitcoinAddress, txid: null }, // Null txid
+        { addr: testBitcoinAddress, txid: null } // Null txid
       ];
 
       for (const payload of incompletePayloads) {
@@ -177,7 +176,7 @@ describe('Bitcoin Webhook Security Tests', () => {
       const jsonInjectionPayloads = [
         '{"addr": "' + testBitcoinAddress + '", "__proto__": {"isAdmin": true}}',
         '{"addr": "' + testBitcoinAddress + '", "constructor": {"prototype": {"isAdmin": true}}}',
-        '{"addr": "' + testBitcoinAddress + '", "txid": "test", "value": 1e308}', // Number overflow
+        '{"addr": "' + testBitcoinAddress + '", "txid": "test", "value": 1e308}' // Number overflow
       ];
 
       for (const jsonString of jsonInjectionPayloads) {
@@ -263,7 +262,7 @@ describe('Bitcoin Webhook Security Tests', () => {
         { value: 100000000, confirmations: -1 }, // Negative confirmations
         { value: Infinity, confirmations: 3 },
         { value: NaN, confirmations: 3 },
-        { value: 2.1e+18, confirmations: 3 }, // Extremely large number
+        { value: 2.1e+18, confirmations: 3 } // Extremely large number
       ];
 
       for (const { value, confirmations } of invalidValues) {
@@ -341,6 +340,7 @@ describe('Bitcoin Webhook Security Tests', () => {
         'true',
         '[]',
         '{"nested": {"deeply": {"very": {"very": {"deep": "object"}}}}}'
+      ];
 
       for (const body of malformedBodies) {
         try {
@@ -485,7 +485,7 @@ describe('Bitcoin Webhook Security Tests', () => {
         { value: 0, confirmations: 6 }, // Zero payment
         { value: 1, confirmations: 6 }, // Minimal payment (1 satoshi)
         { value: 2100000000000000, confirmations: 6 }, // Maximum Bitcoin supply in satoshis
-        { value: 2100000000000001, confirmations: 6 }, // Above maximum supply
+        { value: 2100000000000001, confirmations: 6 } // Above maximum supply
       ];
 
       for (const { value, confirmations } of boundaryTests) {
@@ -510,7 +510,7 @@ describe('Bitcoin Webhook Security Tests', () => {
         { confirmations: 0 }, // Unconfirmed
         { confirmations: 1 }, // Partially confirmed
         { confirmations: 2 }, // Minimum required
-        { confirmations: 1000000 }, // Extremely high confirmations
+        { confirmations: 1000000 } // Extremely high confirmations
       ];
 
       for (const { confirmations } of confirmationTests) {

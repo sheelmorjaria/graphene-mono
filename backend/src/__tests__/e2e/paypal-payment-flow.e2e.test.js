@@ -260,7 +260,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
       // Create single-item cart
       await Cart.deleteMany({ userId: testUser._id });
       
-      const singleItemCart = await Cart.create({
+      await Cart.create({
         userId: testUser._id,
         items: [{
           productId: testProduct1._id,
@@ -317,7 +317,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
 
       await Cart.deleteMany({ userId: testUser._id });
       
-      const highValueCart = await Cart.create({
+      await Cart.create({
         userId: testUser._id,
         items: [{
           productId: highValueProduct._id,
@@ -662,7 +662,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
       // Create complex cart
       await Cart.deleteMany({ userId: testUser._id });
       
-      const complexCart = await Cart.create({
+      await Cart.create({
         userId: testUser._id,
         items: [
           {

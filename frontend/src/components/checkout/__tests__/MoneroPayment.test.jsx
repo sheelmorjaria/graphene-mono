@@ -165,9 +165,9 @@ describe('MoneroPayment Component', () => {
       expect(screen.getByAltText('Monero Payment QR Code')).toBeInTheDocument();
     });
 
-    it('should show loading spinner while QR code is generating', () => {
-      const QRCode = require('qrcode');
-      QRCode.toDataURL.mockImplementation(() => new Promise(() => {})); // Never resolves
+    it('should show loading spinner while QR code is generating', async () => {
+      const QRCode = await import('qrcode');
+      QRCode.default.toDataURL.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(
         <MoneroPayment 
@@ -181,8 +181,8 @@ describe('MoneroPayment Component', () => {
     });
 
     it('should handle QR code generation errors gracefully', async () => {
-      const QRCode = require('qrcode');
-      QRCode.toDataURL.mockRejectedValue(new Error('QR generation failed'));
+      const QRCode = await import('qrcode');
+      QRCode.default.toDataURL.mockRejectedValue(new Error('QR generation failed'));
       
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 

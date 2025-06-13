@@ -21,7 +21,7 @@ export const submitContactForm = async (req, res) => {
 
     if (!email || !email.trim()) {
       validationErrors.push('Email is required');
-    } else if (!validator.isEmail(email)) {
+    } else if (!validator.isEmail(email.trim())) {
       validationErrors.push('Please enter a valid email address');
     }
 

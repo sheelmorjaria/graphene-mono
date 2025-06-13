@@ -334,7 +334,7 @@ describe('RegisterPage', () => {
 
   describe('Navigation', () => {
     it('should navigate to login page when clicking sign in link', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderRegisterPage();
 
       const signInLink = screen.getByRole('link', { name: 'Sign in' });

@@ -31,7 +31,7 @@ const createAdminUser = async () => {
       if (existingAdmin.role !== 'admin') {
         existingAdmin.role = 'admin';
         await existingAdmin.save();
-        console.log(`Updated existing user to admin role`);
+        console.log('Updated existing user to admin role');
       }
       
       process.exit(0);

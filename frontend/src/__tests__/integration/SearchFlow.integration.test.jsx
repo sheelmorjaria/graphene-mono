@@ -60,10 +60,6 @@ const mockEmptyResponse = {
   }
 };
 
-const mockErrorResponse = {
-  success: false,
-  error: 'Search query is required'
-};
 
 const mockProductsListResponse = {
   success: true,

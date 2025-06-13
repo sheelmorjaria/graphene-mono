@@ -354,7 +354,6 @@ export const getOrderById = async (req, res) => {
           subtotalAmount: 1,
           shippingCost: 1,
           taxAmount: 1,
-          discountAmount: 1,
           createdAt: 1,
           updatedAt: 1,
           paymentMethod: 1,
@@ -481,7 +480,7 @@ export const getAllOrders = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Create aggregation pipeline
-    let pipeline = [
+    const pipeline = [
       { $match: filter },
       {
         $lookup: {
@@ -958,7 +957,7 @@ export const getAllReturnRequests = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Create aggregation pipeline
-    let pipeline = [
+    const pipeline = [
       { $match: filter },
       {
         $lookup: {
@@ -1287,9 +1286,6 @@ export const updateReturnRequestStatus = async (req, res) => {
         throw new Error('Return request not found');
       }
 
-      // Store old status
-      const oldStatus = returnRequest.status;
-
       // Update return request status
       returnRequest.status = newStatus;
       returnRequest.processedBy = adminId;
@@ -1431,16 +1427,16 @@ export const getProducts = async (req, res) => {
     // Filter by stock status
     if (stockStatus) {
       switch (stockStatus) {
-        case 'in_stock':
-          query.stockQuantity = { $gt: 0 };
-          break;
-        case 'out_of_stock':
-          query.stockQuantity = 0;
-          break;
-        case 'low_stock':
-          // Define low stock threshold (e.g., less than 10)
-          query.stockQuantity = { $gt: 0, $lte: 10 };
-          break;
+      case 'in_stock':
+        query.stockQuantity = { $gt: 0 };
+        break;
+      case 'out_of_stock':
+        query.stockQuantity = 0;
+        break;
+      case 'low_stock':
+        // Define low stock threshold (e.g., less than 10)
+        query.stockQuantity = { $gt: 0, $lte: 10 };
+        break;
       }
     }
 
@@ -1962,7 +1958,7 @@ export const createCategory = async (req, res) => {
     }
 
     // Generate slug if not provided or use provided slug
-    let finalSlug = slug ? slug.trim() : await Category.generateSlug(name.trim());
+    const finalSlug = slug ? slug.trim() : await Category.generateSlug(name.trim());
     
     // Ensure slug uniqueness if provided
     if (slug && slug.trim()) {

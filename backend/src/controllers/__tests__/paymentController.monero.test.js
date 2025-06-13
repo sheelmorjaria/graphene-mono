@@ -21,11 +21,11 @@ const mockAuth = (req, res, next) => {
   next();
 };
 
-// Mock admin authentication
-const mockAdminAuth = (req, res, next) => {
-  req.user = { _id: 'admin123', role: 'admin' };
-  next();
-};
+// Mock admin authentication (prepared for admin-specific tests)
+// const mockAdminAuth = (req, res, next) => {
+//   req.user = { _id: 'admin123', role: 'admin' };
+//   next();
+// };
 
 describe('Payment Controller - Monero Integration Tests', () => {
   let app;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import AdminProductsListPage from '../AdminProductsListPage';
 import * as adminService from '../../services/adminService';
 
@@ -13,10 +13,13 @@ vi.mock('../../services/adminService', () => ({
 }));
 
 // Mock react-router-dom Link component
-vi.mock('react-router-dom', () => ({
-  ...vi.requireActual('react-router-dom'),
-  Link: ({ children, to, ...props }) => <a href={to} {...props}>{children}</a>
-}));
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    Link: ({ children, to, ...props }) => <a href={to} {...props}>{children}</a>
+  };
+});
 
 // Mock LoadingSpinner component
 vi.mock('../../components/LoadingSpinner', () => {

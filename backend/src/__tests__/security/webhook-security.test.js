@@ -89,7 +89,7 @@ describe('Webhook Security Tests', () => {
     app.use(express.json());
     
     // Add error handling middleware
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       console.error('Test app error:', err);
       res.status(500).json({ error: 'Internal server error', message: err.message });
     });
@@ -202,7 +202,7 @@ describe('Webhook Security Tests', () => {
   describe('Timing Attack Protection', () => {
     it('should use constant-time comparison for signature verification', async () => {
       const payload = { id: 'test', status: 'paid' };
-      const validSignature = generateValidSignature(payload);
+      generateValidSignature(payload);
       
       // Test multiple invalid signatures with same timing
       const invalidSignatures = [
@@ -281,7 +281,7 @@ describe('Webhook Security Tests', () => {
         { id: 'test' }, // Missing status
         { status: 'paid' }, // Missing id
         { id: null, status: 'paid' }, // Null values
-        { id: '', status: '' }, // Empty strings
+        { id: '', status: '' } // Empty strings
       ];
 
       for (const payload of incompletePayloads) {
@@ -301,7 +301,7 @@ describe('Webhook Security Tests', () => {
       const jsonInjectionPayloads = [
         '{"id": "test", "__proto__": {"isAdmin": true}}',
         '{"id": "test", "constructor": {"prototype": {"isAdmin": true}}}',
-        '{"id": "test", "status": "paid", "amount": 1e308}', // Number overflow
+        '{"id": "test", "status": "paid", "amount": 1e308}' // Number overflow
       ];
 
       for (const jsonString of jsonInjectionPayloads) {
@@ -478,7 +478,7 @@ describe('Webhook Security Tests', () => {
         `sha256=${hash}`, // Standard
         `sha256=${hash.toUpperCase()}`, // Uppercase
         `SHA256=${hash}`, // Different case prefix
-        ` sha256=${hash} `, // With whitespace
+        ` sha256=${hash} ` // With whitespace
       ];
 
       for (const signature of encodingVariations) {

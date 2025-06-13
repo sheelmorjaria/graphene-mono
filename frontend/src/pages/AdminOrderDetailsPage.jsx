@@ -730,12 +730,6 @@ const AdminOrderDetailsPage = () => {
                     <span className="text-gray-900">{formatCurrency(order.taxAmount)}</span>
                   </div>
                 )}
-                {order?.discountAmount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Discount</span>
-                    <span className="text-green-600">-{formatCurrency(order.discountAmount)}</span>
-                  </div>
-                )}
                 <div className="border-t border-gray-200 pt-2">
                   <div className="flex justify-between">
                     <span className="text-base font-medium text-gray-900">Total</span>

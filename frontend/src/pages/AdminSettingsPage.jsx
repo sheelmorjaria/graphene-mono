@@ -8,7 +8,7 @@ import PaymentSettings from '../components/settings/PaymentSettings';
 
 const AdminSettingsPage = () => {
   const [activeTab, setActiveTab] = useState('general');
-  const [loading, setLoading] = useState(false);
+  const [loading, _setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
 

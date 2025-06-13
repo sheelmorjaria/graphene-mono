@@ -1,12 +1,18 @@
-import { body, param, query } from 'express-validator';
+import { body } from 'express-validator';
 import { validators } from '../middleware/validation.js';
 
 export const registerValidation = [
-  body('name')
+  body('firstName')
     .trim()
-    .notEmpty().withMessage('Name is required')
-    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z\s]+$/).withMessage('Name can only contain letters and spaces'),
+    .notEmpty().withMessage('First name is required')
+    .isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z\s]+$/).withMessage('First name can only contain letters and spaces'),
+  
+  body('lastName')
+    .trim()
+    .notEmpty().withMessage('Last name is required')
+    .isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z\s]+$/).withMessage('Last name can only contain letters and spaces'),
   
   body('email')
     .trim()
@@ -19,9 +25,19 @@ export const registerValidation = [
     .notEmpty().withMessage('Password is required')
     .custom(validators.isStrongPassword),
   
+  body('confirmPassword')
+    .notEmpty().withMessage('Password confirmation is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
+  
   body('phone')
     .optional()
     .trim()
+    .if(body('phone').notEmpty())
     .custom(validators.isValidPhone)
 ];
 

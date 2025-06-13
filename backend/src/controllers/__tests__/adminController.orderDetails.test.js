@@ -36,7 +36,6 @@ describe('Admin Controller - getOrderById', () => {
       subtotalAmount: 89.99,
       shippingCost: 10.00,
       taxAmount: 0,
-      discountAmount: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
       paymentMethod: {

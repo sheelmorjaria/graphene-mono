@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { deleteProduct, getAdminToken, adminLogout } from '../adminService.js';
+import { deleteProduct } from '../adminService.js';
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -482,7 +482,7 @@ describe('AdminService - Delete Product', () => {
   describe('Integration with getAdminToken', () => {
     test('should call getAdminToken to retrieve token', async () => {
       // Arrange
-      const mockGetAdminToken = vi.fn().mockReturnValue(mockToken);
+      const _mockGetAdminToken = vi.fn().mockReturnValue(mockToken);
       
       // We can't easily mock the import, so we'll verify localStorage.getItem is called
       fetch.mockResolvedValueOnce({

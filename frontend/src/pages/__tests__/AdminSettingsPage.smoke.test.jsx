@@ -20,7 +20,7 @@ vi.mock('../../components/settings/PaymentSettings', () => ({
 }));
 
 // Create a mock AuthContext value for admin user
-const mockAuthContextValue = {
+const _mockAuthContextValue = {
   user: {
     id: 1,
     email: 'admin@test.com',

@@ -55,7 +55,7 @@ describe('PayPal Performance Tests', () => {
       estimatedDays: '1-2',
       isActive: true,
       availableCountries: ['UK', 'US'],
-      calculateCost: function(cart, address) {
+      calculateCost: function(_cart, _address) {
         return { cost: this.cost, available: true };
       }
     });

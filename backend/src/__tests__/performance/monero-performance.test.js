@@ -8,7 +8,7 @@ jest.mock('axios');
 
 // Performance monitoring tests for Monero payment system
 describe('Monero Payment Performance Tests', () => {
-  let performanceMetrics = {
+  const performanceMetrics = {
     exchangeRateApiCalls: [],
     cacheHits: [],
     paymentCreationTimes: [],

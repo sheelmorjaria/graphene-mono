@@ -22,17 +22,13 @@ export const searchProducts = async (req, res) => {
       });
     }
 
-    // Sanitize and escape special regex characters
-    const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 12));
     const skip = (pageNum - 1) * limitNum;
 
     let searchFilter;
-    let sortObj = {};
-    let useTextSearch = true;
+    const sortObj = {};
 
     try {
       // Try MongoDB text search first
@@ -86,7 +82,6 @@ export const searchProducts = async (req, res) => {
 
     } catch (error) {
       // Fall back to regex search if text search fails
-      useTextSearch = false;
       
       // Sanitize and escape special regex characters
       const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

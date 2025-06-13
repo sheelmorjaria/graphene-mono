@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '../../../test/test-utils';
-import { vi, describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Simple mock without external dependencies
 const MockMoneroPayment = ({ paymentData }) => {

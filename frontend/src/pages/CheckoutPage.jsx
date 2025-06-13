@@ -121,7 +121,7 @@ const CartSummary = () => {
 
 const PaymentSection = () => {
   const { nextStep, prevStep, canProceedToReview } = useCheckout();
-  const [validationState, setValidationState] = useState({ isValid: false, error: null });
+  const [_validationState, setValidationState] = useState({ isValid: false, error: null });
 
   const handleValidationChange = (state) => {
     setValidationState(state);
@@ -167,13 +167,13 @@ const PaymentSection = () => {
 const ReviewSection = () => {
   const { 
     checkoutState, 
-    paymentState, 
+    paymentState: _paymentState, 
     shippingAddress, 
     billingAddress, 
     shippingMethod, 
     paymentMethod, 
     useSameAsShipping,
-    orderSummary,
+    orderSummary: _orderSummary,
     prevStep,
     resetCheckout
   } = useCheckout();

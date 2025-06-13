@@ -36,7 +36,7 @@ categorySchema.methods.getUrl = function() {
 
 // Static method to generate unique slug from name
 categorySchema.statics.generateSlug = async function(name, excludeId = null) {
-  let baseSlug = name
+  const baseSlug = name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
     .replace(/\s+/g, '-') // Replace spaces with hyphens

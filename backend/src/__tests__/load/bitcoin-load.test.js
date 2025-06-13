@@ -132,7 +132,7 @@ describe('Bitcoin Load Tests', () => {
       const averageResponseTime = totalDuration / concurrency;
       const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
       
-      console.log(`High concurrency test:`);
+      console.log('High concurrency test:');
       console.log(`  - Concurrent requests: ${concurrency}`);
       console.log(`  - Total time: ${totalDuration.toFixed(2)}ms`);
       console.log(`  - Average response time: ${averageResponseTime.toFixed(2)}ms`);
@@ -186,7 +186,7 @@ describe('Bitcoin Load Tests', () => {
       const averageBurstTime = allTimings.reduce((a, b) => a + b, 0) / allTimings.length;
       const maxBurstTime = Math.max(...allTimings);
       
-      console.log(`Burst load summary:`);
+      console.log('Burst load summary:');
       console.log(`  - Average burst time: ${averageBurstTime.toFixed(2)}ms`);
       console.log(`  - Max burst time: ${maxBurstTime.toFixed(2)}ms`);
       console.log(`  - Total requests: ${allResponses.length}`);
@@ -245,7 +245,7 @@ describe('Bitcoin Load Tests', () => {
       const averageRequestTime = totalDuration / totalRequests;
       const actualRPS = totalRequests / (totalDuration / 1000);
       
-      console.log(`Sustained load summary:`);
+      console.log('Sustained load summary:');
       console.log(`  - Total duration: ${totalDuration.toFixed(2)}ms`);
       console.log(`  - Total requests: ${totalRequests}`);
       console.log(`  - Average request time: ${averageRequestTime.toFixed(2)}ms`);
@@ -297,7 +297,7 @@ describe('Bitcoin Load Tests', () => {
       const averageResponseTime = totalDuration / extremeConcurrency;
       const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
       
-      console.log(`Extreme load test:`);
+      console.log('Extreme load test:');
       console.log(`  - Concurrent requests: ${extremeConcurrency}`);
       console.log(`  - Total time: ${totalDuration.toFixed(2)}ms`);
       console.log(`  - Average response time: ${averageResponseTime.toFixed(2)}ms`);
@@ -406,7 +406,7 @@ describe('Bitcoin Load Tests', () => {
       const maxMemory = Math.max(...memoryReadings);
       const avgMemory = memoryReadings.reduce((a, b) => a + b, 0) / memoryReadings.length;
       
-      console.log(`Memory analysis:`);
+      console.log('Memory analysis:');
       console.log(`  - Initial: ${(initialMemory.heapUsed / 1024 / 1024).toFixed(2)}MB`);
       console.log(`  - Final: ${(finalMemory.heapUsed / 1024 / 1024).toFixed(2)}MB`);
       console.log(`  - Increase: ${(totalMemoryIncrease / 1024 / 1024).toFixed(2)}MB`);
@@ -466,7 +466,7 @@ describe('Bitcoin Load Tests', () => {
       const totalDuration = endTime - startTime;
       const avgBatchTime = batchResults.reduce((sum, batch) => sum + batch.duration, 0) / batchResults.length;
       
-      console.log(`Database load test:`);
+      console.log('Database load test:');
       console.log(`  - Concurrent batches: ${concurrentBatches}`);
       console.log(`  - Operations per batch: ${batchSize}`);
       console.log(`  - Total duration: ${totalDuration.toFixed(2)}ms`);
@@ -546,7 +546,7 @@ describe('Bitcoin Load Tests', () => {
       const maxResponseTime = Math.max(...performanceData.map(d => d.avgResponseTime));
       const degradationFactor = maxResponseTime / baselineResponseTime;
       
-      console.log(`Performance degradation analysis:`);
+      console.log('Performance degradation analysis:');
       console.log(`  - Baseline response time: ${baselineResponseTime.toFixed(2)}ms`);
       console.log(`  - Max response time: ${maxResponseTime.toFixed(2)}ms`);
       console.log(`  - Degradation factor: ${degradationFactor.toFixed(2)}x`);

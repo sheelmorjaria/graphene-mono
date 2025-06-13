@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act, userEvent } from '../../../test/test-utils';
+import { render, screen, waitFor, userEvent } from '../../../test/test-utils';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import MoneroPayment from '../MoneroPayment';
 

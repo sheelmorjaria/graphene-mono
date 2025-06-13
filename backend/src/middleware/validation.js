@@ -1,5 +1,5 @@
 import { validationResult } from 'express-validator';
-import mongoSanitize from 'express-mongo-sanitize';
+// import mongoSanitize from 'express-mongo-sanitize'; // Available for future data sanitization
 import xss from 'xss';
 import hpp from 'hpp';
 import logger from '../utils/logger.js';
@@ -36,7 +36,12 @@ export const sanitizeInput = (req, res, next) => {
   // Custom NoSQL injection prevention
   const removeNoSQLChars = (obj) => {
     if (typeof obj === 'string') {
-      return obj.replace(/[\$\.]/g, '_');
+      // Only remove $ chars - preserve dots for email addresses etc.
+      return obj.replace(/[\$]/g, '_');
+    }
+    if (Array.isArray(obj)) {
+      // Handle arrays properly
+      return obj.map(item => removeNoSQLChars(item));
     }
     if (typeof obj === 'object' && obj !== null) {
       const cleaned = {};
@@ -52,11 +57,23 @@ export const sanitizeInput = (req, res, next) => {
   
   // Sanitize string inputs to prevent XSS
   const sanitizeObject = (obj) => {
-    for (const key in obj) {
-      if (typeof obj[key] === 'string') {
-        obj[key] = xss(obj[key]);
-      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-        sanitizeObject(obj[key]);
+    if (Array.isArray(obj)) {
+      // Handle arrays
+      for (let i = 0; i < obj.length; i++) {
+        if (typeof obj[i] === 'string') {
+          obj[i] = xss(obj[i]);
+        } else if (typeof obj[i] === 'object' && obj[i] !== null) {
+          sanitizeObject(obj[i]);
+        }
+      }
+    } else {
+      // Handle objects
+      for (const key in obj) {
+        if (typeof obj[key] === 'string') {
+          obj[key] = xss(obj[key]);
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          sanitizeObject(obj[key]);
+        }
       }
     }
   };

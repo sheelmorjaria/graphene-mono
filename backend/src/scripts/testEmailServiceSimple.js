@@ -47,14 +47,14 @@ if (connectionResult.success) {
   
   if (process.env.EMAIL_SERVICE !== 'mailtrap') {
     console.log(`${colors.magenta}📌 To enable Mailtrap:${colors.reset}`);
-    console.log(`   1. Ensure EMAIL_SERVICE=mailtrap in your .env file`);
-    console.log(`   2. Add your Mailtrap SMTP credentials\n`);
+    console.log('   1. Ensure EMAIL_SERVICE=mailtrap in your .env file');
+    console.log('   2. Add your Mailtrap SMTP credentials\n');
   } else if (!process.env.MAILTRAP_USER || !process.env.MAILTRAP_PASSWORD) {
     console.log(`${colors.magenta}📌 To fix this:${colors.reset}`);
-    console.log(`   1. Log in to https://mailtrap.io`);
-    console.log(`   2. Go to Email Testing → Inboxes → My Inbox`);
-    console.log(`   3. Click "Show Credentials" to get your SMTP settings`);
-    console.log(`   4. Update MAILTRAP_USER and MAILTRAP_PASSWORD in .env\n`);
+    console.log('   1. Log in to https://mailtrap.io');
+    console.log('   2. Go to Email Testing → Inboxes → My Inbox');
+    console.log('   3. Click "Show Credentials" to get your SMTP settings');
+    console.log('   4. Update MAILTRAP_USER and MAILTRAP_PASSWORD in .env\n');
   }
 }
 
@@ -98,9 +98,9 @@ console.log(`\n${colors.bright}${colors.blue}=== Test Complete ===${colors.reset
 // Show next steps
 if (!connectionResult.success || testResult.messageId?.startsWith('mock_')) {
   console.log(`${colors.yellow}Next Steps:${colors.reset}`);
-  console.log(`1. Set up Mailtrap credentials in your .env file`);
+  console.log('1. Set up Mailtrap credentials in your .env file');
   console.log(`2. Run ${colors.cyan}npm run test:email${colors.reset} to test all email templates`);
-  console.log(`3. Check the emails in your Mailtrap inbox\n`);
+  console.log('3. Check the emails in your Mailtrap inbox\n');
   console.log(`For detailed instructions, see: ${colors.cyan}backend/MAILTRAP_SETUP.md${colors.reset}\n`);
 } else {
   console.log(`${colors.green}✅ Mailtrap integration is working!${colors.reset}`);

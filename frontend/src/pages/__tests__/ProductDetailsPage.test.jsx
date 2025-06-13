@@ -25,7 +25,7 @@ vi.mock('../../components/ImageGallery', () => ({
 }));
 
 vi.mock('../../components/AddToCartButton', () => ({
-  default: ({ productId, stockStatus, stockQuantity, onAddToCart }) => (
+  default: ({ productId, stockStatus, onAddToCart }) => (
     <button 
       data-testid="add-to-cart" 
       onClick={() => onAddToCart(productId, 1)}
@@ -323,7 +323,7 @@ describe('ProductDetailsPage', () => {
   });
 
   it('should navigate back to products list', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     
     useProductDetails.mockReturnValue({
       product: null,

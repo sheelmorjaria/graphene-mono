@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import AdminProductFormPage from '../AdminProductFormPage';
 import * as adminService from '../../services/adminService';
 
@@ -15,11 +15,14 @@ vi.mock('../../services/adminService', () => ({
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', () => ({
-  ...vi.requireActual('react-router-dom'),
-  useNavigate: () => mockNavigate,
-  useParams: () => ({ productId: 'test-product-id' })
-}));
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useParams: () => ({ productId: 'test-product-id' })
+  };
+});
 
 // Mock LoadingSpinner component
 vi.mock('../../components/LoadingSpinner', () => {

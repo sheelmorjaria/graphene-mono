@@ -41,7 +41,6 @@ beforeAll(async () => {
   
   // Override query methods to ignore session parameter and handle chaining
   const originalExec = mongoose.Query.prototype.exec;
-  const originalSession = mongoose.Query.prototype.session;
   
   // Mock the session method to return chainable query
   mongoose.Query.prototype.session = function(session) {
@@ -58,44 +57,37 @@ beforeAll(async () => {
     return originalExec.call(this);
   };
   
-  // Also handle Model methods that use sessions
-  const setupModelSessionMocking = (Model) => {
-    const originalFindById = Model.findById;
-    const originalFind = Model.find;
-    const originalFindOne = Model.findOne;
-    const originalFindOneAndUpdate = Model.findOneAndUpdate;
-    const originalUpdateOne = Model.updateOne;
-    const originalDeleteMany = Model.deleteMany;
-    
-    // Override Model.findById to handle .session() chaining
-    Model.findById = function(...args) {
-      const query = originalFindById.apply(this, args);
-      const originalQuerySession = query.session;
-      
-      query.session = function(session) {
-        query._mockSession = session;
-        return query; // Return query for chaining
-      };
-      
-      return query;
-    };
-    
-    // Similar for other methods
-    ['find', 'findOne', 'findOneAndUpdate', 'updateOne', 'deleteMany'].forEach(method => {
-      const original = Model[method];
-      Model[method] = function(...args) {
-        const query = original.apply(this, args);
-        if (query && typeof query.session === 'function') {
-          const originalQuerySession = query.session;
-          query.session = function(session) {
-            query._mockSession = session;
-            return query;
-          };
-        }
-        return query;
-      };
-    });
-  };
+  // Handle Model methods that use sessions (commented out - available for future use)
+  // const setupModelSessionMocking = (Model) => {
+  //   const originalFindById = Model.findById;
+  //   
+  //   // Override Model.findById to handle .session() chaining
+  //   Model.findById = function(...args) {
+  //     const query = originalFindById.apply(this, args);
+  //     
+  //     query.session = function(session) {
+  //       query._mockSession = session;
+  //       return query; // Return query for chaining
+  //     };
+  //     
+  //     return query;
+  //   };
+  //   
+  //   // Similar for other methods
+  //   ['find', 'findOne', 'findOneAndUpdate', 'updateOne', 'deleteMany'].forEach(method => {
+  //     const original = Model[method];
+  //     Model[method] = function(...args) {
+  //       const query = original.apply(this, args);
+  //       if (query && typeof query.session === 'function') {
+  //         query.session = function(session) {
+  //           query._mockSession = session;
+  //           return query;
+  //         };
+  //       }
+  //       return query;
+  //     };
+  //   });
+  // };
   
   // Mock document save method to handle sessions
   const originalDocumentSave = mongoose.Document.prototype.save;
@@ -112,7 +104,7 @@ beforeAll(async () => {
     
     // If options is an object and contains session, remove session
     if (typeof options === 'object' && options !== null && 'session' in options) {
-      const { session, ...cleanOptions } = options;
+      const { session, ...cleanOptions } = options; // eslint-disable-line no-unused-vars
       const hasOtherOptions = Object.keys(cleanOptions).length > 0;
       return originalDocumentSave.call(this, hasOtherOptions ? cleanOptions : undefined);
     }
@@ -133,7 +125,7 @@ beforeAll(async () => {
           // Find options object and remove session
           const lastArg = args[args.length - 1];
           if (lastArg && typeof lastArg === 'object' && 'session' in lastArg) {
-            const { session, ...cleanOptions } = lastArg;
+            const { session, ...cleanOptions } = lastArg; // eslint-disable-line no-unused-vars
             args[args.length - 1] = Object.keys(cleanOptions).length > 0 ? cleanOptions : {};
           }
           return originalMethod.apply(this, args);
@@ -148,7 +140,7 @@ beforeAll(async () => {
         // Handle both create(doc, options) and create([docs], options) patterns
         const lastArg = args[args.length - 1];
         if (lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && 'session' in lastArg) {
-          const { session, ...cleanOptions } = lastArg;
+          const { session, ...cleanOptions } = lastArg; // eslint-disable-line no-unused-vars
           args[args.length - 1] = Object.keys(cleanOptions).length > 0 ? cleanOptions : {};
         }
         return originalCreate.apply(this, args);

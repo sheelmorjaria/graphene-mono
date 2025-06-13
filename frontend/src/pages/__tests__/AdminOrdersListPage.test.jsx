@@ -1,22 +1,25 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import AdminOrdersListPage from '../AdminOrdersListPage';
 import * as adminService from '../../services/adminService';
 
 // Mock the admin service
-jest.mock('../../services/adminService');
+vi.mock('../../services/adminService');
 
 // Mock react-router-dom
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => mockNavigate
-}));
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate
+  };
+});
 
 // Mock Pagination component
-jest.mock('../../components/Pagination', () => {
+vi.mock('../../components/Pagination', () => {
   return function MockPagination({ currentPage, totalPages, onPageChange }) {
     return (
       <div data-testid="pagination">

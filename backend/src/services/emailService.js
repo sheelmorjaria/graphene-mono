@@ -44,30 +44,12 @@ class EmailService {
     }
 
     try {
-      // Test connection by getting account sending quota
-      const command = new SendEmailCommand({
-        Source: process.env.FROM_EMAIL,
-        Destination: {
-          ToAddresses: []
-        },
-        Message: {
-          Subject: {
-            Data: 'Test'
-          },
-          Body: {
-            Text: {
-              Data: 'Test'
-            }
-          }
-        }
-      });
-      
       // This will validate credentials and configuration
       await this.sesClient.config.credentials();
       
       return { success: true, message: 'AWS SES connection verified' };
     } catch (error) {
-      logError(error, { context: 'email_verification', email });
+      logError(error, { context: 'email_verification' });
       return { success: false, error: error.message };
     }
   }

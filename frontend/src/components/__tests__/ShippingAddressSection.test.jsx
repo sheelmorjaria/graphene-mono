@@ -1,15 +1,16 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import ShippingAddressSection from '../checkout/ShippingAddressSection';
 import { CheckoutProvider } from '../../contexts/CheckoutContext';
 import { AuthProvider } from '../../contexts/AuthContext';
 
 // Mock services
-jest.mock('../../services/addressService', () => ({
-  getUserAddresses: jest.fn(),
-  addUserAddress: jest.fn(),
-  updateUserAddress: jest.fn()
+vi.mock('../../services/addressService', () => ({
+  getUserAddresses: vi.fn(),
+  addUserAddress: vi.fn(),
+  updateUserAddress: vi.fn()
 }));
 
 import { addUserAddress, updateUserAddress } from '../../services/addressService';

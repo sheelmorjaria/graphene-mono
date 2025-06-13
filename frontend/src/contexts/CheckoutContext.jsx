@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getUserAddresses } from '../services/addressService';
 import { calculateShippingRates } from '../services/shippingService';
 import { useAuth } from './AuthContext';
@@ -43,14 +43,7 @@ export const CheckoutProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const { cart } = useCart();
 
-  // Load addresses when component mounts and user is authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadAddresses();
-    }
-  }, [isAuthenticated]);
-
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
     try {
       setAddressesLoading(true);
       setAddressesError('');
@@ -70,7 +63,14 @@ export const CheckoutProvider = ({ children }) => {
     } finally {
       setAddressesLoading(false);
     }
-  };
+  }, [checkoutState.shippingAddress]);
+
+  // Load addresses when component mounts and user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadAddresses();
+    }
+  }, [isAuthenticated, loadAddresses]);
 
   const setShippingAddress = (address) => {
     setCheckoutState(prev => ({
@@ -153,12 +153,20 @@ export const CheckoutProvider = ({ children }) => {
     setShippingRates([]);
   };
 
+  const setShippingMethod = (method) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      shippingMethod: method,
+      shippingCost: method ? method.cost : 0
+    }));
+  };
+
   const refreshAddresses = () => {
     loadAddresses();
   };
 
   // Load shipping rates when shipping address or cart changes
-  const loadShippingRates = async (address = checkoutState.shippingAddress) => {
+  const loadShippingRates = useCallback(async (address = checkoutState.shippingAddress) => {
     if (!address || !cart.items || cart.items.length === 0) {
       setShippingRates([]);
       return;
@@ -192,22 +200,14 @@ export const CheckoutProvider = ({ children }) => {
     } finally {
       setShippingRatesLoading(false);
     }
-  };
+  }, [checkoutState.shippingAddress, cart.items, checkoutState.shippingMethod]);
 
   // Effect to load shipping rates when shipping address or cart changes
   useEffect(() => {
     if (checkoutState.shippingAddress && cart.items.length > 0) {
       loadShippingRates();
     }
-  }, [checkoutState.shippingAddress, cart.items.length]);
-
-  const setShippingMethod = (method) => {
-    setCheckoutState(prev => ({
-      ...prev,
-      shippingMethod: method,
-      shippingCost: method ? method.cost : 0
-    }));
-  };
+  }, [checkoutState.shippingAddress, cart.items.length, loadShippingRates]);
 
   const refreshShippingRates = () => {
     loadShippingRates();

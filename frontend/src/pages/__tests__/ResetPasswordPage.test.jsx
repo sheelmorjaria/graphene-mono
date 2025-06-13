@@ -63,7 +63,7 @@ describe('ResetPasswordPage', () => {
         
         // Mock the useSearchParams hook for this test
         const MockedResetPasswordPage = () => {
-          const navigate = () => {};
+          const _navigate = () => {};
           const token = searchParams.get('token'); // Will be null
           
           return (

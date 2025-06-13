@@ -189,7 +189,7 @@ const ReturnDetailsPage = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Return Status Timeline</h2>
               
               <div className="space-y-4">
-                {getStatusTimeline().map((step, index) => (
+                {getStatusTimeline().map((step) => (
                   <div key={step.status} className={`flex items-start ${step.completed ? 'text-gray-900' : 'text-gray-400'}`}>
                     <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                       step.completed 

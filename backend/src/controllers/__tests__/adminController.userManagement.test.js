@@ -6,10 +6,10 @@ import jwt from 'jsonwebtoken';
 const mockSendAccountDisabledEmail = jest.fn();
 const mockSendAccountReEnabledEmail = jest.fn();
 
-const mockEmailService = {
-  sendAccountDisabledEmail: mockSendAccountDisabledEmail,
-  sendAccountReEnabledEmail: mockSendAccountReEnabledEmail
-};
+// const mockEmailService = {
+//   sendAccountDisabledEmail: mockSendAccountDisabledEmail,
+//   sendAccountReEnabledEmail: mockSendAccountReEnabledEmail
+// };
 
 // Dynamic imports - mocking will be handled in beforeEach
 import app from '../../../server.js';

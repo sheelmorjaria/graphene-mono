@@ -260,7 +260,7 @@ describe('AdminLoginPage', () => {
   it('redirects to dashboard if already authenticated', () => {
     adminService.isAdminAuthenticated.mockReturnValue(true);
     
-    const mockNavigate = vi.fn();
+    const _mockNavigate = vi.fn();
     
     // This test would need to be implemented with proper router mocking
     // The key behavior is that the useEffect should call navigate('/admin/dashboard', { replace: true })

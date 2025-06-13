@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   getCart, 
   addToCart as addToCartService, 
@@ -8,7 +8,7 @@ import {
 } from '../services/cartService';
 import { useAuth } from './AuthContext';
 
-const CartContext = createContext();
+export const CartContext = createContext();
 
 export const useCart = () => {
   const context = useContext(CartContext);
@@ -30,12 +30,7 @@ export const CartProvider = ({ children }) => {
   
   const { isAuthenticated } = useAuth();
 
-  // Load cart on mount and when authentication changes
-  useEffect(() => {
-    loadCart();
-  }, [isAuthenticated]);
-
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -47,7 +42,12 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load cart on mount and when authentication changes
+  useEffect(() => {
+    loadCart();
+  }, [isAuthenticated, loadCart]);
 
   const addToCart = async (productId, quantity = 1) => {
     try {

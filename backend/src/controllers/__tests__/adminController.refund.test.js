@@ -14,11 +14,9 @@ const mockOrder = {
   isRefundEligible: mockIsRefundEligible
 };
 
-// Mock email service
+// Mock email service (prepared for testing)
 const mockSendRefundConfirmationEmail = jest.fn();
-const mockEmailService = {
-  sendRefundConfirmationEmail: mockSendRefundConfirmationEmail
-};
+// const mockEmailService = { sendRefundConfirmationEmail: mockSendRefundConfirmationEmail };
 
 // Set up mocks before imports
 // Mocking will be handled in beforeEach
@@ -43,8 +41,8 @@ jest.mock('mongoose', () => ({
       constructor() {}
       index() { return this; }
       pre() { return this; }
-      methods = {}
-      statics = {}
+      methods = {};
+      statics = {};
     },
     model: jest.fn()
   }

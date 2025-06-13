@@ -145,19 +145,19 @@ describe('PayPal Payment Integration', () => {
     });
 
     it('should create PayPal order successfully with valid data', async () => {
-      // Mock PayPal API success response
-      const mockPayPalResponse = {
-        result: {
-          id: 'PAYPAL_ORDER_ID_123',
-          status: 'CREATED',
-          links: [
-            {
-              rel: 'approve',
-              href: 'https://www.sandbox.paypal.com/checkoutnow?token=PAYPAL_ORDER_ID_123'
-            }
-          ]
-        }
-      };
+      // Mock PayPal API success response (structure preserved for reference)
+      // const mockPayPalResponse = {
+      //   result: {
+      //     id: 'PAYPAL_ORDER_ID_123',
+      //     status: 'CREATED',
+      //     links: [
+      //       {
+      //         rel: 'approve',
+      //         href: 'https://www.sandbox.paypal.com/checkoutnow?token=PAYPAL_ORDER_ID_123'
+      //       }
+      //     ]
+      //   }
+      // };
 
       // Note: In a real test, you'd mock the PayPal API call
       // For now, this will fail due to missing PayPal credentials

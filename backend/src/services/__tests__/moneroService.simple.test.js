@@ -4,7 +4,7 @@ import moneroService from '../moneroService.js';
 
 describe('MoneroService Simple Tests', () => {
   let axiosGetSpy;
-  let axiosPostSpy;
+  // let axiosPostSpy; // For future POST testing
 
   beforeEach(() => {
     jest.clearAllMocks();

@@ -193,12 +193,6 @@ const OrderConfirmationPage = () => {
                   <span>{formatCurrency(order.tax)}</span>
                 </div>
               )}
-              {order.discount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Discount:</span>
-                  <span className="text-green-600">-{formatCurrency(order.discount)}</span>
-                </div>
-              )}
               <div className="border-t pt-2">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total:</span>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllUsers, updateUserStatus, formatCurrency } from '../services/adminService';
+import { getAllUsers, updateUserStatus } from '../services/adminService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 
@@ -35,21 +35,7 @@ function AdminUsersListPage() {
   const [updating, setUpdating] = useState(false);
   const [success, setSuccess] = useState(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, searchQuery, filters, sortBy, sortOrder]);
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(searchInput);
-      setCurrentPage(1); // Reset to first page on new search
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -75,7 +61,21 @@ function AdminUsersListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, filters, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setCurrentPage(1); // Reset to first page on new search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));

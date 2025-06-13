@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
 import CheckoutPage from '../CheckoutPage';
 import { CheckoutProvider } from '../../contexts/CheckoutContext';
 
@@ -185,7 +185,9 @@ describe('CheckoutPage', () => {
       
       // Select an address
       const addressCard = screen.getByText('Jane Smith').closest('div');
-      await user.click(addressCard);
+      await act(async () => {
+        await user.click(addressCard);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Selected Shipping Address:')).toBeInTheDocument();
@@ -232,7 +234,9 @@ describe('CheckoutPage', () => {
       });
       
       const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
@@ -251,7 +255,9 @@ describe('CheckoutPage', () => {
       });
       
       const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
@@ -259,7 +265,9 @@ describe('CheckoutPage', () => {
       
       // Go back to shipping
       const backButton = screen.getByRole('button', { name: /back to shipping/i });
-      await user.click(backButton);
+      await act(async () => {
+        await user.click(backButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Shipping Address')).toBeInTheDocument();
@@ -277,7 +285,9 @@ describe('CheckoutPage', () => {
       });
       
       const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
@@ -285,7 +295,9 @@ describe('CheckoutPage', () => {
       
       // Go to review
       const reviewButton = screen.getByRole('button', { name: /continue to review/i });
-      await user.click(reviewButton);
+      await act(async () => {
+        await user.click(reviewButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Review Your Order')).toBeInTheDocument();
@@ -339,14 +351,18 @@ describe('CheckoutPage', () => {
       });
       
       let continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
       });
       
       continueButton = screen.getByRole('button', { name: /continue to review/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Review Your Order')).toBeInTheDocument();
@@ -366,14 +382,18 @@ describe('CheckoutPage', () => {
       });
       
       let continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByText('Payment Method')).toBeInTheDocument();
       });
       
       continueButton = screen.getByRole('button', { name: /continue to review/i });
-      await user.click(continueButton);
+      await act(async () => {
+        await user.click(continueButton);
+      });
       
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /place order/i })).toBeInTheDocument();

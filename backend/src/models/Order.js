@@ -145,30 +145,6 @@ const orderSchema = new mongoose.Schema({
     min: [0, 'Shipping cost cannot be negative'],
     default: 0
   },
-  discount: {
-    type: Number,
-    min: [0, 'Discount cannot be negative'],
-    default: 0
-  },
-  appliedPromotion: {
-    promotionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Promotion'
-    },
-    code: {
-      type: String,
-      uppercase: true
-    },
-    type: {
-      type: String,
-      enum: ['percentage', 'fixed_amount', 'free_shipping']
-    },
-    value: Number,
-    discountAmount: {
-      type: Number,
-      min: 0
-    }
-  },
   totalAmount: {
     type: Number,
     min: [0, 'Total amount cannot be negative']
@@ -415,16 +391,6 @@ const orderSchema = new mongoose.Schema({
     default: Date.now,
     index: true
   },
-  discount: {
-    type: Number,
-    min: [0, 'Discount cannot be negative'],
-    default: 0
-  },
-  discountCode: {
-    type: String,
-    trim: true,
-    maxlength: 50
-  },
   trackingNumber: {
     type: String,
     trim: true,
@@ -491,14 +457,15 @@ orderSchema.index({ orderStatus: 1, createdAt: -1 }); // For order queries
 orderSchema.pre('save', function(next) {
   // Generate order number if not provided
   if (!this.orderNumber) {
-    const timestamp = Date.now().toString();
+    // Use shorter timestamp (last 8 digits) and 3-digit random suffix
+    const timestamp = Date.now().toString().slice(-8);
     const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     this.orderNumber = `ORD-${timestamp}-${randomSuffix}`;
   }
   
-  // Calculate totalAmount from subtotal, tax, shipping, and discount if not provided
+  // Calculate totalAmount from subtotal, tax, and shipping if not provided
   if (!this.totalAmount) {
-    this.totalAmount = this.subtotal + this.tax + this.shipping - this.discount;
+    this.totalAmount = this.subtotal + this.tax + this.shipping;
   }
   
   // Track status changes in statusHistory

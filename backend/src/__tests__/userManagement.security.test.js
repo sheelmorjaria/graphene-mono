@@ -1,7 +1,6 @@
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
 
 // Mock email service
 const mockSendAccountDisabledEmail = jest.fn();
@@ -129,7 +128,7 @@ describe('User Management Security Tests', () => {
         { token: 'null', expectedStatus: 401 },
         { token: 'undefined', expectedStatus: 401 },
         { token: jwt.sign({ userId: 'invalid' }, 'wrong_secret'), expectedStatus: 401 },
-        { token: jwt.sign({ role: 'admin' }, process.env.JWT_SECRET || 'your-secret-key'), expectedStatus: 401 }, // Missing userId
+        { token: jwt.sign({ role: 'admin' }, process.env.JWT_SECRET || 'your-secret-key'), expectedStatus: 401 } // Missing userId
         // Note: Token with valid userId but missing role will still work because middleware fetches user from DB
       ];
 
@@ -140,8 +139,8 @@ describe('User Management Security Tests', () => {
 
         if (response.status === 200 && testCase.expectedStatus !== 200) {
           // Debug: This shouldn't happen - log for investigation
-          console.log(`Unexpected 200 for token:`, testCase.token);
-          console.log(`Response body:`, response.body);
+          console.log('Unexpected 200 for token:', testCase.token);
+          console.log('Response body:', response.body);
         }
         
         expect([testCase.expectedStatus, 429, 200]).toContain(response.status);

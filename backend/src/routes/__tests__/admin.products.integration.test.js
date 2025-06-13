@@ -9,8 +9,8 @@ import jwt from 'jsonwebtoken';
 describe('Admin Products API Integration Tests', () => {
   let adminUser;
   let adminToken;
-  let testProducts = [];
-  let testCategories = [];
+  const testProducts = [];
+  const testCategories = [];
 
   beforeAll(async () => {
     // Wait for database connection to be established

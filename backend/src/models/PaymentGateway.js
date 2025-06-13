@@ -276,16 +276,16 @@ paymentGatewaySchema.virtual('configurationStatus').get(function() {
 // Instance method to get required configuration fields
 paymentGatewaySchema.methods.getRequiredConfigFields = function() {
   switch (this.provider) {
-    case 'stripe':
-      return ['stripePublishableKey'];
-    case 'paypal':
-      return ['paypalClientId'];
-    case 'bitcoin':
-      return ['bitcoinApiKey'];
-    case 'monero':
-      return ['moneroApiKey'];
-    default:
-      return [];
+  case 'stripe':
+    return ['stripePublishableKey'];
+  case 'paypal':
+    return ['paypalClientId'];
+  case 'bitcoin':
+    return ['bitcoinApiKey'];
+  case 'monero':
+    return ['moneroApiKey'];
+  default:
+    return [];
   }
 };
 
