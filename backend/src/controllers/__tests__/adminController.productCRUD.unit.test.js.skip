@@ -18,16 +18,16 @@ const mockCategory = {
 };
 
 // Mock the models
-jest.unstable_mockModule('../../models/Product.js', () => ({
+jest.mock('../../models/Product.js', () => ({
   default: mockProduct
 }));
 
-jest.unstable_mockModule('../../models/Category.js', () => ({
+jest.mock('../../models/Category.js', () => ({
   default: mockCategory
 }));
 
 // Import the functions to test after mocking
-const { getProductById, createProduct, updateProduct } = await import('../adminController.js');
+import '../adminController.js');
 
 describe('Admin Controller - Product CRUD Unit Tests', () => {
   let req, res;

@@ -3,13 +3,7 @@ import Cart from '../Cart.js';
 import Product from '../Product.js';
 
 describe('Cart Model', () => {
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
+  // Using global test setup for MongoDB connection
 
   afterEach(async () => {
     await Cart.deleteMany({});

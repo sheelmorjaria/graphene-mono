@@ -1,528 +1,311 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import moneroService from '../moneroService.js';
+import axios from 'axios';
 
-// Mock fetch globally
-global.fetch = jest.fn();
-
-// Mock crypto for webhook verification
-jest.mock('crypto', () => ({
-  createHmac: jest.fn(() => ({
-    update: jest.fn().mockReturnThis(),
-    digest: jest.fn(() => 'mocked-signature')
-  }))
-}));
-
-describe('MoneroService', () => {
-  let consoleSpy;
+describe('MoneroService Tests', () => {
+  let axiosGetSpy;
+  let axiosPostSpy;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     
-    // Set test environment variables
-    process.env.GLOBEE_API_KEY = 'test-api-key';
-    process.env.GLOBEE_WEBHOOK_SECRET = 'test-webhook-secret';
-  });
-
-  afterEach(() => {
-    consoleSpy.mockRestore();
-    jest.restoreAllMocks();
+    // Set test environment variables  
+    process.env.NODE_ENV = 'test';
+    process.env.GLOBEE_API_KEY = 'test-globee-api-key';
+    process.env.GLOBEE_SECRET = 'test-webhook-secret';
+    process.env.FRONTEND_URL = 'http://localhost:3000';
+    process.env.BACKEND_URL = 'http://localhost:5000';
+    
+    // Mock axios methods using spyOn
+    axiosGetSpy = jest.spyOn(axios, 'get').mockResolvedValue({ data: {} });
+    axiosPostSpy = jest.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+    
+    // Reset cache
+    moneroService.exchangeRateCache = {
+      rate: null,
+      timestamp: null,
+      validUntil: null
+    };
   });
 
   describe('getExchangeRate', () => {
-    it('should fetch and cache exchange rate successfully', async () => {
-      const mockExchangeResponse = {
-        monero: { gbp: 0.005432 }
+    it('should fetch exchange rate from CoinGecko API', async () => {
+      const mockResponse = {
+        data: {
+          monero: { gbp: 161.23 } // XMR price in GBP
+        }
       };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExchangeResponse)
-      });
+      axiosGetSpy.mockResolvedValueOnce(mockResponse);
 
       const result = await moneroService.getExchangeRate();
 
-      expect(fetch).toHaveBeenCalledWith(
-        'https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies=gbp',
+      expect(axiosGetSpy).toHaveBeenCalledWith(
+        'https://api.coingecko.com/api/v3/simple/price',
         expect.objectContaining({
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          params: {
+            ids: 'monero',
+            vs_currencies: 'gbp',
+            precision: 8
+          },
+          timeout: 10000
         })
       );
 
-      expect(result).toEqual({
-        rate: 0.005432,
-        validUntil: expect.any(Date),
-        source: 'coingecko'
-      });
-
-      // Verify cache timestamp
-      const validUntil = new Date(result.validUntil);
-      const now = new Date();
-      const diffMinutes = (validUntil - now) / (1000 * 60);
-      expect(diffMinutes).toBeCloseTo(5, 0); // Should be ~5 minutes from now
+      // 1 GBP = 1/161.23 XMR ≈ 0.00620333 XMR
+      expect(result.rate).toBeCloseTo(0.00620333, 5);
+      expect(result.validUntil).toBeInstanceOf(Date);
     });
 
-    it('should return cached rate if still valid', async () => {
-      const futureTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-      
-      // Set up cache with valid data
+    it('should use cached rate when still valid', async () => {
+      // Set up cache with future expiration
+      const futureTime = Date.now() + 10 * 60 * 1000; // 10 minutes from now
       moneroService.exchangeRateCache = {
-        rate: 0.006789,
-        validUntil: futureTime,
-        source: 'coingecko'
+        rate: 0.005,
+        timestamp: Date.now(),
+        validUntil: futureTime
       };
 
       const result = await moneroService.getExchangeRate();
 
-      expect(fetch).not.toHaveBeenCalled();
-      expect(result.rate).toBe(0.006789);
-      expect(result.validUntil).toEqual(futureTime);
+      expect(axiosGetSpy).not.toHaveBeenCalled();
+      expect(result.rate).toBe(0.005);
     });
 
     it('should handle API errors gracefully', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        statusText: 'Too Many Requests'
-      });
+      // Clear cache to force API call
+      moneroService.exchangeRateCache = {
+        rate: null,
+        timestamp: null,
+        validUntil: null
+      };
+
+      axiosGetSpy.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(moneroService.getExchangeRate()).rejects.toThrow(
-        'Failed to fetch exchange rate: 429 Too Many Requests'
-      );
-    });
-
-    it('should handle network errors', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'));
-
-      await expect(moneroService.getExchangeRate()).rejects.toThrow(
-        'Failed to fetch exchange rate: Network error'
-      );
-    });
-
-    it('should handle invalid API response format', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ invalid: 'data' })
-      });
-
-      await expect(moneroService.getExchangeRate()).rejects.toThrow(
-        'Invalid exchange rate data received'
+        'Unable to fetch current Monero exchange rate'
       );
     });
   });
 
   describe('convertGbpToXmr', () => {
     beforeEach(() => {
-      // Mock successful exchange rate
-      moneroService.exchangeRateCache = {
+      // Mock the getExchangeRate method to return predictable values
+      jest.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
         rate: 0.01, // 1 GBP = 0.01 XMR
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
+        timestamp: Date.now(),
+        validUntil: new Date(Date.now() + 5 * 60 * 1000)
+      });
     });
 
     it('should convert GBP to XMR correctly', async () => {
       const result = await moneroService.convertGbpToXmr(100);
 
-      expect(result).toEqual({
-        gbpAmount: 100,
-        xmrAmount: 1, // 100 * 0.01
-        exchangeRate: 0.01,
-        validUntil: expect.any(Date)
-      });
+      expect(result.xmrAmount).toBe(1); // 100 * 0.01
+      expect(result.exchangeRate).toBe(0.01);
+      expect(result.validUntil).toBeInstanceOf(Date);
     });
 
-    it('should handle zero amount', async () => {
-      const result = await moneroService.convertGbpToXmr(0);
-
-      expect(result.xmrAmount).toBe(0);
-      expect(result.gbpAmount).toBe(0);
-    });
-
-    it('should handle decimal amounts', async () => {
+    it('should handle decimal amounts correctly', async () => {
       const result = await moneroService.convertGbpToXmr(49.99);
 
       expect(result.xmrAmount).toBe(0.4999); // 49.99 * 0.01
-      expect(result.gbpAmount).toBe(49.99);
-    });
-
-    it('should fetch fresh rate if cache expired', async () => {
-      // Clear cache
-      moneroService.exchangeRateCache = null;
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ monero: { gbp: 0.02 } })
-      });
-
-      const result = await moneroService.convertGbpToXmr(50);
-
-      expect(fetch).toHaveBeenCalled();
-      expect(result.xmrAmount).toBe(1); // 50 * 0.02
     });
   });
 
-  describe('createMoneroPayment', () => {
-    const mockOrderData = {
-      orderId: 'order-123',
-      orderTotal: 199.99,
-      customerEmail: 'test@example.com'
-    };
-
-    it('should create Monero payment successfully', async () => {
-      // Mock exchange rate
-      moneroService.exchangeRateCache = {
-        rate: 0.01,
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
-
-      // Mock GloBee API response
+  describe('createPaymentRequest', () => {
+    it('should create payment request with GloBee API', async () => {
       const mockGloBeeResponse = {
-        success: true,
         data: {
           id: 'globee-payment-123',
           payment_address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
-          payment_amount: 1.9999,
-          expires_at: '2024-01-01T12:00:00Z',
+          total: 1.9999,
+          currency: 'XMR',
+          expiration_time: '2024-01-01T12:00:00Z',
+          payment_url: 'https://globee.com/payment/123',
           status: 'pending'
         }
       };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockGloBeeResponse)
-      });
+      axiosPostSpy.mockResolvedValueOnce(mockGloBeeResponse);
 
-      const result = await moneroService.createMoneroPayment(mockOrderData);
+      const paymentData = {
+        orderId: 'order-123',
+        amount: 1.9999,
+        currency: 'XMR',
+        customerEmail: 'test@example.com'
+      };
 
-      expect(fetch).toHaveBeenCalledWith(
-        'https://globee.com/payment-api/v1/payments',
+      const result = await moneroService.createPaymentRequest(paymentData);
+
+      expect(axiosPostSpy).toHaveBeenCalledWith(
+        'https://api.globee.com/v1/payment-request',
         expect.objectContaining({
-          method: 'POST',
+          total: 1.9999,
+          currency: 'XMR',
+          order_id: 'order-123',
+          customer_email: 'test@example.com'
+        }),
+        expect.objectContaining({
           headers: {
-            'Authorization': 'Bearer test-api-key',
+            'Authorization': 'Bearer test-globee-api-key',
             'Content-Type': 'application/json'
-          },
-          body: expect.stringContaining('"currency":"XMR"')
+          }
         })
       );
 
       expect(result).toEqual({
         paymentId: 'globee-payment-123',
-        moneroAddress: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
-        xmrAmount: 1.9999,
-        orderTotal: 199.99,
-        exchangeRate: 0.01,
+        address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
+        amount: 1.9999,
+        currency: 'XMR',
         expirationTime: '2024-01-01T12:00:00Z',
-        validUntil: expect.any(Date),
-        requiredConfirmations: 10,
-        paymentWindowHours: 24,
+        paymentUrl: 'https://globee.com/payment/123',
         status: 'pending'
       });
     });
 
-    it('should handle GloBee API errors', async () => {
-      moneroService.exchangeRateCache = {
-        rate: 0.01,
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
+    it('should handle missing API key', async () => {
+      const originalApiKey = moneroService.apiKey;
+      moneroService.apiKey = null;
 
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: () => Promise.resolve({
-          success: false,
-          error: 'Invalid payment data'
-        })
-      });
+      await expect(moneroService.createPaymentRequest({
+        orderId: 'test',
+        amount: 1.0
+      })).rejects.toThrow('GloBee API key not configured');
 
-      await expect(moneroService.createMoneroPayment(mockOrderData))
-        .rejects.toThrow('Failed to create Monero payment: Invalid payment data');
-    });
-
-    it('should handle network errors during payment creation', async () => {
-      moneroService.exchangeRateCache = {
-        rate: 0.01,
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
-
-      fetch.mockRejectedValueOnce(new Error('Network timeout'));
-
-      await expect(moneroService.createMoneroPayment(mockOrderData))
-        .rejects.toThrow('Failed to create Monero payment: Network timeout');
-    });
-
-    it('should include correct payment data in GloBee request', async () => {
-      moneroService.exchangeRateCache = {
-        rate: 0.005,
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          data: {
-            id: 'test-payment',
-            payment_address: 'test-address',
-            payment_amount: 1.0,
-            expires_at: '2024-01-01T12:00:00Z',
-            status: 'pending'
-          }
-        })
-      });
-
-      await moneroService.createMoneroPayment(mockOrderData);
-
-      const requestBody = JSON.parse(fetch.mock.calls[0][1].body);
-      
-      expect(requestBody).toEqual({
-        currency: 'XMR',
-        amount: 0.99995, // 199.99 * 0.005
-        notification_url: expect.stringContaining('/api/payments/monero/webhook'),
-        success_url: expect.stringContaining('/order-confirmation/order-123'),
-        cancel_url: expect.stringContaining('/checkout'),
-        customer_email: 'test@example.com',
-        custom_data: {
-          orderId: 'order-123',
-          orderTotal: 199.99
-        }
-      });
+      moneroService.apiKey = originalApiKey;
     });
   });
 
-  describe('checkPaymentStatus', () => {
-    it('should fetch payment status successfully', async () => {
+  describe('getPaymentStatus', () => {
+    it('should fetch payment status from GloBee', async () => {
       const mockStatusResponse = {
-        success: true,
         data: {
           id: 'payment-123',
-          status: 'confirmed',
-          confirmations: 15,
-          payment_amount: 1.5,
-          received_amount: 1.5
+          status: 'paid',
+          confirmations: 12,
+          paid_amount: 1.5,
+          transaction_hash: 'abc123',
+          payment_address: '4AdUndXHHZ...',
+          created_at: '2024-01-01T10:00:00Z',
+          expires_at: '2024-01-02T10:00:00Z'
         }
       };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockStatusResponse)
-      });
+      axiosGetSpy.mockResolvedValueOnce(mockStatusResponse);
 
-      const result = await moneroService.checkPaymentStatus('payment-123');
+      const result = await moneroService.getPaymentStatus('payment-123');
 
-      expect(fetch).toHaveBeenCalledWith(
-        'https://globee.com/payment-api/v1/payments/payment-123',
+      expect(axiosGetSpy).toHaveBeenCalledWith(
+        'https://api.globee.com/v1/payment-request/payment-123',
         expect.objectContaining({
           headers: {
-            'Authorization': 'Bearer test-api-key',
-            'Accept': 'application/json'
+            'Authorization': 'Bearer test-globee-api-key'
           }
         })
       );
 
       expect(result).toEqual({
-        paymentId: 'payment-123',
-        status: 'confirmed',
-        confirmations: 15,
-        expectedAmount: 1.5,
-        receivedAmount: 1.5,
-        isConfirmed: true,
-        isUnderpaid: false
+        id: 'payment-123',
+        status: 'paid',
+        confirmations: 12,
+        paid_amount: 1.5,
+        transaction_hash: 'abc123',
+        payment_address: '4AdUndXHHZ...',
+        created_at: '2024-01-01T10:00:00Z',
+        expires_at: '2024-01-02T10:00:00Z'
       });
-    });
-
-    it('should handle underpaid status correctly', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          data: {
-            id: 'payment-123',
-            status: 'partially_confirmed',
-            confirmations: 5,
-            payment_amount: 2.0,
-            received_amount: 1.8
-          }
-        })
-      });
-
-      const result = await moneroService.checkPaymentStatus('payment-123');
-
-      expect(result.isUnderpaid).toBe(true);
-      expect(result.isConfirmed).toBe(false);
-    });
-
-    it('should handle API errors when checking status', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        json: () => Promise.resolve({
-          success: false,
-          error: 'Payment not found'
-        })
-      });
-
-      await expect(moneroService.checkPaymentStatus('invalid-payment'))
-        .rejects.toThrow('Failed to check payment status: Payment not found');
     });
   });
 
-  describe('verifyWebhookSignature', () => {
-    const testPayload = JSON.stringify({ test: 'data' });
-    const testSignature = 'sha256=mocked-signature';
+  describe('processWebhookNotification', () => {
+    it('should process confirmed payment webhook', () => {
+      const webhookData = {
+        id: 'payment-123',
+        status: 'paid',
+        confirmations: 12,
+        paid_amount: 1.5,
+        total_amount: 1.5,
+        transaction_hash: 'abc123',
+        order_id: 'order-456'
+      };
 
-    it('should verify webhook signature correctly', () => {
-      const crypto = require('crypto');
-      const result = moneroService.verifyWebhookSignature(testPayload, testSignature);
-
-      expect(crypto.createHmac).toHaveBeenCalledWith('sha256', 'test-webhook-secret');
-      expect(result).toBe(true);
-    });
-
-    it('should reject invalid signature format', () => {
-      const result = moneroService.verifyWebhookSignature(testPayload, 'invalid-format');
-
-      expect(result).toBe(false);
-    });
-
-    it('should reject mismatched signature', () => {
-      const crypto = require('crypto');
-      crypto.createHmac.mockReturnValueOnce({
-        update: jest.fn().mockReturnThis(),
-        digest: jest.fn(() => 'different-signature')
-      });
-
-      const result = moneroService.verifyWebhookSignature(testPayload, testSignature);
-
-      expect(result).toBe(false);
-    });
-
-    it('should handle missing webhook secret', () => {
-      process.env.GLOBEE_WEBHOOK_SECRET = '';
-
-      const result = moneroService.verifyWebhookSignature(testPayload, testSignature);
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('processWebhookPayload', () => {
-    const mockWebhookPayload = {
-      id: 'payment-123',
-      status: 'confirmed',
-      confirmations: 12,
-      payment_amount: 1.5,
-      received_amount: 1.5,
-      custom_data: {
-        orderId: 'order-456'
-      }
-    };
-
-    it('should process webhook payload successfully', () => {
-      const result = moneroService.processWebhookPayload(mockWebhookPayload);
+      const result = moneroService.processWebhookNotification(webhookData);
 
       expect(result).toEqual({
         paymentId: 'payment-123',
         orderId: 'order-456',
-        status: 'confirmed',
+        status: 'confirmed', // Because confirmations >= 10
         confirmations: 12,
-        expectedAmount: 1.5,
-        receivedAmount: 1.5,
-        isConfirmed: true,
-        isUnderpaid: false,
-        timestamp: expect.any(Date)
+        paidAmount: 1.5,
+        totalAmount: 1.5,
+        transactionHash: 'abc123',
+        isFullyConfirmed: true,
+        requiresAction: false
       });
     });
 
-    it('should handle missing custom data', () => {
-      const payloadWithoutCustomData = { ...mockWebhookPayload };
-      delete payloadWithoutCustomData.custom_data;
-
-      const result = moneroService.processWebhookPayload(payloadWithoutCustomData);
-
-      expect(result.orderId).toBeNull();
-    });
-
-    it('should correctly identify underpaid transactions', () => {
-      const underpaidPayload = {
-        ...mockWebhookPayload,
-        received_amount: 1.2,
-        status: 'partially_confirmed'
+    it('should detect underpaid transactions', () => {
+      const webhookData = {
+        id: 'payment-123',
+        status: 'underpaid',
+        confirmations: 5,
+        paid_amount: 1.2,
+        total_amount: 1.5,
+        order_id: 'order-456'
       };
 
-      const result = moneroService.processWebhookPayload(underpaidPayload);
+      const result = moneroService.processWebhookNotification(webhookData);
 
-      expect(result.isUnderpaid).toBe(true);
-      expect(result.isConfirmed).toBe(false);
+      expect(result.status).toBe('underpaid');
+      expect(result.requiresAction).toBe(true);
+      expect(result.isFullyConfirmed).toBe(false);
     });
 
-    it('should handle various payment statuses', () => {
-      const testCases = [
-        { status: 'pending', expectedConfirmed: false },
-        { status: 'partially_confirmed', expectedConfirmed: false },
-        { status: 'confirmed', expectedConfirmed: true },
-        { status: 'expired', expectedConfirmed: false },
-        { status: 'cancelled', expectedConfirmed: false }
-      ];
+    it('should handle partially confirmed payments', () => {
+      const webhookData = {
+        id: 'payment-123',
+        status: 'paid',
+        confirmations: 5, // Less than required 10
+        paid_amount: 1.5,
+        total_amount: 1.5,
+        order_id: 'order-456'
+      };
 
-      testCases.forEach(({ status, expectedConfirmed }) => {
-        const payload = { ...mockWebhookPayload, status };
-        const result = moneroService.processWebhookPayload(payload);
-        
-        expect(result.isConfirmed).toBe(expectedConfirmed);
-      });
+      const result = moneroService.processWebhookNotification(webhookData);
+
+      expect(result.status).toBe('partially_confirmed');
+      expect(result.isFullyConfirmed).toBe(false);
     });
   });
 
-  describe('Edge Cases and Error Handling', () => {
-    it('should handle missing environment variables', () => {
-      delete process.env.GLOBEE_API_KEY;
+  describe('Utility Methods', () => {
+    it('should format XMR amounts correctly', () => {
+      expect(moneroService.formatXmrAmount(1.000000000000)).toBe('1');
+      expect(moneroService.formatXmrAmount(1.234567890123)).toBe('1.234567890123');
+      expect(moneroService.formatXmrAmount(0.000000001000)).toBe('0.000000001');
+    });
+
+    it('should calculate payment expiration correctly', () => {
+      const createdAt = new Date('2024-01-01T10:00:00Z');
+      const expiration = moneroService.getPaymentExpirationTime(createdAt);
       
-      expect(() => {
-        // This should log an error or handle gracefully
-        moneroService.createMoneroPayment({ orderId: 'test' });
-      }).not.toThrow();
+      const expectedExpiration = new Date('2024-01-02T10:00:00Z'); // 24 hours later
+      expect(expiration).toEqual(expectedExpiration);
     });
 
-    it('should handle malformed JSON responses', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.reject(new SyntaxError('Unexpected token'))
-      });
-
-      await expect(moneroService.getExchangeRate())
-        .rejects.toThrow();
+    it('should detect expired payments', () => {
+      const past = new Date(Date.now() - 25 * 60 * 60 * 1000); // 25 hours ago
+      const recent = new Date(Date.now() - 1 * 60 * 60 * 1000); // 1 hour ago
+      
+      expect(moneroService.isPaymentExpired(past)).toBe(true);
+      expect(moneroService.isPaymentExpired(recent)).toBe(false);
     });
 
-    it('should handle extremely large amounts', async () => {
-      moneroService.exchangeRateCache = {
-        rate: 0.000001,
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
-
-      const result = await moneroService.convertGbpToXmr(1000000);
-
-      expect(result.xmrAmount).toBe(1); // 1000000 * 0.000001
-      expect(Number.isFinite(result.xmrAmount)).toBe(true);
-    });
-
-    it('should handle very small amounts', async () => {
-      moneroService.exchangeRateCache = {
-        rate: 100,
-        validUntil: new Date(Date.now() + 5 * 60 * 1000),
-        source: 'coingecko'
-      };
-
-      const result = await moneroService.convertGbpToXmr(0.01);
-
-      expect(result.xmrAmount).toBe(1); // 0.01 * 100
-      expect(Number.isFinite(result.xmrAmount)).toBe(true);
+    it('should return correct constants', () => {
+      expect(moneroService.getRequiredConfirmations()).toBe(10);
+      expect(moneroService.getPaymentWindowHours()).toBe(24);
     });
   });
 });

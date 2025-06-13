@@ -23,12 +23,12 @@ const MockCategoryConstructor = jest.fn().mockImplementation((data) => ({
 Object.assign(MockCategoryConstructor, mockCategory);
 
 // Mock the models
-jest.unstable_mockModule('../../models/Category.js', () => ({
+jest.mock('../../models/Category.js', () => ({
   default: MockCategoryConstructor
 }));
 
 // Import the functions to test after mocking
-const { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } = await import('../adminController.js');
+import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from '../adminController.js';
 
 describe('Admin Controller - Category Management Unit Tests', () => {
   let req, res;

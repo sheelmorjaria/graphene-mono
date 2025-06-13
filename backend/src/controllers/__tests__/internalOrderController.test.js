@@ -8,18 +8,12 @@ import Order from '../../models/Order.js';
 process.env.INTERNAL_API_KEY = 'test-internal-api-key-12345';
 
 describe('Internal Order Controller (Admin Endpoints)', () => {
+  // Using global test setup for MongoDB connection
+  
   let testUser;
   let testOrder;
   const validApiKey = 'test-internal-api-key-12345';
   const invalidApiKey = 'invalid-api-key';
-
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   beforeEach(async () => {
     // Clear test data

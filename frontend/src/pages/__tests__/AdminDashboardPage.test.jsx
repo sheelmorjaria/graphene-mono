@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { vi } from 'vitest';
 import AdminDashboardPage from '../AdminDashboardPage';
 import * as adminService from '../../services/adminService';

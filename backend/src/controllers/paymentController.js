@@ -7,6 +7,7 @@ import Promotion from '../models/Promotion.js';
 import { calculateShippingRates } from './shippingController.js';
 import bitcoinService from '../services/bitcoinService.js';
 import moneroService from '../services/moneroService.js';
+import logger, { logError, logPaymentEvent } from '../utils/logger.js';
 
 // Initialize PayPal API
 const paypalEnvironment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'; // 'sandbox' or 'live'
@@ -25,7 +26,7 @@ if (paypalClientId && paypalClientSecret) {
       environment: environment
     });
   } catch (error) {
-    console.error('PayPal client initialization failed:', error);
+    logError(error, { context: 'paypal_client_initialization' });
   }
 }
 
@@ -99,7 +100,7 @@ export const getPaymentMethods = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get payment methods error:', error);
+    logError(error, { context: 'paypal_payment_methods' });
     res.status(500).json({
       success: false,
       error: 'Server error occurred while fetching payment methods'
@@ -300,7 +301,7 @@ export const createPayPalOrder = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Create PayPal order error:', error);
+    logError(error, { context: 'paypal_order_creation', cartId: req.body.cartId });
     res.status(500).json({
       success: false,
       error: 'Server error occurred while creating PayPal order'
@@ -480,7 +481,7 @@ export const capturePayPalPayment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Capture PayPal payment error:', error);
+    logError(error, { context: 'paypal_payment_capture', orderId: req.params.orderId });
     res.status(500).json({
       success: false,
       error: error.message || 'Server error occurred while capturing PayPal payment'
@@ -496,7 +497,7 @@ export const handlePayPalWebhook = async (req, res) => {
     const webhookEvent = req.body;
     const eventType = webhookEvent.event_type;
 
-    console.log('PayPal webhook received:', eventType);
+    logPaymentEvent('paypal_webhook_received', { eventType });
 
     switch (eventType) {
       case 'PAYMENT.CAPTURE.COMPLETED':
@@ -512,12 +513,12 @@ export const handlePayPalWebhook = async (req, res) => {
         break;
       
       default:
-        console.log(`Unhandled PayPal webhook event: ${eventType}`);
+        logger.warn(`Unhandled PayPal webhook event: ${eventType}`);
     }
 
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error('PayPal webhook error:', error);
+    logError(error, { context: 'paypal_webhook_processing' });
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 };
@@ -528,13 +529,13 @@ const handlePaymentCaptureCompleted = async (webhookEvent) => {
     const resource = webhookEvent.resource;
     const orderId = resource.supplementary_data?.related_ids?.order_id;
     
-    console.log(`PayPal payment captured for order: ${orderId}`);
+    logPaymentEvent('paypal_payment_captured', { orderId });
     
     // TODO: Update order status in database
     // This will be implemented when we have Order model updates
     
   } catch (error) {
-    console.error('Error handling payment capture completed:', error);
+    logError(error, { context: 'paypal_capture_completed_handler', orderId });
   }
 };
 
@@ -543,12 +544,12 @@ const handlePaymentCaptureDenied = async (webhookEvent) => {
     const resource = webhookEvent.resource;
     const orderId = resource.supplementary_data?.related_ids?.order_id;
     
-    console.log(`PayPal payment denied for order: ${orderId}`);
+    logPaymentEvent('paypal_payment_denied', { orderId });
     
     // TODO: Update order status in database
     
   } catch (error) {
-    console.error('Error handling payment capture denied:', error);
+    logError(error, { context: 'paypal_capture_denied_handler', orderId });
   }
 };
 
@@ -557,12 +558,12 @@ const handleOrderApproved = async (webhookEvent) => {
     const resource = webhookEvent.resource;
     const orderId = resource.id;
     
-    console.log(`PayPal order approved: ${orderId}`);
+    logPaymentEvent('paypal_order_approved', { orderId });
     
     // TODO: Update order status in database
     
   } catch (error) {
-    console.error('Error handling order approved:', error);
+    logError(error, { context: 'paypal_order_approved_handler', orderId });
   }
 };
 
@@ -611,7 +612,7 @@ export const initializeBitcoinPayment = async (req, res) => {
     
     await order.save();
 
-    console.log(`Bitcoin payment initialized for order ${orderId}:`, {
+    logPaymentEvent('bitcoin_payment_initialized', { orderId,
       address: bitcoinPaymentData.bitcoinAddress,
       amount: bitcoinPaymentData.bitcoinAmount,
       expiry: bitcoinPaymentData.bitcoinPaymentExpiry
@@ -631,7 +632,7 @@ export const initializeBitcoinPayment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Bitcoin payment initialization error:', error);
+    logError(error, { context: 'bitcoin_payment_initialization', cartId: req.body.cartId });
     res.status(500).json({
       success: false,
       error: 'Failed to initialize Bitcoin payment'
@@ -703,7 +704,7 @@ export const getBitcoinPaymentStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Bitcoin payment status error:', error);
+    logError(error, { context: 'bitcoin_payment_status', orderId: req.params.orderId });
     res.status(500).json({
       success: false,
       error: 'Failed to get Bitcoin payment status'
@@ -716,7 +717,7 @@ export const handleBlockonomicsWebhook = async (req, res) => {
   try {
     const { addr, value, txid, confirmations } = req.body;
 
-    console.log('Blockonomics webhook received:', {
+    logPaymentEvent('blockonomics_webhook_received', {
       address: addr,
       value,
       txid,
@@ -737,7 +738,7 @@ export const handleBlockonomicsWebhook = async (req, res) => {
     });
 
     if (!order) {
-      console.log(`No order found for Bitcoin address: ${addr}`);
+      logger.warn(`No order found for Bitcoin address: ${addr}`);
       return res.status(404).json({
         success: false,
         error: 'Order not found for this Bitcoin address'
@@ -760,29 +761,29 @@ export const handleBlockonomicsWebhook = async (req, res) => {
       // Check if payment is expired
       if (bitcoinService.isPaymentExpired(order.paymentDetails.bitcoinPaymentExpiry)) {
         order.paymentStatus = 'expired';
-        console.log(`Bitcoin payment expired for order ${order._id}`);
+        logPaymentEvent('bitcoin_payment_expired', { orderId: order._id });
       }
       // Check if payment is sufficient
       else if (!bitcoinService.isPaymentSufficient(amountReceived, expectedAmount)) {
         order.paymentStatus = 'underpaid';
-        console.log(`Bitcoin underpayment for order ${order._id}: received ${amountReceived}, expected ${expectedAmount}`);
+        logPaymentEvent('bitcoin_payment_underpaid', { orderId: order._id, received: amountReceived, expected: expectedAmount });
       }
       // Check if payment is confirmed (2+ confirmations)
       else if (bitcoinService.isPaymentConfirmed(confirmations || 0)) {
         order.paymentStatus = 'completed';
         order.status = 'processing'; // Move order to processing
-        console.log(`Bitcoin payment confirmed for order ${order._id} with ${confirmations} confirmations`);
+        logPaymentEvent('bitcoin_payment_confirmed', { orderId: order._id, confirmations });
       }
       // Payment received but not yet confirmed
       else {
         order.paymentStatus = 'awaiting_confirmation';
-        console.log(`Bitcoin payment received for order ${order._id}, awaiting confirmations (${confirmations}/2)`);
+        logPaymentEvent('bitcoin_payment_pending', { orderId: order._id, confirmations, required: 2 });
       }
 
       await order.save({ session });
       await session.commitTransaction();
 
-      console.log(`Bitcoin payment updated for order ${order._id}:`, {
+      logPaymentEvent('bitcoin_payment_updated', { orderId: order._id,
         status: order.paymentStatus,
         confirmations: confirmations,
         amountReceived
@@ -801,7 +802,7 @@ export const handleBlockonomicsWebhook = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Blockonomics webhook error:', error);
+    logError(error, { context: 'blockonomics_webhook_processing' });
     res.status(500).json({
       success: false,
       error: 'Webhook processing failed'
@@ -983,7 +984,7 @@ export const createMoneroPayment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Create Monero payment error:', error);
+    logError(error, { context: 'monero_payment_creation', cartId: req.body.cartId });
     res.status(500).json({
       success: false,
       error: error.message || 'Server error occurred while creating Monero payment'
@@ -1038,7 +1039,7 @@ export const checkMoneroPaymentStatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Check Monero payment status error:', error);
+    logError(error, { context: 'monero_payment_status', orderId: req.params.orderId });
     res.status(500).json({
       success: false,
       error: 'Server error occurred while checking payment status'
@@ -1056,19 +1057,19 @@ export const handleMoneroWebhook = async (req, res) => {
 
     // Verify webhook signature
     if (!moneroService.verifyWebhookSignature(payload, signature)) {
-      console.error('Invalid GloBee webhook signature');
+      logger.warn('Invalid GloBee webhook signature');
       return res.status(401).json({
         success: false,
         error: 'Invalid signature'
       });
     }
 
-    console.log('GloBee webhook received:', req.body);
+    logPaymentEvent('globee_webhook_received', req.body);
 
     const webhookData = moneroService.processWebhookNotification(req.body);
     
     if (!webhookData.orderId) {
-      console.error('No order ID in GloBee webhook');
+      logger.warn('No order ID in GloBee webhook');
       return res.status(400).json({
         success: false,
         error: 'Invalid webhook data'
@@ -1095,21 +1096,21 @@ export const handleMoneroWebhook = async (req, res) => {
       if (webhookData.status === 'confirmed') {
         order.paymentStatus = 'completed';
         order.status = 'processing'; // Move order to processing
-        console.log(`Monero payment confirmed for order ${order._id} with ${webhookData.confirmations} confirmations`);
+        logPaymentEvent('monero_payment_confirmed', { orderId: order._id, confirmations: webhookData.confirmations });
       } else if (webhookData.status === 'partially_confirmed') {
         order.paymentStatus = 'awaiting_confirmation';
-        console.log(`Monero payment partially confirmed for order ${order._id} (${webhookData.confirmations}/${moneroService.getRequiredConfirmations()} confirmations)`);
+        logPaymentEvent('monero_payment_partial', { orderId: order._id, confirmations: webhookData.confirmations, required: moneroService.getRequiredConfirmations() });
       } else if (webhookData.status === 'underpaid') {
         order.paymentStatus = 'underpaid';
-        console.log(`Monero underpayment for order ${order._id}: received ${webhookData.paidAmount}, expected ${webhookData.totalAmount}`);
+        logPaymentEvent('monero_payment_underpaid', { orderId: order._id, received: webhookData.paidAmount, expected: webhookData.totalAmount });
       } else if (webhookData.status === 'failed') {
         order.paymentStatus = 'failed';
-        console.log(`Monero payment failed for order ${order._id}`);
+        logPaymentEvent('monero_payment_failed', { orderId: order._id });
       }
 
       await order.save({ session });
 
-      console.log(`Monero payment updated for order ${order._id}:`, {
+      logPaymentEvent('monero_payment_updated', { orderId: order._id,
         status: order.paymentStatus,
         confirmations: webhookData.confirmations,
         paidAmount: webhookData.paidAmount
@@ -1123,7 +1124,7 @@ export const handleMoneroWebhook = async (req, res) => {
 
   } catch (error) {
     await session.abortTransaction();
-    console.error('GloBee webhook error:', error);
+    logError(error, { context: 'globee_webhook_processing' });
     res.status(500).json({
       success: false,
       error: 'Webhook processing failed'

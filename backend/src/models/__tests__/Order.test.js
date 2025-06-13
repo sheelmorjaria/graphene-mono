@@ -2,21 +2,19 @@ import mongoose from 'mongoose';
 import Order from '../Order.js';
 
 describe('Order Model', () => {
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
+  // Using global test setup for MongoDB connection
 
-  afterAll(async () => {
-    await mongoose.connection.close();
+  beforeEach(async () => {
+    await Order.deleteMany({});
   });
 
   afterEach(async () => {
     await Order.deleteMany({});
   });
 
-  const validOrderData = {
+  const getValidOrderData = () => ({
     userId: new mongoose.Types.ObjectId(),
-    customerEmail: 'test@example.com',
+    customerEmail: `test-${Date.now()}-${Math.random()}@example.com`,
     status: 'pending',
     items: [{
       productId: new mongoose.Types.ObjectId(),
@@ -54,14 +52,14 @@ describe('Order Model', () => {
       estimatedDelivery: '3-5 business days'
     },
     paymentMethod: {
-      type: 'card',
-      name: 'Credit Card'
+      type: 'paypal',
+      name: 'PayPal'
     }
-  };
+  });
 
   describe('Schema Validation', () => {
     it('should create a valid order', async () => {
-      const order = new Order(validOrderData);
+      const order = new Order(getValidOrderData());
       const savedOrder = await order.save();
 
       expect(savedOrder._id).toBeDefined();
@@ -73,7 +71,7 @@ describe('Order Model', () => {
 
     it('should require userId', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         userId: undefined
       });
 
@@ -82,7 +80,7 @@ describe('Order Model', () => {
 
     it('should require customerEmail', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         customerEmail: undefined
       });
 
@@ -91,7 +89,7 @@ describe('Order Model', () => {
 
     it('should require at least one item', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         items: []
       });
 
@@ -100,7 +98,7 @@ describe('Order Model', () => {
 
     it('should require valid order status', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         status: 'invalid_status'
       });
 
@@ -109,19 +107,19 @@ describe('Order Model', () => {
 
     it('should require valid payment method', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         paymentMethod: {
           type: 'invalid_method',
           name: 'Invalid Payment'
         }
       });
 
-      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be one of');
+      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be: paypal, bitcoin, monero');
     });
 
     it('should not allow negative amounts', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         totalAmount: -100
       });
 
@@ -130,7 +128,7 @@ describe('Order Model', () => {
 
     it('should require shipping address', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         shippingAddress: undefined
       });
 
@@ -139,7 +137,7 @@ describe('Order Model', () => {
 
     it('should require billing address', async () => {
       const invalidOrder = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         billingAddress: undefined
       });
 
@@ -149,7 +147,7 @@ describe('Order Model', () => {
 
   describe('Order Number Generation', () => {
     it('should auto-generate order number if not provided', async () => {
-      const order = new Order(validOrderData);
+      const order = new Order(getValidOrderData());
       const savedOrder = await order.save();
 
       expect(savedOrder.orderNumber).toMatch(/^ORD-\d+-\d{3}$/);
@@ -158,7 +156,7 @@ describe('Order Model', () => {
     it('should use provided order number', async () => {
       const customOrderNumber = 'CUSTOM-12345';
       const order = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         orderNumber: customOrderNumber
       });
       const savedOrder = await order.save();
@@ -170,13 +168,13 @@ describe('Order Model', () => {
       const orderNumber = 'DUPLICATE-ORDER';
       
       const order1 = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         orderNumber
       });
       await order1.save();
 
       const order2 = new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         orderNumber,
         customerEmail: 'different@example.com'
       });
@@ -188,7 +186,7 @@ describe('Order Model', () => {
   describe('Total Amount Calculation', () => {
     it('should calculate total amount from subtotal, tax, and shipping', async () => {
       const orderData = {
-        ...validOrderData,
+        ...getValidOrderData(),
         subtotal: 100.00,
         tax: 8.25,
         shipping: 10.00
@@ -202,7 +200,7 @@ describe('Order Model', () => {
 
     it('should handle zero tax and shipping', async () => {
       const orderData = {
-        ...validOrderData,
+        ...getValidOrderData(),
         subtotal: 100.00,
         tax: 0,
         shipping: 0
@@ -216,7 +214,7 @@ describe('Order Model', () => {
 
     it('should calculate total amount with discount', async () => {
       const orderData = {
-        ...validOrderData,
+        ...getValidOrderData(),
         subtotal: 100.00,
         tax: 8.25,
         shipping: 10.00,
@@ -234,7 +232,7 @@ describe('Order Model', () => {
     let savedOrder;
 
     beforeEach(async () => {
-      const order = new Order(validOrderData);
+      const order = new Order(getValidOrderData());
       savedOrder = await order.save();
     });
 
@@ -255,14 +253,14 @@ describe('Order Model', () => {
 
     it('should format payment method display correctly', () => {
       // Test basic payment method
-      expect(savedOrder.getPaymentMethodDisplay()).toBe('Credit Card');
+      expect(savedOrder.getPaymentMethodDisplay()).toBe('PayPal');
       
-      // Test with card details
-      savedOrder.paymentDetails = {
-        cardBrand: 'Visa',
-        last4: '1234'
+      // Test with different payment method name
+      savedOrder.paymentMethod = {
+        type: 'bitcoin',
+        name: 'Bitcoin'
       };
-      expect(savedOrder.getPaymentMethodDisplay()).toBe('Credit Card (Visa) ending in ****1234');
+      expect(savedOrder.getPaymentMethodDisplay()).toBe('Bitcoin');
       
       // Test PayPal
       savedOrder.paymentMethod = {
@@ -322,21 +320,21 @@ describe('Order Model', () => {
       // Create multiple orders for the same user
       orders = await Promise.all([
         new Order({
-          ...validOrderData,
+          ...getValidOrderData(),
           userId,
           customerEmail: 'user1@example.com',
           orderDate: new Date('2024-01-01'),
           totalAmount: 100
         }).save(),
         new Order({
-          ...validOrderData,
+          ...getValidOrderData(),
           userId,
           customerEmail: 'user1@example.com',
           orderDate: new Date('2024-01-02'),
           totalAmount: 200
         }).save(),
         new Order({
-          ...validOrderData,
+          ...getValidOrderData(),
           userId,
           customerEmail: 'user1@example.com',
           orderDate: new Date('2024-01-03'),
@@ -346,7 +344,7 @@ describe('Order Model', () => {
 
       // Create order for different user
       await new Order({
-        ...validOrderData,
+        ...getValidOrderData(),
         userId: new mongoose.Types.ObjectId(),
         customerEmail: 'user2@example.com'
       }).save();

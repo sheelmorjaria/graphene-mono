@@ -6,20 +6,15 @@ import User from '../../models/User.js';
 import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
 import Cart from '../../models/Cart.js';
+import { createValidProductData } from '../../test/helpers/testData.js';
 
 describe('Cart Controller', () => {
+  // Using global test setup for MongoDB connection
+  
   let testUser;
   let authToken;
   let testProduct;
   let testCategory;
-
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
 
   beforeEach(async () => {
     // Clear test data
@@ -37,15 +32,15 @@ describe('Cart Controller', () => {
     await testCategory.save();
 
     // Create test product
-    testProduct = new Product({
+    testProduct = new Product(createValidProductData({
       name: 'GrapheneOS Pixel 9 Pro',
       slug: 'grapheneos-pixel-9-pro',
-      description: 'Privacy-focused smartphone',
+      shortDescription: 'Privacy-focused smartphone',
       price: 999.99,
       stockQuantity: 10,
       category: testCategory._id,
       images: ['https://example.com/image1.jpg']
-    });
+    }));
     await testProduct.save();
 
     // Create test user
@@ -295,14 +290,14 @@ describe('Cart Controller', () => {
     });
 
     it('should fail for item not in cart', async () => {
-      const otherProduct = new Product({
+      const otherProduct = new Product(createValidProductData({
         name: 'Other Product',
         slug: 'other-product',
-        description: 'Another product',
+        shortDescription: 'Another product',
         price: 199.99,
         stockQuantity: 5,
         category: testCategory._id
-      });
+      }));
       await otherProduct.save();
 
       const response = await request(app)

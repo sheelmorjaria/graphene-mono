@@ -1,10 +1,7 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
 import MyProfilePage from '../MyProfilePage';
-import { AuthProvider } from '../../contexts/AuthContext';
 
 // Mock navigate function
 const mockNavigate = vi.fn();

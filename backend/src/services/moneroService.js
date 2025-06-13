@@ -1,5 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
+import logger, { logPaymentEvent, logError } from '../utils/logger.js';
 
 // GloBee API configuration
 const GLOBEE_API_URL = process.env.GLOBEE_API_URL || 'https://api.globee.com/v1';
@@ -26,6 +27,17 @@ class MoneroService {
     this.apiKey = GLOBEE_API_KEY;
     this.secret = GLOBEE_SECRET;
     this.baseURL = GLOBEE_API_URL;
+  }
+
+  // For testing purposes, expose cache
+  get exchangeRateCache() {
+    return exchangeRateCache;
+  }
+
+  set exchangeRateCache(value) {
+    exchangeRateCache.rate = value.rate;
+    exchangeRateCache.timestamp = value.timestamp;
+    exchangeRateCache.validUntil = value.validUntil;
   }
 
   /**
@@ -71,20 +83,20 @@ class MoneroService {
         validUntil: validUntil
       };
 
-      console.log(`Monero exchange rate updated: 1 GBP = ${gbpToXmr.toFixed(8)} XMR`);
+      logger.info(`Monero exchange rate updated: 1 GBP = ${gbpToXmr.toFixed(8)} XMR`);
 
       return {
         rate: gbpToXmr,
         validUntil: new Date(validUntil)
       };
     } catch (error) {
-      console.error('Failed to fetch Monero exchange rate:', error);
+      logError(error, { context: 'monero_exchange_rate_fetch' });
       
       // If we have a cached rate that's not too old (within 1 hour), use it as fallback
       if (exchangeRateCache.rate && 
           exchangeRateCache.timestamp && 
           (Date.now() - exchangeRateCache.timestamp) < (60 * 60 * 1000)) {
-        console.warn('Using cached exchange rate as fallback');
+        logger.warn('Using cached exchange rate as fallback');
         return {
           rate: exchangeRateCache.rate,
           validUntil: new Date(exchangeRateCache.validUntil)
@@ -158,7 +170,7 @@ class MoneroService {
         status: response.data.status
       };
     } catch (error) {
-      console.error('GloBee payment request failed:', error);
+      logError(error, { context: 'globee_payment_request', orderData });
       
       if (error.response && error.response.data) {
         throw new Error(`GloBee API error: ${error.response.data.message || error.response.statusText}`);
@@ -197,7 +209,7 @@ class MoneroService {
         expires_at: response.data.expires_at
       };
     } catch (error) {
-      console.error('Failed to get payment status from GloBee:', error);
+      logError(error, { context: 'globee_payment_status', paymentId });
       throw new Error(`Unable to fetch payment status: ${error.message}`);
     }
   }
@@ -211,8 +223,7 @@ class MoneroService {
   verifyWebhookSignature(payload, signature) {
     try {
       if (!this.secret) {
-        console.warn('GloBee webhook secret not configured, skipping signature verification');
-        return true; // Allow in development, but log warning
+        throw new Error('GloBee webhook secret not configured');
       }
 
       const expectedSignature = crypto
@@ -238,7 +249,7 @@ class MoneroService {
         Buffer.from(expectedSignature, 'hex')
       );
     } catch (error) {
-      console.error('Webhook signature verification failed:', error);
+      logError(error, { context: 'webhook_signature_verification' });
       return false;
     }
   }

@@ -1,8 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { CheckoutProvider, useCheckout } from '../CheckoutContext';
-import { AuthProvider } from '../AuthContext';
 
 // Mock addressService
 import { vi } from 'vitest';

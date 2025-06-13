@@ -23,8 +23,7 @@ describe('Admin Refund Integration Tests', () => {
   let testProduct;
 
   beforeAll(async () => {
-    // Connect to test database
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
+    // Using global test setup for MongoDB connection
     
     // Clear existing data
     await User.deleteMany({});
@@ -37,7 +36,6 @@ describe('Admin Refund Integration Tests', () => {
     await User.deleteMany({});
     await Order.deleteMany({});
     await Product.deleteMany({});
-    await mongoose.connection.close();
   });
 
   beforeEach(async () => {
@@ -61,12 +59,14 @@ describe('Admin Refund Integration Tests', () => {
     testProduct = new Product({
       name: 'Test Product',
       slug: 'test-product',
+      sku: 'TEST-PROD-001',
       shortDescription: 'A test product for refund testing',
       longDescription: 'A detailed description of the test product',
       price: 100.00,
       images: ['test-image.jpg'],
       condition: 'new',
-      stockStatus: 'in_stock'
+      stockStatus: 'in_stock',
+      status: 'active'
     });
     await testProduct.save();
 

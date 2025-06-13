@@ -15,12 +15,12 @@ const mockProduct = {
 };
 
 // Mock the Product model
-jest.unstable_mockModule('../../models/Product.js', () => ({
+jest.mock('../../models/Product.js', () => ({
   default: mockProduct
 }));
 
 // Import the function to test after mocking
-const { getProducts } = await import('../adminController.js');
+import '../adminController.js');
 
 describe('Admin Controller - getProducts Unit Tests', () => {
   let req, res;

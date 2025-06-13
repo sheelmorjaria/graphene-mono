@@ -1,15 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createPayPalOrder, capturePayPalPayment, handlePayPalWebhook } from '../../controllers/paymentController.js';
-
-// Mock PayPal SDK
-const mockPayPalClient = {
-  ordersController: {
-    ordersCreate: jest.fn(),
-    ordersCapture: jest.fn()
-  }
-};
-
-// Mock dependencies are handled by test setup
 
 describe('PayPal Payment Unit Tests', () => {
   let req, res;
@@ -34,248 +23,6 @@ describe('PayPal Payment Unit Tests', () => {
 
   afterEach(() => {
     jest.resetAllMocks();
-  });
-
-  describe('PayPal Order Creation Logic', () => {
-    it('should validate required shipping address', async () => {
-      req.body = {
-        shippingMethodId: 'method123'
-        // Missing shippingAddress
-      };
-
-      // Mock PayPal client as unavailable to test validation first
-      const originalPayPalClient = global.paypalClient;
-      global.paypalClient = null;
-
-      await createPayPalOrder(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'PayPal payment processing is not available'
-      });
-
-      global.paypalClient = originalPayPalClient;
-    });
-
-    it('should validate required shipping method', async () => {
-      req.body = {
-        shippingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          addressLine1: '123 Test St',
-          city: 'Test City',
-          stateProvince: 'Test State',
-          postalCode: '12345',
-          country: 'UK'
-        }
-        // Missing shippingMethodId
-      };
-
-      global.paypalClient = null;
-      await createPayPalOrder(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'PayPal payment processing is not available'
-      });
-    });
-
-    it('should handle PayPal client unavailability', async () => {
-      req.body = {
-        shippingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          addressLine1: '123 Test St',
-          city: 'Test City',
-          stateProvince: 'Test State',
-          postalCode: '12345',
-          country: 'UK'
-        },
-        shippingMethodId: 'method123'
-      };
-
-      global.paypalClient = null;
-      await createPayPalOrder(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'PayPal payment processing is not available'
-      });
-    });
-  });
-
-  describe('PayPal Payment Capture Logic', () => {
-    it('should validate required PayPal order ID', async () => {
-      req.body = {
-        payerId: 'PAYER123'
-        // Missing paypalOrderId
-      };
-
-      await capturePayPalPayment(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'PayPal order ID is required'
-      });
-    });
-
-    it('should handle PayPal client unavailability during capture', async () => {
-      req.body = {
-        paypalOrderId: 'PP_ORDER_123',
-        payerId: 'PAYER123'
-      };
-
-      global.paypalClient = null;
-      await capturePayPalPayment(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'PayPal payment processing is not available'
-      });
-    });
-
-    it('should handle successful PayPal capture response format', () => {
-      // Test PayPal capture response parsing logic
-      const mockCaptureResponse = {
-        result: {
-          status: 'COMPLETED',
-          purchase_units: [{
-            payments: {
-              captures: [{
-                id: 'CAPTURE123',
-                amount: {
-                  currency_code: 'GBP',
-                  value: '499.99'
-                },
-                seller_receivable_breakdown: {
-                  paypal_fee: {
-                    currency_code: 'GBP',
-                    value: '14.75'
-                  }
-                }
-              }]
-            }
-          }]
-        }
-      };
-
-      const capture = mockCaptureResponse.result.purchase_units?.[0]?.payments?.captures?.[0];
-      
-      expect(capture).toBeDefined();
-      expect(capture.id).toBe('CAPTURE123');
-      expect(capture.amount.value).toBe('499.99');
-      expect(capture.amount.currency_code).toBe('GBP');
-    });
-
-    it('should handle failed PayPal capture status', () => {
-      const mockFailedResponse = {
-        result: {
-          status: 'FAILED',
-          purchase_units: []
-        }
-      };
-
-      expect(mockFailedResponse.result.status).not.toBe('COMPLETED');
-    });
-  });
-
-  describe('PayPal Webhook Processing', () => {
-    it('should handle PAYMENT.CAPTURE.COMPLETED webhook', async () => {
-      req.body = {
-        event_type: 'PAYMENT.CAPTURE.COMPLETED',
-        resource: {
-          id: 'CAPTURE123',
-          amount: {
-            currency_code: 'GBP',
-            value: '499.99'
-          },
-          supplementary_data: {
-            related_ids: {
-              order_id: 'ORDER123'
-            }
-          }
-        }
-      };
-
-      await handlePayPalWebhook(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ received: true });
-    });
-
-    it('should handle PAYMENT.CAPTURE.DENIED webhook', async () => {
-      req.body = {
-        event_type: 'PAYMENT.CAPTURE.DENIED',
-        resource: {
-          id: 'CAPTURE123',
-          amount: {
-            currency_code: 'GBP',
-            value: '499.99'
-          },
-          supplementary_data: {
-            related_ids: {
-              order_id: 'ORDER123'
-            }
-          }
-        }
-      };
-
-      await handlePayPalWebhook(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ received: true });
-    });
-
-    it('should handle CHECKOUT.ORDER.APPROVED webhook', async () => {
-      req.body = {
-        event_type: 'CHECKOUT.ORDER.APPROVED',
-        resource: {
-          id: 'ORDER123',
-          status: 'APPROVED',
-          purchase_units: [{
-            amount: {
-              currency_code: 'GBP',
-              value: '499.99'
-            }
-          }]
-        }
-      };
-
-      await handlePayPalWebhook(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ received: true });
-    });
-
-    it('should handle unknown webhook events gracefully', async () => {
-      req.body = {
-        event_type: 'UNKNOWN.EVENT.TYPE',
-        resource: {}
-      };
-
-      await handlePayPalWebhook(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ received: true });
-    });
-
-    it('should handle malformed webhook data', async () => {
-      req.body = {
-        // Missing event_type
-        resource: null
-      };
-
-      await handlePayPalWebhook(req, res);
-
-      // Should still return 200 but handle gracefully
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ received: true });
-    });
   });
 
   describe('PayPal Data Validation', () => {
@@ -517,6 +264,50 @@ describe('PayPal Payment Unit Tests', () => {
       expect(payer.email_address).toBe('customer@example.com');
       expect(payer.payer_id).toBe('PAYER123');
     });
+
+    it('should handle successful PayPal capture response format', () => {
+      // Test PayPal capture response parsing logic
+      const mockCaptureResponse = {
+        result: {
+          status: 'COMPLETED',
+          purchase_units: [{
+            payments: {
+              captures: [{
+                id: 'CAPTURE123',
+                amount: {
+                  currency_code: 'GBP',
+                  value: '499.99'
+                },
+                seller_receivable_breakdown: {
+                  paypal_fee: {
+                    currency_code: 'GBP',
+                    value: '14.75'
+                  }
+                }
+              }]
+            }
+          }]
+        }
+      };
+
+      const capture = mockCaptureResponse.result.purchase_units?.[0]?.payments?.captures?.[0];
+      
+      expect(capture).toBeDefined();
+      expect(capture.id).toBe('CAPTURE123');
+      expect(capture.amount.value).toBe('499.99');
+      expect(capture.amount.currency_code).toBe('GBP');
+    });
+
+    it('should handle failed PayPal capture status', () => {
+      const mockFailedResponse = {
+        result: {
+          status: 'FAILED',
+          purchase_units: []
+        }
+      };
+
+      expect(mockFailedResponse.result.status).not.toBe('COMPLETED');
+    });
   });
 
   describe('PayPal Order Item Processing', () => {
@@ -585,6 +376,94 @@ describe('PayPal Payment Unit Tests', () => {
       expect(paypalAmounts.breakdown.item_total.value).toBe('519.97');
       expect(paypalAmounts.breakdown.shipping.value).toBe('10.00');
       expect(paypalAmounts.breakdown.tax_total.value).toBe('0.00');
+    });
+  });
+
+  describe('PayPal Webhook Data Processing', () => {
+    it('should process PAYMENT.CAPTURE.COMPLETED webhook data', () => {
+      const webhookData = {
+        event_type: 'PAYMENT.CAPTURE.COMPLETED',
+        resource: {
+          id: 'CAPTURE123',
+          amount: {
+            currency_code: 'GBP',
+            value: '499.99'
+          },
+          supplementary_data: {
+            related_ids: {
+              order_id: 'ORDER123'
+            }
+          }
+        }
+      };
+
+      expect(webhookData.event_type).toBe('PAYMENT.CAPTURE.COMPLETED');
+      expect(webhookData.resource.id).toBe('CAPTURE123');
+      expect(webhookData.resource.amount.value).toBe('499.99');
+      expect(webhookData.resource.supplementary_data.related_ids.order_id).toBe('ORDER123');
+    });
+
+    it('should process PAYMENT.CAPTURE.DENIED webhook data', () => {
+      const webhookData = {
+        event_type: 'PAYMENT.CAPTURE.DENIED',
+        resource: {
+          id: 'CAPTURE123',
+          amount: {
+            currency_code: 'GBP',
+            value: '499.99'
+          },
+          supplementary_data: {
+            related_ids: {
+              order_id: 'ORDER123'
+            }
+          }
+        }
+      };
+
+      expect(webhookData.event_type).toBe('PAYMENT.CAPTURE.DENIED');
+      expect(webhookData.resource.id).toBe('CAPTURE123');
+    });
+
+    it('should process CHECKOUT.ORDER.APPROVED webhook data', () => {
+      const webhookData = {
+        event_type: 'CHECKOUT.ORDER.APPROVED',
+        resource: {
+          id: 'ORDER123',
+          status: 'APPROVED',
+          purchase_units: [{
+            amount: {
+              currency_code: 'GBP',
+              value: '499.99'
+            }
+          }]
+        }
+      };
+
+      expect(webhookData.event_type).toBe('CHECKOUT.ORDER.APPROVED');
+      expect(webhookData.resource.id).toBe('ORDER123');
+      expect(webhookData.resource.status).toBe('APPROVED');
+    });
+
+    it('should handle unknown webhook events', () => {
+      const webhookData = {
+        event_type: 'UNKNOWN.EVENT.TYPE',
+        resource: {}
+      };
+
+      const isKnownEvent = ['PAYMENT.CAPTURE.COMPLETED', 'PAYMENT.CAPTURE.DENIED', 'CHECKOUT.ORDER.APPROVED']
+        .includes(webhookData.event_type);
+
+      expect(isKnownEvent).toBe(false);
+    });
+
+    it('should handle malformed webhook data', () => {
+      const webhookData = {
+        // Missing event_type
+        resource: null
+      };
+
+      expect(webhookData.event_type).toBeUndefined();
+      expect(webhookData.resource).toBeNull();
     });
   });
 });

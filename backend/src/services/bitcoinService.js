@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import logger, { logPaymentEvent, logError } from '../utils/logger.js';
 
 class BitcoinService {
   constructor() {
@@ -76,7 +77,7 @@ class BitcoinService {
       };
 
     } catch (error) {
-      console.error('Error fetching BTC exchange rate:', error);
+      logError(error, { context: 'btc_exchange_rate_fetch' });
       throw new Error('Failed to fetch Bitcoin exchange rate');
     }
   }
@@ -95,7 +96,7 @@ class BitcoinService {
         exchangeRateTimestamp: timestamp
       };
     } catch (error) {
-      console.error('Error converting GBP to BTC:', error);
+      logError(error, { context: 'gbp_to_btc_conversion', amount: gbpAmount });
       throw error;
     }
   }
@@ -134,7 +135,7 @@ class BitcoinService {
       return data.address;
 
     } catch (error) {
-      console.error('Error generating Bitcoin address:', error);
+      logError(error, { context: 'bitcoin_address_generation' });
       throw new Error('Failed to generate Bitcoin address');
     }
   }
@@ -176,7 +177,7 @@ class BitcoinService {
       };
 
     } catch (error) {
-      console.error('Error fetching Bitcoin address info:', error);
+      logError(error, { context: 'bitcoin_address_info', address });
       throw new Error('Failed to fetch Bitcoin address information');
     }
   }
@@ -218,7 +219,7 @@ class BitcoinService {
       };
 
     } catch (error) {
-      console.error('Error fetching transaction details:', error);
+      logError(error, { context: 'bitcoin_transaction_details', txHash });
       throw new Error('Failed to fetch transaction details');
     }
   }
@@ -246,7 +247,7 @@ class BitcoinService {
       };
 
     } catch (error) {
-      console.error('Error creating Bitcoin payment:', error);
+      logError(error, { context: 'bitcoin_payment_creation', orderAmount });
       throw error;
     }
   }

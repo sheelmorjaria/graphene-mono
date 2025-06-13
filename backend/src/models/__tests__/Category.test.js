@@ -2,13 +2,7 @@ import mongoose from 'mongoose';
 import Category from '../Category.js';
 
 describe('Category Model', () => {
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
+  // Using global test setup for MongoDB connection
 
   afterEach(async () => {
     await Category.deleteMany({});

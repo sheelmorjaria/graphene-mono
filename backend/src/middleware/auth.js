@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { isTokenBlacklisted } from '../controllers/authController.js';
+import logger, { logError } from '../utils/logger.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -64,7 +65,7 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    console.error('Authentication error:', error);
+    logError(error, { context: 'authentication_middleware' });
     res.status(500).json({
       success: false,
       error: 'Server error during authentication.'

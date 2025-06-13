@@ -10,7 +10,9 @@ import Order from '../../models/Order.js';
 import User from '../../models/User.js';
 import Cart from '../../models/Cart.js';
 import Product from '../../models/Product.js';
+import Category from '../../models/Category.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
+import { generateSKU } from '../../test/helpers/testData.js';
 
 // Bitcoin Payment E2E Tests
 describe('Bitcoin Payment End-to-End Flow', () => {
@@ -18,6 +20,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
   let mongoServer;
   let testUser;
   let testProduct;
+  let testCategory;
   let testShippingMethod;
   let userToken;
   const testBitcoinAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
@@ -41,30 +44,43 @@ describe('Bitcoin Payment End-to-End Flow', () => {
       isEmailVerified: true
     });
 
+    // Create test category
+    testCategory = await Category.create({
+      name: 'Test Category',
+      slug: 'test-category-bitcoin-e2e',
+      description: 'Test category for Bitcoin E2E tests'
+    });
+
     testProduct = await Product.create({
       name: 'Bitcoin Payment Test Product',
-      slug: 'bitcoin-payment-test-product',
-      description: 'A product for testing Bitcoin payments end-to-end',
+      slug: 'bitcoin-payment-test-product-e2e',
+      sku: generateSKU('BTC-TEST'),
+      shortDescription: 'A product for testing Bitcoin payments end-to-end',
+      longDescription: 'Detailed description of the Bitcoin test product',
       price: 249.99,
-      category: 'test',
+      category: testCategory._id,
       stockQuantity: 100,
+      condition: 'new',
       isActive: true,
       images: ['test-image.jpg'],
-      specifications: {
-        'Payment Methods': 'Bitcoin, PayPal',
-        'Test Product': 'Yes'
-      }
+      attributes: [
+        { name: 'Payment Methods', value: 'Bitcoin, PayPal' },
+        { name: 'Test Product', value: 'Yes' }
+      ]
     });
 
     testShippingMethod = await ShippingMethod.create({
       name: 'E2E Test Shipping',
+      code: 'E2E_BITCOIN_SHIP',
       description: 'Test shipping method for E2E tests',
-      cost: 15.99,
-      estimatedDays: '3-5',
+      baseCost: 15.99,
+      estimatedDeliveryDays: {
+        min: 3,
+        max: 5
+      },
       isActive: true,
-      availableCountries: ['UK', 'US'],
-      calculateCost: function(cart, address) {
-        return { cost: this.cost, available: true };
+      criteria: {
+        supportedCountries: ['GB', 'US']
       }
     });
 
@@ -115,11 +131,8 @@ describe('Bitcoin Payment End-to-End Flow', () => {
       }
 
       // Add item to cart
-      await cart.addItem({
-        productId: testProduct._id,
-        quantity: 2,
-        unitPrice: testProduct.price
-      });
+      await cart.addItem(testProduct, 2);
+      await cart.save();
 
       expect(cart.items).toHaveLength(1);
       expect(cart.items[0].quantity).toBe(2);
@@ -163,17 +176,18 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         shippingMethod: {
           id: testShippingMethod._id,
           name: testShippingMethod.name,
-          cost: testShippingMethod.cost
+          cost: testShippingMethod.baseCost,
+          estimatedDelivery: '3-5 business days'
         },
         paymentMethod: {
-          type: 'pending',
-          name: 'Pending Payment Selection'
+          type: 'bitcoin',
+          name: 'Bitcoin'
         },
         paymentStatus: 'pending'
       };
 
       const order = new Order(orderData);
-      order.orderNumber = `E2E-BTC-${Date.now()}`;
+      order.orderNumber = `BTC${Date.now()}`.substring(0, 20);
       await order.save();
 
       console.log(`Step 3 completed: Created order ${order.orderNumber} with total £${order.orderTotal}`);
@@ -298,7 +312,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
       // Create expired order for testing
       const expiredOrder = await Order.create({
         userId: testUser._id,
-        orderNumber: `E2E-BTC-EXPIRED-${Date.now()}`,
+        orderNumber: `BTC-EXP${Date.now()}`.substring(0, 20),
         customerEmail: testUser.email,
         items: [{
           productId: testProduct._id,
@@ -329,7 +343,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         shippingMethod: {
           id: testShippingMethod._id,
           name: testShippingMethod.name,
-          cost: 0
+          cost: testShippingMethod.baseCost
         },
         paymentMethod: {
           type: 'bitcoin',
@@ -360,7 +374,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
       // Create order for underpayment testing
       const underpayOrder = await Order.create({
         userId: testUser._id,
-        orderNumber: `E2E-BTC-UNDERPAY-${Date.now()}`,
+        orderNumber: `BTC-UND${Date.now()}`.substring(0, 20),
         customerEmail: testUser.email,
         items: [{
           productId: testProduct._id,
@@ -391,7 +405,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         shippingMethod: {
           id: testShippingMethod._id,
           name: testShippingMethod.name,
-          cost: 0
+          cost: testShippingMethod.baseCost
         },
         paymentMethod: {
           type: 'bitcoin',
@@ -434,7 +448,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         Array(3).fill(null).map(async (_, index) => {
           const order = await Order.create({
             userId: testUser._id,
-            orderNumber: `E2E-BTC-CONCURRENT-${index}-${Date.now()}`,
+            orderNumber: `BTC-C${index}-${Date.now()}`.substring(0, 20),
             customerEmail: `concurrent${index}@test.com`,
             items: [{
               productId: testProduct._id,
@@ -465,10 +479,10 @@ describe('Bitcoin Payment End-to-End Flow', () => {
             shippingMethod: {
               id: testShippingMethod._id,
               name: testShippingMethod.name,
-              cost: 0
+              cost: testShippingMethod.baseCost
             },
             paymentMethod: {
-              type: 'pending',
+              type: 'bitcoin',
               name: 'Pending'
             },
             paymentStatus: 'pending'
@@ -500,7 +514,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
     it('should handle network failures gracefully', async () => {
       const networkTestOrder = await Order.create({
         userId: testUser._id,
-        orderNumber: `E2E-BTC-NETWORK-${Date.now()}`,
+        orderNumber: `BTC-NET${Date.now()}`.substring(0, 20),
         customerEmail: testUser.email,
         items: [{
           productId: testProduct._id,
@@ -531,10 +545,10 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         shippingMethod: {
           id: testShippingMethod._id,
           name: testShippingMethod.name,
-          cost: 0
+          cost: testShippingMethod.baseCost
         },
         paymentMethod: {
-          type: 'pending',
+          type: 'bitcoin',
           name: 'Pending'
         },
         paymentStatus: 'pending'
@@ -561,7 +575,7 @@ describe('Bitcoin Payment End-to-End Flow', () => {
     it('should maintain data consistency during failures', async () => {
       const consistencyOrder = await Order.create({
         userId: testUser._id,
-        orderNumber: `E2E-BTC-CONSISTENCY-${Date.now()}`,
+        orderNumber: `BTC-CON${Date.now()}`.substring(0, 20),
         customerEmail: testUser.email,
         items: [{
           productId: testProduct._id,
@@ -592,10 +606,10 @@ describe('Bitcoin Payment End-to-End Flow', () => {
         shippingMethod: {
           id: testShippingMethod._id,
           name: testShippingMethod.name,
-          cost: 0
+          cost: testShippingMethod.baseCost
         },
         paymentMethod: {
-          type: 'pending',
+          type: 'bitcoin',
           name: 'Pending'
         },
         paymentStatus: 'pending'

@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -7,6 +8,17 @@ import Order from '../../models/Order.js';
 import Cart from '../../models/Cart.js';
 import Product from '../../models/Product.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
+import emailService from '../../services/emailService.js';
+import { createValidProductData, createValidUserData, createValidOrderData } from '../../test/helpers/testData.js';
+
+// Apply session mocking to models
+if (global.enhanceModelWithSessionMocking) {
+  global.enhanceModelWithSessionMocking(Order);
+  global.enhanceModelWithSessionMocking(Product);
+  global.enhanceModelWithSessionMocking(Cart);
+  global.enhanceModelWithSessionMocking(ShippingMethod);
+  global.enhanceModelWithSessionMocking(User);
+}
 
 // Set up environment variables for testing
 
@@ -15,26 +27,26 @@ describe('User Order Controller', () => {
   let authToken;
   let testOrders;
 
-  beforeAll(async () => {
-    await mongoose.connect('mongodb://localhost:27017/graphene-store-test');
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
+  // Using global test setup for MongoDB connection
 
   beforeEach(async () => {
+    // Clear all mocks
+    jest.clearAllMocks();
+    
     // Clear test data
     await User.deleteMany({});
     await Order.deleteMany({});
 
+    // Mock email service methods
+    jest.spyOn(emailService, 'sendOrderCancellationEmail').mockResolvedValue();
+
     // Create test user
-    testUser = new User({
+    testUser = new User(createValidUserData({
       email: 'orders.test@example.com',
       password: 'TestPass123!',
       firstName: 'Order',
       lastName: 'Tester'
-    });
+    }));
     await testUser.save();
 
     // Generate auth token
@@ -210,12 +222,12 @@ describe('User Order Controller', () => {
 
     it('should return empty array for user with no orders', async () => {
       // Create new user with no orders
-      const newUser = new User({
+      const newUser = new User(createValidUserData({
         email: 'noorders@example.com',
         password: 'TestPass123!',
         firstName: 'No',
         lastName: 'Orders'
-      });
+      }));
       await newUser.save();
 
       const newUserToken = jwt.sign(
@@ -243,16 +255,16 @@ describe('User Order Controller', () => {
 
     it('should only return orders for authenticated user', async () => {
       // Create another user with orders
-      const otherUser = new User({
+      const otherUser = new User(createValidUserData({
         email: 'other@example.com',
         password: 'TestPass123!',
         firstName: 'Other',
         lastName: 'User'
-      });
+      }));
       await otherUser.save();
 
       // Create order for other user
-      await new Order({
+      await new Order(createValidOrderData({
         orderNumber: 'OTHER-USER-ORDER-001',
         userId: otherUser._id,
         customerEmail: otherUser.email,
@@ -295,7 +307,7 @@ describe('User Order Controller', () => {
           name: 'PayPal'
         },
         paymentStatus: 'completed'
-      }).save();
+      })).save();
 
       // Request orders with original user's token
       const response = await request(app)
@@ -363,12 +375,12 @@ describe('User Order Controller', () => {
 
     it('should not allow access to other user\'s orders', async () => {
       // Create another user
-      const otherUser = new User({
+      const otherUser = new User(createValidUserData({
         email: 'other@example.com',
         password: 'TestPass123!',
         firstName: 'Other',
         lastName: 'User'
-      });
+      }));
       await otherUser.save();
 
       const otherUserToken = jwt.sign(
@@ -412,9 +424,9 @@ describe('User Order Controller', () => {
       await ShippingMethod.deleteMany({});
 
       // Create test product
-      testProduct = new Product({
+      testProduct = new Product(createValidProductData({
         name: 'Test Product',
-        description: 'A test product',
+        shortDescription: 'A test product',
         price: 29.99,
         stockQuantity: 10,
         category: new mongoose.Types.ObjectId(),
@@ -422,7 +434,7 @@ describe('User Order Controller', () => {
         weight: 100,
         slug: 'test-product',
         images: ['test-image.jpg']
-      });
+      }));
       await testProduct.save();
 
       // Create test shipping method
@@ -620,7 +632,7 @@ describe('User Order Controller', () => {
 
     beforeEach(async () => {
       // Create an order specifically for tracking tests
-      trackingOrder = new Order({
+      trackingOrder = new Order(createValidOrderData({
         orderNumber: 'TRACK-TEST-001',
         userId: testUser._id,
         customerEmail: testUser.email,
@@ -666,7 +678,7 @@ describe('User Order Controller', () => {
           name: 'PayPal'
         },
         paymentStatus: 'completed'
-      });
+      }));
       await trackingOrder.save();
     });
 
@@ -826,18 +838,19 @@ describe('User Order Controller', () => {
 
       beforeEach(async () => {
         // Create a test product for stock tracking
-        testProduct = new Product({
+        testProduct = new Product(createValidProductData({
           name: 'Test Product',
           slug: 'test-product',
           price: 99.99,
           stockQuantity: 10,
           isActive: true
-        });
+        }));
         await testProduct.save();
 
         // Create a pending order
-        pendingOrder = new Order({
-          orderNumber: 'TEST-PENDING-001',
+        pendingOrder = new Order(createValidOrderData({
+          orderNumber: `PEND-${Math.random().toString(36).substr(2, 9)}`,
+          userId: testUser._id,
           customerEmail: testUser.email,
           items: [{
             productId: testProduct._id,
@@ -869,13 +882,24 @@ describe('User Order Controller', () => {
             stateProvince: 'Test State',
             postalCode: '12345',
             country: 'GB'
+          },
+          shippingMethod: {
+            id: new mongoose.Types.ObjectId(),
+            name: 'Standard Shipping',
+            cost: 5.99,
+            estimatedDelivery: '3-5 business days'
+          },
+          paymentMethod: {
+            type: 'paypal',
+            name: 'PayPal'
           }
-        });
+        }));
         await pendingOrder.save();
 
         // Create a shipped order (non-cancellable)
-        shippedOrder = new Order({
-          orderNumber: 'TEST-SHIPPED-001',
+        shippedOrder = new Order(createValidOrderData({
+          orderNumber: `SHIP-${Math.random().toString(36).substr(2, 9)}`,
+          userId: testUser._id,
           customerEmail: testUser.email,
           items: [{
             productId: testProduct._id,
@@ -898,8 +922,26 @@ describe('User Order Controller', () => {
             stateProvince: 'Test State',
             postalCode: '12345',
             country: 'GB'
+          },
+          billingAddress: {
+            fullName: 'Test User',
+            addressLine1: '123 Test St',
+            city: 'Test City',
+            stateProvince: 'Test State',
+            postalCode: '12345',
+            country: 'GB'
+          },
+          shippingMethod: {
+            id: new mongoose.Types.ObjectId(),
+            name: 'Standard Shipping',
+            cost: 5.99,
+            estimatedDelivery: '3-5 business days'
+          },
+          paymentMethod: {
+            type: 'paypal',
+            name: 'PayPal'
           }
-        });
+        }));
         await shippedOrder.save();
       });
 
@@ -963,17 +1005,18 @@ describe('User Order Controller', () => {
 
       it('should not allow cancelling another user\'s order', async () => {
         // Create another user
-        const otherUser = new User({
+        const otherUser = new User(createValidUserData({
           firstName: 'Other',
           lastName: 'User',
           email: 'other@test.com',
           password: 'hashedpassword'
-        });
+        }));
         await otherUser.save();
 
         // Create order for other user
-        const otherUserOrder = new Order({
-          orderNumber: 'TEST-OTHER-001',
+        const otherUserOrder = new Order(createValidOrderData({
+          orderNumber: `OTHER-${Math.random().toString(36).substr(2, 8)}`,
+          userId: otherUser._id,
           customerEmail: otherUser.email,
           items: [{
             productId: testProduct._id,
@@ -995,8 +1038,26 @@ describe('User Order Controller', () => {
             stateProvince: 'Other State',
             postalCode: '67890',
             country: 'GB'
+          },
+          billingAddress: {
+            fullName: 'Other User',
+            addressLine1: '456 Other St',
+            city: 'Other City',
+            stateProvince: 'Other State',
+            postalCode: '67890',
+            country: 'GB'
+          },
+          shippingMethod: {
+            id: new mongoose.Types.ObjectId(),
+            name: 'Standard Shipping',
+            cost: 5.99,
+            estimatedDelivery: '3-5 business days'
+          },
+          paymentMethod: {
+            type: 'paypal',
+            name: 'PayPal'
           }
-        });
+        }));
         await otherUserOrder.save();
 
         const response = await request(app)
@@ -1011,14 +1072,20 @@ describe('User Order Controller', () => {
       it('should handle refund initiation for paid orders', async () => {
         const response = await request(app)
           .post(`/api/user/orders/${pendingOrder._id}/cancel`)
-          .set('Authorization', `Bearer ${authToken}`)
-          .expect(200);
+          .set('Authorization', `Bearer ${authToken}`);
 
+        // Debug the response if it's not 200
+        if (response.status !== 200) {
+          console.log('Response status:', response.status);
+          console.log('Response body:', response.body);
+        }
+
+        expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data.refund).toBeDefined();
         
         // Check if refund information is included (will be error in test environment)
-        if (response.body.data.refund.error) {
+        if (response.body.data.refund && response.body.data.refund.error) {
           expect(response.body.data.refund.error).toBeDefined();
         }
       });

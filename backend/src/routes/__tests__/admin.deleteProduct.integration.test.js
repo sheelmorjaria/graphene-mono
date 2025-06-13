@@ -8,8 +8,18 @@ import User from '../../models/User.js';
 import jwt from 'jsonwebtoken';
 
 // Mock the Product and User models
-jest.mock('../../models/Product.js');
-jest.mock('../../models/User.js');
+jest.mock('../../models/Product.js', () => ({
+  default: {
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    deleteOne: jest.fn()
+  }
+}));
+jest.mock('../../models/User.js', () => ({
+  default: {
+    findById: jest.fn()
+  }
+}));
 
 const app = express();
 app.use(express.json());

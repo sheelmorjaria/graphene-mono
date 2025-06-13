@@ -5,15 +5,7 @@ import app from '../../../server.js';
 import Order from '../../models/Order.js';
 
 describe('Support Controller', () => {
-  beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/graphene-store-test');
-    }
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
+  // Using global test setup for MongoDB connection
 
   beforeEach(async () => {
     // Clear database before each test

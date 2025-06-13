@@ -21,13 +21,7 @@ const mockEmailService = {
 };
 
 // Set up mocks before imports
-jest.unstable_mockModule('../../models/Order.js', () => ({
-  default: mockOrder
-}));
-
-jest.unstable_mockModule('../../services/emailService.js', () => ({
-  default: mockEmailService
-}));
+// Mocking will be handled in beforeEach
 
 // Mock mongoose session
 const mockSession = {
@@ -37,7 +31,7 @@ const mockSession = {
   endSession: jest.fn()
 };
 
-jest.unstable_mockModule('mongoose', () => ({
+jest.mock('mongoose', () => ({
   default: {
     startSession: jest.fn(() => mockSession),
     Types: {
@@ -56,13 +50,24 @@ jest.unstable_mockModule('mongoose', () => ({
   }
 }));
 
-// Dynamic import of the controller
-const { issueRefund } = await import('../adminController.js');
+// Import dependencies
+import Order from '../../models/Order.js';
+import emailService from '../../services/emailService.js';
+import { issueRefund } from '../adminController.js';
 
 describe('Admin Controller - issueRefund', () => {
   let req, res;
 
   beforeEach(() => {
+    // Clear all mocks
+    jest.clearAllMocks();
+    
+    // Mock Order methods
+    jest.spyOn(Order, 'findById').mockImplementation(mockFindById);
+    
+    // Mock email service
+    jest.spyOn(emailService, 'sendRefundConfirmationEmail').mockImplementation(mockSendRefundConfirmationEmail);
+    
     req = {
       params: { orderId: '507f1f77bcf86cd799439011' },
       body: {
@@ -76,8 +81,6 @@ describe('Admin Controller - issueRefund', () => {
       status: jest.fn(() => res),
       json: jest.fn()
     };
-
-    jest.clearAllMocks();
     
     // Default mongoose session mock setup
     mockSession.startTransaction.mockResolvedValue();
@@ -139,8 +142,7 @@ describe('Admin Controller - issueRefund', () => {
       req.params.orderId = 'invalid-id';
       
       // Mock mongoose ObjectId validation
-      const mockMongoose = await import('mongoose');
-      mockMongoose.default.Types.ObjectId.isValid.mockReturnValue(false);
+      mongoose.Types.ObjectId.isValid = jest.fn().mockReturnValue(false);
       
       await issueRefund(req, res);
       
@@ -155,8 +157,8 @@ describe('Admin Controller - issueRefund', () => {
   describe('Order Validation', () => {
     beforeEach(() => {
       // Mock valid ObjectId
-      const mockMongoose = import('mongoose');
-      mockMongoose.then(m => m.default.Types.ObjectId.isValid.mockReturnValue(true));
+      // mongoose already imported at top
+      mongoose.Types.ObjectId.isValid = jest.fn().mockReturnValue(true);
     });
 
     it('should return 404 if order is not found', async () => {
@@ -227,8 +229,8 @@ describe('Admin Controller - issueRefund', () => {
         save: jest.fn().mockResolvedValue()
       };
       
-      const mockMongoose = import('mongoose');
-      mockMongoose.then(m => m.default.Types.ObjectId.isValid.mockReturnValue(true));
+      // mongoose already imported at top
+      mongoose.Types.ObjectId.isValid = jest.fn().mockReturnValue(true);
       mockFindById.mockResolvedValue(mockOrderDoc);
       
       // Mock the populated order response
@@ -316,8 +318,8 @@ describe('Admin Controller - issueRefund', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
-      const mockMongoose = import('mongoose');
-      mockMongoose.then(m => m.default.Types.ObjectId.isValid.mockReturnValue(true));
+      // mongoose already imported at top
+      mongoose.Types.ObjectId.isValid = jest.fn().mockReturnValue(true);
     });
 
     it('should handle database errors and abort transaction', async () => {

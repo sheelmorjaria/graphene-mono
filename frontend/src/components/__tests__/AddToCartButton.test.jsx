@@ -1,6 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
 import AddToCartButton from '../AddToCartButton';
 
 describe('AddToCartButton', () => {

@@ -3,44 +3,15 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import express from 'express';
 
-// Mock dependencies
-jest.unstable_mockModule('../../models/Product.js', () => ({
-  default: {
-    find: jest.fn(),
-    countDocuments: jest.fn()
-  }
-}));
+// Import dependencies
+import Product from '../../models/Product.js';
+import User from '../../models/User.js';
 
-jest.unstable_mockModule('../../models/User.js', () => ({
-  default: {
-    findByEmail: jest.fn(),
-    findById: jest.fn()
-  }
-}));
-
-jest.unstable_mockModule('../../models/Order.js', () => ({
-  default: {
-    find: jest.fn(),
-    countDocuments: jest.fn()
-  }
-}));
-
-jest.unstable_mockModule('../../models/ReturnRequest.js', () => ({
-  default: {
-    find: jest.fn(),
-    countDocuments: jest.fn()
-  }
-}));
-
-jest.unstable_mockModule('../../services/emailService.js', () => ({
-  default: {
-    sendOrderStatusEmail: jest.fn(),
-    sendRefundConfirmationEmail: jest.fn()
-  }
-}));
-
-const Product = (await import('../../models/Product.js')).default;
-const adminRouter = (await import('../../routes/admin.js')).default;
+import Order from '../../models/Order.js';
+import ReturnRequest from '../../models/ReturnRequest.js';
+import emailService from '../../services/emailService.js';
+import adminRouter from '../../routes/admin.js';
+import { createValidProductData, createValidUserData } from '../../test/helpers/testData.js';
 
 // Create Express app
 const app = express();
@@ -63,6 +34,27 @@ const validToken = jwt.sign(
 describe('Admin Products API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Set up mocks for Product model
+    jest.spyOn(Product, 'find').mockImplementation(() => ({
+      populate: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([])
+    }));
+    
+    jest.spyOn(Product, 'countDocuments').mockResolvedValue(0);
+    
+    // Set up mocks for other models
+    jest.spyOn(User, 'findByEmail').mockResolvedValue(null);
+    jest.spyOn(User, 'findById').mockResolvedValue(null);
+    jest.spyOn(Order, 'find').mockResolvedValue([]);
+    jest.spyOn(ReturnRequest, 'find').mockResolvedValue([]);
+    
+    // Set up email service mocks
+    jest.spyOn(emailService, 'sendRefundConfirmationEmail').mockResolvedValue();
+    jest.spyOn(emailService, 'sendOrderConfirmationEmail').mockResolvedValue();
   });
 
   describe('GET /api/admin/products', () => {
