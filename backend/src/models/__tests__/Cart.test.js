@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import Cart from '../Cart.js';
 // import Product from '../Product.js'; // For future cart-product integration tests

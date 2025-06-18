@@ -140,10 +140,18 @@ const LoginPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg border border-forest-200 sm:rounded-lg sm:px-10 transform transition-all duration-300 hover:shadow-xl">
-          <form role="form" className="space-y-6" onSubmit={handleSubmit}>
+          <form 
+            role="form" 
+            data-testid="admin-login-form"
+            className="space-y-6" 
+            onSubmit={handleSubmit}
+          >
             {/* General Error Message */}
             {error && (
-              <div className="bg-error/10 border border-error/30 rounded-md p-4">
+              <div 
+                data-testid="login-error"
+                className="bg-error/10 border border-error/30 rounded-md p-4"
+              >
                 <div className="text-sm text-error">{error}</div>
               </div>
             )}
@@ -164,6 +172,7 @@ const LoginPage = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   onBlur={handleFieldBlur}
+                  data-testid="email-input"
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-forest-400 focus:outline-none focus:ring-forest-600 focus:border-forest-600 sm:text-sm transition-colors ${
                     errors.email ? 'border-error/50' : 'border-forest-300'
@@ -193,6 +202,7 @@ const LoginPage = () => {
                   disabled={isLoading}
                   value={formData.password}
                   onChange={handleInputChange}
+                  data-testid="password-input"
                   aria-describedby={errors.password ? 'password-error' : undefined}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-forest-400 focus:outline-none focus:ring-forest-600 focus:border-forest-600 sm:text-sm transition-colors ${
                     errors.password ? 'border-error/50' : 'border-forest-300'
@@ -238,6 +248,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
+                data-testid="login-button"
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-500 transition-all duration-200 ${
                   isLoading
                     ? 'bg-forest-400 cursor-not-allowed'

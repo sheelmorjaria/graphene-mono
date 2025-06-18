@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { performance } from 'perf_hooks';
 import request from 'supertest';
 import express from 'express';
@@ -9,6 +9,7 @@ import Order from '../../models/Order.js';
 import User from '../../models/User.js';
 import Product from '../../models/Product.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
+import { createValidProductData, createValidUserData, createValidShippingMethodData } from '../../test/helpers/testDataFactory.js';
 
 // PayPal Load Tests
 describe('PayPal Load Tests', () => {
@@ -29,34 +30,40 @@ describe('PayPal Load Tests', () => {
     await mongoose.connect(mongoUri);
 
     // Create test user
-    testUser = await User.create({
+    const userData = createValidUserData({
       firstName: 'PayPal',
       lastName: 'Load',
       email: 'paypal-load@test.com',
       password: 'hashedpassword123'
     });
+    testUser = await User.create(userData);
 
     // Create test product
-    testProduct = await Product.create({
+    const productData = createValidProductData({
       name: 'PayPal Load Test Product',
       slug: 'paypal-load-test-product',
       price: 199.99,
       stockQuantity: 1000,
       isActive: true
     });
+    testProduct = await Product.create(productData);
 
     // Create test shipping method
-    testShippingMethod = await ShippingMethod.create({
+    const shippingMethodData = createValidShippingMethodData({
       name: 'Load Test Shipping',
+      code: 'LOAD_TEST_SHIPPING',
       description: 'Shipping for load tests',
-      cost: 5.99,
-      estimatedDays: '1-3',
+      baseCost: 5.99,
+      estimatedDeliveryDays: { min: 1, max: 3 },
       isActive: true,
-      availableCountries: ['UK', 'US'],
-      calculateCost: function(_cart, _address) {
-        return { cost: this.cost, available: true };
+      criteria: {
+        minOrderValue: 0,
+        maxOrderValue: 10000,
+        maxWeight: 10000,
+        supportedCountries: ['GB', 'US']
       }
     });
+    testShippingMethod = await ShippingMethod.create(shippingMethodData);
 
     // Setup Express app
     app = express();

@@ -1,13 +1,20 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import moneroService from '../moneroService.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
+
+// Set environment variables before importing the service
+process.env.GLOBEE_API_KEY = 'test-globee-api-key';
+process.env.GLOBEE_SECRET = 'test-webhook-secret';
+process.env.FRONTEND_URL = 'http://localhost:3000';
+process.env.BACKEND_URL = 'http://localhost:5000';
+
+import moneroService from '../moneroService.js';
 
 describe('MoneroService Tests', () => {
   let axiosGetSpy;
   let axiosPostSpy;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Set test environment variables  
     process.env.NODE_ENV = 'test';
@@ -16,9 +23,13 @@ describe('MoneroService Tests', () => {
     process.env.FRONTEND_URL = 'http://localhost:3000';
     process.env.BACKEND_URL = 'http://localhost:5000';
     
+    // Reinitialize service properties
+    moneroService.apiKey = 'test-globee-api-key';
+    moneroService.secret = 'test-webhook-secret';
+    
     // Mock axios methods using spyOn
-    axiosGetSpy = jest.spyOn(axios, 'get').mockResolvedValue({ data: {} });
-    axiosPostSpy = jest.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+    axiosGetSpy = vi.spyOn(axios, 'get').mockResolvedValue({ data: {} });
+    axiosPostSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
     
     // Reset cache
     moneroService.exchangeRateCache = {
@@ -91,7 +102,7 @@ describe('MoneroService Tests', () => {
   describe('convertGbpToXmr', () => {
     beforeEach(() => {
       // Mock the getExchangeRate method to return predictable values
-      jest.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
+      vi.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
         rate: 0.01, // 1 GBP = 0.01 XMR
         timestamp: Date.now(),
         validUntil: new Date(Date.now() + 5 * 60 * 1000)

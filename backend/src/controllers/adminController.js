@@ -594,9 +594,9 @@ const getValidStatusTransitions = () => {
     'processing': ['awaiting_shipment', 'shipped', 'cancelled'],
     'awaiting_shipment': ['shipped', 'cancelled'],
     'shipped': ['delivered', 'cancelled'],
-    'delivered': ['refunded'],
+    'delivered': ['returned'], // Can be returned after delivery
     'cancelled': [],
-    'refunded': []
+    'returned': [] // Final state for returned items
   };
 };
 
@@ -708,7 +708,7 @@ export const updateOrderStatus = async (req, res) => {
         await emailService.sendOrderShippedEmail(orderForEmail);
       } else if (newStatus === 'delivered') {
         await emailService.sendOrderDeliveredEmail(orderForEmail);
-      } else if (['processing', 'awaiting_shipment', 'cancelled', 'refunded'].includes(newStatus)) {
+      } else if (['processing', 'awaiting_shipment', 'cancelled', 'returned'].includes(newStatus)) {
         const oldStatus = orderForEmail.statusHistory[orderForEmail.statusHistory.length - 2]?.status || 'unknown';
         await emailService.sendOrderStatusUpdateEmail(orderForEmail, newStatus, oldStatus);
       }
@@ -841,16 +841,14 @@ export const issueRefund = async (req, res) => {
     if (newTotalRefunded >= order.totalAmount) {
       order.refundStatus = 'fully_refunded';
       order.paymentStatus = 'refunded';
-      // Update order status to refunded if fully refunded
-      if (order.status !== 'refunded') {
-        order.status = 'refunded';
-        order.statusHistory.push({
-          status: 'refunded',
-          timestamp: new Date(),
-          updatedBy: adminId,
-          notes: `Order fully refunded - £${refundAmount.toFixed(2)}: ${refundReason}`
-        });
-      }
+      // Note: Don't change order.status since 'refunded' is not a valid order status
+      // The refund status is tracked separately in refundStatus and paymentStatus
+      order.statusHistory.push({
+        status: order.status, // Keep current status
+        timestamp: new Date(),
+        updatedBy: adminId,
+        notes: `Order fully refunded - £${refundAmount.toFixed(2)}: ${refundReason}`
+      });
     } else {
       order.refundStatus = 'partial_refunded';
     }
@@ -2524,6 +2522,14 @@ export const deleteProduct = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'Product ID is required'
+      });
+    }
+
+    // Validate ObjectId format
+    if (!mongoose.isValidObjectId(productId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format'
       });
     }
 

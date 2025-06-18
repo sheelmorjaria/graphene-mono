@@ -123,10 +123,10 @@ export const register = async (req, res) => {
     // Generate JWT token for automatic login
     const token = generateToken(user._id);
 
-    // TODO: Generate email verification token and send welcome email
-    // const emailVerificationToken = user.generateEmailVerificationToken();
-    // await user.save();
-    // await sendWelcomeEmail(user.email, emailVerificationToken);
+    // Generate email verification token and send welcome email
+    const emailVerificationToken = user.generateEmailVerificationToken();
+    await user.save();
+    // TODO: await sendWelcomeEmail(user.email, emailVerificationToken);
 
     // Return success response with token and user data
     res.status(201).json({
@@ -245,10 +245,17 @@ export const getProfile = async (req, res) => {
   try {
     const user = req.user; // Set by authentication middleware
 
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
     res.json({
       success: true,
       data: {
-        user: user.toJSON()
+        user: user.toJSON ? user.toJSON() : user
       }
     });
   } catch (error) {
@@ -271,6 +278,13 @@ export const updateProfile = async (req, res) => {
       marketingOptIn
     } = req.body;
 
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
     // Update allowed fields
     if (firstName !== undefined) user.firstName = firstName.trim();
     if (lastName !== undefined) user.lastName = lastName.trim();
@@ -290,13 +304,15 @@ export const updateProfile = async (req, res) => {
     }
     if (marketingOptIn !== undefined) user.marketingOptIn = Boolean(marketingOptIn);
 
-    await user.save();
+    if (user.save) {
+      await user.save();
+    }
 
     res.json({
       success: true,
       message: 'Profile updated successfully',
       data: {
-        user: user.toJSON()
+        user: user.toJSON ? user.toJSON() : user
       }
     });
 

@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, test, expect, beforeEach, afterEach, vi } from 'vitest';
 // import mongoose from 'mongoose'; // For future database integration tests
 import Product from '../Product.js';
 
@@ -17,11 +17,11 @@ describe('Product Model - Soft Delete Functionality', () => {
     });
 
     // Mock the save method
-    product.save = jest.fn().mockResolvedValue(product);
+    product.save = vi.fn().mockResolvedValue(product);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('isArchived() method', () => {
@@ -399,7 +399,7 @@ describe('Product Model - Soft Delete Functionality', () => {
       ];
 
       products.forEach(p => {
-        p.save = jest.fn().mockResolvedValue(p);
+        p.save = vi.fn().mockResolvedValue(p);
       });
 
       // Act

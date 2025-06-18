@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import { setupMocks, setupCommonMocks } from './helpers/mockSetup.js';
+import { setupAdvancedSessionMocking } from './helpers/sessionMocks.js';
 
 let mongoServer;
 
@@ -10,179 +11,122 @@ setupMocks();
 setupCommonMocks();
 
 beforeAll(async () => {
-  // Setup in-memory MongoDB for testing
-  mongoServer = await MongoMemoryServer.create();
-  const mongoUri = mongoServer.getUri();
-  
-  // Disconnect from any existing connection
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
-  }
-  
-  // Connect to the in-memory database
-  await mongoose.connect(mongoUri);
-  
-  // Mock transactions for testing (in-memory MongoDB doesn't support transactions)
-  const mockSession = {
-    startTransaction: jest.fn(),
-    commitTransaction: jest.fn(),
-    abortTransaction: jest.fn(),
-    endSession: jest.fn(),
-    withTransaction: jest.fn((fn) => fn()),
-    inTransaction: jest.fn().mockReturnValue(false),
-    id: 'mock-session-id',
-    transaction: {},
-    supports: {
-      causalConsistency: false
-    }
-  };
-  
-  mongoose.startSession = jest.fn().mockResolvedValue(mockSession);
-  
-  // Override query methods to ignore session parameter and handle chaining
-  const originalExec = mongoose.Query.prototype.exec;
-  
-  // Mock the session method to return chainable query
-  mongoose.Query.prototype.session = function(session) {
-    // Store session reference but don't actually use it
-    this._mockSession = session;
-    return this; // Return this for chaining
-  };
-  
-  mongoose.Query.prototype.exec = function() {
-    if (this.getOptions().session || this._mockSession) {
-      this.setOptions({ session: undefined });
-      delete this._mockSession;
-    }
-    return originalExec.call(this);
-  };
-  
-  // Handle Model methods that use sessions (commented out - available for future use)
-  // const setupModelSessionMocking = (Model) => {
-  //   const originalFindById = Model.findById;
-  //   
-  //   // Override Model.findById to handle .session() chaining
-  //   Model.findById = function(...args) {
-  //     const query = originalFindById.apply(this, args);
-  //     
-  //     query.session = function(session) {
-  //       query._mockSession = session;
-  //       return query; // Return query for chaining
-  //     };
-  //     
-  //     return query;
-  //   };
-  //   
-  //   // Similar for other methods
-  //   ['find', 'findOne', 'findOneAndUpdate', 'updateOne', 'deleteMany'].forEach(method => {
-  //     const original = Model[method];
-  //     Model[method] = function(...args) {
-  //       const query = original.apply(this, args);
-  //       if (query && typeof query.session === 'function') {
-  //         query.session = function(session) {
-  //           query._mockSession = session;
-  //           return query;
-  //         };
-  //       }
-  //       return query;
-  //     };
-  //   });
-  // };
-  
-  // Mock document save method to handle sessions
-  const originalDocumentSave = mongoose.Document.prototype.save;
-  mongoose.Document.prototype.save = function(options) {
-    // If no options or undefined, call original
-    if (options === undefined || options === null) {
-      return originalDocumentSave.call(this);
+  try {
+    // Setup in-memory MongoDB for testing
+    mongoServer = await MongoMemoryServer.create({
+      instance: {
+        // Disable replica set to avoid session-related issues
+        replSet: undefined,
+        // Use simpler storage engine
+        storageEngine: 'wiredTiger'
+      }
+    });
+    const mongoUri = mongoServer.getUri();
+    
+    // Disconnect from any existing connection
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
     }
     
-    // If options is a function (callback style), call with no options
-    if (typeof options === 'function') {
-      return originalDocumentSave.call(this, undefined, options);
-    }
+    // Connect to the in-memory database with session-safe options
+    await mongoose.connect(mongoUri, {
+      // Disable sessions since MongoMemoryServer doesn't fully support them
+      maxPoolSize: 1,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
     
-    // If options is an object and contains session, remove session
-    if (typeof options === 'object' && options !== null && 'session' in options) {
-      const { session, ...cleanOptions } = options; // eslint-disable-line no-unused-vars
-      const hasOtherOptions = Object.keys(cleanOptions).length > 0;
-      return originalDocumentSave.call(this, hasOtherOptions ? cleanOptions : undefined);
-    }
-    
-    // Otherwise call with original options
-    return originalDocumentSave.call(this, options);
-  };
-  
-  // Also mock Model static methods that use sessions
-  const modelMethods = ['findByIdAndUpdate', 'findOneAndUpdate', 'updateOne', 'updateMany', 'deleteOne', 'deleteMany'];
-  
-  // This will be applied when models are loaded
-  const enhanceModelWithSessionMocking = (Model) => {
-    modelMethods.forEach(methodName => {
-      if (typeof Model[methodName] === 'function') {
-        const originalMethod = Model[methodName];
-        Model[methodName] = function(...args) {
-          // Find options object and remove session
-          const lastArg = args[args.length - 1];
-          if (lastArg && typeof lastArg === 'object' && 'session' in lastArg) {
-            const { session, ...cleanOptions } = lastArg; // eslint-disable-line no-unused-vars
-            args[args.length - 1] = Object.keys(cleanOptions).length > 0 ? cleanOptions : {};
-          }
-          return originalMethod.apply(this, args);
-        };
+    // Wait for connection to be ready
+    await new Promise((resolve) => {
+      if (mongoose.connection.readyState === 1) {
+        resolve();
+      } else {
+        mongoose.connection.once('connected', resolve);
       }
     });
     
-    // Also mock the create method which might be used
-    if (typeof Model.create === 'function') {
-      const originalCreate = Model.create;
-      Model.create = function(...args) {
-        // Handle both create(doc, options) and create([docs], options) patterns
-        const lastArg = args[args.length - 1];
-        if (lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && 'session' in lastArg) {
-          const { session, ...cleanOptions } = lastArg; // eslint-disable-line no-unused-vars
-          args[args.length - 1] = Object.keys(cleanOptions).length > 0 ? cleanOptions : {};
-        }
-        return originalCreate.apply(this, args);
-      };
-    }
-  };
-  
-  // Make the function globally available for models to use
-  global.enhanceModelWithSessionMocking = enhanceModelWithSessionMocking;
+    // Enable session mocking for tests
+    global.sessionMocks = setupAdvancedSessionMocking();
+    
+    console.log('Test database connected successfully');
+  } catch (error) {
+    console.error('Failed to setup test database:', error);
+    throw error;
+  }
 }, 60000);
 
 afterAll(async () => {
-  // Clean up all collections before closing
-  if (mongoose.connection.readyState === 1) {
-    await mongoose.connection.db.dropDatabase();
-  }
-  
-  // Close database connection and stop server
-  if (mongoose.connection.readyState === 1) {
-    await mongoose.connection.close();
-  }
-  
-  if (mongoServer) {
-    await mongoServer.stop();
+  try {
+    // Clean up session mocks first
+    if (global.sessionMocks && global.sessionMocks.cleanup) {
+      global.sessionMocks.cleanup();
+    }
+    
+    // Clean up all collections before closing
+    if (mongoose.connection.readyState === 1) {
+      try {
+        // Try to drop database without session
+        await mongoose.connection.db.dropDatabase();
+      } catch (error) {
+        console.warn('Failed to drop test database:', error.message);
+        // Try alternative cleanup - drop collections individually
+        try {
+          const collections = await mongoose.connection.db.collections();
+          for (const collection of collections) {
+            await collection.drop().catch(() => {}); // Ignore errors
+          }
+        } catch (collectionError) {
+          console.warn('Failed to drop collections individually:', collectionError.message);
+        }
+      }
+    }
+    
+    // Close database connection
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+    
+    // Stop mongo server
+    if (mongoServer) {
+      await mongoServer.stop();
+      mongoServer = null;
+    }
+    
+    console.log('Test database cleanup completed');
+  } catch (error) {
+    console.error('Error during test cleanup:', error.message);
+    // Don't throw - cleanup should be best-effort
   }
 }, 30000);
 
 afterEach(async () => {
-  // Clean up test data
-  if (mongoose.connection.readyState === 1) {
-    const collections = mongoose.connection.collections;
+  try {
+    // Clean up test data
+    if (mongoose.connection.readyState === 1) {
+      const collections = mongoose.connection.collections;
+      
+      // Clean collections sequentially to avoid session conflicts
+      for (const collection of Object.values(collections)) {
+        try {
+          // Use deleteMany without sessions for test cleanup
+          await collection.deleteMany({}, { session: null });
+        } catch (error) {
+          // If that fails, try without any options
+          try {
+            await collection.deleteMany({});
+          } catch (retryError) {
+            console.warn(`Failed to clean collection ${collection.collectionName}:`, error.message);
+          }
+        }
+      }
+    }
     
-    await Promise.all(
-      Object.values(collections).map(async (collection) => {
-        await collection.deleteMany({});
-      })
-    );
+    // Clear all mocks
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  } catch (error) {
+    console.warn('Error during afterEach cleanup:', error.message);
   }
-  
-  // Clear all mocks
-  jest.clearAllMocks();
-  jest.restoreAllMocks();
 });
 
 // Global test utilities
@@ -203,3 +147,82 @@ global.testUtils = {
     }
   }
 };
+
+// Test database connection utilities
+export const connectTestDatabase = async () => {
+  if (mongoose.connection.readyState === 0) {
+    if (!mongoServer) {
+      mongoServer = await MongoMemoryServer.create();
+    }
+    const mongoUri = mongoServer.getUri();
+    await mongoose.connect(mongoUri);
+  }
+};
+
+export const disconnectTestDatabase = async () => {
+  if (mongoose.connection.readyState === 1) {
+    await mongoose.connection.close();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
+    mongoServer = null;
+  }
+};
+
+export const clearTestDatabase = async () => {
+  if (mongoose.connection.readyState === 1) {
+    const collections = mongoose.connection.collections;
+    await Promise.all(
+      Object.values(collections).map(async (collection) => {
+        try {
+          await collection.deleteMany({});
+        } catch (error) {
+          // Ignore session transaction errors during test cleanup
+          if (!error.message.includes('session') && !error.message.includes('Transaction')) {
+            throw error;
+          }
+        }
+      })
+    );
+  }
+};
+
+// Process cleanup handlers to prevent hanging tests
+const cleanup = async () => {
+  try {
+    if (global.sessionMocks && global.sessionMocks.cleanup) {
+      global.sessionMocks.cleanup();
+    }
+    
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+    
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
+  } catch (error) {
+    console.error('Error during process cleanup:', error.message);
+  }
+};
+
+// Handle process termination
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+process.on('beforeExit', cleanup);
+
+// Handle uncaught exceptions in tests
+process.on('uncaughtException', async (error) => {
+  console.error('Uncaught exception in tests:', error);
+  await cleanup();
+  process.exit(1);
+});
+
+process.on('unhandledRejection', async (reason, promise) => {
+  console.error('Unhandled rejection in tests:', reason);
+  await cleanup();
+  process.exit(1);
+});
+
+// Export mongoServer for external use
+export { mongoServer };

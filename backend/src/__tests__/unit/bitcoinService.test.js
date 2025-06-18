@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import BitcoinService from '../../services/bitcoinService.js';
 import { setupMSW, mockApiResponse, mockApiError } from '../../test/msw-setup.js';
 
@@ -10,7 +10,7 @@ describe('BitcoinService Unit Tests', () => {
   
   beforeEach(() => {
     bitcoinService = BitcoinService;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Reset cache
     bitcoinService.rateCache = {
@@ -24,7 +24,7 @@ describe('BitcoinService Unit Tests', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('Exchange Rate Functionality', () => {
@@ -95,7 +95,7 @@ describe('BitcoinService Unit Tests', () => {
   describe('Currency Conversion', () => {
     beforeEach(() => {
       // Mock the exchange rate method
-      jest.spyOn(bitcoinService, 'getBtcExchangeRate').mockResolvedValue({
+      vi.spyOn(bitcoinService, 'getBtcExchangeRate').mockResolvedValue({
         rate: 45000,
         timestamp: new Date(),
         cached: false
@@ -214,9 +214,9 @@ describe('BitcoinService Unit Tests', () => {
 
   describe('Payment Creation', () => {
     beforeEach(() => {
-      jest.spyOn(bitcoinService, 'generateBitcoinAddress')
+      vi.spyOn(bitcoinService, 'generateBitcoinAddress')
         .mockResolvedValue('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa');
-      jest.spyOn(bitcoinService, 'convertGbpToBtc').mockResolvedValue({
+      vi.spyOn(bitcoinService, 'convertGbpToBtc').mockResolvedValue({
         btcAmount: 0.01,
         exchangeRate: 25000,
         exchangeRateTimestamp: new Date()
@@ -242,7 +242,7 @@ describe('BitcoinService Unit Tests', () => {
     });
 
     it('should handle address generation failures', async () => {
-      jest.spyOn(bitcoinService, 'generateBitcoinAddress')
+      vi.spyOn(bitcoinService, 'generateBitcoinAddress')
         .mockRejectedValue(new Error('Address generation failed'));
 
       await expect(bitcoinService.createBitcoinPayment(250))
@@ -250,7 +250,7 @@ describe('BitcoinService Unit Tests', () => {
     });
 
     it('should handle exchange rate failures', async () => {
-      jest.spyOn(bitcoinService, 'convertGbpToBtc')
+      vi.spyOn(bitcoinService, 'convertGbpToBtc')
         .mockRejectedValue(new Error('Exchange rate failed'));
 
       await expect(bitcoinService.createBitcoinPayment(250))

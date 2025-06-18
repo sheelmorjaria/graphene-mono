@@ -73,6 +73,12 @@ class MoneroService {
       }
 
       const xmrToGbp = response.data.monero.gbp;
+      
+      // Validate the exchange rate
+      if (!xmrToGbp || xmrToGbp <= 0 || !isFinite(xmrToGbp)) {
+        throw new Error('Invalid exchange rate received from API');
+      }
+      
       const gbpToXmr = 1 / xmrToGbp;
       const validUntil = now + EXCHANGE_RATE_CACHE_DURATION;
 
@@ -170,7 +176,7 @@ class MoneroService {
         status: response.data.status
       };
     } catch (error) {
-      logError(error, { context: 'globee_payment_request', orderData });
+      logError(error, { context: 'globee_payment_request', orderNumber: paymentData.custom?.order_id });
       
       if (error.response && error.response.data) {
         throw new Error(`GloBee API error: ${error.response.data.message || error.response.statusText}`);

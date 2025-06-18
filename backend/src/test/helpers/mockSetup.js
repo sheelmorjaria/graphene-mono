@@ -1,16 +1,16 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 
 // Global mock setup for external APIs and services
 export const setupMocks = () => {
   // Mock fetch for external API calls
-  global.fetch = jest.fn();
+  global.fetch = vi.fn();
 
   // Mock console methods to reduce noise in tests
   if (!process.env.SHOW_TEST_LOGS) {
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'info').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   }
 
   // Set up test environment variables
@@ -214,8 +214,8 @@ export const mockRateLimiting = {
 
 // Cleanup mocks
 export const cleanupMocks = () => {
-  jest.clearAllMocks();
-  jest.restoreAllMocks();
+  vi.clearAllMocks();
+  vi.restoreAllMocks();
   
   if (global.fetch && global.fetch.mockClear) {
     global.fetch.mockClear();

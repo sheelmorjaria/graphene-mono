@@ -111,7 +111,10 @@ const AdminLoginPage = () => {
         {/* Login Form */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-lg border border-gray-200">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div 
+              data-testid="login-error"
+              className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md"
+            >
               <div className="flex">
                 <div className="text-red-400 mr-3">⚠️</div>
                 <div>
@@ -122,7 +125,11 @@ const AdminLoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form 
+            data-testid="admin-login-form"
+            onSubmit={handleSubmit} 
+            className="space-y-6"
+          >
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -136,6 +143,7 @@ const AdminLoginPage = () => {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
+                data-testid="email-input"
                 className={`appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm ${
                   fieldErrors.email 
                     ? 'border-red-300 bg-red-50' 
@@ -162,6 +170,7 @@ const AdminLoginPage = () => {
                 required
                 value={formData.password}
                 onChange={handleInputChange}
+                data-testid="password-input"
                 className={`appearance-none relative block w-full px-3 py-2 border rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm ${
                   fieldErrors.password 
                     ? 'border-red-300 bg-red-50' 
@@ -180,6 +189,7 @@ const AdminLoginPage = () => {
               <button
                 type="submit"
                 disabled={loading}
+                data-testid="login-button"
                 className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                   loading
                     ? 'bg-gray-400 cursor-not-allowed'

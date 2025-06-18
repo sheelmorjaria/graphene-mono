@@ -1,0 +1,299 @@
+name: Playwright E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install backend dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      working-directory: backend
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+    
+    - name: Start application server
+      working-directory: backend
+      run: |
+        npm start &
+        sleep 30
+        # Wait for server to be ready
+        npx wait-on http://localhost:3000 --timeout=60000
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/graphene-store-test
+        PAYPAL_CLIENT_ID: test-paypal-client-id
+        PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+        PAYPAL_ENVIRONMENT: sandbox
+        JWT_SECRET: test-jwt-secret
+        BCRYPT_ROUNDS: 8
+    
+    - name: Run Playwright tests
+      working-directory: backend
+      run: npx playwright test --project=${{ matrix.browser }}
+      env:
+        CI: true
+    
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-${{ matrix.browser }}
+        path: backend/playwright-report/
+        retention-days: 30
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-results-${{ matrix.browser }}
+        path: backend/test-results/
+        retention-days: 30
+
+  test-mobile:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      working-directory: backend
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start application server
+      working-directory: backend
+      run: |
+        npm start &
+        sleep 30
+        npx wait-on http://localhost:3000 --timeout=60000
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/graphene-store-test
+        PAYPAL_CLIENT_ID: test-paypal-client-id
+        PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+        PAYPAL_ENVIRONMENT: sandbox
+        JWT_SECRET: test-jwt-secret
+        BCRYPT_ROUNDS: 8
+    
+    - name: Run Mobile Playwright tests
+      working-directory: backend
+      run: npx playwright test --project="Mobile Chrome"
+      env:
+        CI: true
+    
+    - name: Upload Mobile Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-mobile-results
+        path: backend/test-results/
+        retention-days: 30
+
+  visual-regression:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      working-directory: backend
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start application server
+      working-directory: backend
+      run: |
+        npm start &
+        sleep 30
+        npx wait-on http://localhost:3000 --timeout=60000
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/graphene-store-test
+        PAYPAL_CLIENT_ID: test-paypal-client-id
+        PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+        PAYPAL_ENVIRONMENT: sandbox
+        JWT_SECRET: test-jwt-secret
+        BCRYPT_ROUNDS: 8
+    
+    - name: Run Visual Regression Tests
+      working-directory: backend
+      run: npx playwright test --grep="screenshot" --project=chromium
+      env:
+        CI: true
+        PLAYWRIGHT_UPDATE_SNAPSHOTS: false
+    
+    - name: Upload Visual Diff Results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: visual-regression-diffs
+        path: backend/test-results/
+        retention-days: 30
+
+  accessibility:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Install Playwright and axe-core
+      working-directory: backend
+      run: |
+        npx playwright install --with-deps chromium
+        npm install --save-dev @axe-core/playwright
+    
+    - name: Start application server
+      working-directory: backend
+      run: |
+        npm start &
+        sleep 30
+        npx wait-on http://localhost:3000 --timeout=60000
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/graphene-store-test
+        PAYPAL_CLIENT_ID: test-paypal-client-id
+        PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+        PAYPAL_ENVIRONMENT: sandbox
+        JWT_SECRET: test-jwt-secret
+        BCRYPT_ROUNDS: 8
+    
+    - name: Run Accessibility Tests
+      working-directory: backend
+      run: npx playwright test --grep="Accessibility" --project=chromium
+      env:
+        CI: true
+    
+    - name: Upload Accessibility Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: accessibility-results
+        path: backend/test-results/
+        retention-days: 30
+
+  performance:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      working-directory: backend
+      run: npx playwright install --with-deps chromium
+    
+    - name: Start application server
+      working-directory: backend
+      run: |
+        npm start &
+        sleep 30
+        npx wait-on http://localhost:3000 --timeout=60000
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/graphene-store-test
+        PAYPAL_CLIENT_ID: test-paypal-client-id
+        PAYPAL_CLIENT_SECRET: test-paypal-client-secret
+        PAYPAL_ENVIRONMENT: sandbox
+        JWT_SECRET: test-jwt-secret
+        BCRYPT_ROUNDS: 8
+    
+    - name: Run Performance Tests
+      working-directory: backend
+      run: npx playwright test --grep="Performance" --project=chromium
+      env:
+        CI: true
+    
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: backend/test-results/
+        retention-days: 30
+
+  summary:
+    if: always()
+    needs: [test, test-mobile, visual-regression, accessibility, performance]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Generate Test Summary
+      run: |
+        echo "## Playwright Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Browser Tests" >> $GITHUB_STEP_SUMMARY
+        echo "- **Chromium**: ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Firefox**: ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **WebKit**: ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Specialized Tests" >> $GITHUB_STEP_SUMMARY
+        echo "- **Mobile**: ${{ needs.test-mobile.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Visual Regression**: ${{ needs.visual-regression.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Accessibility**: ${{ needs.accessibility.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Performance**: ${{ needs.performance.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📊 **Artifacts**: Test reports and screenshots are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY

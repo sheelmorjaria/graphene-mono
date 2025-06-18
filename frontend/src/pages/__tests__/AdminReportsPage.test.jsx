@@ -5,12 +5,10 @@ import AdminReportsPage from '../AdminReportsPage';
 
 // Mock the adminService
 vi.mock('../../services/adminService', () => ({
-  adminService: {
-    getSalesReport: vi.fn(),
-    getProductPerformanceReport: vi.fn(),
-    getCustomerReport: vi.fn(),
-    getInventoryReport: vi.fn()
-  }
+  getSalesReport: vi.fn(),
+  getProductPerformanceReport: vi.fn(),
+  getCustomerReport: vi.fn(),
+  getInventoryReport: vi.fn()
 }));
 
 // Mock the LoadingSpinner component
@@ -18,7 +16,7 @@ vi.mock('../../components/LoadingSpinner', () => ({
   default: () => <div>Loading...</div>
 }));
 
-import { adminService } from '../../services/adminService';
+import { getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../../services/adminService';
 
 const mockSalesData = {
   totalRevenue: 25000,
@@ -60,10 +58,10 @@ describe('AdminReportsPage', () => {
     vi.clearAllMocks();
     
     // Setup default successful responses
-    adminService.getSalesReport.mockResolvedValue(mockSalesData);
-    adminService.getProductPerformanceReport.mockResolvedValue(mockProductData);
-    adminService.getCustomerReport.mockResolvedValue(mockCustomerData);
-    adminService.getInventoryReport.mockResolvedValue(mockInventoryData);
+    getSalesReport.mockResolvedValue(mockSalesData);
+    getProductPerformanceReport.mockResolvedValue(mockProductData);
+    getCustomerReport.mockResolvedValue(mockCustomerData);
+    getInventoryReport.mockResolvedValue(mockInventoryData);
   });
 
   it('should render page title and date range picker', async () => {
@@ -146,7 +144,7 @@ describe('AdminReportsPage', () => {
   });
 
   it('should display error message when reports fail to load', async () => {
-    adminService.getSalesReport.mockRejectedValue(new Error('Network error'));
+    getSalesReport.mockRejectedValue(new Error('Network error'));
     
     renderAdminReportsPage();
     

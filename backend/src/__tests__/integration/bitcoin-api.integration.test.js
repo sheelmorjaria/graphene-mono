@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -6,6 +6,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import paymentRoutes from '../../routes/payment.js';
 import Order from '../../models/Order.js';
 import User from '../../models/User.js';
+import { createValidOrderData, createValidUserData } from '../../test/helpers/testDataFactory.js';
 
 // Bitcoin API Integration Tests
 describe('Bitcoin Payment API Integration Tests', () => {
@@ -15,71 +16,11 @@ describe('Bitcoin Payment API Integration Tests', () => {
   let testUser;
 
   beforeAll(async () => {
-    // Disconnect any existing connection
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    
-    // Start MongoDB Memory Server
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-
-    // Create test user and order
-    testUser = await User.create({
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@example.com',
-      password: 'hashedpassword123'
-    });
-
-    testOrder = await Order.create({
-      userId: testUser._id,
-      orderNumber: 'ORD-BTC-TEST-123',
-      customerEmail: 'test@example.com',
-      items: [{
-        productId: new mongoose.Types.ObjectId(),
-        productName: 'Test Bitcoin Product',
-        productSlug: 'test-bitcoin-product',
-        quantity: 1,
-        unitPrice: 299.99,
-        totalPrice: 299.99
-      }],
-      subtotal: 299.99,
-      orderTotal: 299.99,
-      shippingAddress: {
-        fullName: 'Test User',
-        addressLine1: '123 Bitcoin St',
-        city: 'Test City',
-        stateProvince: 'Test State',
-        postalCode: '12345',
-        country: 'UK'
-      },
-      billingAddress: {
-        fullName: 'Test User',
-        addressLine1: '123 Bitcoin St',
-        city: 'Test City',
-        stateProvince: 'Test State',
-        postalCode: '12345',
-        country: 'UK'
-      },
-      shippingMethod: {
-        id: new mongoose.Types.ObjectId(),
-        name: 'Standard Shipping',
-        cost: 0
-      },
-      paymentMethod: {
-        type: 'pending',
-        name: 'Pending'
-      },
-      paymentStatus: 'pending'
-    });
-    
-    // Setup Express app
+    // Setup Express app only (data will be created in beforeEach)
     app = express();
     app.use(express.json());
     
-    // Mock user authentication
+    // Mock user authentication (will be set in beforeEach)
     app.use((req, res, next) => {
       req.user = testUser;
       next();
@@ -92,21 +33,44 @@ describe('Bitcoin Payment API Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.close();
-    await mongoServer.stop();
+    // Clean up handled by global test setup
   });
 
-  beforeEach(() => {
-    // Reset order payment status for each test
-    testOrder.paymentStatus = 'pending';
-    testOrder.paymentMethod = { type: 'pending', name: 'Pending' };
-    testOrder.paymentDetails = {};
+  beforeEach(async () => {
+    // Create fresh test data for each test (since global setup clears DB after each test)
+    const userData = createValidUserData({
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      password: 'hashedpassword123'
+    });
+    testUser = await User.create(userData);
+
+    const orderData = createValidOrderData({
+      userId: testUser._id,
+      orderNumber: 'ORD-BTC-TEST-123',
+      customerEmail: 'test@example.com',
+      items: [{
+        productId: new mongoose.Types.ObjectId(),
+        productName: 'Test Bitcoin Product',
+        productSlug: 'test-bitcoin-product',
+        quantity: 1,
+        unitPrice: 299.99,
+        totalPrice: 299.99
+      }],
+      subtotal: 299.99,
+      totalAmount: 299.99,
+      paymentMethod: {
+        type: 'bitcoin',
+        name: 'Bitcoin'
+      },
+      paymentStatus: 'pending'
+    });
+    testOrder = await Order.create(orderData);
   });
 
   describe('Bitcoin Payment Initialization', () => {
     it('should initialize Bitcoin payment for valid order', async () => {
-      await testOrder.save();
-      
       const response = await request(app)
         .post('/api/payments/bitcoin/initialize')
         .send({ orderId: testOrder._id.toString() });
@@ -361,34 +325,30 @@ describe('Bitcoin Payment API Integration Tests', () => {
     });
 
     it('should handle concurrent Bitcoin payment requests', async () => {
-      // Create multiple test orders
+      // Create multiple test orders using factory
+      const order1Data = createValidOrderData({
+        userId: testUser._id,
+        orderNumber: 'ORD-BTC-CONCURRENT-1',
+        customerEmail: 'test1@example.com',
+        subtotal: 100,
+        totalAmount: 100,
+        paymentMethod: { type: 'bitcoin', name: 'Bitcoin' },
+        paymentStatus: 'pending'
+      });
+      
+      const order2Data = createValidOrderData({
+        userId: testUser._id,
+        orderNumber: 'ORD-BTC-CONCURRENT-2',
+        customerEmail: 'test2@example.com',
+        subtotal: 200,
+        totalAmount: 200,
+        paymentMethod: { type: 'bitcoin', name: 'Bitcoin' },
+        paymentStatus: 'pending'
+      });
+      
       const orders = await Promise.all([
-        Order.create({
-          userId: testUser._id,
-          orderNumber: 'ORD-BTC-CONCURRENT-1',
-          customerEmail: 'test1@example.com',
-          items: [{ productId: new mongoose.Types.ObjectId(), productName: 'Test', productSlug: 'test', quantity: 1, unitPrice: 100, totalPrice: 100 }],
-          subtotal: 100,
-          orderTotal: 100,
-          shippingAddress: { fullName: 'Test', addressLine1: '123 St', city: 'City', stateProvince: 'State', postalCode: '12345', country: 'UK' },
-          billingAddress: { fullName: 'Test', addressLine1: '123 St', city: 'City', stateProvince: 'State', postalCode: '12345', country: 'UK' },
-          shippingMethod: { id: new mongoose.Types.ObjectId(), name: 'Standard', cost: 0 },
-          paymentMethod: { type: 'pending', name: 'Pending' },
-          paymentStatus: 'pending'
-        }),
-        Order.create({
-          userId: testUser._id,
-          orderNumber: 'ORD-BTC-CONCURRENT-2',
-          customerEmail: 'test2@example.com',
-          items: [{ productId: new mongoose.Types.ObjectId(), productName: 'Test', productSlug: 'test', quantity: 1, unitPrice: 200, totalPrice: 200 }],
-          subtotal: 200,
-          orderTotal: 200,
-          shippingAddress: { fullName: 'Test', addressLine1: '123 St', city: 'City', stateProvince: 'State', postalCode: '12345', country: 'UK' },
-          billingAddress: { fullName: 'Test', addressLine1: '123 St', city: 'City', stateProvince: 'State', postalCode: '12345', country: 'UK' },
-          shippingMethod: { id: new mongoose.Types.ObjectId(), name: 'Standard', cost: 0 },
-          paymentMethod: { type: 'pending', name: 'Pending' },
-          paymentStatus: 'pending'
-        })
+        Order.create(order1Data),
+        Order.create(order2Data)
       ]);
 
       // Send concurrent requests
@@ -415,7 +375,7 @@ describe('Bitcoin Payment API Integration Tests', () => {
         expect(foundOrder.orderNumber).toBe('ORD-BTC-TEST-123');
         expect(foundOrder.customerEmail).toBe('test@example.com');
         expect(foundOrder.items).toHaveLength(1);
-        expect(foundOrder.orderTotal).toBe(299.99);
+        expect(foundOrder.totalAmount).toBe(299.99);
       }
     });
   });

@@ -19,8 +19,8 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock Pagination component
-vi.mock('../../components/Pagination', () => {
-  return function MockPagination({ currentPage, totalPages, onPageChange }) {
+vi.mock('../../components/Pagination', () => ({
+  default: function MockPagination({ currentPage, totalPages, onPageChange }) {
     return (
       <div data-testid="pagination">
         <button 
@@ -41,8 +41,8 @@ vi.mock('../../components/Pagination', () => {
         </button>
       </div>
     );
-  };
-});
+  }
+}));
 
 const renderComponent = () => {
   return render(
@@ -95,7 +95,7 @@ const mockOrdersResponse = {
 
 describe('AdminOrdersListPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     adminService.isAdminAuthenticated.mockReturnValue(true);
     adminService.getAllOrders.mockResolvedValue(mockOrdersResponse);
     adminService.formatCurrency.mockImplementation((amount) => `£${amount.toFixed(2)}`);
@@ -103,7 +103,7 @@ describe('AdminOrdersListPage', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('Authentication', () => {
@@ -210,7 +210,7 @@ describe('AdminOrdersListPage', () => {
       await waitFor(() => {
         expect(screen.getByText('ORD-001')).toBeInTheDocument();
       });
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should filter by status', async () => {
@@ -295,7 +295,7 @@ describe('AdminOrdersListPage', () => {
       await waitFor(() => {
         expect(screen.getByText('ORD-001')).toBeInTheDocument();
       });
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should sort by order date when clicking column header', async () => {

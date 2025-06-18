@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -151,11 +151,6 @@ describe('PayPal Payment API Integration Tests', () => {
     });
     
     app.use('/api/payments', paymentRoutes);
-
-    // Set environment variables
-    process.env.PAYPAL_CLIENT_ID = 'test-paypal-client-id';
-    process.env.PAYPAL_CLIENT_SECRET = 'test-paypal-client-secret';
-    process.env.PAYPAL_ENVIRONMENT = 'sandbox';
   });
 
   afterAll(async () => {

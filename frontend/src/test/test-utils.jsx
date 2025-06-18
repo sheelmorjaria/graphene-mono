@@ -34,16 +34,47 @@ vi.mock('../services/cartService', () => ({
 
 // Test-specific AuthProvider that doesn't make async calls
 const TestAuthProvider = ({ children }) => {
-  const [state] = React.useState({
+  const [state, setState] = React.useState({
     user: null,
     isAuthenticated: false,
     isLoading: false,
     error: null
   })
 
+  const dispatch = React.useCallback((action) => {
+    switch (action.type) {
+      case 'AUTH_SUCCESS':
+        setState({
+          user: action.payload,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
+        break;
+      case 'AUTH_FAILURE':
+        setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: action.payload
+        });
+        break;
+      case 'LOGOUT':
+        setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null
+        });
+        break;
+      default:
+        break;
+    }
+  }, []);
+
   return (
     <AuthStateContext.Provider value={state}>
-      <AuthDispatchContext.Provider value={() => {}}>
+      <AuthDispatchContext.Provider value={dispatch}>
         {children}
       </AuthDispatchContext.Provider>
     </AuthStateContext.Provider>

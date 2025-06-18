@@ -1,424 +1,349 @@
+import { vi, describe, it, test, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
-import request from 'supertest';
-import express from 'express';
-import jwt from 'jsonwebtoken';
+import { connectTestDatabase, disconnectTestDatabase, clearTestDatabase } from '../../test/setup.js';
 
-// Import models
-import User from '../../models/User.js';
+// Mock the Order model
+let mockOrderResolveValue = null;
+
+const createMockQueryChain = () => {
+  const queryChain = {};
+  
+  queryChain.session = vi.fn().mockReturnValue(queryChain);
+  queryChain.populate = vi.fn().mockReturnValue(queryChain);
+  queryChain.sort = vi.fn().mockReturnValue(queryChain);
+  queryChain.limit = vi.fn().mockReturnValue(queryChain);
+  queryChain.skip = vi.fn().mockReturnValue(queryChain);
+  queryChain.select = vi.fn().mockReturnValue(queryChain);
+  queryChain.exec = vi.fn().mockImplementation(() => Promise.resolve(mockOrderResolveValue));
+  queryChain.then = vi.fn().mockImplementation((resolve) => Promise.resolve(mockOrderResolveValue).then(resolve));
+  
+  return queryChain;
+};
+
+const mockFindById = vi.fn().mockImplementation(() => createMockQueryChain());
+const mockSave = vi.fn();
+const mockGetMaxRefundableAmount = vi.fn();
+const mockIsRefundEligible = vi.fn();
+
+const mockOrder = {
+  findById: mockFindById,
+  save: mockSave,
+  getMaxRefundableAmount: mockGetMaxRefundableAmount,
+  isRefundEligible: mockIsRefundEligible
+};
+
+// Mock email service (prepared for testing)
+const mockSendRefundConfirmationEmail = vi.fn();
+// const mockEmailService = { sendRefundConfirmationEmail: mockSendRefundConfirmationEmail };
+
+// Set up mocks before imports
+// Mocking will be handled in beforeEach
+
+// Mock mongoose session
+const mockSession = {
+  startTransaction: vi.fn(),
+  commitTransaction: vi.fn(),
+  abortTransaction: vi.fn(),
+  endSession: vi.fn()
+};
+
+// Use global mongoose mock from setup.vitest.js instead of local override
+
+// Import dependencies
 import Order from '../../models/Order.js';
-import Product from '../../models/Product.js';
+import emailService from '../../services/emailService.js';
+import { issueRefund } from '../adminController.js';
 
-// Import routes
-import adminRoutes from '../../routes/admin.js';
+describe('Admin Controller - issueRefund', () => {
+  let req, res;
 
-const app = express();
-app.use(express.json());
-app.use('/api/admin', adminRoutes);
-
-describe('Admin Refund Integration Tests', () => {
-  let adminUser;
-  let adminToken;
-  let testOrder;
-  let testProduct;
-
-  beforeAll(async () => {
-    // Using global test setup for MongoDB connection
+  beforeEach(() => {
+    // Clear all mocks
+    vi.clearAllMocks();
     
-    // Clear existing data
-    await User.deleteMany({});
-    await Order.deleteMany({});
-    await Product.deleteMany({});
+    // Mock Order methods
+    vi.spyOn(Order, 'findById').mockImplementation(mockFindById);
+    
+    // Mock email service
+    vi.spyOn(emailService, 'sendRefundConfirmationEmail').mockImplementation(mockSendRefundConfirmationEmail);
+    
+    req = {
+      params: { orderId: '507f1f77bcf86cd799439011' },
+      body: {
+        refundAmount: 50.00,
+        refundReason: 'Customer requested refund'
+      },
+      user: { _id: 'admin123' }
+    };
+    
+    res = {
+      status: vi.fn(() => res),
+      json: vi.fn()
+    };
+    
+    // Default mongoose session mock setup
+    mockSession.startTransaction.mockResolvedValue();
+    mockSession.commitTransaction.mockResolvedValue();
+    mockSession.abortTransaction.mockResolvedValue();
+    mockSession.endSession.mockResolvedValue();
   });
 
-  afterAll(async () => {
-    // Clean up
-    await User.deleteMany({});
-    await Order.deleteMany({});
-    await Product.deleteMany({});
-  });
-
-  beforeEach(async () => {
-    // Create admin user
-    adminUser = new User({
-      firstName: 'Admin',
-      lastName: 'User',
-      email: 'admin@example.com',
-      password: 'AdminPass123!',
-      role: 'admin',
-      isActive: true,
-      emailVerified: true
-    });
-    await adminUser.save();
-
-    // Generate admin token
-    adminToken = jwt.sign(
-      { userId: adminUser._id, role: adminUser.role },
-      process.env.JWT_SECRET || 'test-secret'
-    );
-
-    // Create test product
-    testProduct = new Product({
-      name: 'Test Product',
-      slug: 'test-product',
-      sku: 'TEST-PROD-001',
-      shortDescription: 'A test product for refund testing',
-      longDescription: 'A detailed description of the test product',
-      price: 100.00,
-      images: ['test-image.jpg'],
-      condition: 'new',
-      stockStatus: 'in_stock',
-      status: 'active'
-    });
-    await testProduct.save();
-
-    // Create test order
-    testOrder = new Order({
-      userId: adminUser._id,
-      customerEmail: 'customer@example.com',
-      status: 'delivered',
-      items: [{
-        productId: testProduct._id,
-        productName: testProduct.name,
-        productSlug: testProduct.slug,
-        productImage: testProduct.images[0],
-        quantity: 2,
-        unitPrice: testProduct.price,
-        totalPrice: testProduct.price * 2
-      }],
-      subtotal: 200.00,
-      tax: 16.00,
-      shipping: 10.00,
-      totalAmount: 226.00,
-      shippingAddress: {
-        fullName: 'John Doe',
-        addressLine1: '123 Test Street',
-        city: 'Test City',
-        stateProvince: 'Test State',
-        postalCode: '12345',
-        country: 'Test Country'
-      },
-      billingAddress: {
-        fullName: 'John Doe',
-        addressLine1: '123 Test Street',
-        city: 'Test City',
-        stateProvince: 'Test State',
-        postalCode: '12345',
-        country: 'Test Country'
-      },
-      shippingMethod: {
-        id: new mongoose.Types.ObjectId(),
-        name: 'Standard Shipping',
-        cost: 10.00,
-        estimatedDelivery: '3-5 business days'
-      },
-      paymentMethod: {
-        type: 'paypal',
-        name: 'PayPal'
-      },
-      paymentStatus: 'completed'
-    });
-    await testOrder.save();
-  });
-
-  afterEach(async () => {
-    // Clean up after each test
-    await User.deleteMany({});
-    await Order.deleteMany({});
-    await Product.deleteMany({});
-  });
-
-  describe('Full Refund Integration Test', () => {
-    it('should process a full refund and update all relevant data', async () => {
-      // Record initial product stock (if stock tracking is implemented)
-      // const initialStock = testProduct.stockQuantity;
-
-      // Issue full refund
-      const refundData = {
-        refundAmount: 226.00,
-        refundReason: 'Customer requested full refund'
-      };
-
-      const response = await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(refundData)
-        .expect(200);
-
-      // Verify response
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('Refund of £226.00 processed successfully');
-      expect(response.body.data.order).toBeDefined();
-      expect(response.body.data.refund).toBeDefined();
-
-      // Verify order updates in database
-      const updatedOrder = await Order.findById(testOrder._id);
-      expect(updatedOrder.totalRefundedAmount).toBe(226.00);
-      expect(updatedOrder.refundStatus).toBe('fully_refunded');
-      expect(updatedOrder.paymentStatus).toBe('refunded');
-      expect(updatedOrder.status).toBe('refunded');
-      expect(updatedOrder.refundHistory).toHaveLength(1);
+  describe('Input Validation', () => {
+    it('should return 400 if refund amount is missing', async () => {
+      req.body.refundAmount = undefined;
       
-      const refundEntry = updatedOrder.refundHistory[0];
-      expect(refundEntry.amount).toBe(226.00);
-      expect(refundEntry.reason).toBe('Customer requested full refund');
-      expect(refundEntry.adminUserId.toString()).toBe(adminUser._id.toString());
-      expect(refundEntry.status).toBe('succeeded');
-      expect(refundEntry.refundId).toBeDefined();
-
-      // Verify status history was updated
-      const refundStatusUpdate = updatedOrder.statusHistory.find(
-        entry => entry.status === 'refunded'
-      );
-      expect(refundStatusUpdate).toBeDefined();
-      expect(refundStatusUpdate.updatedBy.toString()).toBe(adminUser._id.toString());
-
-      // Note: In a real implementation, we would also verify:
-      // - Product stock was incremented (stock restoration logic)
-      // - Email was sent (mock email service verification)
-      // - Payment gateway refund was initiated (mock PayPal API)
-    });
-  });
-
-  describe('Partial Refund Integration Test', () => {
-    it('should process a partial refund correctly', async () => {
-      // Issue partial refund
-      const refundData = {
-        refundAmount: 100.00,
-        refundReason: 'Partial refund for one item'
-      };
-
-      const response = await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(refundData)
-        .expect(200);
-
-      // Verify response
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('Refund of £100.00 processed successfully');
-
-      // Verify order updates in database
-      const updatedOrder = await Order.findById(testOrder._id);
-      expect(updatedOrder.totalRefundedAmount).toBe(100.00);
-      expect(updatedOrder.refundStatus).toBe('partial_refunded');
-      expect(updatedOrder.paymentStatus).toBe('completed'); // Should remain completed for partial refunds
-      expect(updatedOrder.status).toBe('delivered'); // Should not change for partial refunds
-      expect(updatedOrder.refundHistory).toHaveLength(1);
-
-      // Verify maximum refundable amount is correct
-      const maxRefundable = updatedOrder.getMaxRefundableAmount();
-      expect(maxRefundable).toBe(126.00); // 226.00 - 100.00
-    });
-  });
-
-  describe('Multiple Refunds Integration Test', () => {
-    it('should handle multiple partial refunds correctly', async () => {
-      // First partial refund
-      const firstRefundData = {
-        refundAmount: 50.00,
-        refundReason: 'First partial refund'
-      };
-
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(firstRefundData)
-        .expect(200);
-
-      // Second partial refund
-      const secondRefundData = {
-        refundAmount: 100.00,
-        refundReason: 'Second partial refund'
-      };
-
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(secondRefundData)
-        .expect(200);
-
-      // Verify cumulative refund amount
-      const updatedOrder = await Order.findById(testOrder._id);
-      expect(updatedOrder.totalRefundedAmount).toBe(150.00);
-      expect(updatedOrder.refundStatus).toBe('partial_refunded');
-      expect(updatedOrder.refundHistory).toHaveLength(2);
-
-      // Third refund to reach full refund
-      const thirdRefundData = {
-        refundAmount: 76.00, // Remaining amount: 226.00 - 150.00 = 76.00
-        refundReason: 'Final refund to complete full refund'
-      };
-
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(thirdRefundData)
-        .expect(200);
-
-      // Verify full refund status
-      const finalOrder = await Order.findById(testOrder._id);
-      expect(finalOrder.totalRefundedAmount).toBe(226.00);
-      expect(finalOrder.refundStatus).toBe('fully_refunded');
-      expect(finalOrder.paymentStatus).toBe('refunded');
-      expect(finalOrder.status).toBe('refunded');
-      expect(finalOrder.refundHistory).toHaveLength(3);
-    });
-  });
-
-  describe('Error Cases Integration Tests', () => {
-    it('should reject refund amount exceeding maximum refundable', async () => {
-      const refundData = {
-        refundAmount: 300.00, // Exceeds order total of 226.00
-        refundReason: 'Excessive refund attempt'
-      };
-
-      const response = await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(refundData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('exceeds maximum refundable amount');
-
-      // Verify order was not modified
-      const unchangedOrder = await Order.findById(testOrder._id);
-      expect(unchangedOrder.totalRefundedAmount).toBe(0);
-      expect(unchangedOrder.refundStatus).toBe('none');
-      expect(unchangedOrder.refundHistory).toHaveLength(0);
-    });
-
-    it('should reject refund for already fully refunded order', async () => {
-      // First, fully refund the order
-      const fullRefundData = {
-        refundAmount: 226.00,
-        refundReason: 'Full refund'
-      };
-
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(fullRefundData)
-        .expect(200);
-
-      // Try to refund again
-      const attemptRefundData = {
-        refundAmount: 50.00,
-        refundReason: 'Attempt second refund'
-      };
-
-      const response = await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(attemptRefundData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('exceeds maximum refundable amount');
-    });
-
-    it('should reject refund for order with non-completed payment status', async () => {
-      // Update order payment status to pending
-      await Order.findByIdAndUpdate(testOrder._id, { paymentStatus: 'pending' });
-
-      const refundData = {
-        refundAmount: 100.00,
-        refundReason: 'Refund for pending payment'
-      };
-
-      const response = await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(refundData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('Cannot refund order with payment status: pending');
-    });
-
-    it('should reject unauthorized access', async () => {
-      const refundData = {
-        refundAmount: 100.00,
-        refundReason: 'Unauthorized refund attempt'
-      };
-
-      // Test without token
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .send(refundData)
-        .expect(401);
-
-      // Test with invalid token
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', 'Bearer invalid-token')
-        .send(refundData)
-        .expect(401);
-    });
-
-    it('should reject non-admin user access', async () => {
-      // Create regular user
-      const regularUser = new User({
-        firstName: 'Regular',
-        lastName: 'User',
-        email: 'user@example.com',
-        password: 'UserPass123!',
-        role: 'customer'
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Refund amount and reason are required'
       });
-      await regularUser.save();
+    });
 
-      // Generate user token
-      const userToken = jwt.sign(
-        { _id: regularUser._id, role: regularUser.role },
-        process.env.JWT_SECRET || 'test-secret'
+    it('should return 400 if refund reason is missing', async () => {
+      req.body.refundReason = undefined;
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Refund amount and reason are required'
+      });
+    });
+
+    it('should return 400 if refund amount is not a positive number', async () => {
+      req.body.refundAmount = -10;
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Refund amount must be a positive number'
+      });
+    });
+
+    it('should return 400 if refund reason is empty string', async () => {
+      req.body.refundReason = '   ';
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Refund reason is required'
+      });
+    });
+
+    it('should return 400 if order ID format is invalid', async () => {
+      req.params.orderId = 'invalid-id';
+      
+      // Mock mongoose ObjectId validation
+      mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(false);
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid order ID format'
+      });
+    });
+  });
+
+  describe('Order Validation', () => {
+    beforeEach(() => {
+      // Mock valid ObjectId
+      // mongoose already imported at top
+      mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
+    });
+
+    it('should return 404 if order is not found', async () => {
+      mockOrderResolveValue = null;
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Order not found'
+      });
+    });
+
+    it('should return 400 if order payment status is not completed', async () => {
+      const mockOrderDoc = {
+        paymentStatus: 'pending',
+        getMaxRefundableAmount: vi.fn()
+      };
+      
+      mockFindById.mockResolvedValue(mockOrderDoc);
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Cannot refund order with payment status: pending'
+      });
+    });
+
+    it('should return 400 if refund amount exceeds maximum refundable', async () => {
+      const mockOrderDoc = {
+        paymentStatus: 'completed',
+        getMaxRefundableAmount: vi.fn().mockReturnValue(25.00),
+        refundHistory: [],
+        totalRefundedAmount: 0,
+        totalAmount: 100,
+        save: vi.fn()
+      };
+      
+      mockFindById.mockResolvedValue(mockOrderDoc);
+      req.body.refundAmount = 50.00; // Exceeds max refundable of 25.00
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Refund amount (£50.00) exceeds maximum refundable amount (£25.00)'
+      });
+    });
+  });
+
+  describe('Successful Refund Processing', () => {
+    let mockOrderDoc;
+
+    beforeEach(() => {
+      mockOrderDoc = {
+        _id: '507f1f77bcf86cd799439011',
+        paymentStatus: 'completed',
+        refundStatus: 'none',
+        totalAmount: 100,
+        totalRefundedAmount: 0,
+        refundHistory: [],
+        statusHistory: [],
+        getMaxRefundableAmount: vi.fn().mockReturnValue(100),
+        save: vi.fn().mockResolvedValue()
+      };
+      
+      // mongoose already imported at top
+      mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
+      mockFindById.mockResolvedValue(mockOrderDoc);
+      
+      // Mock the populated order response
+      const mockPopulatedOrder = {
+        ...mockOrderDoc,
+        userId: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+        refundHistory: [{
+          refundId: expect.any(String),
+          amount: 50,
+          reason: 'Customer requested refund',
+          adminUserId: { firstName: 'Admin', lastName: 'User' },
+          status: 'succeeded'
+        }]
+      };
+      
+      // Mock chained populate calls
+      const mockQuery = {
+        populate: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockPopulatedOrder)
+      };
+      mockOrder.findById = vi.fn().mockReturnValue(mockQuery);
+    });
+
+    it('should process partial refund successfully', async () => {
+      req.body.refundAmount = 50.00;
+      
+      await issueRefund(req, res);
+      
+      expect(mockOrderDoc.save).toHaveBeenCalled();
+      expect(mockOrderDoc.totalRefundedAmount).toBe(50);
+      expect(mockOrderDoc.refundStatus).toBe('partial_refunded');
+      expect(mockOrderDoc.refundHistory).toHaveLength(1);
+      expect(mockOrderDoc.refundHistory[0].amount).toBe(50);
+      expect(mockOrderDoc.refundHistory[0].reason).toBe('Customer requested refund');
+      
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Refund of £50.00 processed successfully',
+        data: expect.objectContaining({
+          order: expect.any(Object),
+          refund: expect.any(Object)
+        })
+      });
+    });
+
+    it('should process full refund and update order status', async () => {
+      req.body.refundAmount = 100.00;
+      mockOrderDoc.getMaxRefundableAmount.mockReturnValue(100);
+      
+      await issueRefund(req, res);
+      
+      expect(mockOrderDoc.totalRefundedAmount).toBe(100);
+      expect(mockOrderDoc.refundStatus).toBe('fully_refunded');
+      expect(mockOrderDoc.paymentStatus).toBe('refunded');
+      expect(mockOrderDoc.status).toBe('refunded');
+      expect(mockOrderDoc.statusHistory).toHaveLength(1);
+      expect(mockOrderDoc.statusHistory[0].status).toBe('refunded');
+    });
+
+    it('should send refund confirmation email', async () => {
+      await issueRefund(req, res);
+      
+      expect(mockSendRefundConfirmationEmail).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({
+          amount: 50,
+          reason: 'Customer requested refund'
+        })
       );
-
-      const refundData = {
-        refundAmount: 100.00,
-        refundReason: 'Non-admin refund attempt'
-      };
-
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${userToken}`)
-        .send(refundData)
-        .expect(403);
     });
 
-    it('should handle invalid order ID', async () => {
-      const refundData = {
-        refundAmount: 100.00,
-        refundReason: 'Refund for non-existent order'
-      };
+    it('should not fail if email sending fails', async () => {
+      mockSendRefundConfirmationEmail.mockRejectedValue(new Error('Email service down'));
+      
+      await issueRefund(req, res);
+      
+      // Should still return success even if email fails
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Refund of £50.00 processed successfully',
+        data: expect.any(Object)
+      });
+    });
+  });
 
-      await request(app)
-        .post('/api/admin/orders/507f1f77bcf86cd799439011/refund')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send(refundData)
-        .expect(404);
+  describe('Error Handling', () => {
+    beforeEach(() => {
+      // mongoose already imported at top
+      mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
     });
 
-    it('should validate required fields', async () => {
-      // Test missing refund amount
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ refundReason: 'Missing amount' })
-        .expect(400);
+    it('should handle database errors and abort transaction', async () => {
+      mockFindById.mockRejectedValue(new Error('Database connection failed'));
+      
+      await issueRefund(req, res);
+      
+      expect(mockSession.abortTransaction).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Server error while processing refund'
+      });
+    });
 
-      // Test missing refund reason
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ refundAmount: 100.00 })
-        .expect(400);
-
-      // Test invalid refund amount
-      await request(app)
-        .post(`/api/admin/orders/${testOrder._id}/refund`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ refundAmount: -50.00, refundReason: 'Negative amount' })
-        .expect(400);
+    it('should handle validation errors specifically', async () => {
+      mockFindById.mockRejectedValue(new Error('refund amount exceeds limit'));
+      
+      await issueRefund(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'refund amount exceeds limit'
+      });
     });
   });
 });

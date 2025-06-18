@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -40,13 +40,13 @@ describe('Admin Routes - Delete Product Integration Tests', () => {
 
   beforeEach(() => {
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Setup spies for models
-    jest.spyOn(Product, 'findById').mockResolvedValue(null);
-    jest.spyOn(Product, 'findByIdAndUpdate').mockResolvedValue(null);
-    jest.spyOn(Product, 'deleteOne').mockResolvedValue({ deletedCount: 1 });
-    jest.spyOn(User, 'findById').mockResolvedValue(adminUser);
+    vi.spyOn(Product, 'findById').mockResolvedValue(null);
+    vi.spyOn(Product, 'findByIdAndUpdate').mockResolvedValue(null);
+    vi.spyOn(Product, 'deleteOne').mockResolvedValue({ deletedCount: 1 });
+    vi.spyOn(User, 'findById').mockResolvedValue(adminUser);
 
     // Setup mock product
     mockProduct = {
@@ -57,13 +57,13 @@ describe('Admin Routes - Delete Product Integration Tests', () => {
       stockQuantity: 10,
       status: 'active',
       isActive: true,
-      isArchived: jest.fn(),
-      softDelete: jest.fn(),
-      save: jest.fn()
+      isArchived: vi.fn(),
+      softDelete: vi.fn(),
+      save: vi.fn()
     };
 
     // Mock console.log for audit logging
-    jest.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
 
     // Set default behavior for User.findById
     User.findById.mockResolvedValue(adminUser);
@@ -71,7 +71,7 @@ describe('Admin Routes - Delete Product Integration Tests', () => {
 
   afterEach(() => {
     console.log.mockRestore();
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('DELETE /api/admin/products/:productId', () => {

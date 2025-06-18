@@ -17,7 +17,7 @@ export const registerValidation = [
   body('email')
     .trim()
     .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Invalid email format')
+    .isEmail().withMessage('Please enter a valid email address')
     .normalizeEmail()
     .custom(validators.isSecureEmail),
   
@@ -45,7 +45,7 @@ export const loginValidation = [
   body('email')
     .trim()
     .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Invalid email format')
+    .isEmail().withMessage('Please enter a valid email address')
     .normalizeEmail()
     .custom(validators.isSecureEmail),
   
@@ -57,7 +57,7 @@ export const forgotPasswordValidation = [
   body('email')
     .trim()
     .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Invalid email format')
+    .isEmail().withMessage('Please enter a valid email address')
     .normalizeEmail()
     .custom(validators.isSecureEmail)
 ];
@@ -66,11 +66,20 @@ export const resetPasswordValidation = [
   body('token')
     .trim()
     .notEmpty().withMessage('Reset token is required')
-    .isLength({ min: 64, max: 64 }).withMessage('Invalid reset token'),
+    .isLength({ min: 64, max: 64 }).withMessage('Password reset token is invalid or has expired'),
   
-  body('password')
-    .notEmpty().withMessage('Password is required')
-    .custom(validators.isStrongPassword)
+  body('newPassword')
+    .notEmpty().withMessage('New password is required')
+    .custom(validators.isStrongPassword),
+    
+  body('confirmNewPassword')
+    .notEmpty().withMessage('Password confirmation is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    })
 ];
 
 export const changePasswordValidation = [
@@ -83,6 +92,15 @@ export const changePasswordValidation = [
     .custom((value, { req }) => {
       if (value === req.body.currentPassword) {
         throw new Error('New password must be different from current password');
+      }
+      return true;
+    }),
+    
+  body('confirmNewPassword')
+    .notEmpty().withMessage('Password confirmation is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error('New passwords do not match');
       }
       return true;
     })

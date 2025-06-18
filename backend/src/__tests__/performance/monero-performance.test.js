@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { performance } from 'perf_hooks';
 import axios from 'axios';
 import moneroService from '../../services/moneroService.js';
 
 // Mock axios for testing
-jest.mock('axios');
+vi.mock('axios');
 
 // Performance monitoring tests for Monero payment system
 describe('Monero Payment Performance Tests', () => {
@@ -17,7 +17,7 @@ describe('Monero Payment Performance Tests', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Reset performance metrics
     Object.keys(performanceMetrics).forEach(key => {
@@ -34,7 +34,7 @@ describe('Monero Payment Performance Tests', () => {
 
   describe('Exchange Rate Performance', () => {
     it('should fetch exchange rates within performance thresholds', async () => {
-      axios.get = jest.fn().mockResolvedValue({
+      axios.get = vi.fn().mockResolvedValue({
         data: { monero: { gbp: 161.23 } }
       });
 
@@ -63,7 +63,7 @@ describe('Monero Payment Performance Tests', () => {
     });
 
     it('should achieve fast cache hit performance', async () => {
-      axios.get = jest.fn().mockResolvedValue({
+      axios.get = vi.fn().mockResolvedValue({
         data: { monero: { gbp: 161.23 } }
       });
 
@@ -99,12 +99,12 @@ describe('Monero Payment Performance Tests', () => {
     it('should create payments efficiently', async () => {
       
       // Mock exchange rate call
-      axios.get = jest.fn().mockResolvedValue({
+      axios.get = vi.fn().mockResolvedValue({
         data: { monero: { gbp: 161.23 } }
       });
       
       // Mock GloBee payment creation
-      axios.post = jest.fn().mockResolvedValue({
+      axios.post = vi.fn().mockResolvedValue({
         data: {
           id: 'globee-123',
           payment_address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
@@ -148,7 +148,7 @@ describe('Monero Payment Performance Tests', () => {
 
   describe('Status Check Performance', () => {
     it('should check payment status efficiently', async () => {
-      axios.get = jest.fn().mockResolvedValue({
+      axios.get = vi.fn().mockResolvedValue({
         data: {
           id: 'payment-123',
           status: 'pending',
@@ -219,7 +219,7 @@ describe('Monero Payment Performance Tests', () => {
 
   describe('Memory Usage Analysis', () => {
     it('should maintain stable memory usage', async () => {
-      axios.get = jest.fn().mockResolvedValue({
+      axios.get = vi.fn().mockResolvedValue({
         data: { monero: { gbp: 161.23 } }
       });
 
@@ -250,7 +250,7 @@ describe('Monero Payment Performance Tests', () => {
 
   describe('Concurrent Performance', () => {
     it('should handle concurrent operations efficiently', async () => {
-      axios.get = jest.fn().mockResolvedValue({
+      axios.get = vi.fn().mockResolvedValue({
         data: { monero: { gbp: 161.23 } }
       });
 

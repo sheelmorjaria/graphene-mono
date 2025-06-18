@@ -1,18 +1,15 @@
-import { jest } from '@jest/globals';
+import { vi, describe, it, test, expect, beforeEach, afterEach } from 'vitest';
 
-// Mock the Order model
-const mockAggregate = jest.fn();
-const mockOrder = {
-  aggregate: mockAggregate
-};
-
-// Set up the mock before any imports
-jest.mock('../../models/Order.js', () => ({
-  default: mockOrder
+// Set up the mock before any imports (factory function must be self-contained)
+vi.mock('../../models/Order.js', () => ({
+  default: {
+    aggregate: vi.fn()
+  }
 }));
 
 // Import after mocking
 import { getAllOrders } from '../adminController.js';
+import Order from '../../models/Order.js';
 
 describe('Admin Controller - getAllOrders', () => {
   let req, res;
@@ -23,15 +20,15 @@ describe('Admin Controller - getAllOrders', () => {
       user: { _id: 'admin123', role: 'admin' }
     };
     res = {
-      json: jest.fn(),
-      status: jest.fn(() => res)
+      json: vi.fn(),
+      status: vi.fn(() => res)
     };
     
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('Default parameters', () => {
@@ -54,7 +51,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       const mockCountResult = [{ total: 1 }];
 
-      mockAggregate.mockImplementation((pipeline) => {
+      Order.aggregate.mockImplementation((pipeline) => {
         // Check if this is the count pipeline (has $count stage)
         const hasCount = pipeline.some(stage => stage.$count);
         if (hasCount) {
@@ -65,7 +62,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledTimes(2); // Once for count, once for data
+      expect(Order.aggregate).toHaveBeenCalledTimes(2); // Once for count, once for data
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: {
@@ -86,7 +83,7 @@ describe('Admin Controller - getAllOrders', () => {
   describe('Filtering', () => {
     beforeEach(() => {
       const mockCountResult = [{ total: 0 }];
-      mockAggregate.mockImplementation((pipeline) => {
+      Order.aggregate.mockImplementation((pipeline) => {
         const hasCount = pipeline.some(stage => stage.$count);
         if (hasCount) {
           return Promise.resolve(mockCountResult);
@@ -100,7 +97,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $match: expect.objectContaining({
@@ -117,7 +114,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $match: expect.objectContaining({
@@ -136,7 +133,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $match: expect.objectContaining({
@@ -156,7 +153,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      const firstCall = mockAggregate.mock.calls[0][0];
+      const firstCall = Order.aggregate.mock.calls[0][0];
       const matchStage = firstCall.find(stage => stage.$match);
       
       expect(matchStage.$match).not.toHaveProperty('status');
@@ -166,7 +163,7 @@ describe('Admin Controller - getAllOrders', () => {
   describe('Sorting', () => {
     beforeEach(() => {
       const mockCountResult = [{ total: 0 }];
-      mockAggregate.mockImplementation((pipeline) => {
+      Order.aggregate.mockImplementation((pipeline) => {
         const hasCount = pipeline.some(stage => stage.$count);
         if (hasCount) {
           return Promise.resolve(mockCountResult);
@@ -178,7 +175,7 @@ describe('Admin Controller - getAllOrders', () => {
     it('should sort by createdAt descending by default', async () => {
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $sort: { createdAt: -1 }
@@ -193,7 +190,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $sort: { totalAmount: 1 }
@@ -209,7 +206,7 @@ describe('Admin Controller - getAllOrders', () => {
       req.query.limit = '10';
 
       const mockCountResult = [{ total: 25 }];
-      mockAggregate.mockImplementation((pipeline) => {
+      Order.aggregate.mockImplementation((pipeline) => {
         const hasCount = pipeline.some(stage => stage.$count);
         if (hasCount) {
           return Promise.resolve(mockCountResult);
@@ -219,7 +216,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       await getAllOrders(req, res);
 
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           { $skip: 10 }, // (page-1) * limit = (2-1) * 10 = 10
           { $limit: 10 }
@@ -246,7 +243,7 @@ describe('Admin Controller - getAllOrders', () => {
   describe('Error handling', () => {
     it('should handle database errors', async () => {
       const mockError = new Error('Database connection failed');
-      mockAggregate.mockRejectedValue(mockError);
+      Order.aggregate.mockRejectedValue(mockError);
 
       await getAllOrders(req, res);
 
@@ -278,7 +275,7 @@ describe('Admin Controller - getAllOrders', () => {
 
       const mockCountResult = [{ total: 1 }];
 
-      mockAggregate.mockImplementation((pipeline) => {
+      Order.aggregate.mockImplementation((pipeline) => {
         const hasCount = pipeline.some(stage => stage.$count);
         if (hasCount) {
           return Promise.resolve(mockCountResult);
@@ -289,7 +286,7 @@ describe('Admin Controller - getAllOrders', () => {
       await getAllOrders(req, res);
 
       // Verify that the lookup stage is included
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $lookup: {
@@ -303,7 +300,7 @@ describe('Admin Controller - getAllOrders', () => {
       );
 
       // Verify that the projection stage is included
-      expect(mockAggregate).toHaveBeenCalledWith(
+      expect(Order.aggregate).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             $project: expect.objectContaining({

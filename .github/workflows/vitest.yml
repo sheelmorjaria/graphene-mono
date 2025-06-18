@@ -1,0 +1,214 @@
+name: Vitest Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/vitest.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/vitest.yml'
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  vitest-unit:
+    runs-on: ubuntu-latest
+    name: Vitest Unit Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Vitest unit tests
+      working-directory: ./backend
+      run: npm run test:unit
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+    - name: Generate unit test coverage
+      working-directory: ./backend
+      run: npm run test:coverage
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+    - name: Upload unit test coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: unit-tests
+        name: vitest-unit-coverage
+
+  vitest-integration:
+    runs-on: ubuntu-latest
+    name: Vitest Integration Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Vitest integration tests
+      working-directory: ./backend
+      run: npm run test:integration
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+    - name: Generate integration test coverage
+      working-directory: ./backend
+      run: npm run test:coverage:integration
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+    - name: Upload integration test coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/integration/lcov.info
+        flags: integration-tests
+        name: vitest-integration-coverage
+
+  vitest-e2e:
+    runs-on: ubuntu-latest
+    name: Vitest E2E Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Vitest E2E tests
+      working-directory: ./backend
+      run: npm run test:e2e
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+  vitest-security:
+    runs-on: ubuntu-latest
+    name: Vitest Security Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Vitest security tests
+      working-directory: ./backend
+      run: npm run test:security
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+  vitest-performance:
+    runs-on: ubuntu-latest
+    name: Vitest Performance Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Vitest performance tests
+      working-directory: ./backend
+      run: npm run test:performance
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret-for-ci
+        SESSION_SECRET: test-session-secret-for-ci
+
+  vitest-summary:
+    runs-on: ubuntu-latest
+    name: Vitest Test Summary
+    needs: [vitest-unit, vitest-integration, vitest-e2e, vitest-security, vitest-performance]
+    if: always()
+    
+    steps:
+    - name: Test Results Summary
+      run: |
+        echo "## Vitest Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Unit Tests | ${{ needs.vitest-unit.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Integration Tests | ${{ needs.vitest-integration.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests | ${{ needs.vitest-e2e.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Tests | ${{ needs.vitest-security.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Performance Tests | ${{ needs.vitest-performance.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Overall Status" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ needs.vitest-unit.result }}" == "success" && "${{ needs.vitest-integration.result }}" == "success" ]]; then
+          echo "🎉 **All critical tests passed!**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️  **Some tests failed - review required**" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Check critical test failures
+      if: needs.vitest-unit.result == 'failure' || needs.vitest-integration.result == 'failure'
+      run: |
+        echo "Critical tests failed - unit or integration tests must pass"
+        exit 1

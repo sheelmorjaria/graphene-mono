@@ -1,21 +1,21 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import axios from 'axios';
 import moneroService from '../moneroService.js';
 
 describe('MoneroService Simple Tests', () => {
   let axiosGetSpy;
-  // let axiosPostSpy; // For future POST testing
+  let axiosPostSpy;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Set test environment variables
     process.env.GLOBEE_API_KEY = 'test-globee-api-key';
     process.env.GLOBEE_SECRET = 'test-webhook-secret';
     
     // Mock axios methods using spyOn
-    axiosGetSpy = jest.spyOn(axios, 'get').mockResolvedValue({ data: {} });
-    axiosPostSpy = jest.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+    axiosGetSpy = vi.spyOn(axios, 'get').mockResolvedValue({ data: {} });
+    axiosPostSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
     
     // Reset cache
     moneroService.exchangeRateCache = {
@@ -26,7 +26,7 @@ describe('MoneroService Simple Tests', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('getExchangeRate', () => {
@@ -69,7 +69,7 @@ describe('MoneroService Simple Tests', () => {
   describe('convertGbpToXmr', () => {
     it('should convert GBP to XMR correctly', async () => {
       // Mock getExchangeRate
-      jest.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
+      vi.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
         rate: 0.01,
         validUntil: new Date(Date.now() + 5 * 60 * 1000)
       });

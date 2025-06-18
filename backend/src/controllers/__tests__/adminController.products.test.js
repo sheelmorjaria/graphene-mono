@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { vi, describe, it, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import express from 'express';
@@ -12,6 +12,31 @@ import ReturnRequest from '../../models/ReturnRequest.js';
 import emailService from '../../services/emailService.js';
 import adminRouter from '../../routes/admin.js';
 
+// Mock authentication middleware
+vi.mock('../../middleware/auth.js', () => ({
+  authenticate: vi.fn((req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: 'Access token required' });
+    }
+    
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      req.user = decoded;
+      next();
+    } catch (error) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    }
+  }),
+  requireRole: vi.fn((role) => (req, res, next) => {
+    if (!req.user || req.user.role !== role) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    next();
+  })
+}));
+
 // Create Express app
 const app = express();
 app.use(express.json());
@@ -24,36 +49,69 @@ const mockAdminUser = {
   role: 'admin'
 };
 
-// Generate valid JWT token
+// Generate valid JWT tokens (must match auth middleware secret)
 const validToken = jwt.sign(
   { userId: mockAdminUser._id, role: 'admin' },
-  process.env.JWT_SECRET || 'test-secret'
+  process.env.JWT_SECRET || 'your-secret-key'
+);
+
+const customerToken = jwt.sign(
+  { userId: 'customer-id-123', role: 'customer' },
+  process.env.JWT_SECRET || 'your-secret-key'
 );
 
 describe('Admin Products API', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
-    // Set up mocks for Product model
-    jest.spyOn(Product, 'find').mockImplementation(() => ({
-      populate: jest.fn().mockReturnThis(),
-      sort: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      exec: jest.fn().mockResolvedValue([])
+    // Set up mocks for Product model (will be overridden in specific tests)
+    vi.spyOn(Product, 'find').mockImplementation(() => ({
+      populate: vi.fn().mockReturnThis(),
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValue([])
     }));
     
-    jest.spyOn(Product, 'countDocuments').mockResolvedValue(0);
+    vi.spyOn(Product, 'countDocuments').mockResolvedValue(0);
     
     // Set up mocks for other models
-    jest.spyOn(User, 'findByEmail').mockResolvedValue(null);
-    jest.spyOn(User, 'findById').mockResolvedValue(null);
-    jest.spyOn(Order, 'find').mockResolvedValue([]);
-    jest.spyOn(ReturnRequest, 'find').mockResolvedValue([]);
+    vi.spyOn(User, 'findByEmail').mockResolvedValue(null);
+    
+    // Mock User.findById to return admin user for the token's user ID
+    vi.spyOn(User, 'findById').mockImplementation((id) => {
+      if (id === '507f1f77bcf86cd799439011') {
+        return Promise.resolve({
+          _id: '507f1f77bcf86cd799439011',
+          email: 'admin@example.com',
+          firstName: 'Admin',
+          lastName: 'User',
+          role: 'admin',
+          accountStatus: 'active',
+          isActive: true
+        });
+      }
+      if (id === 'customer-id-123') {
+        return Promise.resolve({
+          _id: 'customer-id-123',
+          email: 'customer@example.com',
+          firstName: 'Test',
+          lastName: 'Customer',
+          role: 'customer',
+          accountStatus: 'active',
+          isActive: true
+        });
+      }
+      return Promise.resolve(null);
+    });
+    vi.spyOn(Order, 'find').mockResolvedValue([]);
+    vi.spyOn(ReturnRequest, 'find').mockResolvedValue([]);
     
     // Set up email service mocks
-    jest.spyOn(emailService, 'sendRefundConfirmationEmail').mockResolvedValue();
-    jest.spyOn(emailService, 'sendOrderConfirmationEmail').mockResolvedValue();
+    vi.spyOn(emailService, 'sendRefundConfirmationEmail').mockResolvedValue();
+    vi.spyOn(emailService, 'sendOrderConfirmationEmail').mockResolvedValue();
   });
 
   describe('GET /api/admin/products', () => {
@@ -67,8 +125,8 @@ describe('Admin Products API', () => {
         status: 'active',
         category: 'smartphone',
         images: ['image1.jpg'],
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z'
       },
       {
         _id: '2',
@@ -79,18 +137,18 @@ describe('Admin Products API', () => {
         status: 'active',
         category: 'smartphone',
         images: ['image2.jpg'],
-        createdAt: new Date('2024-01-02'),
-        updatedAt: new Date('2024-01-02')
+        createdAt: '2024-01-02T00:00:00.000Z',
+        updatedAt: '2024-01-02T00:00:00.000Z'
       }
     ];
 
     const setupProductMocks = () => {
       const mockQuery = {
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(mockProducts)
+        sort: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockProducts)
       };
       
       Product.find.mockReturnValue(mockQuery);
@@ -122,8 +180,12 @@ describe('Admin Products API', () => {
         }
       });
 
-      expect(Product.find).toHaveBeenCalledWith({});
-      expect(Product.countDocuments).toHaveBeenCalledWith({});
+      expect(Product.find).toHaveBeenCalledWith({ 
+        status: { $ne: "archived" } 
+      });
+      expect(Product.countDocuments).toHaveBeenCalledWith({ 
+        status: { $ne: "archived" } 
+      });
     });
 
     it('should handle pagination parameters', async () => {
@@ -150,7 +212,8 @@ describe('Admin Products API', () => {
         $or: [
           { name: { $regex: 'pixel', $options: 'i' } },
           { sku: { $regex: 'pixel', $options: 'i' } }
-        ]
+        ],
+        status: { $ne: "archived" }
       });
     });
 
@@ -163,7 +226,8 @@ describe('Admin Products API', () => {
         .expect(200);
 
       expect(Product.find).toHaveBeenCalledWith({
-        category: 'smartphone'
+        category: 'smartphone',
+        status: { $ne: "archived" }
       });
     });
 
@@ -189,7 +253,8 @@ describe('Admin Products API', () => {
         .expect(200);
 
       expect(Product.find).toHaveBeenCalledWith({
-        price: { $gte: 500, $lte: 800 }
+        price: { $gte: 500, $lte: 800 },
+        status: { $ne: "archived" }
       });
     });
 
@@ -202,7 +267,8 @@ describe('Admin Products API', () => {
         .expect(200);
 
       expect(Product.find).toHaveBeenCalledWith({
-        stockQuantity: { $gt: 0 }
+        stockQuantity: { $gt: 0 },
+        status: { $ne: "archived" }
       });
     });
 
@@ -215,7 +281,8 @@ describe('Admin Products API', () => {
         .expect(200);
 
       expect(Product.find).toHaveBeenCalledWith({
-        stockQuantity: 0
+        stockQuantity: 0,
+        status: { $ne: "archived" }
       });
     });
 
@@ -228,7 +295,8 @@ describe('Admin Products API', () => {
         .expect(200);
 
       expect(Product.find).toHaveBeenCalledWith({
-        stockQuantity: { $gt: 0, $lte: 10 }
+        stockQuantity: { $gt: 0, $lte: 10 },
+        status: { $ne: "archived" }
       });
     });
 
@@ -272,7 +340,7 @@ describe('Admin Products API', () => {
       // Create a token for a non-admin user
       const customerToken = jwt.sign(
         { userId: mockAdminUser._id, role: 'customer' },
-        process.env.JWT_SECRET || 'test-secret'
+        process.env.JWT_SECRET || 'your-secret-key'
       );
 
       await request(app)

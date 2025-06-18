@@ -166,7 +166,10 @@ const ShippingAddressSection = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div 
+      data-testid="shipping-form"
+      className="bg-white rounded-lg shadow p-6"
+    >
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Shipping Address</h2>
 
       {/* Error message */}
@@ -220,6 +223,7 @@ const ShippingAddressSection = () => {
           <div className="border-t pt-6">
             <button
               onClick={handleAddNewAddress}
+              data-testid="add-address-button"
               className="w-full py-3 px-4 border-2 border-dashed border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors rounded-lg font-medium"
             >
               + Add New Address
@@ -228,7 +232,10 @@ const ShippingAddressSection = () => {
 
           {/* Selected address summary */}
           {checkoutState.shippingAddress && (
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div 
+              data-testid="shipping-address"
+              className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4"
+            >
               <h4 className="text-sm font-medium text-blue-800 mb-2">Selected Shipping Address:</h4>
               <div className="text-sm text-blue-700">
                 <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>

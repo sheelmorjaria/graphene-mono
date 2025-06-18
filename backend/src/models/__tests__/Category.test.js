@@ -1,3 +1,4 @@
+import { describe, it, expect, afterEach } from 'vitest';
 // import mongoose from 'mongoose'; // For future database-specific tests
 import Category from '../Category.js';
 

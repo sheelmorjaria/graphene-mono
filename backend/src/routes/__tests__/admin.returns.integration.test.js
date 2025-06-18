@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import express from 'express';
@@ -8,6 +8,8 @@ import Order from '../../models/Order.js';
 import ReturnRequest from '../../models/ReturnRequest.js';
 import jwt from 'jsonwebtoken';
 import emailService from '../../services/emailService.js';
+import { createValidOrderData, createValidReturnRequestData } from '../../test/helpers/testDataFactory.js';
+import { setupAdvancedSessionMocking, restoreOriginalMethods } from '../../test/helpers/sessionMocks.js';
 
 // Will mock email service methods in beforeEach with spies
 
@@ -20,10 +22,35 @@ describe('Admin Returns Integration Tests', () => {
   let adminToken;
 
   beforeAll(async () => {
+    // Setup session mocking to prevent "Unable to acquire server session" errors
+    setupAdvancedSessionMocking();
+    
     // Setup Express app (DB connection handled by global test setup)
     app = express();
     app.use(express.json());
+    
+    // Mock authentication middleware
+    app.use((req, res, next) => {
+      // Add mock user based on authorization header
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret');
+          req.user = decoded;
+        } catch (error) {
+          return res.status(401).json({ success: false, error: 'Invalid token' });
+        }
+      }
+      next();
+    });
+    
     app.use('/api/admin', adminRoutes);
+  });
+
+  afterAll(async () => {
+    // Restore original MongoDB methods
+    restoreOriginalMethods();
   });
 
   beforeEach(async () => {
@@ -33,15 +60,15 @@ describe('Admin Returns Integration Tests', () => {
     await ReturnRequest.deleteMany({});
 
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock email service methods
-    jest.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true });
+    vi.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true });
     
     // Mock additional methods if they exist, or create them for testing
-    emailService.sendReturnApprovedEmail = jest.fn().mockResolvedValue({ success: true });
-    emailService.sendReturnRejectedEmail = jest.fn().mockResolvedValue({ success: true });
-    emailService.sendReturnRefundedEmail = jest.fn().mockResolvedValue({ success: true });
+    emailService.sendReturnApprovedEmail = vi.fn().mockResolvedValue({ success: true });
+    emailService.sendReturnRejectedEmail = vi.fn().mockResolvedValue({ success: true });
+    emailService.sendReturnRefundedEmail = vi.fn().mockResolvedValue({ success: true });
 
     // Create admin user
     adminUser = await User.create({
@@ -75,49 +102,49 @@ describe('Admin Returns Integration Tests', () => {
     );
 
     // Create order
-    order = await Order.create({
-      userId: customerUser._id,
+    const orderData = createValidOrderData({
+      userId: customerUser._id.toString(),
+      customerEmail: customerUser.email,
       orderNumber: 'ORD-2024010001',
+      status: 'delivered',
+      paymentStatus: 'completed',
       items: [{
         productId: new mongoose.Types.ObjectId(),
-        name: 'Google Pixel 8',
-        slug: 'google-pixel-8',
-        price: 699.99,
+        productName: 'Google Pixel 8',
+        productSlug: 'google-pixel-8',
+        productImage: 'pixel8.jpg',
+        unitPrice: 699.99,
         quantity: 1,
-        image: 'pixel8.jpg',
-        lineTotal: 699.99
+        totalPrice: 699.99
       }],
+      subtotal: 699.99,
       totalAmount: 699.99,
-      subtotalAmount: 699.99,
-      shippingCost: 0,
-      taxAmount: 0,
-      status: 'delivered',
-      paymentMethod: 'paypal',
-      paymentStatus: 'completed',
+      shipping: 0,
+      tax: 0,
       shippingAddress: {
         fullName: 'John Doe',
         addressLine1: '123 Test St',
         city: 'Test City',
+        stateProvince: 'Test State',
         postalCode: 'T3ST 1NG',
-        country: 'GB'
+        country: 'GB',
+        phoneNumber: '+1234567890'
       },
       billingAddress: {
         fullName: 'John Doe',
         addressLine1: '123 Test St',
         city: 'Test City',
+        stateProvince: 'Test State',
         postalCode: 'T3ST 1NG',
-        country: 'GB'
+        country: 'GB',
+        phoneNumber: '+1234567890'
       }
     });
+    order = await Order.create(orderData);
 
     // Create return request
-    returnRequest = await ReturnRequest.create({
-      orderId: order._id,
-      orderNumber: order.orderNumber,
-      userId: customerUser._id,
-      customerEmail: customerUser.email,
+    const returnRequestData = createValidReturnRequestData(order, {
       returnRequestNumber: '2024010001',
-      status: 'pending_review',
       items: [{
         productId: order.items[0].productId,
         productName: 'Google Pixel 8',
@@ -127,9 +154,9 @@ describe('Admin Returns Integration Tests', () => {
         totalRefundAmount: 699.99,
         reason: 'defective_item',
         reasonDescription: 'Screen has dead pixels'
-      }],
-      totalRefundAmount: 699.99
+      }]
     });
+    returnRequest = await ReturnRequest.create(returnRequestData);
   });
 
   describe('GET /api/admin/returns', () => {
@@ -183,11 +210,7 @@ describe('Admin Returns Integration Tests', () => {
 
     it('should paginate return requests', async () => {
       // Create another return request
-      await ReturnRequest.create({
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        userId: customerUser._id,
-        customerEmail: customerUser.email,
+      const anotherReturnRequestData = createValidReturnRequestData(order, {
         returnRequestNumber: '2024010002',
         status: 'approved',
         items: [{
@@ -197,10 +220,11 @@ describe('Admin Returns Integration Tests', () => {
           quantity: 1,
           unitPrice: 699.99,
           totalRefundAmount: 699.99,
-          reason: 'changed_mind'
-        }],
-        totalRefundAmount: 699.99
+          reason: 'changed_mind',
+          reasonDescription: 'Changed my mind'
+        }]
       });
+      await ReturnRequest.create(anotherReturnRequestData);
 
       const response = await request(app)
         .get('/api/admin/returns?page=1&limit=1')

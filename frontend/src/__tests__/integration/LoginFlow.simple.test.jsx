@@ -1,8 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
-import { AuthProvider } from '../../contexts/AuthContext';
 import LoginPage from '../../pages/LoginPage';
 
 // Mock navigate function
@@ -41,13 +38,7 @@ const mockLoginResponse = {
 };
 
 const renderLoginTest = () => {
-  return render(
-    <MemoryRouter>
-      <AuthProvider>
-        <LoginPage />
-      </AuthProvider>
-    </MemoryRouter>
-  );
+  return render(<LoginPage />);
 };
 
 describe('Login Flow Integration Tests - Simple', () => {

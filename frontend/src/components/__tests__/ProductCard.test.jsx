@@ -1,153 +1,358 @@
-import { render, screen } from '../../test/test-utils';
-import { describe, it, expect } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 import ProductCard from '../ProductCard';
+import { CartProvider } from '../../contexts/CartContext';
 
-const mockProduct = {
-  id: '1',
-  name: 'GrapheneOS Pixel 9 Pro',
-  slug: 'grapheneos-pixel-9-pro',
-  shortDescription: 'Privacy-focused Google Pixel 9 Pro with GrapheneOS pre-installed for maximum security and privacy.',
-  price: 899.99,
-  images: ['https://example.com/pixel9pro-1.jpg', 'https://example.com/pixel9pro-2.jpg'],
-  condition: 'new',
-  stockStatus: 'in_stock',
-  category: {
-    id: 'cat1',
-    name: 'Smartphones',
-    slug: 'smartphones'
-  },
-  createdAt: '2024-01-15T10:30:00Z'
-};
+// Mock the CartContext
+const mockAddToCart = vi.fn();
+vi.mock('../../contexts/CartContext', () => ({
+  CartProvider: ({ children }) => children,
+  useCart: () => ({
+    addToCart: mockAddToCart
+  })
+}));
 
-const renderWithRouter = (component) => {
-  return render(
-    <MemoryRouter>
-      {component}
-    </MemoryRouter>
-  );
-};
+// Test wrapper component
+const TestWrapper = ({ children }) => (
+  <BrowserRouter>
+    <CartProvider>
+      {children}
+    </CartProvider>
+  </BrowserRouter>
+);
 
 describe('ProductCard', () => {
-  it('should render product information correctly', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
-    
-    expect(screen.getByText('GrapheneOS Pixel 9 Pro')).toBeInTheDocument();
-    expect(screen.getByText('Privacy-focused Google Pixel 9 Pro with GrapheneOS pre-installed for maximum security and privacy.')).toBeInTheDocument();
-    expect(screen.getByText('£899.99')).toBeInTheDocument();
+  const mockProduct = {
+    _id: '507f1f77bcf86cd799439011',
+    name: 'Google Pixel 7',
+    slug: 'google-pixel-7',
+    shortDescription: 'Latest Google smartphone with advanced camera',
+    price: 599.99,
+    images: ['/images/pixel7-1.jpg', '/images/pixel7-2.jpg'],
+    condition: 'new',
+    stockStatus: 'in_stock',
+    stockQuantity: 10
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAddToCart.mockResolvedValue({ success: true });
+  });
+
+  it('renders product information correctly', () => {
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Google Pixel 7')).toBeInTheDocument();
+    expect(screen.getByText('£599.99')).toBeInTheDocument();
+    expect(screen.getByText('Latest Google smartphone with advanced camera')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();
     expect(screen.getByText('In Stock')).toBeInTheDocument();
   });
 
-  it('should display the main product image', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
-    
-    const image = screen.getByAltText('GrapheneOS Pixel 9 Pro');
+  it('displays product image correctly', () => {
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const image = screen.getByAltText('Google Pixel 7');
     expect(image).toBeInTheDocument();
-    expect(image).toHaveAttribute('src', 'https://example.com/pixel9pro-1.jpg');
+    expect(image).toHaveAttribute('src', '/images/pixel7-1.jpg');
   });
 
-  it('should show placeholder image when no images provided', () => {
+  it('displays fallback image when no images provided', () => {
     const productWithoutImages = { ...mockProduct, images: [] };
-    renderWithRouter(<ProductCard product={productWithoutImages} />);
     
-    const image = screen.getByAltText('GrapheneOS Pixel 9 Pro');
+    render(
+      <TestWrapper>
+        <ProductCard product={productWithoutImages} />
+      </TestWrapper>
+    );
+
+    const image = screen.getByAltText('Google Pixel 7');
     expect(image).toHaveAttribute('src', '/placeholder-product.jpg');
   });
 
-  it('should display condition badge with correct styling', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
+  it('shows out of stock status correctly', () => {
+    const outOfStockProduct = {
+      ...mockProduct,
+      stockStatus: 'out_of_stock',
+      stockQuantity: 0
+    };
     
-    const conditionBadge = screen.getByText('New');
-    expect(conditionBadge).toHaveClass('bg-green-100', 'text-green-800');
+    render(
+      <TestWrapper>
+        <ProductCard product={outOfStockProduct} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Out of Stock')).toBeInTheDocument();
+    
+    // Add to cart button should show "Out of Stock" and be disabled
+    const addToCartButton = screen.getByRole('button', { name: /out of stock/i });
+    expect(addToCartButton).toBeDisabled();
   });
 
-  it('should display different condition badge styles', () => {
+  it('shows low stock status correctly', () => {
+    const lowStockProduct = {
+      ...mockProduct,
+      stockStatus: 'low_stock',
+      stockQuantity: 3
+    };
+    
+    render(
+      <TestWrapper>
+        <ProductCard product={lowStockProduct} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Low Stock')).toBeInTheDocument();
+  });
+
+  it('handles add to cart action correctly', async () => {
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
+    fireEvent.click(addToCartButton);
+
+    await waitFor(() => {
+      expect(mockAddToCart).toHaveBeenCalledWith('507f1f77bcf86cd799439011', 1);
+    });
+  });
+
+  it('shows loading state during add to cart', async () => {
+    // Mock a delayed response
+    mockAddToCart.mockImplementation(() => new Promise(resolve => 
+      setTimeout(() => resolve({ success: true }), 100)
+    ));
+
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
+    fireEvent.click(addToCartButton);
+
+    // Should show loading state
+    expect(screen.getByText('Adding...')).toBeInTheDocument();
+    expect(addToCartButton).toBeDisabled();
+
+    // Wait for loading to finish
+    await waitFor(() => {
+      expect(screen.getByText('Add to Cart')).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to product details when View Details is clicked', () => {
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const viewDetailsLink = screen.getByRole('link', { name: /view details/i });
+    expect(viewDetailsLink).toHaveAttribute('href', '/products/google-pixel-7');
+  });
+
+  it('displays different condition states correctly', () => {
     const conditions = [
-      { condition: 'excellent', expectedClass: 'bg-blue-100' },
-      { condition: 'good', expectedClass: 'bg-yellow-100' },
-      { condition: 'fair', expectedClass: 'bg-orange-100' }
+      { condition: 'new', expected: 'New' },
+      { condition: 'excellent', expected: 'Excellent' },
+      { condition: 'good', expected: 'Good' },
+      { condition: 'fair', expected: 'Fair' }
     ];
 
-    conditions.forEach(({ condition, expectedClass }) => {
-      const productWithCondition = { ...mockProduct, condition, name: `Test ${condition}` };
-      const { unmount } = renderWithRouter(<ProductCard product={productWithCondition} />);
+    conditions.forEach(({ condition, expected }) => {
+      const productWithCondition = { ...mockProduct, condition };
       
-      const conditionBadge = screen.getByText(condition.charAt(0).toUpperCase() + condition.slice(1));
-      expect(conditionBadge).toHaveClass(expectedClass);
-      
+      const { unmount } = render(
+        <TestWrapper>
+          <ProductCard product={productWithCondition} />
+        </TestWrapper>
+      );
+
+      expect(screen.getByText(expected)).toBeInTheDocument();
       unmount();
     });
   });
 
-  it('should show out of stock status correctly', () => {
-    const outOfStockProduct = { ...mockProduct, stockStatus: 'out_of_stock' };
-    renderWithRouter(<ProductCard product={outOfStockProduct} />);
-    
-    expect(screen.getByText('Out of Stock')).toBeInTheDocument();
-    expect(screen.getByText('Out of Stock')).toHaveClass('text-red-600');
-  });
-
-  it('should show low stock status correctly', () => {
-    const lowStockProduct = { ...mockProduct, stockStatus: 'low_stock' };
-    renderWithRouter(<ProductCard product={lowStockProduct} />);
-    
-    expect(screen.getByText('Low Stock')).toBeInTheDocument();
-    expect(screen.getByText('Low Stock')).toHaveClass('text-yellow-600');
-  });
-
-  it('should have View Details button with correct link', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
-    
-    const viewDetailsButton = screen.getByText('View Details');
-    expect(viewDetailsButton).toBeInTheDocument();
-    expect(viewDetailsButton).toHaveAttribute('href', '/products/grapheneos-pixel-9-pro');
-  });
-
-  it('should be responsive with proper CSS classes', () => {
-    const { container } = renderWithRouter(<ProductCard product={mockProduct} />);
-    
-    const card = container.firstChild;
-    expect(card).toHaveClass('bg-white', 'rounded-lg', 'shadow-md', 'overflow-hidden', 'transition-transform', 'hover:scale-105');
-  });
-
-  it('should truncate long descriptions', () => {
-    const longDescProduct = {
+  it('prevents add to cart when out of stock', async () => {
+    const outOfStockProduct = {
       ...mockProduct,
-      shortDescription: 'This is a very long description that should be truncated when it exceeds the maximum length allowed for display in the product card component to maintain proper layout and readability.'
+      stockStatus: 'out_of_stock',
+      stockQuantity: 0
     };
     
-    renderWithRouter(<ProductCard product={longDescProduct} />);
-    
-    const description = screen.getByText(/This is a very long description/);
-    expect(description).toHaveClass('line-clamp-2');
+    render(
+      <TestWrapper>
+        <ProductCard product={outOfStockProduct} />
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /out of stock/i });
+    fireEvent.click(addToCartButton);
+
+    // Should not call addToCart
+    expect(mockAddToCart).not.toHaveBeenCalled();
   });
 
-  it('should format price correctly for different currencies', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
+  it('prevents add to cart when already adding', async () => {
+    // Mock a delayed response
+    mockAddToCart.mockImplementation(() => new Promise(resolve => 
+      setTimeout(() => resolve({ success: true }), 100)
+    ));
+
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
     
-    // Should display price with £ symbol and 2 decimal places
-    expect(screen.getByText('£899.99')).toBeInTheDocument();
+    // Click multiple times quickly
+    fireEvent.click(addToCartButton);
+    fireEvent.click(addToCartButton);
+    fireEvent.click(addToCartButton);
+
+    // Should only be called once
+    await waitFor(() => {
+      expect(mockAddToCart).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('should handle missing category gracefully', () => {
-    const productWithoutCategory = { ...mockProduct, category: null };
-    renderWithRouter(<ProductCard product={productWithoutCategory} />);
+  it('stops propagation on add to cart button click', () => {
+    const cardClickHandler = vi.fn();
     
-    // Should still render the product card without errors
-    expect(screen.getByText('GrapheneOS Pixel 9 Pro')).toBeInTheDocument();
+    render(
+      <TestWrapper>
+        <div onClick={cardClickHandler}>
+          <ProductCard product={mockProduct} />
+        </div>
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
+    fireEvent.click(addToCartButton);
+
+    // Card click handler should not be called due to event.stopPropagation()
+    expect(cardClickHandler).not.toHaveBeenCalled();
   });
 
-  it('should have proper accessibility attributes', () => {
-    renderWithRouter(<ProductCard product={mockProduct} />);
+  it('prevents navigation on add to cart button click', () => {
+    const preventDefault = vi.fn();
+    const stopPropagation = vi.fn();
     
-    const card = screen.getByRole('article');
-    expect(card).toBeInTheDocument();
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
     
-    const image = screen.getByAltText('GrapheneOS Pixel 9 Pro');
-    expect(image).toBeInTheDocument();
+    // Create a custom event
+    const clickEvent = new MouseEvent('click', { bubbles: true });
+    Object.defineProperty(clickEvent, 'preventDefault', { value: preventDefault });
+    Object.defineProperty(clickEvent, 'stopPropagation', { value: stopPropagation });
     
-    const link = screen.getByRole('link', { name: /view details/i });
-    expect(link).toBeInTheDocument();
+    fireEvent(addToCartButton, clickEvent);
+    
+    expect(stopPropagation).toHaveBeenCalled();
+  });
+
+  it('handles missing product data gracefully', () => {
+    const incompleteProduct = {
+      _id: '507f1f77bcf86cd799439011',
+      name: 'Basic Product',
+      slug: 'basic-product',
+      price: 99.99,
+      condition: 'new',
+      stockStatus: 'in_stock'
+      // Missing other fields
+    };
+    
+    render(
+      <TestWrapper>
+        <ProductCard product={incompleteProduct} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('Basic Product')).toBeInTheDocument();
+    expect(screen.getByText('£99.99')).toBeInTheDocument();
+  });
+
+  it('formats price correctly', () => {
+    const productWithDecimalPrice = {
+      ...mockProduct,
+      price: 599.5
+    };
+    
+    render(
+      <TestWrapper>
+        <ProductCard product={productWithDecimalPrice} />
+      </TestWrapper>
+    );
+
+    expect(screen.getByText('£599.50')).toBeInTheDocument();
+  });
+
+  it('has proper semantic HTML structure', () => {
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    // Should be wrapped in an article element
+    const article = screen.getByRole('article');
+    expect(article).toBeInTheDocument();
+
+    // Should have proper heading
+    const heading = screen.getByRole('heading', { name: 'Google Pixel 7' });
+    expect(heading).toBeInTheDocument();
+    expect(heading.tagName).toBe('H3');
+  });
+
+  it('has accessible image with proper alt text', () => {
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const image = screen.getByRole('img');
+    expect(image).toHaveAttribute('alt', 'Google Pixel 7');
+  });
+
+  it('handles add to cart failure gracefully', async () => {
+    mockAddToCart.mockResolvedValue({ success: false });
+
+    render(
+      <TestWrapper>
+        <ProductCard product={mockProduct} />
+      </TestWrapper>
+    );
+
+    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
+    fireEvent.click(addToCartButton);
+
+    await waitFor(() => {
+      // Button should return to normal state even if add to cart fails
+      expect(screen.getByText('Add to Cart')).toBeInTheDocument();
+      expect(addToCartButton).not.toBeDisabled();
+    });
   });
 });

@@ -37,7 +37,7 @@ const SearchBar = ({
 
   return (
     <div
-      data-testid="search-bar"
+      data-testid="product-search"
       className={`relative flex items-center ${className}`}
       onClick={handleContainerClick}
     >
@@ -72,6 +72,7 @@ const SearchBar = ({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           aria-label="Search products"
+          data-testid="search-input"
           className="w-full px-4 py-2 pl-10 pr-20 text-forest-800 placeholder:text-forest-500 bg-forest-50 border border-forest-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all duration-200 hover:border-forest-600"
         />
 
