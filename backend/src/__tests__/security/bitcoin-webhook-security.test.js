@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -12,6 +12,7 @@ describe('Bitcoin Webhook Security Tests', () => {
   let app;
   let mongoServer;
   let testUser;
+  let testOrder;
   const testBitcoinAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
   
   beforeAll(async () => {

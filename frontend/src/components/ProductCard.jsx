@@ -5,6 +5,7 @@ import { useCart } from '../contexts/CartContext';
 
 const ProductCard = ({ product }) => {
   const {
+    id,
     _id,
     name,
     slug,
@@ -38,9 +39,18 @@ const ProductCard = ({ product }) => {
 
     setIsAddingToCart(true);
     try {
-      const result = await addToCart(_id, 1);
+      // Use id (from API) or _id (fallback) to handle both cases
+      const productId = id || _id;
+      
+      if (!productId) {
+        console.error('Product ID is missing in ProductCard');
+        return;
+      }
+      
+      const result = await addToCart(productId, 1);
       if (result.success) {
         // Could show a toast notification here
+        console.log('Product added to cart:', productId);
       }
     } finally {
       setIsAddingToCart(false);
@@ -86,7 +96,10 @@ const ProductCard = ({ product }) => {
   const stockStatus_ = getStockStatusDisplay(stockStatus);
 
   return (
-    <article className="bg-card rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-forest-600/20 animate-float border border-forest-200/50">
+    <article 
+      data-testid={`product-card-${slug}`}
+      className="bg-card rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-forest-600/20 animate-float border border-forest-200/50"
+    >
       {/* Product Image */}
       <div className="aspect-square overflow-hidden">
         <img
@@ -107,18 +120,27 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Product Name */}
-        <h3 className="text-lg font-semibold text-forest-800 mb-2 line-clamp-1">
+        <h3 
+          data-testid="product-title"
+          className="text-lg font-semibold text-forest-800 mb-2 line-clamp-1"
+        >
           {name}
         </h3>
 
         {/* Short Description */}
-        <p className="text-forest-600 text-sm mb-3 line-clamp-2">
+        <p 
+          data-testid="product-description"
+          className="text-forest-600 text-sm mb-3 line-clamp-2"
+        >
           {shortDescription}
         </p>
 
         {/* Price and Stock Status */}
         <div className="flex justify-between items-center mb-4">
-          <span className="text-xl font-bold text-forest-900">
+          <span 
+            data-testid="product-price"
+            className="text-xl font-bold text-forest-900"
+          >
             {formatPrice(price)}
           </span>
           <span className={`text-sm font-medium ${stockStatus_.className}`}>
@@ -129,6 +151,7 @@ const ProductCard = ({ product }) => {
         {/* Action Buttons */}
         <div className="space-y-2">
           <button
+            data-testid="add-to-cart-button"
             onClick={handleAddToCart}
             disabled={stockStatus === 'out_of_stock' || stockQuantity === 0 || isAddingToCart}
             className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
@@ -142,7 +165,8 @@ const ProductCard = ({ product }) => {
           
           <Link
             to={`/products/${slug}`}
-            className="block w-full bg-forest-700  text-center py-2 px-4 rounded-md hover:bg-forest-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2 transform hover:scale-105"
+            data-testid="product-details"
+            className="block w-full bg-forest-700 text-center py-2 px-4 rounded-md hover:bg-forest-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2 transform hover:scale-105"
           >
             View Details
           </Link>

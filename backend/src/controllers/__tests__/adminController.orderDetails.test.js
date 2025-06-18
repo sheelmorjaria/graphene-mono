@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { vi, describe, it, test, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import jwt from 'jsonwebtoken';
@@ -8,9 +8,35 @@ import Order from '../../models/Order.js';
 import { getOrderById } from '../adminController.js';
 import { authenticate, requireRole } from '../../middleware/auth.js';
 
-// Mock the models using jest.mock
-jest.mock('../../models/User.js');
-jest.mock('../../models/Order.js');
+// Mock the models using vi.mock
+vi.mock('../../models/User.js');
+vi.mock('../../models/Order.js');
+
+// Mock authentication middleware
+vi.mock('../../middleware/auth.js', () => ({
+  authenticate: vi.fn((req, res, next) => {
+    // Extract token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: 'Access token required' });
+    }
+    
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      req.user = decoded;
+      next();
+    } catch (error) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    }
+  }),
+  requireRole: vi.fn((requiredRole) => (req, res, next) => {
+    if (!req.user || req.user.role !== requiredRole) {
+      return res.status(403).json({ success: false, error: 'Insufficient permissions' });
+    }
+    next();
+  })
+}));
 
 const app = express();
 app.use(express.json());
@@ -23,13 +49,13 @@ describe('Admin Controller - getOrderById', () => {
   beforeEach(() => {
     // Create admin token
     adminToken = jwt.sign(
-      { userId: new mongoose.Types.ObjectId(), role: 'admin' },
-      process.env.JWT_SECRET || 'test-secret'
+      { userId: mongoose.Types.ObjectId(), role: 'admin' },
+      process.env.JWT_SECRET || 'your-secret-key'
     );
 
     // Mock order data
     mockOrder = {
-      _id: new mongoose.Types.ObjectId(),
+      _id: mongoose.Types.ObjectId(),
       orderNumber: 'ORD-001',
       status: 'pending',
       totalAmount: 99.99,
@@ -66,8 +92,8 @@ describe('Admin Controller - getOrderById', () => {
       },
       items: [
         {
-          _id: new mongoose.Types.ObjectId(),
-          productId: new mongoose.Types.ObjectId(),
+          _id: mongoose.Types.ObjectId(),
+          productId: mongoose.Types.ObjectId(),
           name: 'Test Product',
           price: 89.99,
           quantity: 1,
@@ -76,7 +102,7 @@ describe('Admin Controller - getOrderById', () => {
         }
       ],
       customer: {
-        _id: new mongoose.Types.ObjectId(),
+        _id: mongoose.Types.ObjectId(),
         firstName: 'John',
         lastName: 'Doe',
         email: 'john@example.com',
@@ -85,14 +111,14 @@ describe('Admin Controller - getOrderById', () => {
     };
 
     // Clear all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('GET /api/admin/orders/:orderId', () => {
     it('should return order details for valid order ID', async () => {
       // Mock User.findById to return admin user
       User.findById.mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(),
+        _id: mongoose.Types.ObjectId(),
         role: 'admin',
         email: 'admin@test.com'
       });
@@ -113,7 +139,7 @@ describe('Admin Controller - getOrderById', () => {
     it('should return 404 for non-existent order', async () => {
       // Mock User.findById to return admin user
       User.findById.mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(),
+        _id: mongoose.Types.ObjectId(),
         role: 'admin',
         email: 'admin@test.com'
       });
@@ -121,7 +147,7 @@ describe('Admin Controller - getOrderById', () => {
       // Mock Order.aggregate to return empty array
       Order.aggregate.mockResolvedValue([]);
 
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = mongoose.Types.ObjectId();
       const response = await request(app)
         .get(`/api/admin/orders/${nonExistentId}`)
         .set('Authorization', `Bearer ${adminToken}`);
@@ -134,10 +160,13 @@ describe('Admin Controller - getOrderById', () => {
     it('should return 400 for invalid order ID format', async () => {
       // Mock User.findById to return admin user
       User.findById.mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(),
+        _id: mongoose.Types.ObjectId(),
         role: 'admin',
         email: 'admin@test.com'
       });
+
+      // Mock Order.aggregate to throw an error for invalid ObjectId
+      Order.aggregate.mockRejectedValue(new Error('Cast to ObjectId failed'));
 
       const response = await request(app)
         .get('/api/admin/orders/invalid-id')
@@ -158,13 +187,13 @@ describe('Admin Controller - getOrderById', () => {
     it('should return 403 for non-admin user', async () => {
       // Create customer token
       const customerToken = jwt.sign(
-        { userId: new mongoose.Types.ObjectId(), role: 'customer' },
-        process.env.JWT_SECRET || 'test-secret'
+        { userId: mongoose.Types.ObjectId(), role: 'customer' },
+        process.env.JWT_SECRET || 'your-secret-key'
       );
 
       // Mock User.findById to return customer user
       User.findById.mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(),
+        _id: mongoose.Types.ObjectId(),
         role: 'customer',
         email: 'customer@test.com'
       });

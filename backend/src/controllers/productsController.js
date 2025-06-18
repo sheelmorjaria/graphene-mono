@@ -102,7 +102,9 @@ export const getProducts = async (req, res) => {
         page: pageNum,
         limit: limitNum,
         total,
-        pages
+        pages,
+        hasNext: pageNum < pages,
+        hasPrev: pageNum > 1
       }
     });
 

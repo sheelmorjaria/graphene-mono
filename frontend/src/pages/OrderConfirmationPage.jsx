@@ -65,13 +65,22 @@ const OrderConfirmationPage = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Success Header */}
-        <div className="text-center mb-8">
+        <div 
+          data-testid="order-confirmation"
+          className="text-center mb-8"
+        >
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
             <CheckCircleIcon className="h-8 w-8 text-green-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Order Confirmed!</h1>
           <p className="text-lg text-gray-600">
-            Thank you for your order. Your order number is <span className="font-semibold text-gray-800">#{order.orderNumber}</span>
+            Thank you for your order. Your order number is 
+            <span 
+              data-testid="order-number"
+              className="font-semibold text-gray-800"
+            >
+              #{order.orderNumber}
+            </span>
           </p>
         </div>
 
@@ -83,7 +92,12 @@ const OrderConfirmationPage = () => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Order Number:</span>
-                <span className="font-semibold">#{order.orderNumber}</span>
+                <span 
+                  data-testid="order-id"
+                  className="font-semibold"
+                >
+                  #{order.orderNumber}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Order Date:</span>
@@ -91,7 +105,12 @@ const OrderConfirmationPage = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Order Total:</span>
-                <span className="font-semibold text-lg">{formatCurrency(order.totalAmount)}</span>
+                <span 
+                  data-testid="order-total"
+                  className="font-semibold text-lg"
+                >
+                  {formatCurrency(order.totalAmount)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Payment Status:</span>
@@ -145,11 +164,18 @@ const OrderConfirmationPage = () => {
         </div>
 
         {/* Order Items */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div 
+          data-testid="order-details"
+          className="bg-white rounded-lg shadow p-6 mb-8"
+        >
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Items</h2>
           <div className="space-y-4">
             {order.items.map((item) => (
-              <div key={item._id} className="flex items-center space-x-4 pb-4 border-b border-gray-200 last:border-b-0">
+              <div 
+                key={item._id} 
+                data-testid={`order-item-${item.productId || item._id}`}
+                className="flex items-center space-x-4 pb-4 border-b border-gray-200 last:border-b-0"
+              >
                 <div className="flex-shrink-0">
                   {item.productImage ? (
                     <img

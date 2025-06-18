@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 
 // Helper to ensure proper async/await handling in tests
 export const asyncTestWrapper = (testFn) => {
@@ -89,7 +89,7 @@ export const promisifyCallback = (callbackFn) => {
 
 // Helper to ensure async mocks are properly awaited
 export const createAsyncMock = (implementation) => {
-  return jest.fn(async (...args) => {
+  return vi.fn(async (...args) => {
     const result = await implementation(...args);
     await waitForAsync(); // Ensure async operations complete
     return result;

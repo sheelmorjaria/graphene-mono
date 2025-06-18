@@ -22,15 +22,15 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock LoadingSpinner component
-vi.mock('../../components/LoadingSpinner', () => {
-  return function LoadingSpinner() {
+vi.mock('../../components/LoadingSpinner', () => ({
+  default: function LoadingSpinner() {
     return <div data-testid="loading-spinner">Loading...</div>;
-  };
-});
+  }
+}));
 
 // Mock Pagination component
-vi.mock('../../components/Pagination', () => {
-  return function Pagination({ currentPage, totalPages, onPageChange }) {
+vi.mock('../../components/Pagination', () => ({
+  default: function Pagination({ currentPage, totalPages, onPageChange }) {
     return (
       <div data-testid="pagination">
         <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1}>
@@ -42,8 +42,8 @@ vi.mock('../../components/Pagination', () => {
         </button>
       </div>
     );
-  };
-});
+  }
+}));
 
 const mockProducts = [
   {

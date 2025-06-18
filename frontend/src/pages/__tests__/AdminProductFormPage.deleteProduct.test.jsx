@@ -25,11 +25,11 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock LoadingSpinner component
-vi.mock('../../components/LoadingSpinner', () => {
-  return function LoadingSpinner() {
+vi.mock('../../components/LoadingSpinner', () => ({
+  default: function LoadingSpinner() {
     return <div data-testid="loading-spinner">Loading...</div>;
-  };
-});
+  }
+}));
 
 const mockProduct = {
   _id: 'test-product-id',

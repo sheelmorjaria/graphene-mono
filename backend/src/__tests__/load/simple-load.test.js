@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { performance } from 'perf_hooks';
 
 // Simple load test to verify infrastructure

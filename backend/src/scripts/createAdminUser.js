@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const createAdminUser = async () => {
+export const createAdminUser = async (adminData = null) => {
   try {
     // Connect to MongoDB
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/graphene-store';
@@ -12,7 +12,7 @@ const createAdminUser = async () => {
     console.log('Connected to MongoDB');
 
     // Admin user details
-    const adminData = {
+    const defaultAdminData = {
       email: process.env.ADMIN_EMAIL || 'admin@grapheneos-store.com',
       password: process.env.ADMIN_PASSWORD || 'Admin123!',
       firstName: 'Admin',
@@ -21,11 +21,13 @@ const createAdminUser = async () => {
       isActive: true,
       emailVerified: true
     };
+    
+    const finalAdminData = adminData || defaultAdminData;
 
     // Check if admin user already exists
-    const existingAdmin = await User.findOne({ email: adminData.email });
+    const existingAdmin = await User.findOne({ email: finalAdminData.email });
     if (existingAdmin) {
-      console.log(`Admin user with email ${adminData.email} already exists`);
+      console.log(`Admin user with email ${finalAdminData.email} already exists`);
       
       // Update existing user to admin role if needed
       if (existingAdmin.role !== 'admin') {
@@ -34,28 +36,35 @@ const createAdminUser = async () => {
         console.log('Updated existing user to admin role');
       }
       
-      process.exit(0);
+      if (!adminData) process.exit(0); // Only exit if running as script
+      return existingAdmin;
     }
 
     // Create new admin user
-    const adminUser = new User(adminData);
+    const adminUser = new User(finalAdminData);
     await adminUser.save();
 
     console.log('✅ Admin user created successfully!');
-    console.log(`Email: ${adminData.email}`);
-    console.log(`Password: ${adminData.password}`);
+    console.log(`Email: ${finalAdminData.email}`);
+    console.log(`Password: ${finalAdminData.password}`);
     console.log('');
     console.log('🔐 Please change the default password after first login');
     console.log('🌐 Admin login URL: http://localhost:3000/admin/login (frontend)');
+    
+    return adminUser;
 
   } catch (error) {
     console.error('❌ Error creating admin user:', error);
     process.exit(1);
   } finally {
-    await mongoose.disconnect();
-    console.log('Disconnected from MongoDB');
+    if (!adminData) { // Only disconnect if running as script
+      await mongoose.disconnect();
+      console.log('Disconnected from MongoDB');
+    }
   }
 };
 
-// Run the script
-createAdminUser();
+// Run the script only if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  createAdminUser();
+}

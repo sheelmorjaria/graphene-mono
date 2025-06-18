@@ -50,12 +50,19 @@ const CartSummary = () => {
   const { checkoutState, shippingCost, orderTotal } = useCheckout();
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 sticky top-4">
+    <div 
+      data-testid="cart-summary"
+      className="bg-white rounded-lg shadow p-6 sticky top-4"
+    >
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
       
       <div className="space-y-4 mb-6">
         {cart.items.map((item) => (
-          <div key={item._id} className="flex items-center space-x-3">
+          <div 
+            key={item._id} 
+            data-testid={`cart-item-${item._id}`}
+            className="flex items-center space-x-3"
+          >
             <div className="flex-shrink-0">
               {item.productImage ? (
                 <img
@@ -111,7 +118,12 @@ const CartSummary = () => {
         <div className="border-t pt-3">
           <div className="flex justify-between text-lg font-semibold">
             <span className="text-gray-900">Total</span>
-            <span className="text-gray-900">{formatCurrency(orderTotal)}</span>
+            <span 
+              data-testid="order-total"
+              className="text-gray-900"
+            >
+              {formatCurrency(orderTotal)}
+            </span>
           </div>
         </div>
       </div>
@@ -128,7 +140,10 @@ const PaymentSection = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div 
+      data-testid="checkout-form"
+      className="space-y-6"
+    >
       {/* Billing Address Section */}
       <BillingAddressSection />
       
@@ -150,6 +165,7 @@ const PaymentSection = () => {
           <button
             onClick={nextStep}
             disabled={!canProceedToReview}
+            data-testid="checkout-button"
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               canProceedToReview
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -272,7 +288,10 @@ const ReviewSection = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div 
+      data-testid="order-summary"
+      className="bg-white rounded-lg shadow p-6"
+    >
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Review Your Order</h2>
       
       {/* Address Review */}
@@ -442,6 +461,7 @@ const ReviewSection = () => {
         <button
           onClick={handlePlaceOrder}
           disabled={isProcessing}
+          data-testid="place-order-button"
           className={`px-8 py-3 rounded-lg font-medium transition-colors flex items-center ${
             isProcessing 
               ? 'bg-gray-400 text-white cursor-not-allowed' 

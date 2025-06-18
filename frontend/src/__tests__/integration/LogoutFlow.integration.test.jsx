@@ -1,8 +1,5 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
-import { AuthProvider } from '../../contexts/AuthContext';
 import { AppRoutes } from '../../App';
 
 // Mock navigate function
@@ -61,13 +58,9 @@ const mockProductsResponse = {
 global.fetch = vi.fn();
 
 const renderLogoutTest = (initialRoute = '/products') => {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </MemoryRouter>
-  );
+  return render(<AppRoutes />, {
+    initialEntries: [initialRoute]
+  });
 };
 
 describe('Logout Flow Integration Tests', () => {

@@ -1,7 +1,5 @@
 import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '../../contexts/AuthContext';
 import { AppRoutes } from '../../App';
 
 // Mock fetch globally for integration tests

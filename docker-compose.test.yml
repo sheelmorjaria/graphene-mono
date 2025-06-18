@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Test MongoDB Database
+  mongodb-test:
+    image: mongo:6.0
+    container_name: graphene-mongodb-test
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: testuser
+      MONGO_INITDB_ROOT_PASSWORD: testpass
+      MONGO_INITDB_DATABASE: test_db
+    ports:
+      - "27018:27017"
+    networks:
+      - graphene-test-network
+    tmpfs:
+      - /data/db
+    command: mongod --noprealloc --smallfiles --quiet
+
+  # Test Redis
+  redis-test:
+    image: redis:7-alpine
+    container_name: graphene-redis-test
+    ports:
+      - "6380:6379"
+    networks:
+      - graphene-test-network
+    tmpfs:
+      - /data
+    command: redis-server --save "" --appendonly no
+
+  # Backend Tests
+  backend-test:
+    build:
+      context: ./backend
+      target: dev
+    container_name: graphene-backend-test
+    environment:
+      NODE_ENV: test
+      MONGODB_URI: mongodb://testuser:testpass@mongodb-test:27017/test_db?authSource=admin
+      REDIS_URL: redis://redis-test:6379
+      JWT_SECRET: test-jwt-secret
+      SESSION_SECRET: test-session-secret
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - graphene-test-network
+    depends_on:
+      - mongodb-test
+      - redis-test
+    command: npm run test:coverage
+    profiles:
+      - test
+
+  # Frontend Tests
+  frontend-test:
+    build:
+      context: ./frontend
+      target: dev
+    container_name: graphene-frontend-test
+    environment:
+      NODE_ENV: test
+      VITE_API_URL: http://backend-test:5000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - graphene-test-network
+    command: npm run test:coverage
+    profiles:
+      - test
+
+  # E2E Tests
+  e2e-test:
+    build:
+      context: ./frontend
+      target: dev
+    container_name: graphene-e2e-test
+    environment:
+      NODE_ENV: test
+      VITE_API_URL: http://backend:5000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - graphene-test-network
+    depends_on:
+      - backend-test
+      - frontend-test
+    command: npm run test:e2e
+    profiles:
+      - e2e
+
+networks:
+  graphene-test-network:
+    driver: bridge

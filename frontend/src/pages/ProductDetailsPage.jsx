@@ -3,10 +3,12 @@ import { useEffect } from 'react';
 import useProductDetails from '../hooks/useProductDetails';
 import ImageGallery from '../components/ImageGallery';
 import AddToCartButton from '../components/AddToCartButton';
+import { useCart } from '../contexts/CartContext';
 
 const ProductDetailsPage = () => {
   const { slug } = useParams();
   const { product, loading, error, refetch } = useProductDetails(slug);
+  const { addToCart } = useCart();
 
   // Set page title when product loads
   useEffect(() => {
@@ -17,9 +19,24 @@ const ProductDetailsPage = () => {
     }
   }, [product]);
 
-  const handleAddToCart = (productId, quantity) => {
-    console.log(`Adding ${quantity} of product ${productId} to cart`);
-    // TODO: Implement cart functionality
+  const handleAddToCart = async (productId, quantity) => {
+    console.log('handleAddToCart called with:', { productId, quantity });
+    
+    if (!productId) {
+      console.error('Product ID is missing in handleAddToCart');
+      return;
+    }
+    
+    try {
+      const result = await addToCart(productId, quantity);
+      if (result.success) {
+        console.log('Product added to cart successfully:', result.addedItem);
+      } else {
+        console.error('Failed to add to cart:', result.error);
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
   };
 
   const getConditionBadgeClasses = (condition) => {
@@ -198,15 +215,17 @@ const ProductDetailsPage = () => {
           </div>
 
           {/* Add to Cart Section */}
-          <div className="border-t border-gray-200 pt-6">
-            <AddToCartButton
-              productId={product._id}
-              stockStatus={product.stockStatus}
-              stockQuantity={product.stockQuantity}
-              onAddToCart={handleAddToCart}
-              showQuantitySelector={true}
-            />
-          </div>
+          {product._id && (
+            <div className="border-t border-gray-200 pt-6">
+              <AddToCartButton
+                productId={product._id}
+                stockStatus={product.stockStatus}
+                stockQuantity={product.stockQuantity}
+                onAddToCart={handleAddToCart}
+                showQuantitySelector={true}
+              />
+            </div>
+          )}
 
           {/* Product Specifications */}
           {product.attributes && product.attributes.length > 0 && (

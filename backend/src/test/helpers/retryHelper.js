@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 
 // Retry helper for flaky tests
 export const retryTest = async (testFn, options = {}) => {
@@ -35,7 +35,7 @@ export const retryTest = async (testFn, options = {}) => {
       }
 
       // Clear any mocks between retries
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     }
   }
 

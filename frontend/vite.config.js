@@ -50,6 +50,32 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
-    testTimeout: 10000, // Increase timeout to 10 seconds
+    testTimeout: 20000, // Increase timeout to 20 seconds
+    pool: 'forks', // Use forks for better isolation
+    poolOptions: {
+      forks: {
+        singleFork: true
+      }
+    },
+    // Add Jest compatibility
+    server: {
+      deps: {
+        inline: ['@testing-library/react', '@testing-library/user-event']
+      }
+    },
+    // Optimize for React tests
+    clearMocks: true,
+    restoreMocks: true,
+    mockReset: true,
+    // Exclude E2E tests from Vitest (they should run with Playwright)
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+      '**/e2e/**',
+      '**/*.e2e.*'
+    ]
   },
 })

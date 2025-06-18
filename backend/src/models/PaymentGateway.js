@@ -138,8 +138,8 @@ const paymentGatewaySchema = new mongoose.Schema({
       type: Number,
       default: 0,
       min: 0,
-      get: v => Math.round(v * 100) / 100,
-      set: v => Math.round(v * 100) / 100
+      get: v => v ? Math.round(v * 10000) / 10000 : 0,
+      set: v => v
     },
     // Percentage fee (e.g., 2.9 for 2.9%)
     percentageFee: {
@@ -220,6 +220,15 @@ const paymentGatewaySchema = new mongoose.Schema({
       type: Boolean,
       default: false
     }
+  },
+  // Soft delete fields
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,
@@ -305,15 +314,36 @@ paymentGatewaySchema.methods.supportsCountry = function(country) {
   return this.supportedCountries.includes(country.toUpperCase());
 };
 
+// Instance method to check if gateway is available
+paymentGatewaySchema.methods.isAvailable = function() {
+  return this.isEnabled && this.isProperlyConfigured();
+};
+
+// Instance method to validate configuration
+paymentGatewaySchema.methods.validateConfig = function() {
+  return this.isProperlyConfigured();
+};
+
+// Instance method to get secure config without sensitive data
+paymentGatewaySchema.methods.getSecureConfig = function() {
+  const secureConfig = {};
+  Object.keys(this.config.toObject()).forEach(key => {
+    if (!key.includes('Secret') && !key.includes('Key') && !key.includes('ClientId')) {
+      secureConfig[key] = this.config[key];
+    }
+  });
+  return secureConfig;
+};
+
 // Instance method to calculate transaction fee
 paymentGatewaySchema.methods.calculateFee = function(amount, currency = 'GBP') {
-  let fee = this.fees.fixedFee;
+  let fee = this.fees.fixedFee || 0;
   
   // Convert fixed fee to transaction currency if different
   if (this.fees.feeCurrency !== currency.toUpperCase()) {
     // In a real application, you'd use an exchange rate service
     // For now, we'll assume 1:1 conversion or implement basic rates
-    fee = this.fees.fixedFee; // Simplified
+    fee = this.fees.fixedFee || 0; // Simplified
   }
   
   // Add percentage fee
@@ -321,12 +351,27 @@ paymentGatewaySchema.methods.calculateFee = function(amount, currency = 'GBP') {
     fee += amount * (this.fees.percentageFee / 100);
   }
   
-  return Math.round(fee * 100) / 100;
+  return Math.round(fee * 10000) / 10000;
 };
 
 // Instance method to check transaction limits
 paymentGatewaySchema.methods.isAmountWithinLimits = function(amount) {
   return amount >= this.limits.minAmount && amount <= this.limits.maxAmount;
+};
+
+// Static method to find enabled gateways
+paymentGatewaySchema.statics.findEnabled = async function() {
+  return this.find({ isEnabled: true });
+};
+
+// Static method to find gateways by type
+paymentGatewaySchema.statics.findByType = async function(type) {
+  return this.find({ type });
+};
+
+// Static method to find gateways supporting currency
+paymentGatewaySchema.statics.findSupportingCurrency = async function(currency) {
+  return this.find({ supportedCurrencies: currency.toUpperCase() });
 };
 
 // Static method to get enabled gateways for country and currency
@@ -364,6 +409,27 @@ paymentGatewaySchema.pre('save', function(next) {
   }
   
   next();
+});
+
+// Instance method for soft delete
+paymentGatewaySchema.methods.softDelete = async function() {
+  this.isDeleted = true;
+  this.deletedAt = new Date();
+  return this.save();
+};
+
+// Instance method to restore soft deleted gateway
+paymentGatewaySchema.methods.restore = async function() {
+  this.isDeleted = false;
+  this.deletedAt = null;
+  return this.save();
+};
+
+// Pre-find hook to exclude soft deleted items
+paymentGatewaySchema.pre(/^find/, function() {
+  if (!this.getOptions().includeDeleted) {
+    this.where({ isDeleted: { $ne: true } });
+  }
 });
 
 const PaymentGateway = mongoose.model('PaymentGateway', paymentGatewaySchema);

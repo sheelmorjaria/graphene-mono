@@ -1,7 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
 import { AppRoutes } from '../../App';
 
 // Mock fetch globally for integration tests
@@ -85,11 +83,9 @@ const mockProductsListResponse = {
 };
 
 const renderIntegrationTest = (initialRoute = '/') => {
-  return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <AppRoutes />
-    </MemoryRouter>
-  );
+  return render(<AppRoutes />, {
+    initialEntries: [initialRoute]
+  });
 };
 
 describe('Search Flow Integration Tests', () => {

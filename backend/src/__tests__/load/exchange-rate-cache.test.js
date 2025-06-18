@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
 import moneroService from '../../services/moneroService.js';
 
 // Mock axios for testing
-jest.mock('axios');
+vi.mock('axios');
 
 // Load testing for exchange rate caching behavior
 describe('Exchange Rate Caching Load Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Reset cache
     moneroService.exchangeRateCache = {
@@ -22,7 +22,7 @@ describe('Exchange Rate Caching Load Tests', () => {
     // Mock axios to track call count
     let apiCallCount = 0;
     
-    axios.get = jest.fn().mockImplementation(() => {
+    axios.get = vi.fn().mockImplementation(() => {
       apiCallCount++;
       return Promise.resolve({
         data: { monero: { gbp: 161.23 } }
@@ -49,7 +49,7 @@ describe('Exchange Rate Caching Load Tests', () => {
   it('should handle cache expiration under load', async () => {
     let apiCallCount = 0;
     
-    axios.get = jest.fn().mockImplementation(() => {
+    axios.get = vi.fn().mockImplementation(() => {
       apiCallCount++;
       return Promise.resolve({
         data: { monero: { gbp: 161.23 + (apiCallCount * 0.01) } } // Slightly different rates
@@ -83,7 +83,7 @@ describe('Exchange Rate Caching Load Tests', () => {
     
     // First call succeeds, subsequent calls fail
     let callCount = 0;
-    axios.get = jest.fn().mockImplementation(() => {
+    axios.get = vi.fn().mockImplementation(() => {
       callCount++;
       if (callCount === 1) {
         return Promise.resolve({
@@ -111,7 +111,7 @@ describe('Exchange Rate Caching Load Tests', () => {
   });
 
   it('should measure cache performance metrics', async () => {
-    axios.get = jest.fn().mockResolvedValue({
+    axios.get = vi.fn().mockResolvedValue({
       data: { monero: { gbp: 161.23 } }
     });
 
@@ -139,7 +139,7 @@ describe('Exchange Rate Caching Load Tests', () => {
   });
 
   it('should handle memory usage efficiently with large request volumes', async () => {
-    axios.get = jest.fn().mockResolvedValue({
+    axios.get = vi.fn().mockResolvedValue({
       data: { monero: { gbp: 161.23 } }
     });
 
@@ -166,7 +166,7 @@ describe('Exchange Rate Caching Load Tests', () => {
   it('should validate cache consistency under concurrent modifications', async () => {
     let responseValue = 161.23;
     
-    axios.get = jest.fn().mockImplementation(() => {
+    axios.get = vi.fn().mockImplementation(() => {
       return Promise.resolve({
         data: { monero: { gbp: responseValue } }
       });

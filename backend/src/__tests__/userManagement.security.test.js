@@ -1,10 +1,10 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
 // Mock email service
-const mockSendAccountDisabledEmail = jest.fn();
-const mockSendAccountReEnabledEmail = jest.fn();
+const mockSendAccountDisabledEmail = vi.fn();
+const mockSendAccountReEnabledEmail = vi.fn();
 
 const mockEmailService = {
   sendAccountDisabledEmail: mockSendAccountDisabledEmail,
@@ -12,7 +12,7 @@ const mockEmailService = {
 };
 
 // Set up mocks before imports
-jest.mock('../services/emailService.js', () => ({
+vi.mock('../services/emailService.js', () => ({
   default: mockEmailService
 }));
 
@@ -30,7 +30,7 @@ describe('User Management Security Tests', () => {
 
   beforeEach(async () => {
     // Clear all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockSendAccountDisabledEmail.mockResolvedValue({ success: true });
     mockSendAccountReEnabledEmail.mockResolvedValue({ success: true });
 
@@ -418,7 +418,7 @@ describe('User Management Security Tests', () => {
 
   describe('Audit Trail and Logging', () => {
     it('should log all administrative actions', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       // Perform various admin actions
       await request(app)
@@ -441,7 +441,7 @@ describe('User Management Security Tests', () => {
     });
 
     it('should not log sensitive information', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       await request(app)
         .put(`/api/admin/users/${customerUser._id}/status`)

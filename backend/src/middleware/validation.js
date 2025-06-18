@@ -17,10 +17,45 @@ export const handleValidationErrors = (req, res, next) => {
       ip: req.ip
     });
     
+    const errorMessages = errors.array();
+    
+    // Check if multiple "required" errors exist, combine them for better UX
+    const requiredErrors = errorMessages.filter(err => err.msg.includes('required'));
+    
+    let primaryError;
+    if (requiredErrors.length > 1) {
+      // Multiple required fields missing - create a combined message
+      const fields = requiredErrors.map(err => {
+        const msg = err.msg.toLowerCase();
+        if (msg.includes('reset token')) return 'reset token';
+        if (msg.includes('token')) return 'token';
+        if (msg.includes('current password')) return 'current password';
+        if (msg.includes('new password') && !msg.includes('confirmation')) return 'new password';
+        if (msg.includes('password confirmation') || msg.includes('confirmation')) return 'confirmation';
+        if (msg.includes('password')) return 'password';
+        if (msg.includes('email')) return 'email';
+        if (msg.includes('first name')) return 'first name';
+        if (msg.includes('last name')) return 'last name';
+        return err.path;
+      });
+      
+      if (fields.length > 2) {
+        primaryError = `${fields.slice(0, -1).join(', ')}, and ${fields[fields.length - 1]} are required`;
+      } else {
+        primaryError = `${fields.join(' and ')} are required`;
+      }
+      
+      // Capitalize first letter
+      primaryError = primaryError.charAt(0).toUpperCase() + primaryError.slice(1);
+    } else {
+      // Single error or no required field errors - use first error message
+      primaryError = errorMessages[0].msg;
+    }
+    
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
-      errors: errors.array().map(err => ({
+      error: primaryError,
+      errors: errorMessages.map(err => ({
         field: err.path,
         message: err.msg
       }))

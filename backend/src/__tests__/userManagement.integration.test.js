@@ -1,10 +1,10 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
 // Mock email service
-const mockSendAccountDisabledEmail = jest.fn();
-const mockSendAccountReEnabledEmail = jest.fn();
+const mockSendAccountDisabledEmail = vi.fn();
+const mockSendAccountReEnabledEmail = vi.fn();
 
 const mockEmailService = {
   sendAccountDisabledEmail: mockSendAccountDisabledEmail,
@@ -12,7 +12,7 @@ const mockEmailService = {
 };
 
 // Set up mocks before imports
-jest.mock('../services/emailService.js', () => ({
+vi.mock('../services/emailService.js', () => ({
   default: mockEmailService
 }));
 
@@ -29,7 +29,7 @@ describe('User Management Integration Tests', () => {
 
   beforeEach(async () => {
     // Clear all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockSendAccountDisabledEmail.mockResolvedValue({
       success: true,
       messageId: 'disabled_123',
@@ -470,7 +470,7 @@ describe('User Management Integration Tests', () => {
       // This test verifies that operations are logged
       // In a real implementation, you might check a dedicated audit log
       
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       await request(app)
         .put(`/api/admin/users/${regularUser1._id}/status`)

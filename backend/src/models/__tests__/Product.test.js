@@ -1,3 +1,4 @@
+import { describe, it, expect, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import Product from '../Product.js';
 import { createValidProductData } from '../../test/helpers/testData.js';

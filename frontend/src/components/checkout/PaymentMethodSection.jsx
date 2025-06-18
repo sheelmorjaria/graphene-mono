@@ -149,7 +149,9 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
   }
 
   return (
-    <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-200 ${
+    <div 
+      data-testid="payment-methods"
+      className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-200 ${
       isActive ? 'border-2 border-blue-500' : 'border border-gray-200'
     } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}>
       
@@ -175,10 +177,14 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
         <div className="space-y-4">
           
           {/* Payment Method Selection */}
-          <div className="space-y-3">
+          <div 
+            data-testid="payment-methods-accordion"
+            className="space-y-3"
+          >
             {availablePaymentMethods.map((method) => (
               <label
                 key={method.id}
+                data-testid={`payment-method-${method.type}`}
                 className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
                   paymentMethod?.id === method.id
                     ? 'border-blue-500 bg-blue-50'
@@ -237,7 +243,10 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
 
           {/* PayPal Payment Component */}
           {paymentMethod?.type === 'paypal' && orderSummary && (
-            <div className="mt-6 border-t pt-6">
+            <div 
+              data-testid="paypal-checkout-section"
+              className="mt-6 border-t pt-6"
+            >
               <PayPalPayment
                 orderSummary={orderSummary}
                 onPaymentSuccess={handlePayPalSuccess}

@@ -1,0 +1,92 @@
+name: Basic Test Suite
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/**'
+
+jobs:
+  quick-validation:
+    runs-on: ubuntu-latest
+    name: Quick Validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Validate backend package.json
+      working-directory: ./backend
+      run: |
+        npm ci --dry-run
+        npm run lint --if-present
+        echo "✅ Backend package validation complete"
+
+    - name: Validate frontend package.json  
+      working-directory: ./frontend
+      run: |
+        npm ci --dry-run
+        npm run lint --if-present
+
+    - name: Check for common issues
+      run: |
+        echo "Checking for secrets in code..."
+        if grep -r "password\|secret\|key" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" . | grep -v "test" | grep -v "node_modules" | grep -v ".git"; then
+          echo "⚠️  Potential secrets found in code"
+          exit 1
+        fi
+        echo "✅ No obvious secrets detected"
+
+  test-structure:
+    runs-on: ubuntu-latest
+    name: Test Structure Validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check test file structure
+      run: |
+        echo "Checking backend test structure..."
+        if [ ! -d "backend/src/__tests__" ]; then
+          echo "❌ Backend tests directory missing"
+          exit 1
+        fi
+        
+        echo "Checking frontend test structure..."
+        if [ ! -d "frontend/src/__tests__" ] && [ ! -d "frontend/src/components/__tests__" ]; then
+          echo "❌ Frontend tests directory missing"
+          exit 1
+        fi
+        
+        echo "✅ Test structure looks good"
+
+    - name: Check for test files
+      run: |
+        backend_tests=$(find backend -name "*.test.js" -o -name "*.spec.js" | wc -l)
+        frontend_tests=$(find frontend -name "*.test.jsx" -o -name "*.test.js" -o -name "*.spec.jsx" -o -name "*.spec.js" | wc -l)
+        
+        echo "Backend test files: $backend_tests"
+        echo "Frontend test files: $frontend_tests"
+        
+        if [ $backend_tests -lt 5 ]; then
+          echo "⚠️  Backend has fewer than 5 test files"
+        fi
+        
+        if [ $frontend_tests -lt 5 ]; then
+          echo "⚠️  Frontend has fewer than 5 test files"
+        fi
+        
+        echo "✅ Test files detected"

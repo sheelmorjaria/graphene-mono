@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('PayPal Payment Unit Tests', () => {
   beforeEach(() => {
@@ -6,11 +6,11 @@ describe('PayPal Payment Unit Tests', () => {
     // const req = { body: {}, user: { _id: 'user123', email: 'test@example.com' } };
     // const res = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
     
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('PayPal Data Validation', () => {
