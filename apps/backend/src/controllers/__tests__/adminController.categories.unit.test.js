@@ -1,40 +1,38 @@
-import { jest } from '@jest/globals';
+import { vi, describe, test, beforeEach, expect } from 'vitest';
 
-// Create mock Category model
-const mockCategory = {
-  find: jest.fn(),
-  findById: jest.fn(),
-  findOne: jest.fn(),
-  findByIdAndUpdate: jest.fn(),
-  findByIdAndDelete: jest.fn(),
-  generateSlug: jest.fn(),
-  checkCircularDependency: jest.fn(),
-  getChildren: jest.fn(),
-  getProductCount: jest.fn()
-};
-
-// Create a mock category constructor
-const MockCategoryConstructor = jest.fn().mockImplementation((data) => ({
-  ...data,
-  save: jest.fn(),
-  populate: jest.fn()
-}));
-
-Object.assign(MockCategoryConstructor, mockCategory);
-
-// Mock the models
-jest.mock('../../models/Category.js', () => ({
-  default: MockCategoryConstructor
+// Mock the Category model
+vi.mock('../../models/Category.js', () => ({
+  default: Object.assign(
+    vi.fn().mockImplementation((data) => ({
+      ...data,
+      save: vi.fn(),
+      populate: vi.fn()
+    })),
+    {
+      find: vi.fn(),
+      findById: vi.fn(),
+      findOne: vi.fn(),
+      findByIdAndUpdate: vi.fn(),
+      findByIdAndDelete: vi.fn(),
+      generateSlug: vi.fn(),
+      checkCircularDependency: vi.fn(),
+      getChildren: vi.fn(),
+      getProductCount: vi.fn()
+    }
+  )
 }));
 
 // Import the functions to test after mocking
 import { getCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from '../adminController.js';
 
+// Import Category for testing
+import Category from '../../models/Category.js';
+
 describe('Admin Controller - Category Management Unit Tests', () => {
   let req, res;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     req = {
       params: {},
@@ -43,8 +41,8 @@ describe('Admin Controller - Category Management Unit Tests', () => {
     };
     
     res = {
-      json: jest.fn(),
-      status: jest.fn().mockReturnThis()
+      json: vi.fn(),
+      status: vi.fn().mockReturnThis()
     };
   });
 
@@ -56,17 +54,17 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       ];
 
       const mockQuery = {
-        populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(mockCategories)
+        populate: vi.fn().mockReturnThis(),
+        sort: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockCategories)
       };
 
-      mockCategory.find.mockReturnValue(mockQuery);
-      mockCategory.getProductCount.mockResolvedValueOnce(5).mockResolvedValueOnce(3);
+      Category.find.mockReturnValue(mockQuery);
+      Category.getProductCount.mockResolvedValueOnce(5).mockResolvedValueOnce(3);
 
       await getCategories(req, res);
 
-      expect(mockCategory.find).toHaveBeenCalled();
+      expect(Category.find).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: {
@@ -79,7 +77,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
     });
 
     test('should handle database errors', async () => {
-      mockCategory.find.mockImplementation(() => {
+      Category.find.mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 
@@ -104,17 +102,17 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       };
 
       const mockQuery = {
-        populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(mockCategoryData)
+        populate: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockCategoryData)
       };
 
-      mockCategory.findById.mockReturnValue(mockQuery);
-      mockCategory.getProductCount.mockResolvedValue(10);
+      Category.findById.mockReturnValue(mockQuery);
+      Category.getProductCount.mockResolvedValue(10);
       req.params.categoryId = 'cat123';
 
       await getCategoryById(req, res);
 
-      expect(mockCategory.findById).toHaveBeenCalledWith('cat123');
+      expect(Category.findById).toHaveBeenCalledWith('cat123');
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: {
@@ -125,11 +123,11 @@ describe('Admin Controller - Category Management Unit Tests', () => {
 
     test('should return 404 for non-existent category', async () => {
       const mockQuery = {
-        populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(null)
+        populate: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(null)
       };
 
-      mockCategory.findById.mockReturnValue(mockQuery);
+      Category.findById.mockReturnValue(mockQuery);
       req.params.categoryId = 'nonexistent';
 
       await getCategoryById(req, res);
@@ -157,7 +155,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       const error = new Error('Cast error');
       error.name = 'CastError';
 
-      mockCategory.findById.mockImplementation(() => {
+      Category.findById.mockImplementation(() => {
         throw error;
       });
       req.params.categoryId = 'invalid-id';
@@ -184,20 +182,20 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       req.body = categoryData;
 
       // Mock slug generation
-      mockCategory.generateSlug.mockResolvedValue('new-category');
+      Category.generateSlug.mockResolvedValue('new-category');
 
       // Mock category creation
       const mockNewCategory = {
         _id: 'newcat123',
         ...categoryData,
-        save: jest.fn().mockResolvedValue(true),
-        populate: jest.fn().mockResolvedValue({
+        save: vi.fn().mockResolvedValue(true),
+        populate: vi.fn().mockResolvedValue({
           _id: 'newcat123',
           ...categoryData
         })
       };
 
-      MockCategoryConstructor.mockReturnValue(mockNewCategory);
+      Category.mockReturnValue(mockNewCategory);
 
       await createCategory(req, res);
 
@@ -228,7 +226,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       };
 
       // Mock existing category with same slug
-      mockCategory.findOne.mockResolvedValue({ _id: 'existing', slug: 'existing-slug' });
+      Category.findOne.mockResolvedValue({ _id: 'existing', slug: 'existing-slug' });
 
       await createCategory(req, res);
 
@@ -245,7 +243,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
         parentId: 'invalid-parent'
       };
 
-      mockCategory.findById.mockResolvedValue(null); // Parent not found
+      Category.findById.mockResolvedValue(null); // Parent not found
 
       await createCategory(req, res);
 
@@ -275,20 +273,20 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       req.params.categoryId = 'cat123';
       req.body = updateData;
 
-      mockCategory.findById.mockResolvedValue(existingCategory);
-      mockCategory.findOne.mockResolvedValue(null); // No duplicate slug
+      Category.findById.mockResolvedValue(existingCategory);
+      Category.findOne.mockResolvedValue(null); // No duplicate slug
 
       const updatedCategory = { ...existingCategory, ...updateData };
       const mockPopulatedCategory = {
         ...updatedCategory,
-        populate: jest.fn().mockReturnValue(updatedCategory)
+        populate: vi.fn().mockReturnValue(updatedCategory)
       };
 
-      mockCategory.findByIdAndUpdate.mockReturnValue(mockPopulatedCategory);
+      Category.findByIdAndUpdate.mockReturnValue(mockPopulatedCategory);
 
       await updateCategory(req, res);
 
-      expect(mockCategory.findByIdAndUpdate).toHaveBeenCalledWith(
+      expect(Category.findByIdAndUpdate).toHaveBeenCalledWith(
         'cat123',
         expect.objectContaining({
           name: 'Updated Category',
@@ -309,7 +307,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       req.params.categoryId = 'nonexistent';
       req.body = { name: 'Test', slug: 'test' };
 
-      mockCategory.findById.mockResolvedValue(null);
+      Category.findById.mockResolvedValue(null);
 
       await updateCategory(req, res);
 
@@ -324,7 +322,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       req.params.categoryId = 'cat123';
       req.body = {}; // Missing name
 
-      mockCategory.findById.mockResolvedValue({ _id: 'cat123' });
+      Category.findById.mockResolvedValue({ _id: 'cat123' });
 
       await updateCategory(req, res);
 
@@ -339,9 +337,9 @@ describe('Admin Controller - Category Management Unit Tests', () => {
       req.params.categoryId = 'cat123';
       req.body = { name: 'Category', parentId: 'parent123' };
 
-      mockCategory.findById.mockResolvedValueOnce({ _id: 'cat123' }); // Existing category
-      mockCategory.findById.mockResolvedValueOnce({ _id: 'parent123' }); // Parent exists
-      mockCategory.checkCircularDependency.mockResolvedValue(true); // Would create circular dependency
+      Category.findById.mockResolvedValueOnce({ _id: 'cat123' }); // Existing category
+      Category.findById.mockResolvedValueOnce({ _id: 'parent123' }); // Parent exists
+      Category.checkCircularDependency.mockResolvedValue(true); // Would create circular dependency
 
       await updateCategory(req, res);
 
@@ -362,14 +360,14 @@ describe('Admin Controller - Category Management Unit Tests', () => {
 
       req.params.categoryId = 'cat123';
 
-      mockCategory.findById.mockResolvedValue(category);
-      mockCategory.getProductCount.mockResolvedValue(0); // No associated products
-      mockCategory.getChildren.mockResolvedValue([]); // No child categories
-      mockCategory.findByIdAndDelete.mockResolvedValue(category);
+      Category.findById.mockResolvedValue(category);
+      Category.getProductCount.mockResolvedValue(0); // No associated products
+      Category.getChildren.mockResolvedValue([]); // No child categories
+      Category.findByIdAndDelete.mockResolvedValue(category);
 
       await deleteCategory(req, res);
 
-      expect(mockCategory.findByIdAndDelete).toHaveBeenCalledWith('cat123');
+      expect(Category.findByIdAndDelete).toHaveBeenCalledWith('cat123');
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         message: 'Category deleted successfully'
@@ -379,7 +377,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
     test('should return 404 for non-existent category', async () => {
       req.params.categoryId = 'nonexistent';
 
-      mockCategory.findById.mockResolvedValue(null);
+      Category.findById.mockResolvedValue(null);
 
       await deleteCategory(req, res);
 
@@ -393,8 +391,8 @@ describe('Admin Controller - Category Management Unit Tests', () => {
     test('should prevent deletion when category has associated products', async () => {
       req.params.categoryId = 'cat123';
 
-      mockCategory.findById.mockResolvedValue({ _id: 'cat123', name: 'Category' });
-      mockCategory.getProductCount.mockResolvedValue(5); // Has associated products
+      Category.findById.mockResolvedValue({ _id: 'cat123', name: 'Category' });
+      Category.getProductCount.mockResolvedValue(5); // Has associated products
 
       await deleteCategory(req, res);
 
@@ -408,9 +406,9 @@ describe('Admin Controller - Category Management Unit Tests', () => {
     test('should prevent deletion when category has child categories', async () => {
       req.params.categoryId = 'cat123';
 
-      mockCategory.findById.mockResolvedValue({ _id: 'cat123', name: 'Category' });
-      mockCategory.getProductCount.mockResolvedValue(0);
-      mockCategory.getChildren.mockResolvedValue([
+      Category.findById.mockResolvedValue({ _id: 'cat123', name: 'Category' });
+      Category.getProductCount.mockResolvedValue(0);
+      Category.getChildren.mockResolvedValue([
         { _id: 'child1', name: 'Child 1' },
         { _id: 'child2', name: 'Child 2' }
       ]);

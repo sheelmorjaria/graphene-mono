@@ -5,6 +5,57 @@ import { AppRoutes } from '../../App';
 // Mock fetch globally
 global.fetch = vi.fn();
 
+// Mock the useProducts hook
+vi.mock('../../hooks/useProducts', () => ({
+  default: vi.fn(() => ({
+    products: [
+      {
+        id: 'product-1',
+        _id: 'product-1',
+        name: 'GrapheneOS Pixel 9 Pro',
+        slug: 'grapheneos-pixel-9-pro',
+        shortDescription: 'Premium privacy-focused smartphone',
+        price: 899.99,
+        images: ['https://example.com/pixel9pro.jpg'],
+        condition: 'new',
+        stockStatus: 'in_stock',
+        stockQuantity: 25,
+        category: {
+          _id: 'cat-1',
+          name: 'Smartphones',
+          slug: 'smartphones'
+        }
+      },
+      {
+        id: 'product-2',
+        _id: 'product-2',
+        name: 'GrapheneOS Pixel 9',
+        slug: 'grapheneos-pixel-9',
+        shortDescription: 'High-performance privacy smartphone',
+        price: 799.99,
+        images: ['https://example.com/pixel9.jpg'],
+        condition: 'new',
+        stockStatus: 'in_stock',
+        stockQuantity: 32,
+        category: {
+          _id: 'cat-1',
+          name: 'Smartphones',
+          slug: 'smartphones'
+        }
+      }
+    ],
+    pagination: {
+      page: 1,
+      limit: 12,
+      total: 2,
+      pages: 1
+    },
+    loading: false,
+    error: null,
+    fetchProducts: vi.fn()
+  }))
+}));
+
 const mockProductsListResponse = {
   success: true,
   data: {
@@ -93,7 +144,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should complete full user journey from home to product details', async () => {
-    const user = userEvent.setup();
 
     // Mock API responses
     fetch
@@ -120,7 +170,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Click on first product's "View Details"
     const viewDetailsButtons = screen.getAllByText('View Details');
-    await user.click(viewDetailsButtons[0]);
+    await userEvent.click(viewDetailsButtons[0]);
 
     // Should navigate to product details page
     await waitFor(() => {
@@ -139,7 +189,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should handle navigation between product list and details', async () => {
-    const user = userEvent.setup();
 
     fetch
       .mockResolvedValueOnce({
@@ -164,7 +213,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Navigate to product details
     const viewDetailsButton = screen.getAllByText('View Details')[0];
-    await user.click(viewDetailsButton);
+    await userEvent.click(viewDetailsButton);
 
     // Wait for product details to load
     await waitFor(() => {
@@ -173,7 +222,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Navigate back using breadcrumb
     const productsLink = screen.getByRole('link', { name: /products/i });
-    await user.click(productsLink);
+    await userEvent.click(productsLink);
 
     // Should be back on products list
     await waitFor(() => {
@@ -184,7 +233,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should handle error recovery flow', async () => {
-    const user = userEvent.setup();
 
     // Mock initial error, then success
     fetch
@@ -210,7 +258,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Click to view details (will fail)
     const viewDetailsButton = screen.getAllByText('View Details')[0];
-    await user.click(viewDetailsButton);
+    await userEvent.click(viewDetailsButton);
 
     // Should show error
     await waitFor(() => {
@@ -219,7 +267,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Click retry
     const retryButton = screen.getByRole('button', { name: /try again/i });
-    await user.click(retryButton);
+    await userEvent.click(retryButton);
 
     // Should load successfully
     await waitFor(() => {
@@ -230,7 +278,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should handle product filtering and then navigation to details', async () => {
-    const user = userEvent.setup();
 
     const filteredResponse = {
       ...mockProductsListResponse,
@@ -266,7 +313,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Apply filter (simulate filter interaction)
     const categoryFilter = screen.getByLabelText(/smartphones/i);
-    await user.click(categoryFilter);
+    await userEvent.click(categoryFilter);
 
     // Wait for filtered results
     await waitFor(() => {
@@ -275,7 +322,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Navigate to product details
     const viewDetailsButton = screen.getByText('View Details');
-    await user.click(viewDetailsButton);
+    await userEvent.click(viewDetailsButton);
 
     // Should load product details
     await waitFor(() => {
@@ -286,7 +333,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should handle product search and navigation flow', async () => {
-    const user = userEvent.setup();
 
     const searchResponse = {
       ...mockProductsListResponse,
@@ -320,8 +366,8 @@ describe('Product Flow Integration Tests', () => {
 
     // Perform search
     const searchInput = screen.getByPlaceholderText(/search products/i);
-    await user.type(searchInput, 'Pixel 9 Pro');
-    await user.keyboard('{Enter}');
+    await userEvent.type(searchInput, 'Pixel 9 Pro');
+    await userEvent.keyboard('{Enter}');
 
     // Wait for search results
     await waitFor(() => {
@@ -333,7 +379,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Navigate to product details
     const viewDetailsButton = screen.getByText('View Details');
-    await user.click(viewDetailsButton);
+    await userEvent.click(viewDetailsButton);
 
     // Should load product details
     await waitFor(() => {
@@ -383,7 +429,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should handle add to cart flow integration', async () => {
-    const user = userEvent.setup();
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     fetch
@@ -404,7 +449,7 @@ describe('Product Flow Integration Tests', () => {
     });
 
     const viewDetailsButton = screen.getAllByText('View Details')[0];
-    await user.click(viewDetailsButton);
+    await userEvent.click(viewDetailsButton);
 
     // Wait for product details to load
     await waitFor(() => {
@@ -413,10 +458,10 @@ describe('Product Flow Integration Tests', () => {
 
     // Test add to cart with quantity selection
     const quantitySelect = screen.getByLabelText(/quantity/i);
-    await user.selectOptions(quantitySelect, '3');
+    await userEvent.selectOptions(quantitySelect, '3');
 
     const addToCartButton = screen.getByTestId('add-to-cart');
-    await user.click(addToCartButton);
+    await userEvent.click(addToCartButton);
 
     // Verify cart interaction
     expect(consoleSpy).toHaveBeenCalledWith('Adding 3 of product product-1 to cart');
@@ -425,7 +470,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should handle pagination flow with product details', async () => {
-    const user = userEvent.setup();
 
     const page1Response = {
       ...mockProductsListResponse,
@@ -472,7 +516,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Navigate to page 2
     const nextPageButton = screen.getByLabelText(/next page/i);
-    await user.click(nextPageButton);
+    await userEvent.click(nextPageButton);
 
     // Wait for page 2 to load
     await waitFor(() => {
@@ -483,7 +527,6 @@ describe('Product Flow Integration Tests', () => {
   });
 
   it('should maintain state when navigating back from product details', async () => {
-    const user = userEvent.setup();
 
     fetch
       .mockResolvedValueOnce({
@@ -504,7 +547,7 @@ describe('Product Flow Integration Tests', () => {
 
     // Navigate to product details
     const viewDetailsButton = screen.getAllByText('View Details')[0];
-    await user.click(viewDetailsButton);
+    await userEvent.click(viewDetailsButton);
 
     // Wait for product details
     await waitFor(() => {

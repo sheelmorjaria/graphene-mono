@@ -81,7 +81,6 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should navigate to profile page from user menu', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -95,7 +94,7 @@ describe('Profile Flow Integration Tests', () => {
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await user.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('Welcome, John'));
     });
 
     // Wait for dropdown to appear and click Profile
@@ -104,7 +103,7 @@ describe('Profile Flow Integration Tests', () => {
     });
 
     await act(async () => {
-      await user.click(screen.getByRole('link', { name: /profile/i }));
+      await userEvent.click(screen.getByRole('link', { name: /profile/i }));
     });
 
     // Should navigate to profile page
@@ -120,7 +119,6 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should successfully update profile information', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -144,25 +142,25 @@ describe('Profile Flow Integration Tests', () => {
     // Update first name
     const firstNameInput = screen.getByLabelText(/first name/i);
     await act(async () => {
-      await user.clear(firstNameInput);
-      await user.type(firstNameInput, 'Jane');
+      await userEvent.clear(firstNameInput);
+      await userEvent.type(firstNameInput, 'Jane');
     });
 
     // Update phone number
     const phoneInput = screen.getByLabelText(/phone number/i);
     await act(async () => {
-      await user.clear(phoneInput);
-      await user.type(phoneInput, '+441234567890');
+      await userEvent.clear(phoneInput);
+      await userEvent.type(phoneInput, '+441234567890');
     });
 
     // Enable marketing opt-in
     await act(async () => {
-      await user.click(screen.getByLabelText(/receive marketing emails/i));
+      await userEvent.click(screen.getByLabelText(/receive marketing emails/i));
     });
 
     // Submit the form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
     });
 
     // Verify API was called with correct data
@@ -182,7 +180,6 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should handle profile update errors', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -202,7 +199,7 @@ describe('Profile Flow Integration Tests', () => {
 
     // Submit the form without changes to trigger an error
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
     });
 
     // Should show error message
@@ -212,7 +209,6 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should validate form fields before submission', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -232,12 +228,12 @@ describe('Profile Flow Integration Tests', () => {
     // Clear required field
     const firstNameInput = screen.getByLabelText(/first name/i);
     await act(async () => {
-      await user.clear(firstNameInput);
+      await userEvent.clear(firstNameInput);
     });
 
     // Try to submit
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
     });
 
     // Should not call update API
@@ -274,7 +270,6 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should validate phone number format', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -294,9 +289,9 @@ describe('Profile Flow Integration Tests', () => {
     // Enter invalid phone number
     const phoneInput = screen.getByLabelText(/phone number/i);
     await act(async () => {
-      await user.clear(phoneInput);
-      await user.type(phoneInput, 'invalid-phone');
-      await user.tab(); // Trigger blur
+      await userEvent.clear(phoneInput);
+      await userEvent.type(phoneInput, 'invalid-phone');
+      await userEvent.tab(); // Trigger blur
     });
 
     // Should show validation error
@@ -306,7 +301,6 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should show loading state during form submission', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -326,7 +320,7 @@ describe('Profile Flow Integration Tests', () => {
 
     // Submit the form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
     });
 
     // Should show loading state

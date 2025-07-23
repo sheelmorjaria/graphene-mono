@@ -95,8 +95,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should complete full login flow and redirect to products', async () => {
-    const user = userEvent.setup();
-
     // Mock successful login
     loginUser.mockResolvedValueOnce(mockLoginResponse);
 
@@ -114,14 +112,18 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Fill out the login form
+    const emailInput = screen.getByLabelText(/email address/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
     await act(async () => {
-      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+      await userEvent.type(emailInput, 'john.doe@example.com');
+      await userEvent.type(passwordInput, 'SecurePass123!');
     });
 
     // Submit the form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(submitButton);
     });
 
     // Verify login service was called with correct data
@@ -145,7 +147,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should handle login errors', async () => {
-    const user = userEvent.setup();
 
     // Mock login error
     loginUser.mockRejectedValueOnce(new Error('Invalid email or password'));
@@ -159,13 +160,13 @@ describe('Login Flow Integration Tests', () => {
 
     // Fill out the form
     await act(async () => {
-      await user.type(screen.getByLabelText(/email address/i), 'wrong@example.com');
-      await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+      await userEvent.type(screen.getByLabelText(/email address/i), 'wrong@example.com');
+      await userEvent.type(screen.getByLabelText(/password/i), 'wrongpassword');
     });
 
     // Submit the form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
     });
 
     // Should show error message
@@ -181,7 +182,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should navigate to login page from header', async () => {
-    const user = userEvent.setup();
 
     // Mock products page load
     fetch.mockResolvedValueOnce({
@@ -199,7 +199,7 @@ describe('Login Flow Integration Tests', () => {
     // Click Login link in header
     const loginLink = screen.getByRole('link', { name: /login/i });
     await act(async () => {
-      await user.click(loginLink);
+      await userEvent.click(loginLink);
     });
 
     // Should navigate to login page
@@ -209,13 +209,12 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should validate form before submission', async () => {
-    const user = userEvent.setup();
 
     renderIntegrationTest('/login');
 
     // Try to submit empty form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
     });
 
     // Wait for validation to complete
@@ -229,7 +228,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should handle remember me functionality', async () => {
-    const user = userEvent.setup();
 
     // Mock successful login
     loginUser.mockResolvedValueOnce(mockLoginResponse);
@@ -246,16 +244,16 @@ describe('Login Flow Integration Tests', () => {
 
     // Fill out the form
     await act(async () => {
-      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+      await userEvent.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await userEvent.type(screen.getByLabelText(/password/i), 'SecurePass123!');
       
       // Check remember me
-      await user.click(screen.getByLabelText(/remember me/i));
+      await userEvent.click(screen.getByLabelText(/remember me/i));
     });
 
     // Submit the form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
     });
 
     // Verify login service was called with correct data
@@ -273,7 +271,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should show authenticated user menu after login', async () => {
-    const user = userEvent.setup();
 
     // Mock successful login
     loginUser.mockResolvedValueOnce(mockLoginResponse);
@@ -290,9 +287,9 @@ describe('Login Flow Integration Tests', () => {
 
     // Fill out and submit login form
     await act(async () => {
-      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await userEvent.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
     });
 
     // Verify login service was called
@@ -314,7 +311,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should logout user when clicking sign out', async () => {
-    const user = userEvent.setup();
 
     // Mock that user is initially authenticated
     getCurrentUser.mockResolvedValueOnce(mockProfileResponse.data.user);
@@ -337,12 +333,12 @@ describe('Login Flow Integration Tests', () => {
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await user.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('Welcome, John'));
     });
 
     // Click sign out
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign out/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign out/i }));
     });
 
     // Verify logout service was called
@@ -364,15 +360,14 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should validate email format', async () => {
-    const user = userEvent.setup();
 
     renderIntegrationTest('/login');
 
     // Enter invalid email
     const emailInput = screen.getByLabelText(/email address/i);
     await act(async () => {
-      await user.type(emailInput, 'invalid-email');
-      await user.tab(); // Trigger blur event
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab(); // Trigger blur event
     });
 
     // Should show validation error
@@ -406,7 +401,6 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should handle server error responses', async () => {
-    const user = userEvent.setup();
 
     // Mock server error
     loginUser.mockRejectedValueOnce(new Error('Server error occurred'));
@@ -420,13 +414,13 @@ describe('Login Flow Integration Tests', () => {
 
     // Fill out the form
     await act(async () => {
-      await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-      await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+      await userEvent.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+      await userEvent.type(screen.getByLabelText(/password/i), 'SecurePass123!');
     });
 
     // Submit the form
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
     });
 
     // Verify login service was called
@@ -447,15 +441,14 @@ describe('Login Flow Integration Tests', () => {
   });
 
   it('should clear field errors when user starts typing', async () => {
-    const user = userEvent.setup();
 
     renderIntegrationTest('/login');
 
     // Enter invalid email to trigger error
     const emailInput = screen.getByLabelText(/email address/i);
     await act(async () => {
-      await user.type(emailInput, 'invalid');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid');
+      await userEvent.tab();
     });
 
     // Should show validation error
@@ -465,7 +458,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Start typing again
     await act(async () => {
-      await user.type(emailInput, '@example.com');
+      await userEvent.type(emailInput, '@example.com');
     });
 
     // Error should be cleared

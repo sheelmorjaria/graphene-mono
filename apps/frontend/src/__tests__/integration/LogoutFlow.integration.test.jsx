@@ -95,7 +95,6 @@ describe('Logout Flow Integration Tests', () => {
   });
 
   it('should successfully logout user when clicking sign out', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -110,7 +109,7 @@ describe('Logout Flow Integration Tests', () => {
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await user.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('Welcome, John'));
     });
 
     // Wait for dropdown to appear
@@ -120,7 +119,7 @@ describe('Logout Flow Integration Tests', () => {
 
     // Click sign out
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign out/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign out/i }));
     });
 
     // Verify logout service was called
@@ -139,7 +138,6 @@ describe('Logout Flow Integration Tests', () => {
   });
 
   it('should handle logout service error gracefully', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -155,12 +153,12 @@ describe('Logout Flow Integration Tests', () => {
 
     // Click on user dropdown
     await act(async () => {
-      await user.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('Welcome, John'));
     });
 
     // Click sign out
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign out/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign out/i }));
     });
 
     // Even with logout error, user should be logged out locally
@@ -192,7 +190,6 @@ describe('Logout Flow Integration Tests', () => {
   });
 
   it('should close dropdown after successful logout', async () => {
-    const user = userEvent.setup();
     
     // Mock authenticated user
     getCurrentUser.mockResolvedValue(mockUser);
@@ -207,7 +204,7 @@ describe('Logout Flow Integration Tests', () => {
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await user.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('Welcome, John'));
     });
 
     // Verify dropdown content is visible
@@ -219,7 +216,7 @@ describe('Logout Flow Integration Tests', () => {
 
     // Click sign out
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /sign out/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign out/i }));
     });
 
     // After logout, dropdown should be closed and user menu gone

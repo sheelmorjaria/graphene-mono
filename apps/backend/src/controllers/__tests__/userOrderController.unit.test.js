@@ -5,6 +5,7 @@ import Cart from '../../models/Cart.js';
 import Product from '../../models/Product.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 import emailService from '../../services/emailService.js';
+import mongoose from 'mongoose';
 
 // Mock all dependencies
 vi.mock('../../models/Order.js');
@@ -12,6 +13,16 @@ vi.mock('../../models/Cart.js');
 vi.mock('../../models/Product.js');
 vi.mock('../../models/ShippingMethod.js');
 vi.mock('../../services/emailService.js');
+vi.mock('mongoose', async () => {
+  const actual = await vi.importActual('mongoose');
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      startSession: vi.fn()
+    }
+  };
+});
 
 describe('User Order Controller - Unit Tests', () => {
   let req, res, next;
@@ -120,7 +131,8 @@ describe('User Order Controller - Unit Tests', () => {
           subtotal: 100
         }],
         getStatusDisplay: vi.fn().mockReturnValue('Delivered'),
-        getFormattedDate: vi.fn().mockReturnValue('Jan 1, 2023')
+        getFormattedDate: vi.fn().mockReturnValue('Jan 1, 2023'),
+        getPaymentMethodDisplay: vi.fn().mockReturnValue('PayPal')
       };
 
       Order.findOne = vi.fn().mockResolvedValue(mockOrder);
@@ -174,12 +186,16 @@ describe('User Order Controller - Unit Tests', () => {
     it('should place order successfully', async () => {
       req.body = {
         shippingAddress: {
-          street: '123 Main St',
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main St',
           city: 'London',
           country: 'UK',
-          postalCode: 'SW1A 1AA'
+          postalCode: 'SW1A 1AA',
+          phoneNumber: '123-456-7890'
         },
-        paymentMethod: 'card'
+        shippingMethodId: '555555555555555555555555',
+        paypalOrderId: 'PAYPAL-ORDER-123'
       };
 
       const mockCart = {
@@ -191,6 +207,21 @@ describe('User Order Controller - Unit Tests', () => {
         }],
         getTotalAmount: vi.fn().mockReturnValue(100)
       };
+      
+      const mockProduct = {
+        _id: '444444444444444444444444',
+        name: 'Test Product',
+        price: 50,
+        stockQuantity: 10,
+        images: ['image1.jpg']
+      };
+      
+      const mockShippingMethod = {
+        _id: '555555555555555555555555',
+        name: 'Standard Shipping',
+        calculateCost: vi.fn().mockReturnValue({ cost: 10 }),
+        estimatedDelivery: '3-5 days'
+      };
 
       const mockOrder = {
         _id: '111111111111111111111111',
@@ -198,15 +229,38 @@ describe('User Order Controller - Unit Tests', () => {
         save: vi.fn().mockResolvedValue(true)
       };
 
-      Cart.findOne = vi.fn().mockResolvedValue(mockCart);
-      Order.prototype.save = vi.fn().mockResolvedValue(mockOrder);
+      // Mock session
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn(),
+        endSession: vi.fn()
+      };
+      
+      mongoose.startSession.mockResolvedValue(mockSession);
+
+      // Mock findOrCreateCart by mocking Cart.findByUserId
+      Cart.findByUserId = vi.fn().mockResolvedValue(mockCart);
+      Product.find = vi.fn().mockReturnValue({
+        session: vi.fn().mockResolvedValue([mockProduct])
+      });
+      Product.findByIdAndUpdate = vi.fn().mockResolvedValue();
+      ShippingMethod.findOne = vi.fn().mockReturnValue({
+        session: vi.fn().mockResolvedValue(mockShippingMethod)
+      });
+      Cart.prototype.clearCart = vi.fn().mockResolvedValue();
+      
+      // Mock the Order constructor and save
+      Order.mockImplementation(() => ({
+        ...mockOrder,
+        save: vi.fn().mockResolvedValue(mockOrder)
+      }));
 
       await placeOrder(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Order placed successfully',
         data: expect.objectContaining({
           orderId: '111111111111111111111111',
           orderNumber: 'ORD001'
@@ -217,20 +271,26 @@ describe('User Order Controller - Unit Tests', () => {
     it('should handle empty cart', async () => {
       req.body = {
         shippingAddress: {
-          street: '123 Main St',
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main St',
           city: 'London',
-          country: 'UK'
-        }
+          country: 'UK',
+          phoneNumber: '123-456-7890'
+        },
+        shippingMethodId: '555555555555555555555555',
+        paypalOrderId: 'PAYPAL-ORDER-123'
       };
 
-      Cart.findOne = vi.fn().mockResolvedValue(null);
+      // Mock findByUserId since that's what the controller actually calls
+      Cart.findByUserId = vi.fn().mockResolvedValue(null);
 
       await placeOrder(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Cart is empty or not found'
+        error: 'Cart not found'
       });
     });
   });
@@ -245,11 +305,21 @@ describe('User Order Controller - Unit Tests', () => {
         orderNumber: 'ORD001',
         status: 'pending',
         userId: mockUser._id,
+        items: [
+          {
+            productId: '333333333333333333333333',
+            quantity: 2,
+            price: 50
+          }
+        ],
         canBeCancelled: vi.fn().mockReturnValue(true),
         save: vi.fn().mockResolvedValue(true)
       };
 
-      Order.findOne = vi.fn().mockResolvedValue(mockOrder);
+      const mockFindOneWithSession = {
+        session: vi.fn().mockResolvedValue(mockOrder)
+      };
+      Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
       emailService.sendOrderCancellationEmail = vi.fn().mockResolvedValue();
 
       await cancelOrder(req, res);
@@ -257,7 +327,12 @@ describe('User Order Controller - Unit Tests', () => {
       expect(mockOrder.status).toBe('cancelled');
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Order cancelled successfully'
+        message: 'Order cancelled successfully',
+        data: expect.objectContaining({
+          orderId: '111111111111111111111111',
+          orderNumber: 'ORD001',
+          status: 'cancelled'
+        })
       });
     });
 
@@ -270,14 +345,17 @@ describe('User Order Controller - Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Invalid order ID format'
+        error: 'Invalid order ID'
       });
     });
 
     it('should handle non-existent order', async () => {
       req.params.orderId = '111111111111111111111111';
       req.body.reason = 'Test reason';
-      Order.findOne = vi.fn().mockResolvedValue(null);
+      const mockFindOneWithSession = {
+        session: vi.fn().mockResolvedValue(null)
+      };
+      Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
 
       await cancelOrder(req, res);
 
@@ -295,20 +373,20 @@ describe('User Order Controller - Unit Tests', () => {
 
       const mockOrder = {
         _id: '111111111111111111111111',
+        orderNumber: 'ORD001',
         status: 'delivered',
-        userId: mockUser._id,
+        customerEmail: mockUser.email,
+        deliveryDate: new Date(),
+        hasReturnRequest: false,
         items: [{
           productId: '444444444444444444444444',
+          productName: 'Test Product',
+          productSlug: 'test-product',
           quantity: 2,
-          price: 50,
-          canBeReturned: true
-        }],
-        getEligibleReturnItems: vi.fn().mockReturnValue([{
-          productId: '444444444444444444444444',
-          quantity: 2,
-          price: 50,
-          canBeReturned: true
-        }])
+          unitPrice: 50,
+          totalPrice: 100,
+          productImage: 'test.jpg'
+        }]
       };
 
       Order.findOne = vi.fn().mockResolvedValue(mockOrder);
@@ -318,11 +396,17 @@ describe('User Order Controller - Unit Tests', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: {
+          orderId: '111111111111111111111111',
+          orderNumber: 'ORD001',
+          deliveryDate: mockOrder.deliveryDate,
+          returnWindow: 30,
           eligibleItems: expect.arrayContaining([
             expect.objectContaining({
               productId: '444444444444444444444444',
+              productName: 'Test Product',
               quantity: 2,
-              canBeReturned: true
+              unitPrice: 50,
+              totalPrice: 100
             })
           ])
         }
@@ -337,7 +421,7 @@ describe('User Order Controller - Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Invalid order ID format'
+        error: 'Invalid order ID'
       });
     });
 

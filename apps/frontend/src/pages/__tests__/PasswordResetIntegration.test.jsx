@@ -46,7 +46,6 @@ describe('Password Reset Integration', () => {
   });
 
   it('should complete the full password reset flow', async () => {
-    const user = userEvent.setup();
     
     // Step 1: Request password reset
     mockFetch.mockImplementation((url) => {
@@ -66,10 +65,10 @@ describe('Password Reset Integration', () => {
 
     // Fill out forgot password form
     const emailInput = screen.getByLabelText(/email address/i);
-    await user.type(emailInput, 'test@example.com');
+    await userEvent.type(emailInput, 'test@example.com');
     
     const submitButton = screen.getByRole('button', { name: /send reset link/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     // Verify API call was made
     await waitFor(() => {
@@ -93,7 +92,6 @@ describe('Password Reset Integration', () => {
   });
 
   it('should complete the password reset with valid token', async () => {
-    const user = userEvent.setup();
     
     // Mock successful password reset
     mockFetch.mockImplementation((url, options) => {
@@ -126,8 +124,8 @@ describe('Password Reset Integration', () => {
     });
 
     // Fill out the reset password form
-    await user.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
-    await user.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
 
     // Verify password strength shows as strong
     await waitFor(() => {
@@ -135,7 +133,7 @@ describe('Password Reset Integration', () => {
     });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /reset password/i }));
+    await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
     // Verify success message appears
     await waitFor(() => {
@@ -149,7 +147,6 @@ describe('Password Reset Integration', () => {
   });
 
   it('should handle forgot password API errors gracefully', async () => {
-    const user = userEvent.setup();
     
     // Mock API error
     mockFetch.mockImplementation((url) => {
@@ -169,10 +166,10 @@ describe('Password Reset Integration', () => {
 
     // Fill out the form
     const emailInput = screen.getByLabelText(/email address/i);
-    await user.type(emailInput, 'test@example.com');
+    await userEvent.type(emailInput, 'test@example.com');
     
     const submitButton = screen.getByRole('button', { name: /send reset link/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     // Verify error message appears
     await waitFor(() => {
@@ -184,7 +181,6 @@ describe('Password Reset Integration', () => {
   });
 
   it('should handle reset password API errors gracefully', async () => {
-    const user = userEvent.setup();
     
     // Mock API error
     mockFetch.mockImplementation((url) => {
@@ -208,11 +204,11 @@ describe('Password Reset Integration', () => {
     });
 
     // Fill out the form with valid passwords
-    await user.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
-    await user.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /reset password/i }));
+    await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
     // Verify error message appears
     await waitFor(() => {
@@ -224,7 +220,6 @@ describe('Password Reset Integration', () => {
   });
 
   it('should validate password strength in reset flow', async () => {
-    const user = userEvent.setup();
     
     renderResetPasswordPage();
 
@@ -236,27 +231,27 @@ describe('Password Reset Integration', () => {
     const newPasswordInput = screen.getByLabelText('New Password *');
     
     // Test weak password
-    await user.type(newPasswordInput, 'weak');
+    await userEvent.type(newPasswordInput, 'weak');
     await waitFor(() => {
       expect(screen.getByText('weak')).toBeInTheDocument();
     });
 
     // Test medium password
-    await user.clear(newPasswordInput);
-    await user.type(newPasswordInput, 'Password1');
+    await userEvent.clear(newPasswordInput);
+    await userEvent.type(newPasswordInput, 'Password1');
     await waitFor(() => {
       expect(screen.getByText('medium')).toBeInTheDocument();
     });
 
     // Test strong password
-    await user.clear(newPasswordInput);
-    await user.type(newPasswordInput, 'StrongPass123!');
+    await userEvent.clear(newPasswordInput);
+    await userEvent.type(newPasswordInput, 'StrongPass123!');
     await waitFor(() => {
       expect(screen.getByText('strong')).toBeInTheDocument();
     });
 
     // Test password requirements display
-    await user.click(newPasswordInput);
+    await userEvent.click(newPasswordInput);
     await waitFor(() => {
       expect(screen.getByText(/password must contain/i)).toBeInTheDocument();
       expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();

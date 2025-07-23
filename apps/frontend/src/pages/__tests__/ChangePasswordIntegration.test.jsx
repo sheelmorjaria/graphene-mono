@@ -70,7 +70,6 @@ describe('ChangePasswordPage Integration', () => {
   });
 
   it('should complete the full password change flow successfully', async () => {
-    const user = userEvent.setup();
     
     // Mock successful password change API call
     mockFetch.mockImplementation((url, options) => {
@@ -114,9 +113,9 @@ describe('ChangePasswordPage Integration', () => {
     });
 
     // Fill out the form
-    await user.type(screen.getByLabelText(/current password/i), 'OldPassword123!');
-    await user.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
-    await user.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText(/current password/i), 'OldPassword123!');
+    await userEvent.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
 
     // Verify password strength shows as strong
     await waitFor(() => {
@@ -124,7 +123,7 @@ describe('ChangePasswordPage Integration', () => {
     });
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /update password/i }));
+    await userEvent.click(screen.getByRole('button', { name: /update password/i }));
 
     // Verify success message appears
     await waitFor(() => {
@@ -141,7 +140,6 @@ describe('ChangePasswordPage Integration', () => {
   });
 
   it('should handle API errors gracefully', async () => {
-    const user = userEvent.setup();
     
     // Mock API error
     mockFetch.mockImplementation((url, options) => {
@@ -176,12 +174,12 @@ describe('ChangePasswordPage Integration', () => {
     });
 
     // Fill out the form with incorrect current password
-    await user.type(screen.getByLabelText(/current password/i), 'WrongPassword123!');
-    await user.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
-    await user.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText(/current password/i), 'WrongPassword123!');
+    await userEvent.type(screen.getByLabelText('New Password *'), 'NewSecurePass456@');
+    await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewSecurePass456@');
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /update password/i }));
+    await userEvent.click(screen.getByRole('button', { name: /update password/i }));
 
     // Verify error message appears
     await waitFor(() => {

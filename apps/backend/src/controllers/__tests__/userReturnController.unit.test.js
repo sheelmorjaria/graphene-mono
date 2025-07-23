@@ -13,6 +13,16 @@ import mongoose from 'mongoose';
 vi.mock('../../models/ReturnRequest.js');
 vi.mock('../../models/Order.js');
 vi.mock('../../services/emailService.js');
+vi.mock('mongoose', async () => {
+  const actual = await vi.importActual('mongoose');
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      startSession: vi.fn()
+    }
+  };
+});
 
 describe('User Return Controller - Unit Tests', () => {
   let req, res, next;
@@ -91,15 +101,22 @@ describe('User Return Controller - Unit Tests', () => {
         pagination: expect.objectContaining({
           page: 1,
           limit: 10,
-          total: 1
+          total: 1,
+          pages: 1
         })
       });
     });
 
     it('should handle database errors', async () => {
-      ReturnRequest.find = vi.fn().mockImplementation(() => {
-        throw new Error('Database error');
-      });
+      const mockFind = {
+        populate: vi.fn().mockReturnThis(),
+        sort: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockRejectedValue(new Error('Database error'))
+      };
+      
+      ReturnRequest.find = vi.fn().mockReturnValue(mockFind);
 
       await getUserReturnRequests(req, res);
 
@@ -118,6 +135,7 @@ describe('User Return Controller - Unit Tests', () => {
       const mockReturnRequest = {
         _id: '111111111111111111111111',
         returnRequestNumber: 'RET001',
+        formattedRequestNumber: 'RET-001',
         orderNumber: 'ORD001',
         orderId: {
           _id: '222222222222222222222222',
@@ -125,10 +143,14 @@ describe('User Return Controller - Unit Tests', () => {
           orderDate: new Date('2023-01-01')
         },
         status: 'approved',
-        reason: 'Defective item',
-        description: 'Product not working',
-        getFormattedStatus: vi.fn().mockReturnValue('Approved'),
-        canBeCancelled: vi.fn().mockReturnValue(false)
+        totalRefundAmount: 100,
+        totalItemsCount: 1,
+        requestDate: new Date('2023-01-01'),
+        items: [],
+        images: [],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2023-01-01'),
+        getFormattedStatus: vi.fn().mockReturnValue('Approved')
       };
 
       const mockFindOne = {
@@ -146,12 +168,14 @@ describe('User Return Controller - Unit Tests', () => {
 
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        data: expect.objectContaining({
-          id: '111111111111111111111111',
-          returnRequestNumber: 'RET001',
-          status: 'approved',
-          formattedStatus: 'Approved'
-        })
+        data: {
+          returnRequest: expect.objectContaining({
+            id: '111111111111111111111111',
+            returnRequestNumber: 'RET001',
+            status: 'approved',
+            formattedStatus: 'Approved'
+          })
+        }
       });
     });
 
@@ -190,42 +214,69 @@ describe('User Return Controller - Unit Tests', () => {
     it('should create return request successfully', async () => {
       req.body = {
         orderId: '222222222222222222222222',
-        reason: 'defective',
-        description: 'Product not working',
         items: [
-          { productId: '333333333333333333333333', quantity: 1 }
+          { productId: '333333333333333333333333', quantity: 1, reason: 'defective_item', reasonDescription: 'Product not working' }
         ]
       };
+
+      // Mock session
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn(),
+        endSession: vi.fn()
+      };
+      mongoose.startSession.mockResolvedValue(mockSession);
 
       const mockOrder = {
         _id: '222222222222222222222222',
         orderNumber: 'ORD001',
-        userId: mockUser._id,
+        customerEmail: mockUser.email,
         status: 'delivered',
+        deliveryDate: new Date(),
+        hasReturnRequest: false,
+        returnRequestIds: [], // Add missing array
         items: [{
           productId: '333333333333333333333333',
-          name: 'Test Product',
+          productName: 'Test Product',
           quantity: 2,
-          price: 100
+          unitPrice: 100,
+          totalPrice: 200
         }],
-        canReturn: vi.fn().mockReturnValue(true)
+        save: vi.fn().mockResolvedValue(true)
       };
 
       const mockReturnRequest = {
         _id: '111111111111111111111111',
-        returnRequestNumber: 'RET001',
-        save: vi.fn().mockResolvedValue(true)
+        returnRequestNumber: '20240101001',
+        formattedRequestNumber: 'RET-20240101001',
+        totalRefundAmount: 100,
+        totalItemsCount: 1,
+        status: 'pending',
+        save: vi.fn().mockImplementation(async function() {
+          // Simulate pre-save middleware behavior
+          if (!this.returnRequestNumber) {
+            this.returnRequestNumber = '20240101001';
+          }
+          this.totalRefundAmount = 100;
+          this.totalItemsCount = 1;
+          return this;
+        })
       };
 
-      Order.findOne = vi.fn().mockResolvedValue(mockOrder);
-      ReturnRequest.prototype.save = vi.fn().mockResolvedValue(mockReturnRequest);
-      emailService.sendReturnRequestConfirmation = vi.fn().mockResolvedValue();
+      const mockFindOneWithSession = {
+        session: vi.fn().mockResolvedValue(mockOrder)
+      };
+      Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
+      Order.findByIdAndUpdate = vi.fn().mockResolvedValue();
+      ReturnRequest.mockImplementation(() => mockReturnRequest);
+      emailService.sendReturnRequestConfirmationEmail = vi.fn().mockResolvedValue();
 
       await submitReturnRequest(req, res);
 
       expect(Order.findOne).toHaveBeenCalledWith({
         _id: '222222222222222222222222',
-        userId: mockUser._id
+        customerEmail: mockUser.email
       });
 
       expect(res.status).toHaveBeenCalledWith(201);
@@ -234,7 +285,11 @@ describe('User Return Controller - Unit Tests', () => {
         message: 'Return request submitted successfully',
         data: expect.objectContaining({
           returnRequestId: '111111111111111111111111',
-          returnRequestNumber: 'RET001'
+          returnRequestNumber: '20240101001',
+          formattedRequestNumber: 'RET-20240101001',
+          status: 'pending',
+          totalRefundAmount: 100,
+          totalItemsCount: 1
         })
       });
     });
@@ -242,7 +297,7 @@ describe('User Return Controller - Unit Tests', () => {
     it('should validate required fields', async () => {
       req.body = {
         orderId: '222222222222222222222222',
-        // Missing reason
+        // Missing items
         items: []
       };
 
@@ -251,15 +306,14 @@ describe('User Return Controller - Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Reason and at least one item are required'
+        error: 'Order ID and items are required'
       });
     });
 
     it('should validate orderId format', async () => {
       req.body = {
         orderId: 'invalid-id',
-        reason: 'defective',
-        items: [{ productId: '123' }]
+        items: [{ productId: '333333333333333333333333', quantity: 1, reason: 'defective' }]
       };
 
       await submitReturnRequest(req, res);
@@ -274,11 +328,13 @@ describe('User Return Controller - Unit Tests', () => {
     it('should handle non-existent order', async () => {
       req.body = {
         orderId: '222222222222222222222222',
-        reason: 'defective',
-        items: [{ productId: '333333333333333333333333' }]
+        items: [{ productId: '333333333333333333333333', quantity: 1, reason: 'defective' }]
       };
 
-      Order.findOne = vi.fn().mockResolvedValue(null);
+      const mockFindOneWithSession = {
+        session: vi.fn().mockResolvedValue(null)
+      };
+      Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
 
       await submitReturnRequest(req, res);
 
@@ -292,11 +348,13 @@ describe('User Return Controller - Unit Tests', () => {
     it('should handle database errors', async () => {
       req.body = {
         orderId: '222222222222222222222222',
-        reason: 'defective',
-        items: [{ productId: '333333333333333333333333' }]
+        items: [{ productId: '333333333333333333333333', quantity: 1, reason: 'defective' }]
       };
 
-      Order.findOne = vi.fn().mockRejectedValue(new Error('Database error'));
+      const mockFindOneWithSession = {
+        session: vi.fn().mockRejectedValue(new Error('Database error'))
+      };
+      Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
 
       await submitReturnRequest(req, res);
 

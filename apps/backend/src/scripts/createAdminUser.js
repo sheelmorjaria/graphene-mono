@@ -7,16 +7,16 @@ dotenv.config();
 export const createAdminUser = async (adminData = null) => {
   try {
     // Connect to MongoDB
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/graphene-store';
+    const mongoURI = process.env.MONGODB_URI;
     await mongoose.connect(mongoURI);
     console.log('Connected to MongoDB');
 
     // Admin user details
     const defaultAdminData = {
-      email: process.env.ADMIN_EMAIL || 'admin@grapheneos-store.com',
-      password: process.env.ADMIN_PASSWORD || 'Admin123!',
-      firstName: 'Admin',
-      lastName: 'User',
+      email: process.env.ADMIN_EMAIL,
+      password: process.env.ADMIN_PASSWORD,
+      firstName: 'Sheel',
+      lastName: 'Morjaria',
       role: 'admin',
       isActive: true,
       emailVerified: true

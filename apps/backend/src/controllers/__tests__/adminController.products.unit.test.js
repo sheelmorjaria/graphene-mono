@@ -1,53 +1,51 @@
-import { jest } from '@jest/globals';
-
-// Mock mongoose and models
-const mockQuery = {
-  sort: jest.fn().mockReturnThis(),
-  skip: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockReturnThis(),
-  select: jest.fn().mockReturnThis(),
-  lean: jest.fn().mockResolvedValue([])
-};
-
-const mockProduct = {
-  find: jest.fn().mockReturnValue(mockQuery),
-  countDocuments: jest.fn().mockResolvedValue(0)
-};
+import { vi, describe, test, beforeEach, expect } from 'vitest';
 
 // Mock the Product model
-jest.mock('../../models/Product.js', () => ({
-  default: mockProduct
+vi.mock('../../models/Product.js', () => ({
+  default: {
+    find: vi.fn(),
+    countDocuments: vi.fn()
+  }
 }));
 
 // Import the function to test after mocking
-import '../adminController.js');
+import { getProducts } from '../adminController.js';
+import Product from '../../models/Product.js';
 
 describe('Admin Controller - getProducts Unit Tests', () => {
-  let req, res;
+  let req, res, mockQuery;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     req = {
       query: {}
     };
     
     res = {
-      json: jest.fn(),
-      status: jest.fn().mockReturnThis()
+      json: vi.fn(),
+      status: vi.fn().mockReturnThis()
+    };
+
+    // Create mock query object for each test
+    mockQuery = {
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([])
     };
 
     // Reset mocks
-    mockQuery.lean.mockResolvedValue([]);
-    mockProduct.countDocuments.mockResolvedValue(0);
-    mockProduct.find.mockReturnValue(mockQuery);
+    Product.find.mockReturnValue(mockQuery);
+    Product.countDocuments.mockResolvedValue(0);
   });
 
   test('should handle empty query parameters', async () => {
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({});
-    expect(mockProduct.countDocuments).toHaveBeenCalledWith({});
+    expect(Product.find).toHaveBeenCalledWith({ status: { $ne: 'archived' } });
+    expect(Product.countDocuments).toHaveBeenCalledWith({ status: { $ne: 'archived' } });
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: {
@@ -69,11 +67,12 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
+    expect(Product.find).toHaveBeenCalledWith({
       $or: [
         { name: { $regex: 'pixel', $options: 'i' } },
         { sku: { $regex: 'pixel', $options: 'i' } }
-      ]
+      ],
+      status: { $ne: 'archived' }
     });
   });
 
@@ -82,8 +81,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      category: 'smartphone'
+    expect(Product.find).toHaveBeenCalledWith({
+      category: 'smartphone',
+      status: { $ne: 'archived' }
     });
   });
 
@@ -92,7 +92,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
+    expect(Product.find).toHaveBeenCalledWith({
       status: 'active'
     });
   });
@@ -103,8 +103,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      price: { $gte: 100, $lte: 500 }
+    expect(Product.find).toHaveBeenCalledWith({
+      price: { $gte: 100, $lte: 500 },
+      status: { $ne: 'archived' }
     });
   });
 
@@ -113,8 +114,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      price: { $gte: 100 }
+    expect(Product.find).toHaveBeenCalledWith({
+      price: { $gte: 100 },
+      status: { $ne: 'archived' }
     });
   });
 
@@ -123,8 +125,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      price: { $lte: 500 }
+    expect(Product.find).toHaveBeenCalledWith({
+      price: { $lte: 500 },
+      status: { $ne: 'archived' }
     });
   });
 
@@ -133,8 +136,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      stockQuantity: { $gt: 0 }
+    expect(Product.find).toHaveBeenCalledWith({
+      stockQuantity: { $gt: 0 },
+      status: { $ne: 'archived' }
     });
   });
 
@@ -143,8 +147,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      stockQuantity: 0
+    expect(Product.find).toHaveBeenCalledWith({
+      stockQuantity: 0,
+      status: { $ne: 'archived' }
     });
   });
 
@@ -153,8 +158,9 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
-      stockQuantity: { $gt: 0, $lte: 10 }
+    expect(Product.find).toHaveBeenCalledWith({
+      stockQuantity: { $gt: 0, $lte: 10 },
+      status: { $ne: 'archived' }
     });
   });
 
@@ -203,7 +209,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
   test('should calculate pagination metadata correctly', async () => {
     req.query.page = '2';
     req.query.limit = '5';
-    mockProduct.countDocuments.mockResolvedValue(12);
+    Product.countDocuments.mockResolvedValue(12);
     
     await getProducts(req, res);
 
@@ -232,7 +238,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
-    expect(mockProduct.find).toHaveBeenCalledWith({
+    expect(Product.find).toHaveBeenCalledWith({
       $or: [
         { name: { $regex: 'pixel', $options: 'i' } },
         { sku: { $regex: 'pixel', $options: 'i' } }
@@ -246,7 +252,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
 
   test('should handle database errors gracefully', async () => {
     const errorMessage = 'Database connection failed';
-    mockProduct.find.mockImplementation(() => {
+    Product.find.mockImplementation(() => {
       throw new Error(errorMessage);
     });
 
@@ -276,7 +282,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     ];
 
     mockQuery.lean.mockResolvedValue(mockProducts);
-    mockProduct.countDocuments.mockResolvedValue(1);
+    Product.countDocuments.mockResolvedValue(1);
     
     await getProducts(req, res);
 

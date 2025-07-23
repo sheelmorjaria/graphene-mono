@@ -150,7 +150,7 @@ const SearchResultsPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
               <div className="mb-4 lg:mb-0">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Found {searchResults.totalProducts} products for "{query}"
+                  Found {searchResults?.totalProducts || 0} products for "{query}"
                 </h2>
               </div>
 
@@ -239,7 +239,7 @@ const SearchResultsPage = () => {
             </div>
 
             {/* No Results */}
-            {searchResults.products.length === 0 && (
+            {searchResults && searchResults.products && searchResults.products.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-gray-500 text-lg mb-2">
                   No products found for "{query}"
@@ -251,7 +251,7 @@ const SearchResultsPage = () => {
             )}
 
             {/* Product Grid */}
-            {searchResults.products.length > 0 && (
+            {searchResults && searchResults.products && searchResults.products.length > 0 && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                   {searchResults.products.map((product) => (
@@ -260,7 +260,7 @@ const SearchResultsPage = () => {
                 </div>
 
                 {/* Pagination */}
-                {searchResults.totalPages > 1 && (
+                {searchResults && searchResults.totalPages > 1 && (
                   <div className="flex items-center justify-center space-x-4">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
@@ -272,12 +272,12 @@ const SearchResultsPage = () => {
                     </button>
 
                     <span className="text-sm text-gray-700">
-                      Page {currentPage} of {searchResults.totalPages}
+                      Page {currentPage} of {searchResults?.totalPages || 1}
                     </span>
 
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === searchResults.totalPages}
+                      disabled={currentPage === (searchResults?.totalPages || 1)}
                       aria-label="Next page"
                       className="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

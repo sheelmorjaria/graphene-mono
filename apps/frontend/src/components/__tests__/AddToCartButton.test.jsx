@@ -57,14 +57,13 @@ describe('AddToCartButton', () => {
   });
 
   it('should call onAddToCart when clicked', async () => {
-    const user = userEvent.setup();
     const mockOnAddToCart = vi.fn();
     
     render(<AddToCartButton {...defaultProps} onAddToCart={mockOnAddToCart} />);
     
     const button = screen.getByRole('button', { name: /add to cart/i });
     await act(async () => {
-      await user.click(button);
+      await userEvent.click(button);
     });
     
     expect(mockOnAddToCart).toHaveBeenCalledTimes(1);
@@ -88,7 +87,6 @@ describe('AddToCartButton', () => {
   });
 
   it('should handle quantity selection', async () => {
-    const user = userEvent.setup();
     render(<AddToCartButton {...defaultProps} showQuantitySelector={true} />);
     
     // Should show quantity selector
@@ -98,14 +96,14 @@ describe('AddToCartButton', () => {
     
     // Change quantity
     await act(async () => {
-      await user.selectOptions(quantitySelect, '3');
+      await userEvent.selectOptions(quantitySelect, '3');
     });
     expect(quantitySelect).toHaveValue('3');
     
     // Click add to cart
     const button = screen.getByRole('button', { name: /add to cart/i });
     await act(async () => {
-      await user.click(button);
+      await userEvent.click(button);
     });
     
     expect(defaultProps.onAddToCart).toHaveBeenCalledWith('product-123', 3);
@@ -150,7 +148,6 @@ describe('AddToCartButton', () => {
   });
 
   it('should handle keyboard navigation', async () => {
-    const user = userEvent.setup();
     const mockOnAddToCart = vi.fn();
     
     render(<AddToCartButton {...defaultProps} onAddToCart={mockOnAddToCart} />);
@@ -162,14 +159,14 @@ describe('AddToCartButton', () => {
     expect(button).toHaveFocus();
     
     await act(async () => {
-      await user.keyboard('{Enter}');
+      await userEvent.keyboard('{Enter}');
     });
     expect(mockOnAddToCart).toHaveBeenCalledTimes(1);
     expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1);
     
     // Press Space
     await act(async () => {
-      await user.keyboard(' ');
+      await userEvent.keyboard(' ');
     });
     expect(mockOnAddToCart).toHaveBeenCalledTimes(2);
     expect(mockOnAddToCart).toHaveBeenLastCalledWith('product-123', 1);

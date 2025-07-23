@@ -1,19 +1,100 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import PaymentGateway from '../PaymentGateway.js';
-import { connectTestDatabase, disconnectTestDatabase, clearTestDatabase } from '../../test/setup.js';
 
 describe('PaymentGateway Model', () => {
+  let mongoServer;
+
   beforeAll(async () => {
-    await connectTestDatabase();
+    // Close any existing connection first
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+
+    // Create dedicated in-memory MongoDB instance for this test
+    mongoServer = await MongoMemoryServer.create({
+      instance: {
+        replSet: undefined, // Disable replica set to avoid session issues  
+        storageEngine: 'wiredTiger'
+      }
+    });
+    
+    const mongoUri = mongoServer.getUri();
+    
+    // Connect with session-disabled options
+    await mongoose.connect(mongoUri, {
+      maxPoolSize: 1,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000
+    });
+
+    // Mock session methods to prevent session usage
+    const mockSession = {
+      inTransaction: vi.fn(() => false),
+      startTransaction: vi.fn(),
+      commitTransaction: vi.fn(),
+      abortTransaction: vi.fn(),
+      endSession: vi.fn(),
+      withTransaction: vi.fn((fn) => fn()),
+      id: 'mock-session-id'
+    };
+
+    // Override mongoose session methods
+    mongoose.startSession = vi.fn(() => Promise.resolve(mockSession));
+    if (mongoose.connection.startSession) {
+      mongoose.connection.startSession = vi.fn(() => Promise.resolve(mockSession));
+    }
+
+    // Override mongoose operations to avoid session usage
+    const originalDocumentSave = mongoose.Document.prototype.save;
+    mongoose.Document.prototype.save = function(options) {
+      // Remove session from options if present
+      if (options && options.session) {
+        const { session, ...cleanOptions } = options;
+        return originalDocumentSave.call(this, cleanOptions);
+      }
+      return originalDocumentSave.call(this, options);
+    };
+
+    // Override Query methods to remove session usage
+    const originalExec = mongoose.Query.prototype.exec;
+    mongoose.Query.prototype.exec = function() {
+      // Remove session from query options
+      if (this.options && this.options.session) {
+        delete this.options.session;
+      }
+      return originalExec.call(this);
+    };
+
+    // Override find methods
+    const originalFind = mongoose.Model.find;
+    mongoose.Model.find = function(filter, projection, options) {
+      if (options && options.session) {
+        const { session, ...cleanOptions } = options;
+        return originalFind.call(this, filter, projection, cleanOptions);
+      }
+      return originalFind.call(this, filter, projection, options);
+    };
   });
 
   afterAll(async () => {
-    await disconnectTestDatabase();
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
   beforeEach(async () => {
-    await clearTestDatabase();
+    // Clear all collections without using sessions
+    if (mongoose.connection.readyState === 1) {
+      const collections = Object.values(mongoose.connection.collections);
+      for (const collection of collections) {
+        await collection.deleteMany({}).catch(() => {}); // Ignore errors
+      }
+    }
   });
 
   describe('Schema Validation', () => {

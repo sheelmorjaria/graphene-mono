@@ -156,14 +156,13 @@ describe('SearchResultsPage', () => {
       performSearch: mockPerformSearch
     });
 
-    const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
     const searchInput = screen.getByTestId('search-input');
     
     // Clear the field first and then type
-    await user.clear(searchInput);
-    await user.type(searchInput, 'smartphone');
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, 'smartphone');
 
     // The component will trigger a search with the new query via URL change
     // Multiple calls will happen as the user types, the final one should be for 'smartphone'
@@ -179,11 +178,10 @@ describe('SearchResultsPage', () => {
       performSearch: mockPerformSearch
     });
 
-    const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
     const retryButton = screen.getByRole('button', { name: /try again/i });
-    await user.click(retryButton);
+    await userEvent.click(retryButton);
 
     // The retry should call with the current page parameter
     expect(mockPerformSearch).toHaveBeenCalledWith('pixel', { page: 1 });
@@ -226,11 +224,10 @@ describe('SearchResultsPage', () => {
       performSearch: mockPerformSearch
     });
 
-    const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
     const nextButton = screen.getByRole('button', { name: /next page/i });
-    await user.click(nextButton);
+    await userEvent.click(nextButton);
 
     expect(mockPerformSearch).toHaveBeenCalledWith('pixel', { page: 2 });
   });
@@ -260,11 +257,10 @@ describe('SearchResultsPage', () => {
       performSearch: mockPerformSearch
     });
 
-    const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
     const sortSelect = screen.getByLabelText(/sort by/i);
-    await user.selectOptions(sortSelect, 'price-asc');
+    await userEvent.selectOptions(sortSelect, 'price-asc');
 
     expect(mockPerformSearch).toHaveBeenCalledWith('pixel', { 
       page: 1,
@@ -337,11 +333,10 @@ describe('SearchResultsPage', () => {
       performSearch: mockPerformSearch
     });
 
-    const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
     const conditionSelect = screen.getByLabelText(/condition/i);
-    await user.selectOptions(conditionSelect, 'new');
+    await userEvent.selectOptions(conditionSelect, 'new');
 
     expect(mockPerformSearch).toHaveBeenCalledWith('pixel', { 
       page: 1,
@@ -383,12 +378,11 @@ describe('SearchResultsPage', () => {
       performSearch: mockPerformSearch
     });
 
-    const user = userEvent.setup();
     renderWithRouter(<SearchResultsPage />);
 
     const _prevButton = screen.getByRole('button', { name: /previous page/i });
-    await user.tab(); // Focus on prev button
-    await user.keyboard('{Enter}');
+    await userEvent.tab(); // Focus on prev button
+    await userEvent.keyboard('{Enter}');
 
     expect(mockPerformSearch).toHaveBeenCalledWith('pixel', { page: 1 });
   });

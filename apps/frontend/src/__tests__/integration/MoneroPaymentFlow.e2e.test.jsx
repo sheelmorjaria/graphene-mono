@@ -105,10 +105,8 @@ vi.mock('../../contexts/AuthContext', () => ({
 global.fetch = vi.fn();
 
 describe('Monero Payment End-to-End Flow', () => {
-  let user;
 
   beforeEach(() => {
-    user = userEvent.setup();
     jest.clearAllMocks();
     jest.useFakeTimers();
     
@@ -197,7 +195,7 @@ describe('Monero Payment End-to-End Flow', () => {
 
       // 2. Navigate to cart (simulate having items)
       const cartIcon = screen.getByRole('link', { name: /cart/i });
-      await user.click(cartIcon);
+      await userEvent.click(cartIcon);
 
       await waitFor(() => {
         expect(window.location.pathname).toBe('/cart');
@@ -205,7 +203,7 @@ describe('Monero Payment End-to-End Flow', () => {
 
       // 3. Proceed to checkout
       const checkoutButton = screen.getByRole('button', { name: /proceed to checkout/i });
-      await user.click(checkoutButton);
+      await userEvent.click(checkoutButton);
 
       await waitFor(() => {
         expect(window.location.pathname).toBe('/checkout');
@@ -221,14 +219,14 @@ describe('Monero Payment End-to-End Flow', () => {
       const cityInput = screen.getByLabelText(/city/i);
       const postalCodeInput = screen.getByLabelText(/postal code/i);
 
-      await user.type(fullNameInput, 'John Doe');
-      await user.type(addressInput, '123 Test Street');
-      await user.type(cityInput, 'London');
-      await user.type(postalCodeInput, 'SW1A 1AA');
+      await userEvent.type(fullNameInput, 'John Doe');
+      await userEvent.type(addressInput, '123 Test Street');
+      await userEvent.type(cityInput, 'London');
+      await userEvent.type(postalCodeInput, 'SW1A 1AA');
 
       // Continue to payment method
       const continueButton = screen.getByRole('button', { name: /continue/i });
-      await user.click(continueButton);
+      await userEvent.click(continueButton);
 
       // 5. Select Monero payment method
       await waitFor(() => {
@@ -236,7 +234,7 @@ describe('Monero Payment End-to-End Flow', () => {
       });
 
       const moneroOption = screen.getByLabelText(/monero.*xmr/i);
-      await user.click(moneroOption);
+      await userEvent.click(moneroOption);
 
       await waitFor(() => {
         expect(screen.getByText('Monero Payment Process')).toBeInTheDocument();
@@ -244,7 +242,7 @@ describe('Monero Payment End-to-End Flow', () => {
 
       // 6. Complete order
       const placeOrderButton = screen.getByRole('button', { name: /place order/i });
-      await user.click(placeOrderButton);
+      await userEvent.click(placeOrderButton);
 
       // 7. Should redirect to Monero payment page
       await waitFor(() => {
@@ -266,7 +264,7 @@ describe('Monero Payment End-to-End Flow', () => {
 
       // 10. Test copy functionality
       const copyButtons = screen.getAllByRole('button', { name: /copy/i });
-      await user.click(copyButtons[0]); // Copy address
+      await userEvent.click(copyButtons[0]); // Copy address
 
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
         '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q'
@@ -435,10 +433,10 @@ describe('Monero Payment End-to-End Flow', () => {
       });
 
       const moneroOption = screen.getByLabelText(/monero.*xmr/i);
-      await user.click(moneroOption);
+      await userEvent.click(moneroOption);
 
       const placeOrderButton = screen.getByRole('button', { name: /place order/i });
-      await user.click(placeOrderButton);
+      await userEvent.click(placeOrderButton);
 
       await waitFor(() => {
         expect(screen.getByText(/Payment service unavailable/)).toBeInTheDocument();
@@ -559,7 +557,7 @@ describe('Monero Payment End-to-End Flow', () => {
         })
       });
 
-      await user.click(tryAgainButton);
+      await userEvent.click(tryAgainButton);
 
       await waitFor(() => {
         expect(screen.getByText('Monero Payment')).toBeInTheDocument();

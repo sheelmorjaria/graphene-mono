@@ -199,7 +199,6 @@ describe('ProductDetailsPage', () => {
   });
 
   it('should handle add to cart action', async () => {
-    const user = userEvent.setup();
     useProductDetails.mockReturnValue({
       product: mockProduct,
       loading: false,
@@ -209,7 +208,7 @@ describe('ProductDetailsPage', () => {
     renderWithRouter(<ProductDetailsPage />);
 
     const addToCartButton = screen.getByTestId('add-to-cart');
-    await user.click(addToCartButton);
+    await userEvent.click(addToCartButton);
 
     // This would normally trigger cart logic
     expect(addToCartButton).toHaveBeenCalled;
@@ -304,7 +303,6 @@ describe('ProductDetailsPage', () => {
   });
 
   it('should handle retry when error occurs', async () => {
-    const user = userEvent.setup();
     const mockRefetch = vi.fn();
     
     useProductDetails.mockReturnValue({
@@ -317,13 +315,12 @@ describe('ProductDetailsPage', () => {
     renderWithRouter(<ProductDetailsPage />);
 
     const retryButton = screen.getByRole('button', { name: /try again/i });
-    await user.click(retryButton);
+    await userEvent.click(retryButton);
 
     expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 
   it('should navigate back to products list', async () => {
-    const _user = userEvent.setup();
     
     useProductDetails.mockReturnValue({
       product: null,
@@ -416,7 +413,6 @@ describe('ProductDetailsPage', () => {
   });
 
   it('should handle keyboard navigation properly', async () => {
-    const user = userEvent.setup();
     
     useProductDetails.mockReturnValue({
       product: mockProduct,
@@ -427,10 +423,10 @@ describe('ProductDetailsPage', () => {
     renderWithRouter(<ProductDetailsPage />);
 
     // Tab navigation should work through interactive elements
-    await user.tab();
+    await userEvent.tab();
     expect(screen.getByRole('link', { name: /home/i })).toHaveFocus();
 
-    await user.tab();
+    await userEvent.tab();
     expect(screen.getByRole('link', { name: /products/i })).toHaveFocus();
   });
 

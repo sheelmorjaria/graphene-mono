@@ -37,13 +37,12 @@ describe('ImageGallery', () => {
   });
 
   it('should change main image when thumbnail is clicked', async () => {
-    const user = userEvent.setup();
     render(<ImageGallery {...defaultProps} />);
     
     const mainImage = screen.getByRole('img', { name: /main product image/i });
     const secondThumbnail = screen.getByRole('img', { name: /thumbnail 2/i });
     
-    await user.click(secondThumbnail);
+    await userEvent.click(secondThumbnail);
     
     expect(mainImage).toHaveAttribute('src', mockImages[1]);
   });
@@ -58,7 +57,6 @@ describe('ImageGallery', () => {
   });
 
   it('should update active thumbnail when different thumbnail is selected', async () => {
-    const user = userEvent.setup();
     render(<ImageGallery {...defaultProps} />);
     
     const firstThumbnail = screen.getByRole('img', { name: /thumbnail 1/i });
@@ -72,7 +70,7 @@ describe('ImageGallery', () => {
     expect(secondButton).not.toHaveClass('ring-blue-500');
     
     // Click second thumbnail
-    await user.click(secondThumbnail);
+    await userEvent.click(secondThumbnail);
     
     // Now second should be active
     expect(firstButton).not.toHaveClass('ring-blue-500');
@@ -80,7 +78,6 @@ describe('ImageGallery', () => {
   });
 
   it('should handle keyboard navigation', async () => {
-    const user = userEvent.setup();
     render(<ImageGallery {...defaultProps} />);
     
     const firstThumbnail = screen.getByRole('img', { name: /thumbnail 1/i });
@@ -91,7 +88,7 @@ describe('ImageGallery', () => {
     expect(thumbnailButton).toHaveFocus();
     
     // Press arrow key to navigate
-    await user.keyboard('{ArrowRight}');
+    await userEvent.keyboard('{ArrowRight}');
     
     const secondThumbnail = screen.getByRole('img', { name: /thumbnail 2/i });
     const secondButton = secondThumbnail.closest('button');
@@ -167,7 +164,6 @@ describe('ImageGallery', () => {
   });
 
   it('should support zoom functionality on main image', async () => {
-    const user = userEvent.setup();
     render(<ImageGallery {...defaultProps} />);
     
     const mainImage = screen.getByRole('img', { name: /main product image/i });
@@ -175,7 +171,7 @@ describe('ImageGallery', () => {
     // Should be clickable for zoom
     expect(mainImage.closest('button')).toBeInTheDocument();
     
-    await user.click(mainImage);
+    await userEvent.click(mainImage);
     
     // Could trigger a zoom modal (implementation dependent)
     // For now, just ensure it's clickable

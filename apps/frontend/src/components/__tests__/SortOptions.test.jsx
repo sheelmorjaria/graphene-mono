@@ -41,13 +41,12 @@ describe('SortOptions', () => {
   });
 
   it('should call onSortChange when selection changes', async () => {
-    const user = userEvent.setup();
     const mockOnSortChange = vi.fn();
     
     render(<SortOptions {...defaultProps} onSortChange={mockOnSortChange} />);
     
     const select = screen.getByRole('combobox');
-    await user.selectOptions(select, 'price-low');
+    await userEvent.selectOptions(select, 'price-low');
     
     expect(mockOnSortChange).toHaveBeenCalledWith('price-low');
   });
@@ -70,12 +69,11 @@ describe('SortOptions', () => {
   });
 
   it('should handle focus and keyboard navigation', async () => {
-    const user = userEvent.setup();
     
     render(<SortOptions {...defaultProps} />);
     
     const select = screen.getByRole('combobox');
-    await user.tab();
+    await userEvent.tab();
     
     expect(select).toHaveFocus();
   });

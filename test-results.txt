@@ -1,0 +1,669 @@
+
+> @graphene-store/monorepo@1.0.0 test:backend
+> npm run test --workspace=@graphene-store/backend
+
+
+> @graphene-store/backend@1.0.0 test
+> vitest --config vitest.config.unit.js
+
+
+ RUN  v3.2.4 /home/sheel/Downloads/graphene-mono/apps/backend
+
+ ❯ |unit| src/utils/__tests__/logger.comprehensive.test.js (16 tests | 7 failed) 17ms
+   ✓ Logger Utility - Comprehensive Tests > Logger Configuration > should have logger available 1ms
+   × Logger Utility - Comprehensive Tests > Logger Configuration > should have logging helper functions 4ms
+     → [vitest] No "logAuthEvent" export is defined on the "../utils/logger.js" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+   × Logger Utility - Comprehensive Tests > Logger Methods > should have all logging methods 3ms
+     → expected undefined to be type of 'function'
+   × Logger Utility - Comprehensive Tests > Logger Methods > should have stream object for Morgan integration 0ms
+     → expected undefined to be defined
+   × Logger Utility - Comprehensive Tests > Logger Methods > should handle stream write correctly 1ms
+     → http does not exist
+   ✓ Logger Utility - Comprehensive Tests > logError Function > should call logError function without throwing 1ms
+   ✓ Logger Utility - Comprehensive Tests > logError Function > should handle errors without context 0ms
+   ✓ Logger Utility - Comprehensive Tests > logError Function > should handle non-Error objects 0ms
+   ✓ Logger Utility - Comprehensive Tests > logPaymentEvent Function > should call logPaymentEvent function without throwing 0ms
+   ✓ Logger Utility - Comprehensive Tests > logPaymentEvent Function > should handle payment events without data 0ms
+   × Logger Utility - Comprehensive Tests > logAuthEvent Function > should call logAuthEvent function without throwing 2ms
+     → expected [Function] to not throw an error but 'Error: [vitest] No "logAuthEvent" exp…' was thrown
+   × Logger Utility - Comprehensive Tests > logAuthEvent Function > should handle auth events without details 1ms
+     → expected [Function] to not throw an error but 'Error: [vitest] No "logAuthEvent" exp…' was thrown
+   × Logger Utility - Comprehensive Tests > logSecurityEvent Function > should call logSecurityEvent function without throwing 1ms
+     → expected [Function] to not throw an error but 'Error: [vitest] No "logSecurityEvent"…' was thrown
+   ✓ Logger Utility - Comprehensive Tests > Error Scenarios > should handle null error gracefully 0ms
+   ✓ Logger Utility - Comprehensive Tests > Error Scenarios > should handle undefined error gracefully 0ms
+   ✓ Logger Utility - Comprehensive Tests > Error Scenarios > should handle circular reference in context 0ms
+stdout | src/controllers/__tests__/authController.unit.test.js > Auth Controller - Unit Tests > register > should handle basic registration flow
+Email verification token generated for user: john@example.com { emailVerificationToken: [32m'verify-token-123'[39m }
+
+stdout | src/controllers/__tests__/authController.unit.test.js > Auth Controller - Unit Tests > logout > should handle logout request
+User test@example.com logged out at 2025-07-23T17:08:24.132Z
+
+stdout | src/controllers/__tests__/authController.unit.test.js > Auth Controller - Unit Tests > forgotPassword > should handle forgot password request
+Password reset requested for user john@example.com at 2025-07-23T17:08:24.145Z
+Reset token generated: reset-token-123
+
+stdout | src/controllers/__tests__/authController.unit.test.js > Auth Controller - Unit Tests > resetPassword > should handle reset password request
+Password reset completed for user undefined at 2025-07-23T17:08:24.153Z
+
+stdout | src/controllers/__tests__/authController.unit.test.js > Auth Controller - Unit Tests > Request/Response Structure > should handle request and response objects
+User undefined logged out at 2025-07-23T17:08:24.172Z
+
+ ✓ |unit| src/controllers/__tests__/authController.unit.test.js (18 tests) 79ms
+ ✓ |unit| src/controllers/__tests__/health.coverage.unit.test.js (16 tests) 105ms
+ ❯ |unit| src/controllers/__tests__/userReturnController.unit.test.js (10 tests | 4 failed) 80ms
+   ✓ User Return Controller - Unit Tests > getUserReturnRequests > should return user return requests with default pagination 17ms
+   ✓ User Return Controller - Unit Tests > getUserReturnRequests > should handle database errors 16ms
+   × User Return Controller - Unit Tests > getReturnRequestDetails > should return return request details for valid ID 12ms
+     → expected "spy" to be called with arguments: [ { success: true, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "data": ObjectContaining {[90m
+[31m+     "data": {[90m
+[31m+       "returnRequest": {[90m
+[31m+         "adminNotes": undefined,[90m
+[31m+         "approvedDate": undefined,[90m
+[31m+         "createdAt": undefined,[90m
+[31m+         "formattedRequestNumber": undefined,[90m
+[2m          "formattedStatus": "Approved",[22m
+[2m          "id": "111111111111111111111111",[22m
+[31m+         "images": undefined,[90m
+[31m+         "isWithinReturnWindow": undefined,[90m
+[31m+         "itemReceivedDate": undefined,[90m
+[31m+         "items": undefined,[90m
+[31m+         "order": {[90m
+[31m+           "_id": "222222222222222222222222",[90m
+[31m+           "orderDate": 2023-01-01T00:00:00.000Z,[90m
+[31m+           "orderNumber": "ORD001",[90m
+[31m+         },[90m
+[31m+         "orderId": "222222222222222222222222",[90m
+[31m+         "orderNumber": "ORD001",[90m
+[31m+         "refundId": undefined,[90m
+[31m+         "refundProcessedDate": undefined,[90m
+[31m+         "refundStatus": undefined,[90m
+[31m+         "requestDate": undefined,[90m
+[2m          "returnRequestNumber": "RET001",[22m
+[31m+         "returnShippingAddress": undefined,[90m
+[31m+         "returnWindow": undefined,[90m
+[2m          "status": "approved",[22m
+[31m+         "totalItemsCount": undefined,[90m
+[31m+         "totalRefundAmount": undefined,[90m
+[31m+         "updatedAt": undefined,[90m
+[31m+       },[90m
+[2m      },[22m
+[2m      "success": true,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × User Return Controller - Unit Tests > getReturnRequestDetails > should return 400 for invalid return request ID 4ms
+     → expected "spy" to be called with arguments: [ 400 ][90m
+
+Number of calls: [1m0[22m
+[39m
+   ✓ User Return Controller - Unit Tests > getReturnRequestDetails > should return 404 for non-existent return request 4ms
+   × User Return Controller - Unit Tests > submitReturnRequest > should create return request successfully 5ms
+     → expected "spy" to be called with arguments: [ { …(2) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[2m      "_id": "222222222222222222222222",[22m
+[32m-     "userId": "123456789012345678901234",[90m
+[31m+     "customerEmail": "test@example.com",[90m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ User Return Controller - Unit Tests > submitReturnRequest > should validate required fields 3ms
+   × User Return Controller - Unit Tests > submitReturnRequest > should validate orderId format 4ms
+     → expected "spy" to be called with arguments: [ { success: false, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "error": "Invalid order ID",[90m
+[31m+     "error": "Unable to determine delivery date for this order",[90m
+[2m      "success": false,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ User Return Controller - Unit Tests > submitReturnRequest > should handle non-existent order 3ms
+   ✓ User Return Controller - Unit Tests > submitReturnRequest > should handle database errors 9ms
+ ❯ |unit| src/controllers/__tests__/userOrderController.unit.test.js (13 tests | 4 failed) 126ms
+   ✓ User Order Controller - Unit Tests > getUserOrders > should return user orders with default pagination 15ms
+   ✓ User Order Controller - Unit Tests > getUserOrders > should handle database errors 16ms
+   ✓ User Order Controller - Unit Tests > getUserOrderDetails > should return order details for valid order 5ms
+   ✓ User Order Controller - Unit Tests > getUserOrderDetails > should return 400 for invalid order ID format 6ms
+   ✓ User Order Controller - Unit Tests > getUserOrderDetails > should return 404 for non-existent order 6ms
+   × User Order Controller - Unit Tests > placeOrder > should place order successfully 11ms
+     → expected "spy" to be called with arguments: [ 201 ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[32m-   201,[90m
+[31m+   400,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ User Order Controller - Unit Tests > placeOrder > should handle empty cart 7ms
+   ✓ User Order Controller - Unit Tests > cancelOrder > should cancel order successfully 10ms
+   × User Order Controller - Unit Tests > cancelOrder > should handle invalid order ID 11ms
+     → expected "spy" to be called with arguments: [ { success: false, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "error": "Invalid order ID format",[90m
+[31m+     "error": "Order cannot be cancelled. Current status: cancelled",[90m
+[2m      "success": false,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ User Order Controller - Unit Tests > cancelOrder > should handle non-existent order 6ms
+   × User Order Controller - Unit Tests > getEligibleReturnItems > should return eligible return items 17ms
+     → expected "spy" to be called with arguments: [ { success: true, data: { …(1) } } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[2m      "data": {[22m
+[32m-       "eligibleItems": ArrayContaining [[90m
+[32m-         ObjectContaining {[90m
+[32m-           "canBeReturned": true,[90m
+[31m+       "deliveryDate": 2025-07-23T17:08:24.258Z,[90m
+[31m+       "eligibleItems": [[90m
+[31m+         {[90m
+[2m            "productId": "444444444444444444444444",[22m
+[31m+           "productImage": undefined,[90m
+[31m+           "productName": undefined,[90m
+[31m+           "productSlug": undefined,[90m
+[2m            "quantity": 2,[22m
+[31m+           "totalPrice": undefined,[90m
+[31m+           "unitPrice": undefined,[90m
+[2m          },[22m
+[2m        ],[22m
+[31m+       "orderId": "111111111111111111111111",[90m
+[31m+       "orderNumber": undefined,[90m
+[31m+       "returnWindow": 30,[90m
+[2m      },[22m
+[2m      "success": true,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × User Order Controller - Unit Tests > getEligibleReturnItems > should handle invalid order ID 6ms
+     → expected "spy" to be called with arguments: [ 400 ][90m
+
+Number of calls: [1m0[22m
+[39m
+   ✓ User Order Controller - Unit Tests > getEligibleReturnItems > should handle non-existent order 5ms
+ ✓ |unit| src/services/__tests__/bitcoinService.test.js (24 tests) 169ms
+ ✓ |unit| src/services/__tests__/bitcoinService.unit.test.js (23 tests) 168ms
+ ✓ |unit| src/__tests__/unit/bitcoinService.test.js (22 tests) 161ms
+ ✓ |unit| src/controllers/__tests__/adminController.orders.test.js (10 tests) 104ms
+ ✓ |unit| src/middleware/__tests__/imageUpload.comprehensive.test.js (29 tests) 100ms
+ ✓ |unit| src/controllers/__tests__/paymentController.simple.unit.test.js (25 tests) 117ms
+ ✓ |unit| src/controllers/__tests__/cartController.unit.test.js (33 tests) 342ms
+ ✓ |unit| src/controllers/__tests__/adminController.products.test.js (14 tests) 357ms
+ ✓ |unit| src/controllers/__tests__/internalOrderController.unit.test.js (8 tests) 21ms
+ ✓ |unit| src/controllers/__tests__/PaymentController.test.js (17 tests) 29ms
+ ✓ |unit| src/services/__tests__/moneroService.comprehensive.unit.test.js (34 tests) 31ms
+ ✓ |unit| src/services/__tests__/emailService.simple.test.js (15 tests) 45ms
+ ✓ |unit| src/middleware/__tests__/auth.test.js (23 tests) 29ms
+ ✓ |unit| src/middleware/__tests__/security.comprehensive.unit.test.js (35 tests) 45ms
+ ✓ |unit| src/services/__tests__/paypalService.unit.test.js (25 tests) 41ms
+stdout | src/controllers/__tests__/paymentController.comprehensive.unit.test.js > Payment Controller - Comprehensive Unit Tests > createMoneroPayment > should handle session not available gracefully
+MongoDB sessions not available, continuing without transactions
+
+ ✓ |unit| src/validators/__tests__/orderValidators.test.js (34 tests) 47ms
+ ✓ |unit| src/validators/__tests__/productValidators.test.js (58 tests) 78ms
+ ✓ |unit| src/middleware/__tests__/validation.unit.test.js (33 tests) 84ms
+ ✓ |unit| src/controllers/__tests__/adminController.orderDetails.test.js (5 tests) 176ms
+ ❯ |unit| src/controllers/__tests__/paymentController.comprehensive.unit.test.js (39 tests | 16 failed) 778ms
+   ✓ Payment Controller - Comprehensive Unit Tests > getPaymentMethods > should return all available payment methods 31ms
+   ✓ Payment Controller - Comprehensive Unit Tests > getPaymentMethods > should handle errors gracefully 15ms
+   ✓ Payment Controller - Comprehensive Unit Tests > createPayPalOrder > should create PayPal order successfully 18ms
+   ✓ Payment Controller - Comprehensive Unit Tests > createPayPalOrder > should validate required fields 15ms
+   ✓ Payment Controller - Comprehensive Unit Tests > createPayPalOrder > should handle empty cart 35ms
+   ✓ Payment Controller - Comprehensive Unit Tests > createPayPalOrder > should handle PayPal client not initialized 41ms
+   ✓ Payment Controller - Comprehensive Unit Tests > createPayPalOrder > should handle out of stock products 15ms
+   × Payment Controller - Comprehensive Unit Tests > createPayPalOrder > should handle database transaction errors 24ms
+     → expected "spy" to be called with arguments: [ 500 ][90m
+
+Number of calls: [1m0[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > capturePayPalPayment > should capture PayPal payment successfully 13ms
+     → expected "spy" to be called with arguments: [ 'order123' ][90m
+
+Number of calls: [1m0[22m
+[39m
+   ✓ Payment Controller - Comprehensive Unit Tests > capturePayPalPayment > should validate required fields 9ms
+   × Payment Controller - Comprehensive Unit Tests > capturePayPalPayment > should handle non-existent order 15ms
+     → expected "spy" to be called with arguments: [ 404 ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[32m-   404,[90m
+[31m+   500,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > capturePayPalPayment > should handle unauthorized access 11ms
+     → expected "spy" to be called with arguments: [ 403 ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[32m-   403,[90m
+[31m+   500,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > capturePayPalPayment > should handle already completed payments 10ms
+     → expected "spy" to be called with arguments: [ 400 ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[32m-   400,[90m
+[31m+   500,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ Payment Controller - Comprehensive Unit Tests > capturePayPalPayment > should handle PayPal capture failures 9ms
+   × Payment Controller - Comprehensive Unit Tests > initializeBitcoinPayment > should create Bitcoin payment successfully 11ms
+     → expected "spy" to be called with arguments: [ 'bitcoin_payment_created', …(1) ][90m
+
+Number of calls: [1m0[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > initializeBitcoinPayment > should validate order ID format 10ms
+     → expected "spy" to be called with arguments: [ 400 ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[32m-   400,[90m
+[31m+   500,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ Payment Controller - Comprehensive Unit Tests > initializeBitcoinPayment > should handle missing order ID 12ms
+   × Payment Controller - Comprehensive Unit Tests > initializeBitcoinPayment > should handle wrong payment method 10ms
+     → expected "spy" to be called with arguments: [ 400 ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[32m-   400,[90m
+[31m+   500,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ Payment Controller - Comprehensive Unit Tests > initializeBitcoinPayment > should handle exchange rate service failure 10ms
+   × Payment Controller - Comprehensive Unit Tests > getBitcoinPaymentStatus > should check Bitcoin payment status successfully 10ms
+     → expected "spy" to be called at least once
+   × Payment Controller - Comprehensive Unit Tests > getBitcoinPaymentStatus > should detect expired payments 13ms
+     → expected "spy" to be called with arguments: [ { success: true, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "data": ObjectContaining {[90m
+[32m-       "isExpired": true,[90m
+[31m+     "data": {[90m
+[31m+       "bitcoinAddress": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",[90m
+[31m+       "bitcoinAmount": 0.005,[90m
+[31m+       "bitcoinAmountReceived": 0,[90m
+[31m+       "bitcoinConfirmations": 0,[90m
+[31m+       "bitcoinTransactionHash": undefined,[90m
+[31m+       "exchangeRate": undefined,[90m
+[31m+       "isConfirmed": undefined,[90m
+[31m+       "isExpired": undefined,[90m
+[31m+       "orderId": "order123",[90m
+[31m+       "orderNumber": undefined,[90m
+[31m+       "paymentExpiry": 2025-07-23T16:08:25.283Z,[90m
+[31m+       "paymentStatus": undefined,[90m
+[31m+       "requiresConfirmations": 2,[90m
+[2m      },[22m
+[2m      "success": true,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > getBitcoinPaymentStatus > should handle insufficient confirmations 14ms
+     → expected "spy" to be called with arguments: [ { success: true, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "data": ObjectContaining {[90m
+[32m-       "confirmations": 1,[90m
+[32m-       "paymentStatus": "awaiting_confirmation",[90m
+[31m+     "data": {[90m
+[31m+       "bitcoinAddress": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",[90m
+[31m+       "bitcoinAmount": 0.005,[90m
+[31m+       "bitcoinAmountReceived": 0,[90m
+[31m+       "bitcoinConfirmations": 0,[90m
+[31m+       "bitcoinTransactionHash": undefined,[90m
+[31m+       "exchangeRate": undefined,[90m
+[31m+       "isConfirmed": undefined,[90m
+[31m+       "isExpired": undefined,[90m
+[31m+       "orderId": "order123",[90m
+[31m+       "orderNumber": undefined,[90m
+[31m+       "paymentExpiry": 2025-07-23T18:08:25.297Z,[90m
+[31m+       "paymentStatus": undefined,[90m
+[31m+       "requiresConfirmations": 2,[90m
+[2m      },[22m
+[2m      "success": true,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > getBitcoinPaymentStatus > should handle no payment received 13ms
+     → expected "spy" to be called with arguments: [ { success: true, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "data": ObjectContaining {[90m
+[32m-       "amountReceived": 0,[90m
+[32m-       "confirmations": 0,[90m
+[32m-       "paymentStatus": "pending",[90m
+[31m+     "data": {[90m
+[31m+       "bitcoinAddress": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",[90m
+[31m+       "bitcoinAmount": 0.005,[90m
+[31m+       "bitcoinAmountReceived": 0,[90m
+[31m+       "bitcoinConfirmations": 0,[90m
+[31m+       "bitcoinTransactionHash": undefined,[90m
+[31m+       "exchangeRate": undefined,[90m
+[31m+       "isConfirmed": undefined,[90m
+[31m+       "isExpired": undefined,[90m
+[31m+       "orderId": "order123",[90m
+[31m+       "orderNumber": undefined,[90m
+[31m+       "paymentExpiry": 2025-07-23T18:08:25.311Z,[90m
+[31m+       "paymentStatus": undefined,[90m
+[31m+       "requiresConfirmations": 2,[90m
+[2m      },[22m
+[2m      "success": true,[22m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > createMoneroPayment > should create Monero payment successfully 11ms
+     → expected "spy" to be called with arguments: [ 'order123' ][90m
+
+Number of calls: [1m0[22m
+[39m
+   × Payment Controller - Comprehensive Unit Tests > createMoneroPayment > should handle session not available gracefully 23ms
+     → expected "spy" to be called at least once
+   ✓ Payment Controller - Comprehensive Unit Tests > createMoneroPayment > should validate ObjectId format 15ms
+   × Payment Controller - Comprehensive Unit Tests > createMoneroPayment > should handle service errors 30ms
+     → expected "spy" to be called at least once
+   ✓ Payment Controller - Comprehensive Unit Tests > checkMoneroPaymentStatus > should check Monero payment status successfully 35ms
+   ✓ Payment Controller - Comprehensive Unit Tests > checkMoneroPaymentStatus > should handle missing payment details 28ms
+   ✓ Payment Controller - Comprehensive Unit Tests > checkMoneroPaymentStatus > should detect expired payments 27ms
+   ✓ Payment Controller - Comprehensive Unit Tests > handleMoneroWebhook > should process valid webhook successfully 23ms
+   ✓ Payment Controller - Comprehensive Unit Tests > handleMoneroWebhook > should reject invalid signature 20ms
+   ✓ Payment Controller - Comprehensive Unit Tests > handleMoneroWebhook > should handle missing order ID 28ms
+   ✓ Payment Controller - Comprehensive Unit Tests > handleMoneroWebhook > should handle different payment statuses 54ms
+   ✓ Payment Controller - Comprehensive Unit Tests > handleMoneroWebhook > should handle webhook processing errors 47ms
+   ✓ Payment Controller - Comprehensive Unit Tests > Edge Cases and Error Scenarios > should handle null user gracefully in createPayPalOrder 30ms
+   ✓ Payment Controller - Comprehensive Unit Tests > Edge Cases and Error Scenarios > should handle circular references in logging 14ms
+   × Payment Controller - Comprehensive Unit Tests > Edge Cases and Error Scenarios > should handle very large order amounts 12ms
+     → expected "spy" to be called with arguments: [ { success: true, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    {[22m
+[32m-     "data": ObjectContaining {[90m
+[32m-       "btcAmount": Any<Number>,[90m
+[32m-     },[90m
+[32m-     "success": true,[90m
+[31m+     "error": "Failed to initialize Bitcoin payment",[90m
+[31m+     "success": false,[90m
+[2m    },[22m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ Payment Controller - Comprehensive Unit Tests > Edge Cases and Error Scenarios > should handle malformed webhook data 13ms
+ ✓ |unit| src/controllers/__tests__/shippingController.test.js (25 tests) 50ms
+ ✓ |unit| src/middleware/__tests__/errorHandler.test.js (11 tests) 28ms
+ ✓ |unit| src/middleware/__tests__/errorHandler.comprehensive.unit.test.js (32 tests) 30ms
+ ✓ |unit| src/services/__tests__/emailService.comprehensive.test.js (20 tests) 29ms
+ ✓ |unit| src/services/__tests__/emailService.accountStatus.test.js (13 tests) 30ms
+ ✓ |unit| src/utils/__tests__/logger.test.js (16 tests) 20ms
+ ✓ |unit| src/services/__tests__/moneroService.test.js (15 tests) 17ms
+ ✓ |unit| src/controllers/__tests__/productsController.unit.test.js (10 tests) 63ms
+ ✓ |unit| src/services/__tests__/serviceMocking.simple.test.js (11 tests) 47ms
+ ✓ |unit| src/utils/__tests__/logger.simple.unit.test.js (27 tests) 29ms
+ ✓ |unit| src/middleware/__tests__/notFound.test.js (12 tests) 71ms
+ ✓ |unit| src/services/__tests__/moneroService.simple.test.js (5 tests) 49ms
+ ✓ |unit| src/controllers/__tests__/refundLogic.test.js (22 tests) 31ms
+ ✓ |unit| src/middleware/__tests__/errorHandler.unit.test.js (17 tests) 22ms
+ ✓ |unit| src/__tests__/unit/paypalPayment.test.js (19 tests) 9ms
+ ✓ |unit| src/services/__tests__/paypalService.test.js (17 tests) 12ms
+ ✓ |unit| src/middleware/__tests__/maintenance.test.js (19 tests) 13ms
+ ✓ |unit| src/middleware/__tests__/rateLimiter.test.js (5 tests) 5ms
+ ✓ |unit| src/services/__tests__/emailService.basic.test.js (3 tests) 6ms
+stdout | src/controllers/__tests__/userAddressController.test.js
+⚠️  Sentry not initialized - missing SENTRY_DSN or not in production
+⚠️  New Relic not initialized - missing license key or not in production
+
+ ✓ |unit| src/services/__tests__/moneroService.working.test.js (15 tests) 17ms
+ ✓ |unit| src/validators/__tests__/authValidators.unit.test.js (17 tests) 9ms
+stdout | src/controllers/__tests__/supportController.test.js
+⚠️  Sentry not initialized - missing SENTRY_DSN or not in production
+⚠️  New Relic not initialized - missing license key or not in production
+
+ ✓ |unit| src/controllers/__tests__/userAddressController.test.js (17 tests) 330ms
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Successful submissions > should submit contact form with valid data
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.446Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Successful submissions > should handle all valid subject types
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'order-inquiry'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.458Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Successful submissions > should handle all valid subject types
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.461Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Successful submissions > should handle all valid subject types
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'technical-issue'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.463Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Successful submissions > should handle all valid subject types
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'other'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.465Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Successful submissions > should handle contact form with order number
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mtrue[39m,
+  orderValid: [33mtrue[39m,
+  timestamp: [35m2025-07-23T17:08:27.471Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Input sanitization > should handle HTML input safely
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.520Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Input sanitization > should trim whitespace from input fields
+📞 Contact Form Submission: {
+  from: [32m'john@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mtrue[39m,
+  orderValid: [33mtrue[39m,
+  timestamp: [35m2025-07-23T17:08:27.532Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Rate limiting > should allow multiple submissions in test environment
+📞 Contact Form Submission: {
+  from: [32m'user0@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.538Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Rate limiting > should allow multiple submissions in test environment
+📞 Contact Form Submission: {
+  from: [32m'user1@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.538Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Rate limiting > should allow multiple submissions in test environment
+📞 Contact Form Submission: {
+  from: [32m'user2@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.539Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Rate limiting > should allow multiple submissions in test environment
+📞 Contact Form Submission: {
+  from: [32m'user3@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.539Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Rate limiting > should allow multiple submissions in test environment
+📞 Contact Form Submission: {
+  from: [32m'user4@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.540Z[39m
+}
+
+stdout | src/controllers/__tests__/supportController.test.js > Support Controller > POST /api/support/contact > Rate limiting > should allow multiple submissions in test environment
+📞 Contact Form Submission: {
+  from: [32m'user5@example.com'[39m,
+  subject: [32m'product-question'[39m,
+  hasOrderNumber: [33mfalse[39m,
+  orderValid: [90mundefined[39m,
+  timestamp: [35m2025-07-23T17:08:27.540Z[39m
+}
+
+ ✓ |unit| src/controllers/__tests__/supportController.test.js (10 tests) 120ms
+
+ Test Files  4 failed | 44 passed (48)
+      Tests  31 failed | 906 passed (937)
+   Start at  18:08:23
+   Duration  4.54s (transform 3.10s, setup 16.28s, collect 14.46s, tests 4.36s, environment 12ms, prepare 7.15s)
+

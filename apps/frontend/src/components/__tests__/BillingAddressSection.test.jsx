@@ -108,10 +108,9 @@ describe('BillingAddressSection', () => {
     it('should call setUseSameAsShipping when checkbox is toggled', async () => {
       const setUseSameAsShipping = vi.fn();
       renderWithProviders({ setUseSameAsShipping });
-      const user = userEvent.setup();
-      
+        
       const checkbox = screen.getByRole('checkbox');
-      await user.click(checkbox);
+      await userEvent.click(checkbox);
       
       expect(setUseSameAsShipping).toHaveBeenCalledWith(false);
     });
@@ -155,10 +154,9 @@ describe('BillingAddressSection', () => {
         ...separateBillingContext, 
         setBillingAddress 
       });
-      const user = userEvent.setup();
-      
+        
       const addressCard = screen.getByText('Jane Smith').closest('div');
-      await user.click(addressCard);
+      await userEvent.click(addressCard);
       
       expect(setBillingAddress).toHaveBeenCalledWith(mockAddresses[1]);
     });
@@ -217,10 +215,9 @@ describe('BillingAddressSection', () => {
 
     it('should show add address form when button is clicked', async () => {
       renderWithProviders(separateBillingContext);
-      const user = userEvent.setup();
-      
+        
       const addButton = screen.getByText('+ Add New Billing Address');
-      await user.click(addButton);
+      await userEvent.click(addButton);
       
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
@@ -252,27 +249,26 @@ describe('BillingAddressSection', () => {
         setBillingAddress, 
         refreshAddresses 
       });
-      const user = userEvent.setup();
-      
+        
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
-      await user.click(addButton);
+      await userEvent.click(addButton);
       
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
       
       // Fill form
-      await user.type(screen.getByLabelText(/full name/i), 'New Billing User');
-      await user.type(screen.getByLabelText(/address line 1/i), '999 Bill St');
-      await user.type(screen.getByLabelText(/city/i), 'Billtown');
-      await user.type(screen.getByLabelText(/state/i), 'FL');
-      await user.type(screen.getByLabelText(/postal code/i), '99999');
-      await user.type(screen.getByLabelText(/country/i), 'USA');
+      await userEvent.type(screen.getByLabelText(/full name/i), 'New Billing User');
+      await userEvent.type(screen.getByLabelText(/address line 1/i), '999 Bill St');
+      await userEvent.type(screen.getByLabelText(/city/i), 'Billtown');
+      await userEvent.type(screen.getByLabelText(/state/i), 'FL');
+      await userEvent.type(screen.getByLabelText(/postal code/i), '99999');
+      await userEvent.type(screen.getByLabelText(/country/i), 'USA');
       
       // Submit form
       const saveButton = screen.getByText('Save Address');
-      await user.click(saveButton);
+      await userEvent.click(saveButton);
       
       await waitFor(() => {
         expect(addUserAddress).toHaveBeenCalled();
@@ -283,11 +279,10 @@ describe('BillingAddressSection', () => {
 
     it('should handle form cancellation', async () => {
       renderWithProviders(separateBillingContext);
-      const user = userEvent.setup();
-      
+        
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
-      await user.click(addButton);
+      await userEvent.click(addButton);
       
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
@@ -295,7 +290,7 @@ describe('BillingAddressSection', () => {
       
       // Cancel form
       const cancelButton = screen.getByText('Cancel');
-      await user.click(cancelButton);
+      await userEvent.click(cancelButton);
       
       await waitFor(() => {
         expect(screen.getByText('Choose a billing address:')).toBeInTheDocument();
@@ -314,10 +309,9 @@ describe('BillingAddressSection', () => {
 
     it('should show edit form when edit button is clicked', async () => {
       renderWithProviders(separateBillingContext);
-      const user = userEvent.setup();
-      
+        
       const editButtons = screen.getAllByText('Edit');
-      await user.click(editButtons[0]);
+      await userEvent.click(editButtons[0]);
       
       await waitFor(() => {
         expect(screen.getByText('Edit Billing Address')).toBeInTheDocument();
@@ -344,11 +338,10 @@ describe('BillingAddressSection', () => {
         setBillingAddress, 
         refreshAddresses 
       });
-      const user = userEvent.setup();
-      
+        
       // Click edit
       const editButtons = screen.getAllByText('Edit');
-      await user.click(editButtons[0]);
+      await userEvent.click(editButtons[0]);
       
       await waitFor(() => {
         expect(screen.getByText('Edit Billing Address')).toBeInTheDocument();
@@ -356,12 +349,12 @@ describe('BillingAddressSection', () => {
       
       // Update name
       const nameInput = screen.getByDisplayValue('John Doe');
-      await user.clear(nameInput);
-      await user.type(nameInput, 'John Updated');
+      await userEvent.clear(nameInput);
+      await userEvent.type(nameInput, 'John Updated');
       
       // Submit form
       const updateButton = screen.getByText('Update Address');
-      await user.click(updateButton);
+      await userEvent.click(updateButton);
       
       await waitFor(() => {
         expect(updateUserAddress).toHaveBeenCalledWith('1', expect.objectContaining({
@@ -408,10 +401,9 @@ describe('BillingAddressSection', () => {
         addressesError: 'Failed to load addresses',
         refreshAddresses
       });
-      const user = userEvent.setup();
-      
+        
       const retryButton = screen.getByText('Retry');
-      await user.click(retryButton);
+      await userEvent.click(retryButton);
       
       expect(refreshAddresses).toHaveBeenCalled();
     });
@@ -419,27 +411,26 @@ describe('BillingAddressSection', () => {
     it('should show error when form submission fails', async () => {
       addUserAddress.mockRejectedValue(new Error('Server error'));
       renderWithProviders(separateBillingContext);
-      const user = userEvent.setup();
-      
+        
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
-      await user.click(addButton);
+      await userEvent.click(addButton);
       
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
       
       // Fill form
-      await user.type(screen.getByLabelText(/full name/i), 'Test User');
-      await user.type(screen.getByLabelText(/address line 1/i), '123 Test St');
-      await user.type(screen.getByLabelText(/city/i), 'Test City');
-      await user.type(screen.getByLabelText(/state/i), 'TS');
-      await user.type(screen.getByLabelText(/postal code/i), '12345');
-      await user.type(screen.getByLabelText(/country/i), 'USA');
+      await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
+      await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test St');
+      await userEvent.type(screen.getByLabelText(/city/i), 'Test City');
+      await userEvent.type(screen.getByLabelText(/state/i), 'TS');
+      await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
+      await userEvent.type(screen.getByLabelText(/country/i), 'USA');
       
       // Submit form
       const saveButton = screen.getByText('Save Address');
-      await user.click(saveButton);
+      await userEvent.click(saveButton);
       
       await waitFor(() => {
         expect(screen.getByText('Server error')).toBeInTheDocument();
@@ -449,27 +440,26 @@ describe('BillingAddressSection', () => {
     it('should show loading state during form submission', async () => {
       addUserAddress.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 1000)));
       renderWithProviders(separateBillingContext);
-      const user = userEvent.setup();
-      
+        
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
-      await user.click(addButton);
+      await userEvent.click(addButton);
       
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
       
       // Fill minimal required fields
-      await user.type(screen.getByLabelText(/full name/i), 'Test User');
-      await user.type(screen.getByLabelText(/address line 1/i), '123 Test St');
-      await user.type(screen.getByLabelText(/city/i), 'Test City');
-      await user.type(screen.getByLabelText(/state/i), 'TS');
-      await user.type(screen.getByLabelText(/postal code/i), '12345');
-      await user.type(screen.getByLabelText(/country/i), 'USA');
+      await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
+      await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test St');
+      await userEvent.type(screen.getByLabelText(/city/i), 'Test City');
+      await userEvent.type(screen.getByLabelText(/state/i), 'TS');
+      await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
+      await userEvent.type(screen.getByLabelText(/country/i), 'USA');
       
       // Submit form
       const saveButton = screen.getByText('Save Address');
-      await user.click(saveButton);
+      await userEvent.click(saveButton);
       
       expect(screen.getByText('Saving...')).toBeInTheDocument();
     });
@@ -485,11 +475,10 @@ describe('BillingAddressSection', () => {
         },
         setUseSameAsShipping
       });
-      const user = userEvent.setup();
-      
+        
       // Start adding new address
       const addButton = screen.getByText('+ Add New Billing Address');
-      await user.click(addButton);
+      await userEvent.click(addButton);
       
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();

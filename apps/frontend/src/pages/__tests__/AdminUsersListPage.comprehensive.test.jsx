@@ -211,7 +211,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
   describe('Search and Filtering Functionality', () => {
     it('should handle search by name', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -220,7 +219,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Find and use search input
       const searchInput = screen.getByPlaceholderText(/search by name or email/i);
-      await user.type(searchInput, 'John Doe');
+      await userEvent.type(searchInput, 'John Doe');
 
       // Wait for debounced search
       await waitFor(() => {
@@ -234,7 +233,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle search by email', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -242,7 +240,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       const searchInput = screen.getByPlaceholderText(/search by name or email/i);
-      await user.type(searchInput, 'john.doe@test.com');
+      await userEvent.type(searchInput, 'john.doe@test.com');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -255,7 +253,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle account status filtering', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -264,7 +261,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Find and use status filter
       const statusFilter = screen.getByRole('combobox', { name: /account status/i });
-      await user.selectOptions(statusFilter, 'disabled');
+      await userEvent.selectOptions(statusFilter, 'disabled');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -276,7 +273,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle email verification filtering', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -284,7 +280,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       const verificationFilter = screen.getByRole('combobox', { name: /email verified/i });
-      await user.selectOptions(verificationFilter, 'false');
+      await userEvent.selectOptions(verificationFilter, 'false');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -296,7 +292,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle date range filtering', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -306,8 +301,8 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       const fromDateInput = screen.getByLabelText(/from date/i);
       const toDateInput = screen.getByLabelText(/to date/i);
 
-      await user.type(fromDateInput, '2024-01-01');
-      await user.type(toDateInput, '2024-01-31');
+      await userEvent.type(fromDateInput, '2024-01-01');
+      await userEvent.type(toDateInput, '2024-01-31');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -320,7 +315,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should clear all filters when reset button is clicked', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -331,12 +325,12 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       const searchInput = screen.getByPlaceholderText(/search by name or email/i);
       const statusFilter = screen.getByRole('combobox', { name: /account status/i });
 
-      await user.type(searchInput, 'test search');
-      await user.selectOptions(statusFilter, 'disabled');
+      await userEvent.type(searchInput, 'test search');
+      await userEvent.selectOptions(statusFilter, 'disabled');
 
       // Clear filters
       const clearButton = screen.getByText(/clear filters/i);
-      await user.click(clearButton);
+      await userEvent.click(clearButton);
 
       // Verify filters are cleared
       expect(searchInput.value).toBe('');
@@ -355,7 +349,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
   describe('Sorting Functionality', () => {
     it('should handle sorting by different fields', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -363,7 +356,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       const sortBySelect = screen.getByRole('combobox', { name: /sort by/i });
-      await user.selectOptions(sortBySelect, 'firstName');
+      await userEvent.selectOptions(sortBySelect, 'firstName');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -376,7 +369,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should toggle sort order when clicking sort direction button', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -384,7 +376,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       const sortOrderButton = screen.getByRole('button', { name: /sort order/i });
-      await user.click(sortOrderButton);
+      await userEvent.click(sortOrderButton);
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -398,7 +390,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
   describe('User Status Management', () => {
     it('should show disable confirmation dialog for active users', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -407,7 +398,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Click disable button for active user (John Doe)
       const disableButtons = screen.getAllByText(/disable/i);
-      await user.click(disableButtons[0]);
+      await userEvent.click(disableButtons[0]);
 
       // Check confirmation dialog
       expect(screen.getByText(/disable user account/i)).toBeInTheDocument();
@@ -420,7 +411,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should successfully disable user account', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -429,10 +419,10 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Click disable button and confirm
       const disableButtons = screen.getAllByText(/disable/i);
-      await user.click(disableButtons[0]);
+      await userEvent.click(disableButtons[0]);
 
       const confirmButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(confirmButton);
+      await userEvent.click(confirmButton);
 
       // Verify API call
       await waitFor(() => {
@@ -449,7 +439,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should show enable confirmation dialog for disabled users', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -458,7 +447,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Click enable button for disabled user (Jane Smith)
       const enableButtons = screen.getAllByText(/enable/i);
-      await user.click(enableButtons[0]);
+      await userEvent.click(enableButtons[0]);
 
       // Check confirmation dialog
       expect(screen.getByText(/enable user account/i)).toBeInTheDocument();
@@ -467,7 +456,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle status update errors', async () => {
-      const user = userEvent.setup();
       mockUpdateUserStatus.mockRejectedValue(new Error('Status update failed'));
       
       renderAdminUsersListPage();
@@ -478,10 +466,10 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Attempt to disable user
       const disableButtons = screen.getAllByText(/disable/i);
-      await user.click(disableButtons[0]);
+      await userEvent.click(disableButtons[0]);
 
       const confirmButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(confirmButton);
+      await userEvent.click(confirmButton);
 
       // Verify error message
       await waitFor(() => {
@@ -491,7 +479,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should cancel status update when cancel button is clicked', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -500,11 +487,11 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Click disable button
       const disableButtons = screen.getAllByText(/disable/i);
-      await user.click(disableButtons[0]);
+      await userEvent.click(disableButtons[0]);
 
       // Click cancel
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      await user.click(cancelButton);
+      await userEvent.click(cancelButton);
 
       // Verify dialog is closed and no API call was made
       expect(screen.queryByText(/disable user account/i)).not.toBeInTheDocument();
@@ -514,7 +501,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
   describe('Navigation and Pagination', () => {
     it('should navigate to user details when view button is clicked', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -522,13 +508,12 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       const viewButtons = screen.getAllByText(/view/i);
-      await user.click(viewButtons[0]);
+      await userEvent.click(viewButtons[0]);
 
       expect(mockNavigate).toHaveBeenCalledWith('/admin/users/1');
     });
 
     it('should handle pagination correctly', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -537,7 +522,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Click next page
       const nextPageButton = screen.getByText('Next Page');
-      await user.click(nextPageButton);
+      await userEvent.click(nextPageButton);
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -549,7 +534,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle page size changes', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -557,7 +541,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       const pageSizeSelect = screen.getByRole('combobox', { name: /users per page/i });
-      await user.selectOptions(pageSizeSelect, '25');
+      await userEvent.selectOptions(pageSizeSelect, '25');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
@@ -595,7 +579,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should handle keyboard navigation', async () => {
-      const user = userEvent.setup();
       renderAdminUsersListPage();
 
       await waitFor(() => {
@@ -606,10 +589,10 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       const searchInput = screen.getByRole('textbox', { name: /search users/i });
       searchInput.focus();
       
-      await user.tab();
+      await userEvent.tab();
       expect(screen.getByRole('combobox', { name: /account status/i })).toHaveFocus();
 
-      await user.tab();
+      await userEvent.tab();
       expect(screen.getByRole('combobox', { name: /email verified/i })).toHaveFocus();
     });
   });
@@ -639,7 +622,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     });
 
     it('should show appropriate message for search with no results', async () => {
-      const user = userEvent.setup();
       
       // Initial load with users
       renderAdminUsersListPage();
@@ -665,7 +647,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Perform search
       const searchInput = screen.getByPlaceholderText(/search by name or email/i);
-      await user.type(searchInput, 'nonexistent user');
+      await userEvent.type(searchInput, 'nonexistent user');
 
       await waitFor(() => {
         expect(screen.getByText(/no users found matching your search/i)).toBeInTheDocument();

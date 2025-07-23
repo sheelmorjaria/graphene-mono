@@ -59,7 +59,10 @@ const ProductDetailsPage = () => {
   };
 
   const formatPrice = (price) => {
-    return `£${price.toFixed(2)}`;
+    if (price === null || price === undefined || isNaN(price)) {
+      return '£0.00';
+    }
+    return `£${Number(price).toFixed(2)}`;
   };
 
   if (loading) {

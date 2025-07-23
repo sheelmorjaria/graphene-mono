@@ -275,6 +275,13 @@ const orderSchema = new mongoose.Schema({
     exchangeRateValidUntil: {
       type: Date
     },
+    // Payment provider ID (previously globeePaymentId, now supports NowPayments)
+    paymentProviderId: {
+      type: String,
+      trim: true,
+      maxlength: 100
+    },
+    // Legacy field for backward compatibility
     globeePaymentId: {
       type: String,
       trim: true,
