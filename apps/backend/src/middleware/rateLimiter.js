@@ -9,7 +9,9 @@ export const apiLimiter = rateLimit({
     error: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Skip validation errors about trust proxy setting
+  validate: false
 });
 
 // Strict rate limiter for auth endpoints
@@ -21,7 +23,9 @@ export const authLimiter = rateLimit({
     error: 'Too many authentication attempts, please try again later.'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Skip validation errors about trust proxy setting
+  validate: false
 });
 
 // Password reset rate limiter
@@ -33,5 +37,7 @@ export const passwordResetLimiter = rateLimit({
     error: 'Too many password reset attempts, please try again later.'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Skip validation errors about trust proxy setting
+  validate: false
 });
