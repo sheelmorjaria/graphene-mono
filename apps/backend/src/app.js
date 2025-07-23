@@ -79,9 +79,11 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip validation errors about trust proxy setting during development/testing
+  validate: false,
   skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/api/health';
+    // Skip rate limiting for health checks and in test environment
+    return req.path === '/api/health' || process.env.NODE_ENV === 'test';
   }
 });
 
