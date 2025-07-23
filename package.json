@@ -1,0 +1,66 @@
+{
+  "name": "@graphene-store/monorepo",
+  "version": "1.0.0",
+  "description": "GrapheneOS Store - Privacy-Focused Smartphone E-commerce Platform",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "packageManager": "npm@10.0.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=@graphene-store/frontend",
+    "dev:backend": "npm run dev --workspace=@graphene-store/backend",
+    "build": "npm run build --workspaces --if-present",
+    "build:frontend": "npm run build --workspace=@graphene-store/frontend",
+    "build:backend": "npm run build --workspace=@graphene-store/backend",
+    "test": "npm run test --workspaces --if-present",
+    "test:frontend": "npm run test --workspace=@graphene-store/frontend",
+    "test:backend": "npm run test --workspace=@graphene-store/backend",
+    "test:e2e": "npm run test:e2e --workspace=@graphene-store/backend",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "clean:deps": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "fresh-install": "npm run clean:deps && npm install",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up",
+    "docker:prod": "docker-compose -f docker-compose.yml up",
+    "docker:test": "docker-compose -f docker-compose.test.yml up",
+    "start": "npm run start --workspace=@graphene-store/backend",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.5.0",
+    "@changesets/cli": "^2.27.0",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.0.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "turbo": "^1.13.0"
+  },
+  "keywords": [
+    "grapheneos",
+    "privacy",
+    "smartphone",
+    "e-commerce",
+    "bitcoin",
+    "monero",
+    "monorepo"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/graphene-store.git"
+  },
+  "author": "GrapheneOS Store Team",
+  "license": "MIT",
+  "homepage": "https://grapheneos-store.com"
+}

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/sheel/Downloads/graphene-mono/backend/logs/.6c12240a275f274a9264ebd1f21094c921c55249-audit.json",
+    "files": [
+        {
+            "date": 1753134207407,
+            "name": "/home/sheel/Downloads/graphene-mono/backend/logs/combined-2025-07-21.log",
+            "hash": "9acaf58f6c11be71faf0bd3ee3f21e7fe90aa0a7482ead5a31f8c57b8960b6f8"
+        }
+    ],
+    "hashType": "sha256"
+}
