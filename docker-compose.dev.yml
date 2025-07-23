@@ -34,7 +34,7 @@ services:
   # Backend Service (Development)
   backend:
     build:
-      context: ./backend
+      context: ./apps/backend
       target: dev
     container_name: graphene-backend-dev
     restart: unless-stopped
@@ -52,10 +52,10 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./backend:/app
+      - ./apps/backend:/app
       - /app/node_modules
-      - ./backend/uploads:/app/uploads
-      - ./backend/logs:/app/logs
+      - ./apps/backend/uploads:/app/uploads
+      - ./apps/backend/logs:/app/logs
     networks:
       - graphene-dev-network
     depends_on:
@@ -65,7 +65,7 @@ services:
   # Frontend Service (Development)
   frontend:
     build:
-      context: ./frontend
+      context: ./apps/frontend
       target: dev
     container_name: graphene-frontend-dev
     restart: unless-stopped
@@ -77,7 +77,7 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ./apps/frontend:/app
       - /app/node_modules
     networks:
       - graphene-dev-network

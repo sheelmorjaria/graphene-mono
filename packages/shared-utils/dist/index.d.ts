@@ -1,0 +1,30 @@
+export declare const formatCurrency: (amount: number, currency?: string) => string;
+export declare const formatDate: (date: string | Date) => string;
+export declare const formatDateTime: (date: string | Date) => string;
+export declare const slugify: (text: string) => string;
+export declare const truncateText: (text: string, maxLength: number) => string;
+export declare const capitalizeFirst: (text: string) => string;
+export declare const isValidEmail: (email: string) => boolean;
+export declare const isValidUKPostalCode: (postalCode: string) => boolean;
+export declare const isValidPhoneNumber: (phone: string) => boolean;
+export declare const uniqueBy: <T>(array: T[], key: keyof T) => T[];
+export declare const groupBy: <T>(array: T[], key: keyof T) => Record<string, T[]>;
+export declare const calculateDiscount: (originalPrice: number, salePrice: number) => number;
+export declare const calculateTax: (amount: number, taxRate: number) => number;
+export declare const formatLeadTime: (minDays: number, maxDays: number) => string;
+export declare const calculateEstimatedDelivery: (leadTimeMaxDays: number) => Date;
+export declare const buildProductUrl: (slug: string) => string;
+export declare const buildCategoryUrl: (categorySlug: string) => string;
+export declare const buildSearchUrl: (query: string) => string;
+export declare const isDevelopment: () => boolean;
+export declare const isProduction: () => boolean;
+export declare const isTest: () => boolean;
+export declare const createApiError: (message: string, statusCode?: number) => Error & {
+    statusCode: number;
+};
+export declare const setLocalStorage: (key: string, value: any) => void;
+export declare const getLocalStorage: <T>(key: string, defaultValue: T) => T;
+export declare const removeLocalStorage: (key: string) => void;
+export declare const debounce: <T extends (...args: any[]) => any>(func: T, delay: number) => (...args: Parameters<T>) => void;
+export declare const deepClone: <T>(obj: T) => T;
+//# sourceMappingURL=index.d.ts.map

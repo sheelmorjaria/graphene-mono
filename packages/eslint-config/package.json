@@ -1,0 +1,24 @@
+{
+  "name": "@graphene-store/eslint-config",
+  "version": "1.0.0",
+  "description": "Shared ESLint configuration for GrapheneOS Store",
+  "main": "index.js",
+  "dependencies": {
+    "@eslint/js": "^9.25.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "files": [
+    "index.js",
+    "react.js",
+    "node.js"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

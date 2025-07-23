@@ -1,0 +1,43 @@
+# GrapheneOS Store Robots.txt
+# https://grapheneos-store.com/robots.txt
+
+User-agent: *
+Allow: /
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/admin/
+
+# Disallow user account pages
+Disallow: /profile
+Disallow: /addresses
+Disallow: /orders/
+Disallow: /my-account/
+Disallow: /change-password
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Disallow checkout and payment pages
+Disallow: /checkout
+Disallow: /payment/
+Disallow: /order-confirmation/
+
+# Disallow API endpoints
+Disallow: /api/auth/
+Disallow: /api/users/
+Disallow: /api/orders/
+Disallow: /api/cart/
+Disallow: /api/payment/
+
+# Allow specific bots full access
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Sitemap location
+Sitemap: https://grapheneos-store.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

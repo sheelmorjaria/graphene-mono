@@ -1,0 +1,29 @@
+{
+  "name": "@graphene-store/shared-utils",
+  "version": "1.0.0",
+  "description": "Shared utilities for GrapheneOS Store",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@graphene-store/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^3.1.4"
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
