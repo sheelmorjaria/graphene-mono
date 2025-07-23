@@ -177,7 +177,6 @@ describe('CheckoutPage', () => {
 
     it('should allow address selection', async () => {
       renderWithProviders();
-      const user = userEvent.setup();
       
       await waitFor(() => {
         expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -186,7 +185,7 @@ describe('CheckoutPage', () => {
       // Select an address
       const addressCard = screen.getByText('Jane Smith').closest('div');
       await act(async () => {
-        await user.click(addressCard);
+        await userEvent.click(addressCard);
       });
       
       await waitFor(() => {
@@ -226,7 +225,6 @@ describe('CheckoutPage', () => {
 
     it('should navigate to payment step', async () => {
       renderWithProviders();
-      const user = userEvent.setup();
       
       await waitFor(() => {
         const continueButton = screen.getByRole('button', { name: /continue to payment/i });
@@ -235,7 +233,7 @@ describe('CheckoutPage', () => {
       
       const continueButton = screen.getByRole('button', { name: /continue to payment/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {
@@ -246,7 +244,6 @@ describe('CheckoutPage', () => {
 
     it('should navigate back from payment to shipping', async () => {
       renderWithProviders();
-      const user = userEvent.setup();
       
       // Go to payment
       await waitFor(() => {
@@ -256,7 +253,7 @@ describe('CheckoutPage', () => {
       
       const continueButton = screen.getByRole('button', { name: /continue to payment/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {
@@ -266,7 +263,7 @@ describe('CheckoutPage', () => {
       // Go back to shipping
       const backButton = screen.getByRole('button', { name: /back to shipping/i });
       await act(async () => {
-        await user.click(backButton);
+        await userEvent.click(backButton);
       });
       
       await waitFor(() => {
@@ -276,7 +273,6 @@ describe('CheckoutPage', () => {
 
     it('should navigate to review step', async () => {
       renderWithProviders();
-      const user = userEvent.setup();
       
       // Go to payment
       await waitFor(() => {
@@ -286,7 +282,7 @@ describe('CheckoutPage', () => {
       
       const continueButton = screen.getByRole('button', { name: /continue to payment/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {
@@ -296,7 +292,7 @@ describe('CheckoutPage', () => {
       // Go to review
       const reviewButton = screen.getByRole('button', { name: /continue to review/i });
       await act(async () => {
-        await user.click(reviewButton);
+        await userEvent.click(reviewButton);
       });
       
       await waitFor(() => {
@@ -342,7 +338,6 @@ describe('CheckoutPage', () => {
   describe('Order Review', () => {
     it('should display selected shipping address in review', async () => {
       renderWithProviders();
-      const user = userEvent.setup();
       
       // Navigate to review step
       await waitFor(() => {
@@ -352,7 +347,7 @@ describe('CheckoutPage', () => {
       
       let continueButton = screen.getByRole('button', { name: /continue to payment/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {
@@ -361,7 +356,7 @@ describe('CheckoutPage', () => {
       
       continueButton = screen.getByRole('button', { name: /continue to review/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {
@@ -373,7 +368,6 @@ describe('CheckoutPage', () => {
 
     it('should show place order button in review', async () => {
       renderWithProviders();
-      const user = userEvent.setup();
       
       // Navigate to review step
       await waitFor(() => {
@@ -383,7 +377,7 @@ describe('CheckoutPage', () => {
       
       let continueButton = screen.getByRole('button', { name: /continue to payment/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {
@@ -392,7 +386,7 @@ describe('CheckoutPage', () => {
       
       continueButton = screen.getByRole('button', { name: /continue to review/i });
       await act(async () => {
-        await user.click(continueButton);
+        await userEvent.click(continueButton);
       });
       
       await waitFor(() => {

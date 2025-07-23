@@ -105,7 +105,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should validate phone number format', async () => {
-      const user = userEvent.setup();
       renderProfilePage();
 
       await waitFor(() => {
@@ -113,9 +112,9 @@ describe('MyProfilePage', () => {
       });
 
       const phoneInput = screen.getByLabelText(/phone number/i);
-      await user.clear(phoneInput);
-      await user.type(phoneInput, 'invalid-phone');
-      await user.tab();
+      await userEvent.clear(phoneInput);
+      await userEvent.type(phoneInput, 'invalid-phone');
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('Please enter a valid phone number')).toBeInTheDocument();
@@ -123,7 +122,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should validate required fields', async () => {
-      const user = userEvent.setup();
       renderProfilePage();
 
       await waitFor(() => {
@@ -131,8 +129,8 @@ describe('MyProfilePage', () => {
       });
 
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.clear(firstNameInput);
-      await user.tab();
+      await userEvent.clear(firstNameInput);
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('First name is required')).toBeInTheDocument();
@@ -140,7 +138,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should clear field errors when user starts typing', async () => {
-      const user = userEvent.setup();
       renderProfilePage();
 
       await waitFor(() => {
@@ -148,14 +145,14 @@ describe('MyProfilePage', () => {
       });
 
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.clear(firstNameInput);
-      await user.tab();
+      await userEvent.clear(firstNameInput);
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('First name is required')).toBeInTheDocument();
       });
 
-      await user.type(firstNameInput, 'Jane');
+      await userEvent.type(firstNameInput, 'Jane');
 
       await waitFor(() => {
         expect(screen.queryByText('First name is required')).not.toBeInTheDocument();
@@ -165,7 +162,6 @@ describe('MyProfilePage', () => {
 
   describe('Form Submission', () => {
     it('should submit form with valid data', async () => {
-      const user = userEvent.setup();
       updateUserProfile.mockResolvedValue({
         success: true,
         data: { user: { ...mockUser, firstName: 'Jane' } }
@@ -178,10 +174,10 @@ describe('MyProfilePage', () => {
       });
 
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.clear(firstNameInput);
-      await user.type(firstNameInput, 'Jane');
+      await userEvent.clear(firstNameInput);
+      await userEvent.type(firstNameInput, 'Jane');
 
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
       await waitFor(() => {
         expect(updateUserProfile).toHaveBeenCalledWith({
@@ -194,7 +190,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should show success message after successful update', async () => {
-      const user = userEvent.setup();
       updateUserProfile.mockResolvedValue({
         success: true,
         data: { user: { ...mockUser, firstName: 'Jane' } }
@@ -207,10 +202,10 @@ describe('MyProfilePage', () => {
       });
 
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.clear(firstNameInput);
-      await user.type(firstNameInput, 'Jane');
+      await userEvent.clear(firstNameInput);
+      await userEvent.type(firstNameInput, 'Jane');
 
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/profile updated successfully/i)).toBeInTheDocument();
@@ -218,7 +213,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should handle update errors', async () => {
-      const user = userEvent.setup();
       updateUserProfile.mockRejectedValue(new Error('Email already exists'));
 
       renderProfilePage();
@@ -227,7 +221,7 @@ describe('MyProfilePage', () => {
         expect(screen.getByDisplayValue('John')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Email already exists')).toBeInTheDocument();
@@ -235,7 +229,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should prevent submission with validation errors', async () => {
-      const user = userEvent.setup();
       renderProfilePage();
 
       await waitFor(() => {
@@ -243,9 +236,9 @@ describe('MyProfilePage', () => {
       });
 
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.clear(firstNameInput);
+      await userEvent.clear(firstNameInput);
 
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
       await waitFor(() => {
         expect(updateUserProfile).not.toHaveBeenCalled();
@@ -253,7 +246,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should show loading state during submission', async () => {
-      const user = userEvent.setup();
       updateUserProfile.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderProfilePage();
@@ -262,7 +254,7 @@ describe('MyProfilePage', () => {
         expect(screen.getByDisplayValue('John')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/saving/i)).toBeInTheDocument();
@@ -270,7 +262,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should disable form during submission', async () => {
-      const user = userEvent.setup();
       updateUserProfile.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderProfilePage();
@@ -279,7 +270,7 @@ describe('MyProfilePage', () => {
         expect(screen.getByDisplayValue('John')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: /save changes/i }));
+      await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/first name/i)).toBeDisabled();
@@ -310,7 +301,6 @@ describe('MyProfilePage', () => {
     });
 
     it('should associate error messages with form fields', async () => {
-      const user = userEvent.setup();
       renderProfilePage();
 
       await waitFor(() => {
@@ -318,8 +308,8 @@ describe('MyProfilePage', () => {
       });
 
       const firstNameInput = screen.getByLabelText(/first name/i);
-      await user.clear(firstNameInput);
-      await user.tab();
+      await userEvent.clear(firstNameInput);
+      await userEvent.tab();
 
       await waitFor(() => {
         const errorElement = screen.getByText('First name is required');

@@ -432,119 +432,6 @@ const createProduct = async (productData, adminUser) => {
   return await product.save();
 };
 
-// Function to seed sample products
-export const seedSampleProducts = async () => {
-  let connection = null;
-  
-  try {
-    connection = await connectDB();
-    
-    if (!Product || !User) {
-      throw new Error("Models not initialized properly");
-    }
-
-    console.log("🌱 Seeding sample products...\n");
-    
-    // Check if products already exist
-    const existingCount = await Product.countDocuments();
-    if (existingCount > 0) {
-      console.log(`⚠️  Database already contains ${existingCount} products. Skipping seed.`);
-      return { message: "Database already seeded", count: existingCount };
-    }
-
-    // Sample Pixel products data
-    const sampleProducts = [
-      {
-        name: "Google Pixel 8 Pro 128GB Obsidian",
-        price: 899,
-        condition: "new"
-      },
-      {
-        name: "Google Pixel 8 256GB Hazel", 
-        price: 699,
-        condition: "new"
-      },
-      {
-        name: "Google Pixel 7 Pro 256GB Snow",
-        price: 599,
-        condition: "excellent"
-      },
-      {
-        name: "Google Pixel 7 128GB Obsidian",
-        price: 499,
-        condition: "excellent"
-      },
-      {
-        name: "Google Pixel 6 Pro 128GB Stormy Black",
-        price: 399,
-        condition: "good"
-      }
-    ];
-
-    const createdProducts = [];
-    
-    for (const productData of sampleProducts) {
-      // Generate unique SKU and slug
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substr(2, 9);
-      const sku = `PIXEL-${timestamp}-${randomSuffix}`.toUpperCase();
-      const slug = productData.name.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-
-      const product = new Product({
-        name: productData.name,
-        slug: `${slug}-${randomSuffix}`,
-        sku: sku,
-        shortDescription: `${productData.name} with GrapheneOS pre-installed`,
-        longDescription: `${productData.name} flashed with GrapheneOS for enhanced privacy and security. Ready to use out of the box.`,
-        price: productData.price,
-        condition: productData.condition,
-        stockStatus: 'in_stock',
-        stockQuantity: Math.floor(Math.random() * 10) + 1,
-        images: ["/images/placeholder.png"],
-        attributes: [
-          {
-            name: "Storage",
-            value: productData.name.includes("256GB") ? "256GB" : "128GB"
-          },
-          {
-            name: "Color", 
-            value: productData.name.split(" ").pop()
-          },
-          {
-            name: "OS",
-            value: "GrapheneOS"
-          }
-        ],
-        status: 'active',
-        isActive: true
-      });
-
-      const savedProduct = await product.save();
-      createdProducts.push(savedProduct);
-      console.log(`✅ Created: ${savedProduct.name}`);
-    }
-
-    console.log(`\n🎉 Successfully seeded ${createdProducts.length} sample products!`);
-    return { message: "Successfully seeded", count: createdProducts.length, products: createdProducts };
-
-  } catch (error) {
-    console.error("❌ Error seeding products:", error.message);
-    throw error;
-  } finally {
-    if (connection && mongoose.connection.readyState === 1) {
-      try {
-        await mongoose.connection.close();
-        console.log("MongoDB connection closed");
-      } catch (closeError) {
-        console.error("Error closing connection:", closeError);
-      }
-    }
-  }
-};
 
 // Function to check if a model is an old Pixel (1-5) variant that should be excluded
 const isOldPixelVariant = (productName) => {
@@ -733,16 +620,6 @@ if (isMainModule()) {
       })
       .catch((error) => {
         console.error("\n❌ Debug failed:", error.message);
-        process.exit(1);
-      });
-  } else if (command === "seed") {
-    seedSampleProducts()
-      .then((result) => {
-        console.log(`\n✅ Seed completed! ${result.message} - ${result.count} products.`);
-        process.exit(0);
-      })
-      .catch((error) => {
-        console.error("\n❌ Seed failed:", error.message);
         process.exit(1);
       });
   } else if (command === "remove-old-pixels") {

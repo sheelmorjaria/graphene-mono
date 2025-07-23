@@ -63,7 +63,6 @@ describe('Login Flow Integration Tests - Simple', () => {
   });
 
   it('should handle successful login', async () => {
-    const user = userEvent.setup();
     
     loginUser.mockResolvedValueOnce(mockLoginResponse);
 
@@ -74,11 +73,11 @@ describe('Login Flow Integration Tests - Simple', () => {
     });
 
     // Fill out the form
-    await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+    await userEvent.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'SecurePass123!');
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Verify login service was called
     await waitFor(() => {
@@ -95,7 +94,6 @@ describe('Login Flow Integration Tests - Simple', () => {
   });
 
   it('should handle login errors', async () => {
-    const user = userEvent.setup();
     
     loginUser.mockRejectedValueOnce(new Error('Invalid email or password'));
 
@@ -106,11 +104,11 @@ describe('Login Flow Integration Tests - Simple', () => {
     });
 
     // Fill out the form
-    await user.type(screen.getByLabelText(/email address/i), 'wrong@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'wrongpassword');
+    await userEvent.type(screen.getByLabelText(/email address/i), 'wrong@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'wrongpassword');
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Should show error message
     await waitFor(() => {
@@ -122,7 +120,6 @@ describe('Login Flow Integration Tests - Simple', () => {
   });
 
   it('should validate form fields', async () => {
-    const user = userEvent.setup();
 
     renderLoginTest();
 
@@ -131,7 +128,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     });
 
     // Try to submit empty form
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Should not call login service
     expect(loginUser).not.toHaveBeenCalled();
@@ -147,7 +144,6 @@ describe('Login Flow Integration Tests - Simple', () => {
   });
 
   it('should handle logout functionality', async () => {
-    const user = userEvent.setup();
     
     // Mock successful login first
     loginUser.mockResolvedValueOnce(mockLoginResponse);
@@ -159,9 +155,9 @@ describe('Login Flow Integration Tests - Simple', () => {
     });
 
     // Login first
-    await user.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'SecurePass123!');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await userEvent.type(screen.getByLabelText(/email address/i), 'john.doe@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'SecurePass123!');
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Verify user is logged in (navigation would happen in real app)
     await waitFor(() => {

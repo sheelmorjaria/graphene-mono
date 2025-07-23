@@ -74,11 +74,10 @@ describe('AddressForm', () => {
 
   describe('Form Validation', () => {
     it('should validate required fields on submit', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByText('Full name is required')).toBeInTheDocument();
@@ -93,12 +92,11 @@ describe('AddressForm', () => {
     });
 
     it('should validate phone number format on blur', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       const phoneInput = screen.getByLabelText('Phone Number');
-      await user.type(phoneInput, 'invalid-phone');
-      await user.tab();
+      await userEvent.type(phoneInput, 'invalid-phone');
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('Please enter a valid phone number')).toBeInTheDocument();
@@ -106,8 +104,7 @@ describe('AddressForm', () => {
     });
 
     it('should accept valid phone number formats', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       const phoneInput = screen.getByLabelText('Phone Number');
       
@@ -120,9 +117,9 @@ describe('AddressForm', () => {
       ];
 
       for (const number of validNumbers) {
-        await user.clear(phoneInput);
-        await user.type(phoneInput, number);
-        await user.tab();
+        await userEvent.clear(phoneInput);
+        await userEvent.type(phoneInput, number);
+        await userEvent.tab();
         
         // Should not show error
         expect(screen.queryByText('Please enter a valid phone number')).not.toBeInTheDocument();
@@ -130,12 +127,11 @@ describe('AddressForm', () => {
     });
 
     it('should clear field errors when user starts typing', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       // Trigger validation errors
       const submitButton = screen.getByRole('button', { name: /save address/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByText('Full name is required')).toBeInTheDocument();
@@ -143,7 +139,7 @@ describe('AddressForm', () => {
 
       // Start typing in the field
       const fullNameInput = screen.getByLabelText('Full Name *');
-      await user.type(fullNameInput, 'John');
+      await userEvent.type(fullNameInput, 'John');
 
       await waitFor(() => {
         expect(screen.queryByText('Full name is required')).not.toBeInTheDocument();
@@ -153,21 +149,20 @@ describe('AddressForm', () => {
 
   describe('Form Submission', () => {
     it('should submit form with valid data', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       // Fill out all required fields
-      await user.type(screen.getByLabelText('Full Name *'), 'John Doe');
-      await user.type(screen.getByLabelText('Address Line 1 *'), '123 Main St');
-      await user.type(screen.getByLabelText('Address Line 2'), 'Apt 4B');
-      await user.type(screen.getByLabelText('City *'), 'New York');
-      await user.type(screen.getByLabelText('State/Province *'), 'NY');
-      await user.type(screen.getByLabelText('Postal Code *'), '10001');
-      await user.type(screen.getByLabelText('Country *'), 'United States');
-      await user.type(screen.getByLabelText('Phone Number'), '+1 (555) 123-4567');
+      await userEvent.type(screen.getByLabelText('Full Name *'), 'John Doe');
+      await userEvent.type(screen.getByLabelText('Address Line 1 *'), '123 Main St');
+      await userEvent.type(screen.getByLabelText('Address Line 2'), 'Apt 4B');
+      await userEvent.type(screen.getByLabelText('City *'), 'New York');
+      await userEvent.type(screen.getByLabelText('State/Province *'), 'NY');
+      await userEvent.type(screen.getByLabelText('Postal Code *'), '10001');
+      await userEvent.type(screen.getByLabelText('Country *'), 'United States');
+      await userEvent.type(screen.getByLabelText('Phone Number'), '+1 (555) 123-4567');
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
@@ -184,19 +179,18 @@ describe('AddressForm', () => {
     });
 
     it('should submit form without optional fields', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       // Fill out only required fields
-      await user.type(screen.getByLabelText('Full Name *'), 'Jane Smith');
-      await user.type(screen.getByLabelText('Address Line 1 *'), '456 Oak Ave');
-      await user.type(screen.getByLabelText('City *'), 'Los Angeles');
-      await user.type(screen.getByLabelText('State/Province *'), 'CA');
-      await user.type(screen.getByLabelText('Postal Code *'), '90210');
-      await user.type(screen.getByLabelText('Country *'), 'United States');
+      await userEvent.type(screen.getByLabelText('Full Name *'), 'Jane Smith');
+      await userEvent.type(screen.getByLabelText('Address Line 1 *'), '456 Oak Ave');
+      await userEvent.type(screen.getByLabelText('City *'), 'Los Angeles');
+      await userEvent.type(screen.getByLabelText('State/Province *'), 'CA');
+      await userEvent.type(screen.getByLabelText('Postal Code *'), '90210');
+      await userEvent.type(screen.getByLabelText('Country *'), 'United States');
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
@@ -213,24 +207,22 @@ describe('AddressForm', () => {
     });
 
     it('should handle cancel button click', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      await user.click(cancelButton);
+      await userEvent.click(cancelButton);
 
       expect(mockOnCancel).toHaveBeenCalled();
     });
 
     it('should prevent submission when loading', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} isLoading={true} />);
+        render(<AddressForm {...defaultProps} isLoading={true} />);
 
       const submitButton = screen.getByRole('button', { name: /saving/i });
       expect(submitButton).toBeDisabled();
 
       // Try to click anyway (should not trigger onSubmit)
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
   });
@@ -262,11 +254,10 @@ describe('AddressForm', () => {
     });
 
     it('should associate error messages with form fields', async () => {
-      const user = userEvent.setup();
-      render(<AddressForm {...defaultProps} />);
+        render(<AddressForm {...defaultProps} />);
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         const fullNameInput = screen.getByLabelText('Full Name *');

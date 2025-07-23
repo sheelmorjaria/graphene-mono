@@ -75,22 +75,20 @@ describe('FilterSidebar', () => {
   });
 
   it('should call onCategoryChange when category is selected', async () => {
-    const user = userEvent.setup();
     const mockOnCategoryChange = vi.fn();
     
     render(<FilterSidebar {...defaultProps} onCategoryChange={mockOnCategoryChange} />);
     
-    await user.click(screen.getByText('Smartphones'));
+    await userEvent.click(screen.getByText('Smartphones'));
     expect(mockOnCategoryChange).toHaveBeenCalledWith('smartphones');
   });
 
   it('should call onConditionChange when condition is selected', async () => {
-    const user = userEvent.setup();
     const mockOnConditionChange = vi.fn();
     
     render(<FilterSidebar {...defaultProps} onConditionChange={mockOnConditionChange} />);
     
-    await user.click(screen.getByText('Excellent'));
+    await userEvent.click(screen.getByText('Excellent'));
     expect(mockOnConditionChange).toHaveBeenCalledWith('excellent');
   });
 
@@ -112,12 +110,11 @@ describe('FilterSidebar', () => {
   });
 
   it('should call onClearFilters when clear button is clicked', async () => {
-    const user = userEvent.setup();
     const mockOnClearFilters = vi.fn();
     
     render(<FilterSidebar {...defaultProps} onClearFilters={mockOnClearFilters} />);
     
-    await user.click(screen.getByText('Clear All Filters'));
+    await userEvent.click(screen.getByText('Clear All Filters'));
     expect(mockOnClearFilters).toHaveBeenCalled();
   });
 
@@ -129,22 +126,20 @@ describe('FilterSidebar', () => {
   });
 
   it('should reset category selection when All Categories is clicked', async () => {
-    const user = userEvent.setup();
     const mockOnCategoryChange = vi.fn();
     
     render(<FilterSidebar {...defaultProps} selectedCategory="smartphones" onCategoryChange={mockOnCategoryChange} />);
     
-    await user.click(screen.getByText('All Categories'));
+    await userEvent.click(screen.getByText('All Categories'));
     expect(mockOnCategoryChange).toHaveBeenCalledWith('');
   });
 
   it('should reset condition selection when All Conditions is clicked', async () => {
-    const user = userEvent.setup();
     const mockOnConditionChange = vi.fn();
     
     render(<FilterSidebar {...defaultProps} selectedCondition="new" onConditionChange={mockOnConditionChange} />);
     
-    await user.click(screen.getByText('All Conditions'));
+    await userEvent.click(screen.getByText('All Conditions'));
     expect(mockOnConditionChange).toHaveBeenCalledWith('');
   });
 
@@ -173,17 +168,16 @@ describe('FilterSidebar', () => {
   });
 
   it('should handle keyboard navigation for filter buttons', async () => {
-    const user = userEvent.setup();
     
     render(<FilterSidebar {...defaultProps} />);
     
     // First tab should focus on the Clear All Filters button
-    await user.tab();
+    await userEvent.tab();
     const clearButton = screen.getByText('Clear All Filters');
     expect(clearButton).toHaveFocus();
     
     // Second tab should focus on the first category button
-    await user.tab();
+    await userEvent.tab();
     const firstCategoryButton = screen.getByText('All Categories');
     expect(firstCategoryButton).toHaveFocus();
   });

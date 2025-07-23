@@ -131,7 +131,6 @@ describe('MoneroPayment Component', () => {
       // Mock console.error to catch any errors
       const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       const { helper } = await testPatterns.testTimerComponent(
         <MoneroPayment 
@@ -154,7 +153,7 @@ describe('MoneroPayment Component', () => {
       expect(addressCopyButton).toBeInTheDocument();
 
       await actAsync(async () => {
-        await user.click(addressCopyButton);
+        await userEvent.click(addressCopyButton);
       });
       
       expect(mockWriteText).toHaveBeenCalledWith(mockPaymentData.moneroAddress);
@@ -173,7 +172,6 @@ describe('MoneroPayment Component', () => {
       const mockWriteText = vi.fn().mockResolvedValue();
       navigator.clipboard.writeText = mockWriteText;
       
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       const { helper } = await testPatterns.testTimerComponent(
         <MoneroPayment 
@@ -196,7 +194,7 @@ describe('MoneroPayment Component', () => {
       expect(amountCopyButton).toBeInTheDocument();
 
       await actAsync(async () => {
-        await user.click(amountCopyButton);
+        await userEvent.click(amountCopyButton);
       });
 
       expect(mockWriteText).toHaveBeenCalledWith('1.234567890123');
@@ -235,9 +233,8 @@ describe('MoneroPayment Component', () => {
 
       expect(addressCopyButton).toBeInTheDocument();
 
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       await actAsync(async () => {
-        await user.click(addressCopyButton);
+        await userEvent.click(addressCopyButton);
       });
 
       // Error should be handled gracefully - no crash, just console.error

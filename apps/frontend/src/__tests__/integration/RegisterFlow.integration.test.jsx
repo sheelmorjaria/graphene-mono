@@ -37,16 +37,15 @@ describe('Registration Flow Integration Tests', () => {
   });
 
   it('should allow users to fill out the form', async () => {
-    const user = userEvent.setup();
     renderIntegrationTest('/register');
 
     // Fill out all form fields
-    await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-    await user.type(screen.getByLabelText('Password *'), 'ValidPass123!');
-    await user.type(screen.getByLabelText(/confirm password/i), 'ValidPass123!');
-    await user.type(screen.getByLabelText(/first name/i), 'John');
-    await user.type(screen.getByLabelText(/last name/i), 'Doe');
-    await user.type(screen.getByLabelText(/phone/i), '+441234567890');
+    await userEvent.type(screen.getByLabelText(/email address/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText('Password *'), 'ValidPass123!');
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'ValidPass123!');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'John');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Doe');
+    await userEvent.type(screen.getByLabelText(/phone/i), '+441234567890');
 
     // Verify form fields have values
     expect(screen.getByLabelText(/email address/i)).toHaveValue('test@example.com');
@@ -58,11 +57,10 @@ describe('Registration Flow Integration Tests', () => {
   });
 
   it('should display validation errors for empty required fields', async () => {
-    const user = userEvent.setup();
     renderIntegrationTest('/register');
 
     // Try to submit empty form
-    await user.click(screen.getByRole('button', { name: /create account/i }));
+    await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     // Form should not allow submission with empty required fields
     // The form validates client-side before attempting submission
@@ -70,18 +68,17 @@ describe('Registration Flow Integration Tests', () => {
   });
 
   it('should validate password confirmation', async () => {
-    const user = userEvent.setup();
     renderIntegrationTest('/register');
 
     // Fill form with mismatched passwords
-    await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-    await user.type(screen.getByLabelText('Password *'), 'ValidPass123!');
-    await user.type(screen.getByLabelText(/confirm password/i), 'DifferentPass123!');
-    await user.type(screen.getByLabelText(/first name/i), 'John');
-    await user.type(screen.getByLabelText(/last name/i), 'Doe');
+    await userEvent.type(screen.getByLabelText(/email address/i), 'test@example.com');
+    await userEvent.type(screen.getByLabelText('Password *'), 'ValidPass123!');
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'DifferentPass123!');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'John');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Doe');
 
     // Trigger validation by clicking away
-    await user.tab();
+    await userEvent.tab();
 
     // Should show password mismatch error
     await waitFor(() => {
@@ -106,7 +103,6 @@ describe('Registration Flow Integration Tests', () => {
   });
 
   it('should toggle marketing opt-in checkbox', async () => {
-    const user = userEvent.setup();
     renderIntegrationTest('/register');
 
     const marketingCheckbox = screen.getByLabelText(/marketing/i);
@@ -115,22 +111,21 @@ describe('Registration Flow Integration Tests', () => {
     expect(marketingCheckbox).not.toBeChecked();
 
     // Click to check
-    await user.click(marketingCheckbox);
+    await userEvent.click(marketingCheckbox);
     expect(marketingCheckbox).toBeChecked();
 
     // Click to uncheck
-    await user.click(marketingCheckbox);
+    await userEvent.click(marketingCheckbox);
     expect(marketingCheckbox).not.toBeChecked();
   });
 
   it('should show password requirements when password field is focused', async () => {
-    const user = userEvent.setup();
     renderIntegrationTest('/register');
 
     const passwordInput = screen.getByLabelText('Password *');
     
     // Focus password field
-    await user.click(passwordInput);
+    await userEvent.click(passwordInput);
 
     // Should show password requirements
     await waitFor(() => {

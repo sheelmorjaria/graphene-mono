@@ -1,49 +1,72 @@
-import { jest } from '@jest/globals';
-
-// Mock mongoose
-const mockMongoose = {
-  Schema: {
-    Types: {
-      ObjectId: jest.fn()
-    }
-  },
-  model: jest.fn()
-};
-
-// Create mock category with static methods
-const mockCategoryMethods = {
-  generateSlug: jest.fn(),
-  checkCircularDependency: jest.fn(),
-  getChildren: jest.fn(),
-  getProductCount: jest.fn(),
-  findOne: jest.fn(),
-  findById: jest.fn(),
-  find: jest.fn(),
-  countDocuments: jest.fn()
-};
+import { vi, describe, test, beforeEach, expect } from 'vitest';
 
 // Mock the Category model
-jest.mock('../Category.js', () => mockCategoryMethods);
+vi.mock('../Category.js', () => ({
+  default: {
+    generateSlug: vi.fn(),
+    checkCircularDependency: vi.fn(),
+    getChildren: vi.fn(),
+    getProductCount: vi.fn(),
+    findOne: vi.fn(),
+    findById: vi.fn(),
+    find: vi.fn(),
+    countDocuments: vi.fn()
+  }
+}));
 
-// Mock Product model for product count method
-const mockProduct = {
-  countDocuments: jest.fn()
-};
-
-jest.mock('mongoose', () => ({
-  ...mockMongoose,
-  model: jest.fn((name) => {
-    if (name === 'Product') return mockProduct;
-    return mockCategoryMethods;
+// Mock mongoose
+vi.mock('mongoose', () => ({
+  default: {
+    Schema: {
+      Types: {
+        ObjectId: vi.fn()
+      }
+    },
+    model: vi.fn((name) => {
+      if (name === 'Product') {
+        return { countDocuments: vi.fn() };
+      }
+      return {
+        generateSlug: vi.fn(),
+        checkCircularDependency: vi.fn(),
+        getChildren: vi.fn(),
+        getProductCount: vi.fn(),
+        findOne: vi.fn(),
+        findById: vi.fn(),
+        find: vi.fn(),
+        countDocuments: vi.fn()
+      };
+    })
+  },
+  Schema: {
+    Types: {
+      ObjectId: vi.fn()
+    }
+  },
+  model: vi.fn((name) => {
+    if (name === 'Product') {
+      return { countDocuments: vi.fn() };
+    }
+    return {
+      generateSlug: vi.fn(),
+      checkCircularDependency: vi.fn(),
+      getChildren: vi.fn(),
+      getProductCount: vi.fn(),
+      findOne: vi.fn(),
+      findById: vi.fn(),
+      find: vi.fn(),
+      countDocuments: vi.fn()
+    };
   })
 }));
 
 // Import after mocking
 import Category from '../Category.js';
+import mongoose from 'mongoose';
 
 describe('Category Model Unit Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('generateSlug static method', () => {
@@ -58,7 +81,7 @@ describe('Category Model Unit Tests', () => {
           .trim();
 
         // Simulate no existing categories
-        mockCategoryMethods.findOne.mockResolvedValue(null);
+        Category.findOne.mockResolvedValue(null);
         return baseSlug;
       };
 
@@ -76,7 +99,7 @@ describe('Category Model Unit Tests', () => {
           .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
           .trim();
 
-        mockCategoryMethods.findOne.mockResolvedValue(null);
+        Category.findOne.mockResolvedValue(null);
         return baseSlug;
       };
 
@@ -94,7 +117,7 @@ describe('Category Model Unit Tests', () => {
           .trim();
 
         // Simulate existing category
-        mockCategoryMethods.findOne
+        Category.findOne
           .mockResolvedValueOnce({ slug: 'test-category' }) // First check fails
           .mockResolvedValueOnce(null); // Second check with counter passes
 
@@ -121,7 +144,7 @@ describe('Category Model Unit Tests', () => {
         if (categoryId.toString() === parentId.toString()) return true;
         
         // Simulate no circular dependency
-        mockCategoryMethods.findById.mockResolvedValue({ parentId: null });
+        Category.findById.mockResolvedValue({ parentId: null });
         return false;
       };
 
@@ -134,7 +157,7 @@ describe('Category Model Unit Tests', () => {
         if (categoryId.toString() === parentId.toString()) return true;
         
         // Simulate A -> B -> A circular dependency
-        mockCategoryMethods.findById
+        Category.findById
           .mockResolvedValueOnce({ parentId: 'categoryA' }) // B's parent is A
           .mockResolvedValueOnce({ parentId: null }); // A has no parent
 
@@ -161,9 +184,9 @@ describe('Category Model Unit Tests', () => {
       const getChildren = async (parentId) => {
         // Simulate find with sort
         const mockQuery = {
-          sort: jest.fn().mockResolvedValue(mockChildren.sort((a, b) => a.name.localeCompare(b.name)))
+          sort: vi.fn().mockResolvedValue(mockChildren.sort((a, b) => a.name.localeCompare(b.name)))
         };
-        mockCategoryMethods.find.mockReturnValue(mockQuery);
+        Category.find.mockReturnValue(mockQuery);
         
         return mockChildren.sort((a, b) => a.name.localeCompare(b.name));
       };
@@ -176,9 +199,9 @@ describe('Category Model Unit Tests', () => {
     test('should return empty array for category with no children', async () => {
       const getChildren = async (parentId) => {
         const mockQuery = {
-          sort: jest.fn().mockResolvedValue([])
+          sort: vi.fn().mockResolvedValue([])
         };
-        mockCategoryMethods.find.mockReturnValue(mockQuery);
+        Category.find.mockReturnValue(mockQuery);
         return [];
       };
 
@@ -190,7 +213,8 @@ describe('Category Model Unit Tests', () => {
   describe('getProductCount static method', () => {
     test('should return product count for category', async () => {
       const getProductCount = async (categoryId) => {
-        mockProduct.countDocuments.mockResolvedValue(15);
+        const Product = mongoose.model('Product');
+        Product.countDocuments.mockResolvedValue(15);
         return 15;
       };
 
@@ -200,7 +224,8 @@ describe('Category Model Unit Tests', () => {
 
     test('should return 0 for category with no products', async () => {
       const getProductCount = async (categoryId) => {
-        mockProduct.countDocuments.mockResolvedValue(0);
+        const Product = mongoose.model('Product');
+        Product.countDocuments.mockResolvedValue(0);
         return 0;
       };
 

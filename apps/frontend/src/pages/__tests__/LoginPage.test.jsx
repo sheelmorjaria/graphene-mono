@@ -73,40 +73,37 @@ describe('LoginPage', () => {
 
   describe('Form Validation', () => {
     it('should prevent submission with empty required fields', async () => {
-      const user = userEvent.setup();
       renderLoginPage();
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       // Should stay on login page (validation prevented submission)
       expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
     });
 
     it('should validate email format', async () => {
-      const user = userEvent.setup();
       renderLoginPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab(); // Trigger blur
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab(); // Trigger blur
 
       expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
     });
 
     it('should clear validation errors when user starts typing', async () => {
-      const user = userEvent.setup();
       renderLoginPage();
 
       // Trigger validation error
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab();
 
       expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
 
       // Start typing again - error should clear
-      await user.type(emailInput, '@example.com');
+      await userEvent.type(emailInput, '@example.com');
       expect(screen.queryByText(/please enter a valid email address/i)).not.toBeInTheDocument();
     });
   });
@@ -118,7 +115,6 @@ describe('LoginPage', () => {
     };
 
     it('should submit form with valid credentials', async () => {
-      const user = userEvent.setup();
       const mockResponse = {
         success: true,
         data: {
@@ -136,11 +132,11 @@ describe('LoginPage', () => {
       renderLoginPage();
 
       // Fill in the form
-      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
-      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
 
       // Submit the form
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(loginUser).toHaveBeenCalledWith({
@@ -153,17 +149,16 @@ describe('LoginPage', () => {
     });
 
     it('should handle login errors', async () => {
-      const user = userEvent.setup();
       const errorMessage = 'Invalid email or password';
       
       loginUser.mockRejectedValue(new Error(errorMessage));
       renderLoginPage();
 
       // Fill and submit form
-      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
-      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
 
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -173,17 +168,16 @@ describe('LoginPage', () => {
     });
 
     it('should handle disabled account error', async () => {
-      const user = userEvent.setup();
       const errorMessage = 'Account has been disabled. Please contact support for assistance.';
       
       loginUser.mockRejectedValue(new Error(errorMessage));
       renderLoginPage();
 
       // Fill and submit form
-      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
-      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
 
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -193,7 +187,6 @@ describe('LoginPage', () => {
     });
 
     it('should show loading state during submission', async () => {
-      const user = userEvent.setup();
       let resolveLogin;
       const loginPromise = new Promise(resolve => {
         resolveLogin = resolve;
@@ -203,10 +196,10 @@ describe('LoginPage', () => {
       renderLoginPage();
 
       // Fill and submit form
-      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
-      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
 
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       // Should show loading state
       expect(screen.getByRole('button', { name: /signing in/i })).toBeInTheDocument();
@@ -221,7 +214,6 @@ describe('LoginPage', () => {
     });
 
     it('should disable form during submission', async () => {
-      const user = userEvent.setup();
       let resolveLogin;
       const loginPromise = new Promise(resolve => {
         resolveLogin = resolve;
@@ -230,10 +222,10 @@ describe('LoginPage', () => {
       loginUser.mockReturnValue(loginPromise);
       renderLoginPage();
 
-      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
-      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
 
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       // All form fields should be disabled
       expect(screen.getByLabelText(/email address/i)).toBeDisabled();
@@ -243,7 +235,6 @@ describe('LoginPage', () => {
     });
 
     it('should handle case-insensitive email login', async () => {
-      const user = userEvent.setup();
       const mockResponse = {
         success: true,
         data: { token: 'token', user: {} }
@@ -252,10 +243,10 @@ describe('LoginPage', () => {
       loginUser.mockResolvedValue(mockResponse);
       renderLoginPage();
 
-      await user.type(screen.getByLabelText(/email address/i), 'JOHN.DOE@EXAMPLE.COM');
-      await user.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.type(screen.getByLabelText(/email address/i), 'JOHN.DOE@EXAMPLE.COM');
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
 
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(loginUser).toHaveBeenCalledWith({
@@ -266,22 +257,21 @@ describe('LoginPage', () => {
     });
 
     it('should clear general error when user starts typing', async () => {
-      const user = userEvent.setup();
       
       loginUser.mockRejectedValue(new Error('Invalid credentials'));
       renderLoginPage();
 
       // Submit form to trigger error
-      await user.type(screen.getByLabelText(/email address/i), validCredentials.email);
-      await user.type(screen.getByLabelText(/password/i), 'wrong-password');
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), 'wrong-password');
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
       });
 
       // Start typing - error should clear
-      await user.type(screen.getByLabelText(/password/i), '!');
+      await userEvent.type(screen.getByLabelText(/password/i), '!');
       expect(screen.queryByText('Invalid credentials')).not.toBeInTheDocument();
     });
   });
@@ -321,12 +311,11 @@ describe('LoginPage', () => {
     });
 
     it('should associate error messages with form fields', async () => {
-      const user = userEvent.setup();
       renderLoginPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab();
 
       const errorMessage = screen.getByText(/please enter a valid email address/i);
       expect(errorMessage).toBeInTheDocument();
@@ -334,7 +323,6 @@ describe('LoginPage', () => {
     });
 
     it('should have proper button states', async () => {
-      const user = userEvent.setup();
       renderLoginPage();
 
       const submitButton = screen.getByRole('button', { name: /sign in/i });
@@ -345,9 +333,9 @@ describe('LoginPage', () => {
       const loginPromise = new Promise(resolve => { resolveLogin = resolve; });
       loginUser.mockReturnValue(loginPromise);
 
-      await user.type(screen.getByLabelText(/email address/i), 'test@example.com');
-      await user.type(screen.getByLabelText(/password/i), 'password');
-      await user.click(submitButton);
+      await userEvent.type(screen.getByLabelText(/email address/i), 'test@example.com');
+      await userEvent.type(screen.getByLabelText(/password/i), 'password');
+      await userEvent.click(submitButton);
 
       expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
 
@@ -364,16 +352,15 @@ describe('LoginPage', () => {
     });
 
     it('should handle remember me checkbox state', async () => {
-      const user = userEvent.setup();
       renderLoginPage();
 
       const checkbox = screen.getByLabelText(/remember me/i);
       expect(checkbox).not.toBeChecked();
 
-      await user.click(checkbox);
+      await userEvent.click(checkbox);
       expect(checkbox).toBeChecked();
 
-      await user.click(checkbox);
+      await userEvent.click(checkbox);
       expect(checkbox).not.toBeChecked();
     });
   });

@@ -51,32 +51,29 @@ describe('Pagination', () => {
   });
 
   it('should call onPageChange when page number is clicked', async () => {
-    const user = userEvent.setup();
     const mockOnPageChange = vi.fn();
     
     render(<Pagination {...defaultProps} onPageChange={mockOnPageChange} />);
     
-    await user.click(screen.getByText('3'));
+    await userEvent.click(screen.getByText('3'));
     expect(mockOnPageChange).toHaveBeenCalledWith(3);
   });
 
   it('should call onPageChange when Previous button is clicked', async () => {
-    const user = userEvent.setup();
     const mockOnPageChange = vi.fn();
     
     render(<Pagination {...defaultProps} currentPage={3} onPageChange={mockOnPageChange} />);
     
-    await user.click(screen.getByText('Previous'));
+    await userEvent.click(screen.getByText('Previous'));
     expect(mockOnPageChange).toHaveBeenCalledWith(2);
   });
 
   it('should call onPageChange when Next button is clicked', async () => {
-    const user = userEvent.setup();
     const mockOnPageChange = vi.fn();
     
     render(<Pagination {...defaultProps} currentPage={2} onPageChange={mockOnPageChange} />);
     
-    await user.click(screen.getByText('Next'));
+    await userEvent.click(screen.getByText('Next'));
     expect(mockOnPageChange).toHaveBeenCalledWith(3);
   });
 

@@ -35,50 +35,46 @@ describe('SearchBar', () => {
   });
 
   it('should handle text input changes', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
-    await user.type(searchInput, 'pixel phone');
+    await userEvent.type(searchInput, 'pixel phone');
     
     expect(searchInput).toHaveValue('pixel phone');
   });
 
   it('should navigate to search page on form submission', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
     
-    await user.type(searchInput, 'pixel');
+    await userEvent.type(searchInput, 'pixel');
     fireEvent.submit(searchForm);
     
     expect(mockNavigate).toHaveBeenCalledWith('/search?q=pixel');
   });
 
   it('should navigate to search page when search button is clicked', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchButton = screen.getByRole('button', { name: /search/i });
     
-    await user.type(searchInput, 'smartphone');
-    await user.click(searchButton);
+    await userEvent.type(searchInput, 'smartphone');
+    await userEvent.click(searchButton);
     
     expect(mockNavigate).toHaveBeenCalledWith('/search?q=smartphone');
   });
 
   it('should handle Enter key press to submit search', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
-    await user.type(searchInput, 'graphene');
-    await user.keyboard('{Enter}');
+    await userEvent.type(searchInput, 'graphene');
+    await userEvent.keyboard('{Enter}');
     
     expect(mockNavigate).toHaveBeenCalledWith('/search?q=graphene');
   });
@@ -96,32 +92,30 @@ describe('SearchBar', () => {
   });
 
   it('should not submit whitespace-only search', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
     
-    await user.type(searchInput, '   ');
+    await userEvent.type(searchInput, '   ');
     fireEvent.submit(searchForm);
     
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('should clear input when clear button is clicked', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
-    await user.type(searchInput, 'test query');
+    await userEvent.type(searchInput, 'test query');
     expect(searchInput).toHaveValue('test query');
     
     // Clear button should appear when there's text
     const clearButton = screen.getByRole('button', { name: /clear search/i });
     expect(clearButton).toBeInTheDocument();
     
-    await user.click(clearButton);
+    await userEvent.click(clearButton);
     expect(searchInput).toHaveValue('');
   });
 
@@ -133,20 +127,18 @@ describe('SearchBar', () => {
   });
 
   it('should URL encode search query properly', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchForm = searchInput.closest('form');
     
-    await user.type(searchInput, 'pixel & smartphone');
+    await userEvent.type(searchInput, 'pixel & smartphone');
     fireEvent.submit(searchForm);
     
     expect(mockNavigate).toHaveBeenCalledWith('/search?q=pixel%20%26%20smartphone');
   });
 
   it('should focus input when search button container is clicked', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
@@ -154,7 +146,7 @@ describe('SearchBar', () => {
     
     expect(searchInput).not.toHaveFocus();
     
-    await user.click(searchContainer);
+    await userEvent.click(searchContainer);
     
     expect(searchInput).toHaveFocus();
   });
@@ -200,48 +192,45 @@ describe('SearchBar', () => {
   });
 
   it('should handle rapid successive inputs without issues', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
     // Rapidly type and delete text
-    await user.type(searchInput, 'a');
-    await user.clear(searchInput);
-    await user.type(searchInput, 'pixel');
-    await user.clear(searchInput);
-    await user.type(searchInput, 'smartphone');
+    await userEvent.type(searchInput, 'a');
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, 'pixel');
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, 'smartphone');
     
     expect(searchInput).toHaveValue('smartphone');
   });
 
   it('should maintain focus after clearing input', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     
-    await user.type(searchInput, 'test');
+    await userEvent.type(searchInput, 'test');
     const clearButton = screen.getByRole('button', { name: /clear search/i });
-    await user.click(clearButton);
+    await userEvent.click(clearButton);
     
     expect(searchInput).toHaveFocus();
     expect(searchInput).toHaveValue('');
   });
 
   it('should handle keyboard navigation properly', async () => {
-    const user = userEvent.setup();
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
     const searchButton = screen.getByRole('button', { name: /search/i });
     
     // Tab to search input
-    await user.tab();
+    await userEvent.tab();
     expect(searchInput).toHaveFocus();
     
     // Tab to search button
-    await user.tab();
+    await userEvent.tab();
     expect(searchButton).toHaveFocus();
   });
 });

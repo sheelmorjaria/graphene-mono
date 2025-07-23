@@ -208,7 +208,6 @@ describe('MoneroPayment Component', () => {
 
   describe('Clipboard Functionality', () => {
     it('should copy address to clipboard when button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
       render(
         <MoneroPayment 
@@ -219,7 +218,7 @@ describe('MoneroPayment Component', () => {
       );
 
       const addressCopyButton = screen.getAllByRole('button')[0]; // First copy button
-      await user.click(addressCopyButton);
+      await userEvent.click(addressCopyButton);
 
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockPaymentData.moneroAddress);
 
@@ -238,7 +237,6 @@ describe('MoneroPayment Component', () => {
     });
 
     it('should copy amount to clipboard when button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
       render(
         <MoneroPayment 
@@ -249,7 +247,7 @@ describe('MoneroPayment Component', () => {
       );
 
       const amountCopyButton = screen.getAllByRole('button')[1]; // Second copy button
-      await user.click(amountCopyButton);
+      await userEvent.click(amountCopyButton);
 
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('1.234567890123');
 
@@ -259,7 +257,6 @@ describe('MoneroPayment Component', () => {
     });
 
     it('should handle clipboard errors gracefully', async () => {
-      const user = userEvent.setup();
       navigator.clipboard.writeText.mockRejectedValue(new Error('Clipboard access denied'));
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -272,7 +269,7 @@ describe('MoneroPayment Component', () => {
       );
 
       const copyButton = screen.getAllByRole('button')[0];
-      await user.click(copyButton);
+      await userEvent.click(copyButton);
 
       expect(consoleSpy).toHaveBeenCalledWith('Failed to copy to clipboard:', expect.any(Error));
       consoleSpy.mockRestore();

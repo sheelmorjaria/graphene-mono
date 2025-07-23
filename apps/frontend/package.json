@@ -26,6 +26,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/vite": "^4.1.8",
+    "@testing-library/dom": "^10.4.0",
     "@vitest/coverage-v8": "^3.2.3",
     "prop-types": "^15.8.1",
     "qrcode": "^1.5.4",

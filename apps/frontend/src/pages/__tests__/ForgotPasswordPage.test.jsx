@@ -65,14 +65,13 @@ describe('ForgotPasswordPage', () => {
 
   describe('Form Validation', () => {
     it('should validate required email field', async () => {
-      const user = userEvent.setup();
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
       
       // Focus and blur to trigger validation
-      await user.click(emailInput);
-      await user.tab();
+      await userEvent.click(emailInput);
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('Email is required')).toBeInTheDocument();
@@ -80,12 +79,11 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should validate email format', async () => {
-      const user = userEvent.setup();
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
@@ -93,21 +91,20 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should clear error when user starts typing', async () => {
-      const user = userEvent.setup();
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
       
       // Trigger validation error first
-      await user.type(emailInput, 'invalid');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid');
+      await userEvent.tab();
       
       await waitFor(() => {
         expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
       });
 
       // Start typing to clear error
-      await user.type(emailInput, '@example.com');
+      await userEvent.type(emailInput, '@example.com');
       
       await waitFor(() => {
         expect(screen.queryByText('Please enter a valid email address')).not.toBeInTheDocument();
@@ -117,7 +114,6 @@ describe('ForgotPasswordPage', () => {
 
   describe('Form Submission', () => {
     it('should submit form with valid email', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockResolvedValue({
         success: true,
         message: 'If an account exists for that email, a password reset link has been sent.'
@@ -126,10 +122,10 @@ describe('ForgotPasswordPage', () => {
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(forgotPassword).toHaveBeenCalledWith({ email: 'test@example.com' });
@@ -137,7 +133,6 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should show success message after submission', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockResolvedValue({
         success: true,
         message: 'If an account exists for that email, a password reset link has been sent.'
@@ -146,10 +141,10 @@ describe('ForgotPasswordPage', () => {
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByText('If an account exists for that email, a password reset link has been sent.')).toBeInTheDocument();
@@ -157,16 +152,15 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should show loading state during submission', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /sending/i })).toBeInTheDocument();
@@ -175,16 +169,15 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should disable form during submission', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByLabelText(/email address/i)).toBeDisabled();
@@ -192,16 +185,15 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockRejectedValue(new Error('Server error'));
 
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByText('Server error')).toBeInTheDocument();
@@ -209,7 +201,6 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should clear form after successful submission', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockResolvedValue({
         success: true,
         message: 'If an account exists for that email, a password reset link has been sent.'
@@ -218,10 +209,10 @@ describe('ForgotPasswordPage', () => {
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(emailInput).toHaveValue('');
@@ -229,20 +220,19 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should prevent multiple submissions', async () => {
-      const user = userEvent.setup();
       forgotPassword.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'test@example.com');
+      await userEvent.type(emailInput, 'test@example.com');
       
       const submitButton = screen.getByRole('button', { name: /send reset link/i });
       
       // Click multiple times
-      await user.click(submitButton);
-      await user.click(submitButton);
-      await user.click(submitButton);
+      await userEvent.click(submitButton);
+      await userEvent.click(submitButton);
+      await userEvent.click(submitButton);
 
       // Should only be called once
       expect(forgotPassword).toHaveBeenCalledTimes(1);
@@ -261,12 +251,11 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should associate error messages with form fields', async () => {
-      const user = userEvent.setup();
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab();
 
       await waitFor(() => {
         const errorElement = screen.getByText('Please enter a valid email address');
@@ -276,24 +265,22 @@ describe('ForgotPasswordPage', () => {
     });
 
     it('should have proper focus management', async () => {
-      const user = userEvent.setup();
       renderForgotPasswordPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
       
       // Focus should be on email input initially
-      await user.tab();
+      await userEvent.tab();
       expect(emailInput).toHaveFocus();
     });
   });
 
   describe('Navigation', () => {
     it('should navigate back to login when clicking back link', async () => {
-      const user = userEvent.setup();
       renderForgotPasswordPage();
 
       const backLink = screen.getByRole('link', { name: /back to login/i });
-      await user.click(backLink);
+      await userEvent.click(backLink);
 
       // Link navigation is handled by React Router, so we just check the href
       expect(backLink).toHaveAttribute('href', '/login');

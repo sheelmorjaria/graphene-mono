@@ -100,11 +100,10 @@ describe('ResetPasswordPage', () => {
 
   describe('Password Strength Validation', () => {
     it('should show password requirements when focused', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const newPasswordInput = screen.getByLabelText('New Password *');
-      await user.click(newPasswordInput);
+      await userEvent.click(newPasswordInput);
 
       await waitFor(() => {
         expect(screen.getByText(/password must contain/i)).toBeInTheDocument();
@@ -117,39 +116,37 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should show password strength indicator', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const newPasswordInput = screen.getByLabelText('New Password *');
       
       // Test weak password
-      await user.type(newPasswordInput, 'weak');
+      await userEvent.type(newPasswordInput, 'weak');
       await waitFor(() => {
         expect(screen.getByText('weak')).toBeInTheDocument();
       });
 
       // Test medium password
-      await user.clear(newPasswordInput);
-      await user.type(newPasswordInput, 'Password1');
+      await userEvent.clear(newPasswordInput);
+      await userEvent.type(newPasswordInput, 'Password1');
       await waitFor(() => {
         expect(screen.getByText('medium')).toBeInTheDocument();
       });
 
       // Test strong password
-      await user.clear(newPasswordInput);
-      await user.type(newPasswordInput, 'StrongPass123!');
+      await userEvent.clear(newPasswordInput);
+      await userEvent.type(newPasswordInput, 'StrongPass123!');
       await waitFor(() => {
         expect(screen.getByText('strong')).toBeInTheDocument();
       });
     });
 
     it('should validate password strength on blur', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const newPasswordInput = screen.getByLabelText('New Password *');
-      await user.type(newPasswordInput, 'weak');
-      await user.tab();
+      await userEvent.type(newPasswordInput, 'weak');
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText(/password must be at least 8 characters/i)).toBeInTheDocument();
@@ -157,15 +154,14 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should validate confirm password match', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const newPasswordInput = screen.getByLabelText('New Password *');
       const confirmPasswordInput = screen.getByLabelText('Confirm New Password *');
 
-      await user.type(newPasswordInput, 'StrongPass123!');
-      await user.type(confirmPasswordInput, 'DifferentPass123!');
-      await user.tab();
+      await userEvent.type(newPasswordInput, 'StrongPass123!');
+      await userEvent.type(confirmPasswordInput, 'DifferentPass123!');
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
@@ -173,18 +169,17 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should clear field errors when user starts typing', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const newPasswordInput = screen.getByLabelText('New Password *');
-      await user.type(newPasswordInput, 'weak');
-      await user.tab();
+      await userEvent.type(newPasswordInput, 'weak');
+      await userEvent.tab();
 
       await waitFor(() => {
         expect(screen.getByText(/password must be at least 8 characters/i)).toBeInTheDocument();
       });
 
-      await user.type(newPasswordInput, 'StrongPass123!');
+      await userEvent.type(newPasswordInput, 'StrongPass123!');
 
       await waitFor(() => {
         expect(screen.queryByText(/password must be at least 8 characters/i)).not.toBeInTheDocument();
@@ -194,7 +189,6 @@ describe('ResetPasswordPage', () => {
 
   describe('Form Submission', () => {
     it('should submit form with valid data', async () => {
-      const user = userEvent.setup();
       resetPassword.mockResolvedValue({
         success: true,
         message: 'Password has been reset successfully'
@@ -202,10 +196,10 @@ describe('ResetPasswordPage', () => {
 
       renderResetPasswordPage();
 
-      await user.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
-      await user.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
 
-      await user.click(screen.getByRole('button', { name: /reset password/i }));
+      await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
         expect(resetPassword).toHaveBeenCalledWith({
@@ -217,7 +211,6 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should show success message and redirect to login after successful reset', async () => {
-      const user = userEvent.setup();
       resetPassword.mockResolvedValue({
         success: true,
         message: 'Password has been reset successfully'
@@ -225,10 +218,10 @@ describe('ResetPasswordPage', () => {
 
       renderResetPasswordPage();
 
-      await user.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
-      await user.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
 
-      await user.click(screen.getByRole('button', { name: /reset password/i }));
+      await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/password has been reset successfully/i)).toBeInTheDocument();
@@ -241,15 +234,14 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should handle password reset errors', async () => {
-      const user = userEvent.setup();
       resetPassword.mockRejectedValue(new Error('Password reset token is invalid or has expired'));
 
       renderResetPasswordPage();
 
-      await user.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
-      await user.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
 
-      await user.click(screen.getByRole('button', { name: /reset password/i }));
+      await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Password reset token is invalid or has expired')).toBeInTheDocument();
@@ -257,14 +249,13 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should prevent submission with validation errors', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       // Try to submit with weak password
-      await user.type(screen.getByLabelText('New Password *'), 'weak');
-      await user.type(screen.getByLabelText('Confirm New Password *'), 'weak');
+      await userEvent.type(screen.getByLabelText('New Password *'), 'weak');
+      await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'weak');
 
-      await user.click(screen.getByRole('button', { name: /reset password/i }));
+      await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
         expect(resetPassword).not.toHaveBeenCalled();
@@ -272,15 +263,14 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should show loading state during submission', async () => {
-      const user = userEvent.setup();
       resetPassword.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderResetPasswordPage();
 
-      await user.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
-      await user.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
 
-      await user.click(screen.getByRole('button', { name: /reset password/i }));
+      await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /resetting/i })).toBeInTheDocument();
@@ -289,15 +279,14 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should disable form during submission', async () => {
-      const user = userEvent.setup();
       resetPassword.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderResetPasswordPage();
 
-      await user.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
-      await user.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('New Password *'), 'NewPassword456!');
+      await userEvent.type(screen.getByLabelText('Confirm New Password *'), 'NewPassword456!');
 
-      await user.click(screen.getByRole('button', { name: /reset password/i }));
+      await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText('New Password *')).toBeDisabled();
@@ -322,12 +311,11 @@ describe('ResetPasswordPage', () => {
     });
 
     it('should associate error messages with form fields', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const newPasswordInput = screen.getByLabelText('New Password *');
-      await user.type(newPasswordInput, 'weak');
-      await user.tab();
+      await userEvent.type(newPasswordInput, 'weak');
+      await userEvent.tab();
 
       await waitFor(() => {
         const errorElement = screen.getByText(/password must be at least 8 characters/i);
@@ -339,11 +327,10 @@ describe('ResetPasswordPage', () => {
 
   describe('Navigation', () => {
     it('should navigate back to login when clicking back link', async () => {
-      const user = userEvent.setup();
       renderResetPasswordPage();
 
       const backLink = screen.getByRole('link', { name: /back to login/i });
-      await user.click(backLink);
+      await userEvent.click(backLink);
 
       // Link navigation is handled by React Router, so we just check the href
       expect(backLink).toHaveAttribute('href', '/login');

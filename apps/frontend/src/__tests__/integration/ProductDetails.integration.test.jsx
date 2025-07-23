@@ -193,7 +193,6 @@ describe('Product Details Integration Tests', () => {
   });
 
   it('should retry API call when retry button is clicked', async () => {
-    const user = userEvent.setup();
 
     // Mock initial error, then success
     fetch
@@ -215,7 +214,7 @@ describe('Product Details Integration Tests', () => {
 
     // Click retry button
     const retryButton = screen.getByRole('button', { name: /try again/i });
-    await user.click(retryButton);
+    await userEvent.click(retryButton);
 
     // Should show loading again
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
@@ -266,7 +265,6 @@ describe('Product Details Integration Tests', () => {
   });
 
   it('should handle add to cart interaction', async () => {
-    const user = userEvent.setup();
 
     fetch.mockResolvedValueOnce({
       ok: true,
@@ -284,7 +282,7 @@ describe('Product Details Integration Tests', () => {
 
     // Click add to cart button
     const addToCartButton = screen.getByTestId('add-to-cart');
-    await user.click(addToCartButton);
+    await userEvent.click(addToCartButton);
 
     // Verify cart function was called (mocked as console.log)
     expect(consoleSpy).toHaveBeenCalledWith('Adding 1 of product product-123 to cart');

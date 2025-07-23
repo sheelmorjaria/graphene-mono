@@ -2,14 +2,25 @@ import React from 'react';
 import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
 import { CheckoutProvider, useCheckout } from '../CheckoutContext';
 
-// Mock addressService
+// Mock addressService and AuthContext
 import { vi } from 'vitest';
 
 vi.mock('../../services/addressService', () => ({
   getUserAddresses: vi.fn()
 }));
 
+vi.mock('../AuthContext', () => ({
+  useAuth: vi.fn()
+}));
+
+vi.mock('../CartContext', () => ({
+  useCart: vi.fn().mockReturnValue({
+    cart: { items: [], totalAmount: 0 }
+  })
+}));
+
 import { getUserAddresses } from '../../services/addressService';
+import { useAuth } from '../AuthContext';
 
 // Test component that uses checkout context
 const TestComponent = () => {
@@ -67,18 +78,17 @@ const TestComponent = () => {
 };
 
 const renderWithProviders = (authenticated = true) => {
-  const mockAuth = {
+  // Mock useAuth for this test
+  useAuth.mockReturnValue({
     isAuthenticated: authenticated,
     isLoading: false,
     user: authenticated ? { _id: '1', email: 'test@example.com' } : null
-  };
+  });
 
   return render(
-    <AuthProvider value={mockAuth}>
-      <CheckoutProvider>
-        <TestComponent />
-      </CheckoutProvider>
-    </AuthProvider>
+    <CheckoutProvider>
+      <TestComponent />
+    </CheckoutProvider>
   );
 };
 

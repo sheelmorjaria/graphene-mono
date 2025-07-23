@@ -350,7 +350,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
     });
 
     it('should handle disable account action', async () => {
-      const user = userEvent.setup();
       renderAdminUserDetailsPage();
 
       await waitFor(() => {
@@ -359,7 +358,7 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
 
       // Click disable button
       const disableButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(disableButton);
+      await userEvent.click(disableButton);
 
       // Check confirmation dialog
       expect(screen.getByText(/disable user account/i)).toBeInTheDocument();
@@ -367,7 +366,7 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
 
       // Confirm action
       const confirmButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(confirmButton);
+      await userEvent.click(confirmButton);
 
       // Verify API call
       await waitFor(() => {
@@ -381,7 +380,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
     });
 
     it('should handle enable account action', async () => {
-      const user = userEvent.setup();
       
       // Start with disabled user
       const disabledUser = {
@@ -402,14 +400,14 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
 
       // Click enable button
       const enableButton = screen.getByRole('button', { name: /enable account/i });
-      await user.click(enableButton);
+      await userEvent.click(enableButton);
 
       // Check confirmation dialog
       expect(screen.getByText(/enable user account/i)).toBeInTheDocument();
 
       // Confirm action
       const confirmButton = screen.getByRole('button', { name: /enable account/i });
-      await user.click(confirmButton);
+      await userEvent.click(confirmButton);
 
       // Verify API call
       await waitFor(() => {
@@ -420,7 +418,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
     });
 
     it('should handle status update errors', async () => {
-      const user = userEvent.setup();
       mockUpdateUserStatus.mockRejectedValue(new Error('Update failed'));
       
       renderAdminUserDetailsPage();
@@ -431,10 +428,10 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
 
       // Attempt to disable
       const disableButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(disableButton);
+      await userEvent.click(disableButton);
 
       const confirmButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(confirmButton);
+      await userEvent.click(confirmButton);
 
       // Check error message
       await waitFor(() => {
@@ -444,7 +441,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
     });
 
     it('should cancel status update when cancelled', async () => {
-      const user = userEvent.setup();
       renderAdminUserDetailsPage();
 
       await waitFor(() => {
@@ -453,10 +449,10 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
 
       // Open dialog and cancel
       const disableButton = screen.getByRole('button', { name: /disable account/i });
-      await user.click(disableButton);
+      await userEvent.click(disableButton);
 
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      await user.click(cancelButton);
+      await userEvent.click(cancelButton);
 
       // Verify no API call and dialog closed
       expect(mockUpdateUserStatus).not.toHaveBeenCalled();
@@ -466,7 +462,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
 
   describe('Navigation and Actions', () => {
     it('should navigate back to users list', async () => {
-      const user = userEvent.setup();
       renderAdminUserDetailsPage();
 
       await waitFor(() => {
@@ -474,7 +469,7 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
       });
 
       const backButton = screen.getByText(/back to users/i);
-      await user.click(backButton);
+      await userEvent.click(backButton);
 
       expect(mockNavigate).toHaveBeenCalledWith('/admin/users');
     });
@@ -494,7 +489,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
     });
 
     it('should provide view orders functionality', async () => {
-      const user = userEvent.setup();
       renderAdminUserDetailsPage();
 
       await waitFor(() => {
@@ -504,7 +498,7 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
       // Check view orders button (if it exists)
       const viewOrdersButton = screen.queryByText(/view orders/i);
       if (viewOrdersButton) {
-        await user.click(viewOrdersButton);
+        await userEvent.click(viewOrdersButton);
         expect(mockNavigate).toHaveBeenCalledWith('/admin/orders', { 
           state: { userId: '123' } 
         });
@@ -536,7 +530,6 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
     });
 
     it('should handle keyboard navigation properly', async () => {
-      const user = userEvent.setup();
       renderAdminUserDetailsPage();
 
       await waitFor(() => {
@@ -550,7 +543,7 @@ describe('AdminUserDetailsPage - Comprehensive Tests', () => {
       backButton.focus();
       expect(backButton).toHaveFocus();
 
-      await user.tab();
+      await userEvent.tab();
       expect(disableButton).toHaveFocus();
     });
 

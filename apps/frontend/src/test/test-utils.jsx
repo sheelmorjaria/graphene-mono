@@ -1,6 +1,7 @@
 import React from 'react'
 import { render as rtlRender, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import { vi } from 'vitest'
 import { AuthProvider, AuthStateContext, AuthDispatchContext } from '../contexts/AuthContext'
 import { CartProvider, CartContext } from '../contexts/CartContext'
@@ -85,12 +86,33 @@ const TestAuthProvider = ({ children }) => {
 const TestCartProvider = ({ children }) => {
   const [cart] = React.useState({
     items: [],
-    total: 0,
-    count: 0
+    totalItems: 0,
+    totalAmount: 0,
+    itemCount: 0
   })
 
+  const addToCart = vi.fn().mockResolvedValue({
+    success: true,
+    message: 'Product added to cart',
+    addedItem: { productId: 'test', quantity: 1 }
+  })
+
+  const contextValue = {
+    cart,
+    loading: false,
+    error: '',
+    addToCart,
+    updateCartItem: vi.fn(),
+    removeFromCart: vi.fn(),
+    clearCart: vi.fn(),
+    refreshCart: vi.fn(),
+    clearError: vi.fn(),
+    isEmpty: cart.items.length === 0,
+    itemCount: cart.totalItems || 0
+  }
+
   return (
-    <CartContext.Provider value={{ cart, dispatch: () => {} }}>
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   )
@@ -108,13 +130,15 @@ function render(
   // Create a wrapper component with all necessary providers
   function Wrapper({ children }) {
     return (
-      <MemoryRouter initialEntries={initialEntries} initialIndex={initialIndex}>
-        <TestAuthProvider>
-          <TestCartProvider>
-            {children}
-          </TestCartProvider>
-        </TestAuthProvider>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={initialEntries} initialIndex={initialIndex}>
+          <TestAuthProvider>
+            <TestCartProvider>
+              {children}
+            </TestCartProvider>
+          </TestAuthProvider>
+        </MemoryRouter>
+      </HelmetProvider>
     )
   }
 

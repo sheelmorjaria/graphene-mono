@@ -1,39 +1,36 @@
-import { jest } from '@jest/globals';
-
-// Create a mock Product constructor
-const mockProductInstance = {
-  save: jest.fn(),
-  populate: jest.fn()
-};
-
-const MockProduct = jest.fn().mockImplementation(() => mockProductInstance);
-MockProduct.findById = jest.fn();
-MockProduct.findOne = jest.fn();
-MockProduct.findByIdAndUpdate = jest.fn();
-
-const mockProduct = MockProduct;
-
-const mockCategory = {
-  findById: jest.fn()
-};
+import { vi, describe, test, beforeEach, expect } from 'vitest';
 
 // Mock the models
-jest.mock('../../models/Product.js', () => ({
-  default: mockProduct
+vi.mock('../../models/Product.js', () => ({
+  default: Object.assign(
+    vi.fn().mockImplementation(() => ({
+      save: vi.fn(),
+      populate: vi.fn()
+    })),
+    {
+      findById: vi.fn(),
+      findOne: vi.fn(),
+      findByIdAndUpdate: vi.fn()
+    }
+  )
 }));
 
-jest.mock('../../models/Category.js', () => ({
-  default: mockCategory
+vi.mock('../../models/Category.js', () => ({
+  default: {
+    findById: vi.fn()
+  }
 }));
 
 // Import the functions to test after mocking
-import '../adminController.js');
+import { createProduct, updateProduct, getProductById } from '../adminController.js';
+import Product from '../../models/Product.js';
+import Category from '../../models/Category.js';
 
 describe('Admin Controller - Product CRUD Unit Tests', () => {
   let req, res;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     req = {
       params: {},
@@ -42,8 +39,8 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
     };
     
     res = {
-      json: jest.fn(),
-      status: jest.fn().mockReturnThis()
+      json: vi.fn(),
+      status: vi.fn().mockReturnThis()
     };
   });
 
@@ -58,16 +55,16 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       };
 
       const mockPopulatedQuery = {
-        populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(mockProductData)
+        populate: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(mockProductData)
       };
       
-      mockProduct.findById.mockReturnValue(mockPopulatedQuery);
+      Product.findById.mockReturnValue(mockPopulatedQuery);
       req.params.productId = 'product123';
 
       await getProductById(req, res);
 
-      expect(mockProduct.findById).toHaveBeenCalledWith('product123');
+      expect(Product.findById).toHaveBeenCalledWith('product123');
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: { product: mockProductData }
@@ -76,11 +73,11 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
 
     test('should return 404 for non-existent product', async () => {
       const mockPopulatedQuery = {
-        populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(null)
+        populate: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue(null)
       };
       
-      mockProduct.findById.mockReturnValue(mockPopulatedQuery);
+      Product.findById.mockReturnValue(mockPopulatedQuery);
       req.params.productId = 'nonexistent';
 
       await getProductById(req, res);
@@ -108,7 +105,7 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       const error = new Error('Cast error');
       error.name = 'CastError';
       
-      mockProduct.findById.mockImplementation(() => {
+      Product.findById.mockImplementation(() => {
         throw error;
       });
       req.params.productId = 'invalid-id';
@@ -136,11 +133,11 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       req.body = productData;
 
       // Mock category validation
-      mockCategory.findById.mockResolvedValue({ _id: 'cat123', name: 'Test Category' });
+      Category.findById.mockResolvedValue({ _id: 'cat123', name: 'Test Category' });
       
       // Mock SKU uniqueness check
-      mockProduct.findOne.mockResolvedValueOnce(null); // SKU check
-      mockProduct.findOne.mockResolvedValueOnce(null); // Slug check
+      Product.findOne.mockResolvedValueOnce(null); // SKU check
+      Product.findOne.mockResolvedValueOnce(null); // Slug check
 
       // Mock product creation
       const mockNewProduct = {
@@ -152,14 +149,18 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
         category: 'cat123'
       };
 
-      mockProductInstance.save.mockResolvedValue(mockNewProduct);
-      mockProductInstance.populate.mockResolvedValue(mockProductInstance);
-      
-      // Mock the product instance to return populated data
-      Object.assign(mockProductInstance, {
+      // Mock the Product constructor to return the instance with methods
+      const mockProductInstance = {
         ...mockNewProduct,
-        category: { _id: 'cat123', name: 'Test Category' }
-      });
+        save: vi.fn().mockResolvedValue(mockNewProduct),
+        populate: vi.fn().mockImplementation(function() {
+          // Mutate this instance to add populated category
+          this.category = { _id: 'cat123', name: 'Test Category' };
+          return this;
+        })
+      };
+      
+      Product.mockReturnValue(mockProductInstance);
 
       await createProduct(req, res);
 
@@ -169,12 +170,8 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
         message: 'Product created successfully',
         data: { 
           product: expect.objectContaining({
-            name: 'New Product',
-            sku: 'NEW-001',
-            category: expect.objectContaining({
-              _id: 'cat123',
-              name: 'Test Category'
-            })
+            ...mockNewProduct,
+            category: { _id: 'cat123', name: 'Test Category' }
           })
         }
       });
@@ -201,7 +198,7 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       };
 
       // Mock existing product with same SKU
-      mockProduct.findOne.mockResolvedValue({ _id: 'existing', sku: 'EXISTING-001' });
+      Product.findOne.mockResolvedValue({ _id: 'existing', sku: 'EXISTING-001' });
 
       await createProduct(req, res);
 
@@ -221,8 +218,8 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
         category: 'invalid-category'
       };
 
-      mockProduct.findOne.mockResolvedValue(null); // SKU check passes
-      mockCategory.findById.mockResolvedValue(null); // Category not found
+      Product.findOne.mockResolvedValue(null); // SKU check passes
+      Category.findById.mockResolvedValue(null); // Category not found
 
       await createProduct(req, res);
 
@@ -257,20 +254,20 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       req.params.productId = 'product123';
       req.body = updateData;
 
-      mockProduct.findById.mockResolvedValue(existingProduct);
-      mockProduct.findOne.mockResolvedValue(null); // No duplicate SKU
+      Product.findById.mockResolvedValue(existingProduct);
+      Product.findOne.mockResolvedValue(null); // No duplicate SKU
       
       const updatedProduct = { ...existingProduct, ...updateData, price: 120, stockQuantity: 8 };
       const mockPopulatedProduct = {
         ...updatedProduct,
-        populate: jest.fn().mockReturnValue(updatedProduct)
+        populate: vi.fn().mockReturnValue(updatedProduct)
       };
       
-      mockProduct.findByIdAndUpdate.mockReturnValue(mockPopulatedProduct);
+      Product.findByIdAndUpdate.mockReturnValue(mockPopulatedProduct);
 
       await updateProduct(req, res);
 
-      expect(mockProduct.findByIdAndUpdate).toHaveBeenCalledWith(
+      expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
         'product123',
         expect.objectContaining({
           name: 'Updated Product',
@@ -291,7 +288,7 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       req.params.productId = 'nonexistent';
       req.body = { name: 'Test', sku: 'TEST', price: '100', stockQuantity: '5' };
 
-      mockProduct.findById.mockResolvedValue(null);
+      Product.findById.mockResolvedValue(null);
 
       await updateProduct(req, res);
 
@@ -306,7 +303,7 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
       req.params.productId = 'product123';
       req.body = { name: 'Product' }; // Missing SKU, price, stockQuantity
 
-      mockProduct.findById.mockResolvedValue({ _id: 'product123' });
+      Product.findById.mockResolvedValue({ _id: 'product123' });
 
       await updateProduct(req, res);
 
@@ -331,9 +328,9 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
         stockQuantity: '5'
       };
 
-      mockProduct.findById.mockResolvedValue(existingProduct);
+      Product.findById.mockResolvedValue(existingProduct);
       // Mock that another product already has the new SKU
-      mockProduct.findOne.mockResolvedValue({ _id: 'other123', sku: 'EXISTING-002' });
+      Product.findOne.mockResolvedValue({ _id: 'other123', sku: 'EXISTING-002' });
 
       await updateProduct(req, res);
 

@@ -148,7 +148,6 @@ describe('MoneroPayment Component - Improved', () => {
         }, { timeout: 2000 });
       });
 
-      const user = userEvent.setup();
       const copyButtons = getAllByRole('button');
       const addressCopyButton = copyButtons.find(btn => 
         btn.closest('div')?.querySelector('input')?.value === mockPaymentData.moneroAddress
@@ -156,7 +155,7 @@ describe('MoneroPayment Component - Improved', () => {
 
       if (addressCopyButton) {
         await actAsync(async () => {
-          await user.click(addressCopyButton);
+          await userEvent.click(addressCopyButton);
         });
 
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockPaymentData.moneroAddress);

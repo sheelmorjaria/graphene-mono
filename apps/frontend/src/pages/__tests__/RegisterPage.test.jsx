@@ -70,13 +70,12 @@ describe('RegisterPage', () => {
 
   describe('Form Validation', () => {
     it('should show validation errors for empty required fields', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const submitButton = screen.getByRole('button', { name: /create account/i });
       
       await act(async () => {
-        await user.click(submitButton);
+        await userEvent.click(submitButton);
       });
 
       expect(screen.getByText(/email is required/i)).toBeInTheDocument();
@@ -86,58 +85,53 @@ describe('RegisterPage', () => {
     });
 
     it('should validate email format', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab(); // Trigger blur
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab(); // Trigger blur
 
       expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
     });
 
     it('should validate password strength', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const passwordInput = screen.getByLabelText('Password *');
-      await user.type(passwordInput, 'weak');
-      await user.tab(); // Trigger blur
+      await userEvent.type(passwordInput, 'weak');
+      await userEvent.tab(); // Trigger blur
 
       expect(screen.getByText(/password must be at least 8 characters/i)).toBeInTheDocument();
     });
 
     it('should validate password confirmation match', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const passwordInput = screen.getByLabelText('Password *');
       const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
 
-      await user.type(passwordInput, 'StrongPass123!');
-      await user.type(confirmPasswordInput, 'DifferentPass123!');
-      await user.tab(); // Trigger blur
+      await userEvent.type(passwordInput, 'StrongPass123!');
+      await userEvent.type(confirmPasswordInput, 'DifferentPass123!');
+      await userEvent.tab(); // Trigger blur
 
       expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
     });
 
     it('should validate phone number format when provided', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const phoneInput = screen.getByLabelText(/phone number/i);
-      await user.type(phoneInput, 'invalid-phone');
-      await user.tab(); // Trigger blur
+      await userEvent.type(phoneInput, 'invalid-phone');
+      await userEvent.tab(); // Trigger blur
 
       expect(screen.getByText(/please enter a valid phone number/i)).toBeInTheDocument();
     });
 
     it('should show password strength requirements', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const passwordInput = screen.getByLabelText('Password *');
-      await user.click(passwordInput);
+      await userEvent.click(passwordInput);
 
       expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
       expect(screen.getByText(/uppercase letter/i)).toBeInTheDocument();
@@ -147,18 +141,17 @@ describe('RegisterPage', () => {
     });
 
     it('should update password strength indicator', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const passwordInput = screen.getByLabelText('Password *');
       
       // Type weak password
-      await user.type(passwordInput, 'weak');
+      await userEvent.type(passwordInput, 'weak');
       expect(screen.getByText(/weak/i)).toBeInTheDocument();
 
       // Clear and type strong password
-      await user.clear(passwordInput);
-      await user.type(passwordInput, 'StrongPass123!');
+      await userEvent.clear(passwordInput);
+      await userEvent.type(passwordInput, 'StrongPass123!');
       expect(screen.getByText(/strong/i)).toBeInTheDocument();
     });
   });
@@ -173,7 +166,6 @@ describe('RegisterPage', () => {
     };
 
     it('should submit form with valid data', async () => {
-      const user = userEvent.setup();
       const mockResponse = {
         success: true,
         data: {
@@ -191,14 +183,14 @@ describe('RegisterPage', () => {
       renderRegisterPage();
 
       // Fill in the form
-      await user.type(screen.getByLabelText(/email address/i), validFormData.email);
-      await user.type(screen.getByLabelText(/^password$/i), validFormData.password);
-      await user.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
-      await user.type(screen.getByLabelText(/first name/i), validFormData.firstName);
-      await user.type(screen.getByLabelText(/last name/i), validFormData.lastName);
+      await userEvent.type(screen.getByLabelText(/email address/i), validFormData.email);
+      await userEvent.type(screen.getByLabelText(/^password$/i), validFormData.password);
+      await userEvent.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
+      await userEvent.type(screen.getByLabelText(/first name/i), validFormData.firstName);
+      await userEvent.type(screen.getByLabelText(/last name/i), validFormData.lastName);
 
       // Submit the form
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
         expect(registerUser).toHaveBeenCalledWith({
@@ -216,7 +208,6 @@ describe('RegisterPage', () => {
     });
 
     it('should submit form with optional fields', async () => {
-      const user = userEvent.setup();
       const mockResponse = {
         success: true,
         data: { token: 'mock-token', user: {} }
@@ -226,15 +217,15 @@ describe('RegisterPage', () => {
       renderRegisterPage();
 
       // Fill in all fields including optional ones
-      await user.type(screen.getByLabelText(/email address/i), validFormData.email);
-      await user.type(screen.getByLabelText(/^password$/i), validFormData.password);
-      await user.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
-      await user.type(screen.getByLabelText(/first name/i), validFormData.firstName);
-      await user.type(screen.getByLabelText(/last name/i), validFormData.lastName);
-      await user.type(screen.getByLabelText(/phone number/i), '+447123456789');
-      await user.click(screen.getByLabelText(/receive marketing emails/i));
+      await userEvent.type(screen.getByLabelText(/email address/i), validFormData.email);
+      await userEvent.type(screen.getByLabelText(/^password$/i), validFormData.password);
+      await userEvent.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
+      await userEvent.type(screen.getByLabelText(/first name/i), validFormData.firstName);
+      await userEvent.type(screen.getByLabelText(/last name/i), validFormData.lastName);
+      await userEvent.type(screen.getByLabelText(/phone number/i), '+447123456789');
+      await userEvent.click(screen.getByLabelText(/receive marketing emails/i));
 
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
         expect(registerUser).toHaveBeenCalledWith({
@@ -250,20 +241,19 @@ describe('RegisterPage', () => {
     });
 
     it('should handle registration errors', async () => {
-      const user = userEvent.setup();
       const errorMessage = 'An account with this email already exists';
       
       registerUser.mockRejectedValue(new Error(errorMessage));
       renderRegisterPage();
 
       // Fill and submit form
-      await user.type(screen.getByLabelText(/email address/i), validFormData.email);
-      await user.type(screen.getByLabelText(/^password$/i), validFormData.password);
-      await user.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
-      await user.type(screen.getByLabelText(/first name/i), validFormData.firstName);
-      await user.type(screen.getByLabelText(/last name/i), validFormData.lastName);
+      await userEvent.type(screen.getByLabelText(/email address/i), validFormData.email);
+      await userEvent.type(screen.getByLabelText(/^password$/i), validFormData.password);
+      await userEvent.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
+      await userEvent.type(screen.getByLabelText(/first name/i), validFormData.firstName);
+      await userEvent.type(screen.getByLabelText(/last name/i), validFormData.lastName);
 
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
         expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -273,7 +263,6 @@ describe('RegisterPage', () => {
     });
 
     it('should show loading state during submission', async () => {
-      const user = userEvent.setup();
       let resolveRegister;
       const registerPromise = new Promise(resolve => {
         resolveRegister = resolve;
@@ -283,13 +272,13 @@ describe('RegisterPage', () => {
       renderRegisterPage();
 
       // Fill and submit form
-      await user.type(screen.getByLabelText(/email address/i), validFormData.email);
-      await user.type(screen.getByLabelText(/^password$/i), validFormData.password);
-      await user.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
-      await user.type(screen.getByLabelText(/first name/i), validFormData.firstName);
-      await user.type(screen.getByLabelText(/last name/i), validFormData.lastName);
+      await userEvent.type(screen.getByLabelText(/email address/i), validFormData.email);
+      await userEvent.type(screen.getByLabelText(/^password$/i), validFormData.password);
+      await userEvent.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
+      await userEvent.type(screen.getByLabelText(/first name/i), validFormData.firstName);
+      await userEvent.type(screen.getByLabelText(/last name/i), validFormData.lastName);
 
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
       // Should show loading state
       expect(screen.getByRole('button', { name: /creating account/i })).toBeInTheDocument();
@@ -304,7 +293,6 @@ describe('RegisterPage', () => {
     });
 
     it('should disable form during submission', async () => {
-      const user = userEvent.setup();
       let resolveRegister;
       const registerPromise = new Promise(resolve => {
         resolveRegister = resolve;
@@ -313,13 +301,13 @@ describe('RegisterPage', () => {
       registerUser.mockReturnValue(registerPromise);
       renderRegisterPage();
 
-      await user.type(screen.getByLabelText(/email address/i), validFormData.email);
-      await user.type(screen.getByLabelText(/^password$/i), validFormData.password);
-      await user.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
-      await user.type(screen.getByLabelText(/first name/i), validFormData.firstName);
-      await user.type(screen.getByLabelText(/last name/i), validFormData.lastName);
+      await userEvent.type(screen.getByLabelText(/email address/i), validFormData.email);
+      await userEvent.type(screen.getByLabelText(/^password$/i), validFormData.password);
+      await userEvent.type(screen.getByLabelText(/confirm password/i), validFormData.confirmPassword);
+      await userEvent.type(screen.getByLabelText(/first name/i), validFormData.firstName);
+      await userEvent.type(screen.getByLabelText(/last name/i), validFormData.lastName);
 
-      await user.click(screen.getByRole('button', { name: /create account/i }));
+      await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
       // All form fields should be disabled
       expect(screen.getByLabelText(/email address/i)).toBeDisabled();
@@ -334,7 +322,6 @@ describe('RegisterPage', () => {
 
   describe('Navigation', () => {
     it('should navigate to login page when clicking sign in link', async () => {
-      const _user = userEvent.setup();
       renderRegisterPage();
 
       const signInLink = screen.getByRole('link', { name: 'Sign in' });
@@ -366,12 +353,11 @@ describe('RegisterPage', () => {
     });
 
     it('should associate error messages with form fields', async () => {
-      const user = userEvent.setup();
       renderRegisterPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      await user.type(emailInput, 'invalid-email');
-      await user.tab();
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.tab();
 
       const errorMessage = screen.getByText(/please enter a valid email address/i);
       expect(errorMessage).toBeInTheDocument();

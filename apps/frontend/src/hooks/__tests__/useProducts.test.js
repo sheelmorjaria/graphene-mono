@@ -195,7 +195,9 @@ describe('useProducts hook', () => {
     
     productsService.getProducts.mockResolvedValue(mockResponse);
     
-    result.current.fetchProducts();
+    await act(async () => {
+      result.current.fetchProducts();
+    });
     
     // Error should be reset during loading
     expect(result.current.error).toBe(null);
@@ -220,13 +222,16 @@ describe('useProducts hook', () => {
     const { result } = renderHook(() => useProducts());
 
     // Make multiple rapid calls
-    result.current.fetchProducts({ page: 1 });
-    result.current.fetchProducts({ page: 2 });
-    result.current.fetchProducts({ page: 3 });
+    await act(async () => {
+      result.current.fetchProducts({ page: 1 });
+      result.current.fetchProducts({ page: 2 });
+      result.current.fetchProducts({ page: 3 });
+    });
 
+    // Wait for debounce delay and loading to complete
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
-    });
+    }, { timeout: 1000 });
 
     // Should only make one API call (the last one)
     expect(productsService.getProducts).toHaveBeenCalledTimes(1);

@@ -1,5 +1,6 @@
 import { render, screen, waitFor, userEvent } from '../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from '../App';
 
 // Mock the page components
@@ -33,11 +34,9 @@ vi.mock('../hooks/useProductDetails', () => ({
 }));
 
 const renderWithRouter = (initialEntries = ['/']) => {
-  return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <AppRoutes />
-    </MemoryRouter>
-  );
+  return render(<AppRoutes />, {
+    initialEntries
+  });
 };
 
 describe('App Routing', () => {
@@ -78,7 +77,6 @@ describe('App Routing', () => {
   });
 
   it('should navigate between routes correctly', async () => {
-    const user = userEvent.setup();
     renderWithRouter(['/']);
 
     // Should start on product list page
@@ -87,7 +85,7 @@ describe('App Routing', () => {
     // Click on products link (if it exists and is different from current)
     const productsLink = screen.queryByRole('link', { name: /products/i });
     if (productsLink && productsLink.getAttribute('href') !== '/') {
-      await user.click(productsLink);
+      await userEvent.click(productsLink);
       expect(screen.getByTestId('product-list-page')).toBeInTheDocument();
     }
   });

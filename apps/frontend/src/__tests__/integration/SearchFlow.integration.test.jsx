@@ -99,7 +99,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should complete full search flow from header search bar', async () => {
-    const user = userEvent.setup();
 
     // Mock products list API call first
     fetch.mockResolvedValueOnce({
@@ -120,10 +119,10 @@ describe('Search Flow Integration Tests', () => {
     expect(searchInput).toBeInTheDocument();
 
     // Type search query
-    await user.type(searchInput, 'pixel');
+    await userEvent.type(searchInput, 'pixel');
 
     // Submit search (should navigate to search page)
-    await user.keyboard('{Enter}');
+    await userEvent.keyboard('{Enter}');
 
     // Should navigate to search results page
     await waitFor(() => {
@@ -176,7 +175,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle search with no results', async () => {
-    const user = userEvent.setup();
 
     // Mock products list API call first
     fetch.mockResolvedValueOnce({
@@ -194,8 +192,8 @@ describe('Search Flow Integration Tests', () => {
 
     // Search for something that returns no results
     const searchInput = screen.getByPlaceholderText('Search products...');
-    await user.type(searchInput, 'nonexistent');
-    await user.keyboard('{Enter}');
+    await userEvent.type(searchInput, 'nonexistent');
+    await userEvent.keyboard('{Enter}');
 
     // Should navigate to search results page
     await waitFor(() => {
@@ -211,7 +209,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle search API errors', async () => {
-    const user = userEvent.setup();
 
     // Mock products list API call first
     fetch.mockResolvedValueOnce({
@@ -225,8 +222,8 @@ describe('Search Flow Integration Tests', () => {
     renderIntegrationTest('/products');
 
     const searchInput = screen.getByPlaceholderText('Search products...');
-    await user.type(searchInput, 'pixel');
-    await user.keyboard('{Enter}');
+    await userEvent.type(searchInput, 'pixel');
+    await userEvent.keyboard('{Enter}');
 
     // Should show error state
     await waitFor(() => {
@@ -238,7 +235,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle search with sorting', async () => {
-    const user = userEvent.setup();
 
     // Mock search response for initial search
     fetch.mockResolvedValueOnce({
@@ -269,7 +265,7 @@ describe('Search Flow Integration Tests', () => {
 
     // Change sorting
     const sortSelect = screen.getByLabelText(/sort by/i);
-    await user.selectOptions(sortSelect, 'price-asc');
+    await userEvent.selectOptions(sortSelect, 'price-asc');
 
     // Should make a new API call with sorting parameters
     await waitFor(() => {
@@ -281,7 +277,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle search with filters', async () => {
-    const user = userEvent.setup();
 
     // Mock search response for initial search
     fetch.mockResolvedValueOnce({
@@ -313,7 +308,7 @@ describe('Search Flow Integration Tests', () => {
 
     // Apply condition filter
     const conditionSelect = screen.getByLabelText(/condition/i);
-    await user.selectOptions(conditionSelect, 'new');
+    await userEvent.selectOptions(conditionSelect, 'new');
 
     // Should make a new API call with filter parameters
     await waitFor(() => {
@@ -325,7 +320,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle pagination in search results', async () => {
-    const user = userEvent.setup();
 
     // Mock multi-page search response
     const multiPageResponse = {
@@ -368,7 +362,7 @@ describe('Search Flow Integration Tests', () => {
 
     // Click next page
     const nextButton = screen.getByRole('button', { name: /next page/i });
-    await user.click(nextButton);
+    await userEvent.click(nextButton);
 
     // Should make API call for page 2
     await waitFor(() => {
@@ -385,7 +379,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle retry after search error', async () => {
-    const user = userEvent.setup();
 
     // Mock initial error
     fetch.mockRejectedValueOnce(new Error('Network error'));
@@ -405,7 +398,7 @@ describe('Search Flow Integration Tests', () => {
 
     // Click retry button
     const retryButton = screen.getByRole('button', { name: /try again/i });
-    await user.click(retryButton);
+    await userEvent.click(retryButton);
 
     // Should show results after retry
     await waitFor(() => {
@@ -436,7 +429,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should handle special characters in search query', async () => {
-    const user = userEvent.setup();
 
     // Mock products list API call first
     fetch.mockResolvedValueOnce({
@@ -453,8 +445,8 @@ describe('Search Flow Integration Tests', () => {
     renderIntegrationTest('/products');
 
     const searchInput = screen.getByPlaceholderText('Search products...');
-    await user.type(searchInput, 'C++ programming');
-    await user.keyboard('{Enter}');
+    await userEvent.type(searchInput, 'C++ programming');
+    await userEvent.keyboard('{Enter}');
 
     // Should properly encode the query in the API call
     await waitFor(() => {
@@ -466,7 +458,6 @@ describe('Search Flow Integration Tests', () => {
   });
 
   it('should navigate from search results to product details', async () => {
-    const user = userEvent.setup();
 
     // Mock search response
     fetch.mockResolvedValueOnce({
@@ -515,7 +506,7 @@ describe('Search Flow Integration Tests', () => {
 
     // Click on the first product's "View Details" button
     const viewDetailsButtons = screen.getAllByText('View Details');
-    await user.click(viewDetailsButtons[0]);
+    await userEvent.click(viewDetailsButtons[0]);
 
     // Should navigate to product details page
     await waitFor(() => {
