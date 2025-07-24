@@ -66,7 +66,7 @@ const GeneralSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch('/api/admin/settings/general', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/admin/settings/general`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -148,7 +148,7 @@ const GeneralSettings = ({ onMessage }) => {
       setSaving(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch('/api/admin/settings/general', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/admin/settings/general`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,12 +1,11 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const ADMIN_API_BASE = `${API_BASE_URL}/admin`;
 
 // Admin login
 export const adminLogin = async (credentials) => {
   try {
     console.log('🔵 AdminService login attempt');
     
-    const response = await fetch('/api/admin/login', {
+    const response = await fetch(`${API_BASE_URL}/admin/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,7 +41,7 @@ export const getDashboardMetrics = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch('/api/admin/dashboard-metrics', {
+    const response = await fetch(`${API_BASE_URL}/admin/dashboard-metrics`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
