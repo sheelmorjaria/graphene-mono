@@ -14,8 +14,6 @@ export const searchProducts = async (req, res) => {
       condition
     } = req.query;
 
-    // Debug logging for production
-    console.log(`[SEARCH] Query: "${query}", Type: ${typeof query}, Length: ${query?.length}`);
 
 
     // Validate search query
@@ -36,12 +34,27 @@ export const searchProducts = async (req, res) => {
 
     try {
       // Try MongoDB text search first
+      // For multi-word queries, use phrase search to be more specific
+      const trimmedQuery = query.trim();
+      const words = trimmedQuery.split(/\s+/);
+      
+      let textSearchQuery;
+      if (words.length > 1) {
+        // For multi-word queries like "pixel 8", use phrase search
+        textSearchQuery = `"${trimmedQuery}"`;
+      } else {
+        // For single words, use regular text search
+        textSearchQuery = trimmedQuery;
+      }
+      
       searchFilter = {
         $and: [
           { isActive: true },
-          { $text: { $search: query.trim() } }
+          { $text: { $search: textSearchQuery } }
         ]
       };
+      
+      console.log(`[SEARCH] Text search query: "${textSearchQuery}" (original: "${trimmedQuery}")`);
 
       // Add additional filters
       if (category) {
@@ -86,12 +99,9 @@ export const searchProducts = async (req, res) => {
 
     } catch (error) {
       // Fall back to regex search if text search fails
-      console.log(`[SEARCH] Text search failed, using regex. Error: ${error.message}`);
-      
       // For multi-word queries, prioritize exact matches in the name
       const trimmedQuery = query.trim();
       const words = trimmedQuery.split(/\s+/);
-      console.log(`[SEARCH] Words split: [${words.join(', ')}], Count: ${words.length}`);
       
       // Escape special regex characters
       const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -109,7 +119,6 @@ export const searchProducts = async (req, res) => {
             ...nameConditions
           ]
         };
-        console.log(`[SEARCH] Multi-word filter created:`, JSON.stringify(searchFilter, null, 2));
       } else {
         // For single word queries, search across all fields
         const sanitizedQuery = escapeRegex(trimmedQuery);
@@ -166,7 +175,6 @@ export const searchProducts = async (req, res) => {
     }
 
     // Execute search query
-    console.log(`[SEARCH] Final search filter:`, JSON.stringify(searchFilter, null, 2));
     
     const products = await Product
       .find(searchFilter)
@@ -180,7 +188,6 @@ export const searchProducts = async (req, res) => {
     const total = await Product.countDocuments(searchFilter);
     const pages = Math.ceil(total / limitNum);
     
-    console.log(`[SEARCH] Results: ${total} total, ${products.length} returned`);
     
 
     // Format response
