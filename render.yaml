@@ -18,7 +18,7 @@ services:
       - key: FROM_EMAIL
         value: noreply@graphene-security.com
       - key: FROM_NAME
-        value: GrapheneOS Store
+        value: Graphene Security
       - key: EMAIL_SERVICE
         value: ses
       - key: AWS_REGION
@@ -27,6 +27,29 @@ services:
         value: your-aws-access-key
       - key: AWS_SECRET_ACCESS_KEY
         value: your-aws-secret-key
+      # PayPal Configuration
+      - key: PAYPAL_CLIENT_ID
+        value: your-paypal-client-id
+      - key: PAYPAL_CLIENT_SECRET
+        value: your-paypal-client-secret
+      - key: PAYPAL_MODE
+        value: live
+      - key: PAYPAL_WEBHOOK_ID
+        value: your-paypal-webhook-id
+      # Blockonomics Configuration
+      - key: BLOCKONOMICS_API_KEY
+        value: your-blockonomics-api-key
+      - key: BLOCKONOMICS_WEBHOOK_SECRET
+        value: your-blockonomics-webhook-secret
+      - key: BLOCKONOMICS_XPUB
+        value: your-bitcoin-extended-public-key
+      # NowPayments Configuration
+      - key: NOWPAYMENTS_API_KEY
+        value: your-nowpayments-api-key
+      - key: NOWPAYMENTS_IPN_SECRET
+        value: your-nowpayments-ipn-secret
+      - key: NOWPAYMENTS_EMAIL
+        value: your-nowpayments-account-email
     
   # Frontend Static Site
   - type: web
@@ -38,9 +61,9 @@ services:
       - key: VITE_API_BASE_URL
         value: https://graphene-backend.onrender.com/api
       - key: VITE_APP_TITLE
-        value: GrapheneOS Store
+        value: Graphene Security
       - key: VITE_COMPANY_NAME
-        value: GrapheneOS Store
+        value: Graphene Security
       - key: VITE_ENABLE_BITCOIN_PAYMENTS
         value: "true"
       - key: VITE_ENABLE_MONERO_PAYMENTS
