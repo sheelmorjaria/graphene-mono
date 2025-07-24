@@ -29,7 +29,7 @@ const AddToCartButton = ({
     }
   }, [showSuccess]);
 
-  const isOutOfStock = stockStatus === 'out_of_stock' || stockQuantity === 0;
+  const isOutOfStock = stockStatus === 'out_of_stock';
   const isLowStock = stockStatus === 'low_stock';
 
   const handleAddToCart = () => {
