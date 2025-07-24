@@ -13,6 +13,20 @@ services:
         value: 10000
       - key: FRONTEND_URL
         value: https://graphene-frontend.onrender.com
+      - key: SUPPORT_EMAIL
+        value: support@graphene-security.com
+      - key: FROM_EMAIL
+        value: noreply@graphene-security.com
+      - key: FROM_NAME
+        value: GrapheneOS Store
+      - key: EMAIL_SERVICE
+        value: ses
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_ACCESS_KEY_ID
+        value: your-aws-access-key
+      - key: AWS_SECRET_ACCESS_KEY
+        value: your-aws-secret-key
     
   # Frontend Static Site
   - type: web
