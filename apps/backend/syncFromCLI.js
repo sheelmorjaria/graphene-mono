@@ -503,8 +503,8 @@ const createProductFromCLI = async (cliProductData) => {
   
   const mappedCondition = conditionMap[condition] || 'good';
 
-  // Add GrapheneOS service markup of £109.99 to the CEX price
-  const finalPrice = price + 109.99;
+  // Add GrapheneOS service markup of £120 to the CEX price
+  const finalPrice = price + 120;
 
   const product = new Product({
     name: name,
@@ -873,13 +873,13 @@ export const syncAndroidPhones = async () => {
           console.log(`⏭️  Product already exists: ${productData.name}`);
           
           // Add GrapheneOS service markup to the new price
-          const newFinalPrice = productData.price + 109.99;
+          const newFinalPrice = productData.price + 120;
           
           // Update price if different
           if (existingProduct.price !== newFinalPrice) {
             existingProduct.price = newFinalPrice;
             await existingProduct.save();
-            console.log(`   💰 Updated price to £${newFinalPrice} (CEX: £${productData.price} + £109.99 service)`);
+            console.log(`   💰 Updated price to £${newFinalPrice} (CEX: £${productData.price} + £120 service)`);
           }
           
           skippedCount++;
@@ -888,7 +888,7 @@ export const syncAndroidPhones = async () => {
 
         // Create new product using the CLI data
         const newProduct = await createProductFromCLI(productData);
-        console.log(`✅ Created: ${newProduct.name} - £${newProduct.price} (CEX: £${productData.price} + £109.99 service)`);
+        console.log(`✅ Created: ${newProduct.name} - £${newProduct.price} (CEX: £${productData.price} + £120 service)`);
         syncedCount++;
 
       } catch (productError) {
