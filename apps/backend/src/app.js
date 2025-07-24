@@ -79,8 +79,11 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip validation errors about trust proxy setting during development/testing
-  validate: false,
+  // Trust proxy is set above, so validation should work correctly
+  validate: {
+    trustProxy: true, // Explicitly trust proxy configuration
+    xForwardedForHeader: true // Allow X-Forwarded-For header
+  },
   skip: (req) => {
     // Skip rate limiting for health checks and in test environment
     return req.path === '/api/health' || process.env.NODE_ENV === 'test';
