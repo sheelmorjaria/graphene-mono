@@ -18,7 +18,6 @@ const RegisterPage = () => {
     firstName: '',
     lastName: '',
     phone: '',
-    marketingOptIn: false
   });
 
   // Validation errors state
@@ -421,20 +420,12 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {/* Marketing Opt-in */}
-            <div className="flex items-center">
-              <input
-                id="marketingOptIn"
-                name="marketingOptIn"
-                type="checkbox"
-                disabled={isLoading}
-                checked={formData.marketingOptIn}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-forest-600 focus:ring-forest-500 border-forest-300 rounded"
-              />
-              <label htmlFor="marketingOptIn" className="ml-2 block text-sm text-forest-800">
-                I would like to receive marketing emails about new products and offers
-              </label>
+            {/* Privacy Notice */}
+            <div className="bg-forest-50 border border-forest-200 rounded-md p-4">
+              <p className="text-sm text-forest-700">
+                <strong>Privacy Notice:</strong> Email addresses are not collected for marketing purposes. 
+                We use your email purely for authentication and transactional emails related to your account and orders.
+              </p>
             </div>
 
             {/* Submit Button */}
