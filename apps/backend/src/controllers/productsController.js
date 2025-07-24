@@ -15,10 +15,6 @@ export const getProducts = async (req, res) => {
       condition
     } = req.query;
 
-    // Debug logging to check if search requests are accidentally hitting this endpoint
-    if (req.query.q) {
-      console.log(`[PRODUCTS] WARNING: Search query "${req.query.q}" hit products endpoint instead of search!`);
-    }
 
     // Validate and sanitize pagination parameters
     const pageNum = Math.max(1, parseInt(page) || 1);
