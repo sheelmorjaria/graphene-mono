@@ -10,22 +10,14 @@ const ProductListPage = () => {
   const { products, pagination, loading, error, fetchProducts } = useProducts();
   const [currentSort, setCurrentSort] = useState('newest');
   const [filters, setFilters] = useState({
-    category: '',
     condition: '',
     priceRange: { min: '', max: '' }
   });
 
-  // Mock categories - in real app this would come from API
-  const categories = [
-    { id: 'cat1', name: 'Smartphones', slug: 'smartphones' },
-    { id: 'cat2', name: 'Accessories', slug: 'accessories' },
-    { id: 'cat3', name: 'Cases', slug: 'cases' }
-  ];
 
   useEffect(() => {
     const params = {
       sort: currentSort,
-      ...(filters.category && { category: filters.category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
@@ -36,7 +28,6 @@ const ProductListPage = () => {
   const handleRetry = () => {
     const params = {
       sort: currentSort,
-      ...(filters.category && { category: filters.category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
@@ -48,7 +39,6 @@ const ProductListPage = () => {
     const params = {
       page: newPage,
       sort: currentSort,
-      ...(filters.category && { category: filters.category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
@@ -61,7 +51,6 @@ const ProductListPage = () => {
     const params = {
       sort: newSort,
       page: 1,
-      ...(filters.category && { category: filters.category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
@@ -69,9 +58,6 @@ const ProductListPage = () => {
     fetchProducts(params);
   };
 
-  const handleCategoryChange = (category) => {
-    setFilters(prev => ({ ...prev, category }));
-  };
 
   const handleConditionChange = (condition) => {
     setFilters(prev => ({ ...prev, condition }));
@@ -83,7 +69,6 @@ const ProductListPage = () => {
 
   const handleClearFilters = () => {
     setFilters({
-      category: '',
       condition: '',
       priceRange: { min: '', max: '' }
     });
@@ -166,11 +151,8 @@ const ProductListPage = () => {
         {/* Filter Sidebar */}
         <div className="lg:w-1/4">
           <FilterSidebar
-            categories={categories}
-            selectedCategory={filters.category}
             priceRange={filters.priceRange}
             selectedCondition={filters.condition}
-            onCategoryChange={handleCategoryChange}
             onPriceRangeChange={handlePriceRangeChange}
             onConditionChange={handleConditionChange}
             onClearFilters={handleClearFilters}
