@@ -398,17 +398,30 @@ export const syncFromCLI = async () => {
 // Helper functions
 const extractConditionFromName = (name) => {
   if (!name) return null;
+  
+  // Look for condition letter (A, B, or C) before [Android Phones] or at the end
+  // Pattern: condition letter followed by optional space and [category] or end of string
+  const conditionMatch = name.match(/\s([ABC])(?:\s*\[|$)/);
+  if (conditionMatch) {
+    return conditionMatch[1];
+  }
+  
+  // Fallback: check if last character is A, B, or C (original logic)
   const lastChar = name.trim().slice(-1);
   if (["A", "B", "C"].includes(lastChar)) {
     return lastChar;
   }
+  
   return null;
 };
 
 const extractModelInfo = (name) => {
   if (!name) return null;
 
-  const nameWithoutCondition = name.replace(/\s+[ABC]$/, "");
+  // Remove condition letter (A, B, or C) and category from the name for parsing
+  const nameWithoutCondition = name
+    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "") // Remove condition + optional category
+    .replace(/\s*\[.*?\]$/, ""); // Remove remaining category if any
   const match = nameWithoutCondition.match(
     /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro|Fold)?\s*(\d+GB)?\s*([^,]+)?,?\s*Unlocked?/i
   );
@@ -463,7 +476,7 @@ const createProduct = async (productData, adminUser) => {
       },
       {
         name: "Condition",
-        value: getConditionDescription(condition)
+        value: condition ? getConditionDescription(condition) : "Good condition"
       }
     ],
     status: 'active',

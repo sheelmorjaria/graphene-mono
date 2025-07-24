@@ -278,7 +278,6 @@ const ProductDetailsPage = () => {
               <AddToCartButton
                 productId={product._id}
                 stockStatus={product.stockStatus}
-                stockQuantity={product.stockQuantity}
                 onAddToCart={handleAddToCart}
                 showQuantitySelector={true}
               />

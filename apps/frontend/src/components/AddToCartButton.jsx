@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 const AddToCartButton = ({
   productId,
   stockStatus,
-  stockQuantity,
+  stockQuantity = 0,
   onAddToCart,
   disabled = false,
   isLoading = false,
@@ -47,7 +47,8 @@ const AddToCartButton = ({
 
   // Generate quantity options
   const quantityOptions = [];
-  const maxOptions = Math.min(stockQuantity, maxQuantity);
+  // Use maxQuantity without stock limitation since we don't show stock counts
+  const maxOptions = isOutOfStock ? 0 : maxQuantity;
   for (let i = 1; i <= maxOptions; i++) {
     quantityOptions.push(i);
   }
@@ -78,9 +79,8 @@ const AddToCartButton = ({
   // Get stock status text
   const getStockStatusText = () => {
     if (isOutOfStock) return 'Unavailable';
-    if (isLowStock && stockQuantity <= 5) return `${stockQuantity} in stock`;
-    if (stockQuantity > 10) return 'In Stock';
-    return `${stockQuantity} in stock`;
+    if (isLowStock) return 'Low Stock';
+    return 'In Stock';
   };
 
   // Get icon based on state
@@ -168,9 +168,9 @@ const AddToCartButton = ({
       </div>
 
       {/* Low Stock Warning */}
-      {isLowStock && stockQuantity <= 5 && stockQuantity > 0 && (
+      {isLowStock && (
         <div className="text-sm text-amber-600 font-medium">
-          Hurry! Only {stockQuantity} left in stock!
+          Limited stock available
         </div>
       )}
 
@@ -187,7 +187,7 @@ const AddToCartButton = ({
 AddToCartButton.propTypes = {
   productId: PropTypes.string.isRequired,
   stockStatus: PropTypes.oneOf(['in_stock', 'low_stock', 'out_of_stock']).isRequired,
-  stockQuantity: PropTypes.number.isRequired,
+  stockQuantity: PropTypes.number,
   onAddToCart: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
   isLoading: PropTypes.bool,
