@@ -66,7 +66,7 @@ const GeneralSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch('/api/admin/settings/general', {
+      const response = await fetch('http://localhost:10000/api/admin/settings/general', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -74,19 +74,10 @@ const GeneralSettings = ({ onMessage }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load settings');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const text = await response.text();
-      console.log('Response text:', text);
-      
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (parseError) {
-        console.error('Failed to parse response:', text);
-        throw new Error('Invalid response format');
-      }
+      const data = await response.json();
       if (data.success) {
         setSettings(data.data);
       }
