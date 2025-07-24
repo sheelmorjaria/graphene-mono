@@ -1,0 +1,9 @@
+# Redirect all routes to index.html for SPA routing
+/*    /index.html   200
+
+# API redirects to backend (optional fallback)
+/api/*  https://graphene-backend.onrender.com/api/:splat  200
+
+# Security redirects
+/.env*  /404.html  404
+/config/*  /404.html  404
