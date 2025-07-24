@@ -83,23 +83,44 @@ export const searchProducts = async (req, res) => {
     } catch (error) {
       // Fall back to regex search if text search fails
       
-      // Sanitize and escape special regex characters
-      const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // For multi-word queries, prioritize exact matches in the name
+      const trimmedQuery = query.trim();
+      const words = trimmedQuery.split(/\s+/);
+      
+      // Escape special regex characters
+      const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      if (words.length > 1) {
+        // For multi-word queries like "pixel 7", require all words to be present in the name
+        // This prevents "pixel 6" from matching when searching for "pixel 7"
+        const nameConditions = words.map(word => ({
+          name: { $regex: escapeRegex(word), $options: 'i' }
+        }));
+        
+        searchFilter = {
+          $and: [
+            { isActive: true },
+            ...nameConditions
+          ]
+        };
+      } else {
+        // For single word queries, search across all fields
+        const sanitizedQuery = escapeRegex(trimmedQuery);
+        searchFilter = {
+          $and: [
+            { isActive: true },
+            {
+              $or: [
+                { name: { $regex: sanitizedQuery, $options: 'i' } },
+                { shortDescription: { $regex: sanitizedQuery, $options: 'i' } },
+                { longDescription: { $regex: sanitizedQuery, $options: 'i' } }
+              ]
+            }
+          ]
+        };
+      }
 
-      searchFilter = {
-        $and: [
-          { isActive: true },
-          {
-            $or: [
-              { name: { $regex: sanitizedQuery, $options: 'i' } },
-              { shortDescription: { $regex: sanitizedQuery, $options: 'i' } },
-              { longDescription: { $regex: sanitizedQuery, $options: 'i' } }
-            ]
-          }
-        ]
-      };
-
-      // Add additional filters
+      // Add additional filters (these work with our new structure)
       if (category) {
         searchFilter.$and.push({ category });
       }
