@@ -16,7 +16,6 @@ services:
   - type: web
     name: graphene-frontend  
     env: static
-    region: oregon
     buildCommand: cd apps/frontend && npm install && npm run build
     staticPublishPath: apps/frontend/dist
     envVars:
@@ -27,11 +26,11 @@ services:
       - key: VITE_COMPANY_NAME
         value: GrapheneOS Store
       - key: VITE_ENABLE_BITCOIN_PAYMENTS
-        value: true
+        value: "true"
       - key: VITE_ENABLE_MONERO_PAYMENTS
-        value: true
+        value: "true"
       - key: VITE_ENABLE_PAYPAL_PAYMENTS
-        value: true
+        value: "true"
     routes:
       - type: rewrite
         source: /*
