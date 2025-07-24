@@ -14,6 +14,9 @@ export const searchProducts = async (req, res) => {
       condition
     } = req.query;
 
+    // Debug logging for production
+    console.log(`[SEARCH] Query: "${query}", Type: ${typeof query}, Length: ${query?.length}`);
+
 
     // Validate search query
     if (!query || typeof query !== 'string' || query.trim() === '') {
@@ -83,9 +86,12 @@ export const searchProducts = async (req, res) => {
 
     } catch (error) {
       // Fall back to regex search if text search fails
+      console.log(`[SEARCH] Text search failed, using regex. Error: ${error.message}`);
+      
       // For multi-word queries, prioritize exact matches in the name
       const trimmedQuery = query.trim();
       const words = trimmedQuery.split(/\s+/);
+      console.log(`[SEARCH] Words split: [${words.join(', ')}], Count: ${words.length}`);
       
       // Escape special regex characters
       const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -103,6 +109,7 @@ export const searchProducts = async (req, res) => {
             ...nameConditions
           ]
         };
+        console.log(`[SEARCH] Multi-word filter created:`, JSON.stringify(searchFilter, null, 2));
       } else {
         // For single word queries, search across all fields
         const sanitizedQuery = escapeRegex(trimmedQuery);
@@ -159,6 +166,8 @@ export const searchProducts = async (req, res) => {
     }
 
     // Execute search query
+    console.log(`[SEARCH] Final search filter:`, JSON.stringify(searchFilter, null, 2));
+    
     const products = await Product
       .find(searchFilter)
       .populate('category', 'name slug')
@@ -170,6 +179,8 @@ export const searchProducts = async (req, res) => {
     // Get total count for pagination
     const total = await Product.countDocuments(searchFilter);
     const pages = Math.ceil(total / limitNum);
+    
+    console.log(`[SEARCH] Results: ${total} total, ${products.length} returned`);
     
 
     // Format response
@@ -197,7 +208,7 @@ export const searchProducts = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error searching products:', error);
+    console.error(`[SEARCH] Error searching for "${query}":`, error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'

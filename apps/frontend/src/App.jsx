@@ -132,27 +132,48 @@ const AuthenticatedUserMenu = () => {
 
 const Header = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-gradient-to-r from-forest-900 to-forest-800  shadow-xl" role="banner">
+    <header className="bg-gradient-to-r from-forest-900 to-forest-800 shadow-xl" role="banner">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <Link 
-            to="/" 
-            className="text-xl font-bold text-forest-900 hover:text-forest-300 transition-colors duration-200 flex-shrink-0 animate-wave  px-3 py-1 rounded"
-          >
-            GrapheneOS Store
-          </Link>
+        {/* Mobile layout - Stack vertically */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Top row - Logo and mobile menu button */}
+          <div className="flex items-center justify-between">
+            <Link 
+              to="/" 
+              className="text-xl font-bold text-forest-900 hover:text-forest-300 transition-colors duration-200 flex-shrink-0 animate-wave px-3 py-1 rounded"
+            >
+              GrapheneOS Store
+            </Link>
+            
+            {/* Mobile menu button - only visible on small screens */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden text-forest-900 hover:text-forest-300 p-2"
+              aria-label="Toggle mobile menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
           
-          {/* Search Bar */}
-          <div className="flex-1 max-w-2xl mx-4">
+          {/* Search Bar - full width on mobile, limited on desktop */}
+          <div className="w-full lg:flex-1 lg:max-w-2xl lg:mx-4">
             <SearchBar 
               placeholder="Search products..."
               className="w-full"
             />
           </div>
           
-          <nav className="flex-shrink-0">
+          {/* Desktop Navigation - always visible on large screens */}
+          <nav className="hidden lg:block flex-shrink-0">
             <ul className="flex items-center space-x-6">
               <li>
                 <Link 
@@ -204,6 +225,84 @@ const Header = () => {
               )}
             </ul>
           </nav>
+          
+          {/* Mobile Navigation Menu - toggleable */}
+          {isMobileMenuOpen && (
+            <nav className="lg:hidden border-t border-forest-700 pt-4">
+              <ul className="flex flex-col space-y-2">
+                <li>
+                  <Link 
+                    to="/products" 
+                    className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Products
+                  </Link>
+                </li>
+                
+                <li>
+                  <Link 
+                    to="/contact-us" 
+                    className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+                
+                <li className="flex items-center px-3 py-2">
+                  <CartIcon />
+                  <span className="ml-2 text-forest-900">Cart</span>
+                </li>
+                
+                {!isLoading && (
+                  isAuthenticated ? (
+                    <>
+                      <li>
+                        <Link 
+                          to="/profile" 
+                          className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Profile
+                        </Link>
+                      </li>
+                      <li>
+                        <Link 
+                          to="/orders" 
+                          className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          My Orders
+                        </Link>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        <Link 
+                          to="/login" 
+                          className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Login
+                        </Link>
+                      </li>
+                      <li>
+                        <Link 
+                          to="/register" 
+                          className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Register
+                        </Link>
+                      </li>
+                    </>
+                  )
+                )}
+              </ul>
+            </nav>
+          )}
         </div>
       </div>
     </header>
