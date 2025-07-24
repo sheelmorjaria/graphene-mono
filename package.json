@@ -56,11 +56,16 @@
     "monero",
     "monorepo"
   ],
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-org/graphene-store.git"
   },
   "author": "GrapheneOS Store Team",
   "license": "MIT",
-  "homepage": "https://grapheneos-store.com"
+  "homepage": "https://grapheneos-store.com",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "mongoose": "^8.16.4"
+  }
 }

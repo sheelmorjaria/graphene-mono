@@ -9,6 +9,11 @@
             "date": 1753277655710,
             "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-23.log",
             "hash": "87cbeaafebe150b8b0746300f971091d393a91550512690e5aae18986d794132"
+        },
+        {
+            "date": 1753342047834,
+            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-24.log",
+            "hash": "2a3c236587f38cc7830381335da4d94395e674b2a9d90fc4f8be90636849b89a"
         }
     ],
     "hashType": "sha256"

@@ -23,6 +23,18 @@ export const getCart = async () => {
       credentials: 'include', // Include cookies for guest cart sessions
     });
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const textResponse = await response.text();
+      console.error('Non-JSON response from cart API:', {
+        status: response.status,
+        contentType,
+        body: textResponse.substring(0, 500)
+      });
+      throw new Error(`Cart API returned ${response.status}: ${textResponse.substring(0, 100)}`);
+    }
+
     const data = await response.json();
 
     if (!response.ok) {

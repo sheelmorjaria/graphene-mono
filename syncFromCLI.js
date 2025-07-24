@@ -21,10 +21,9 @@ let User, Product;
 // Dynamic import to avoid circular dependency issues
 const loadModels = async () => {
   try {
-    // Check if running from root or backend directory
-    const isInBackend = process.cwd().includes('/backend');
-    const userPath = isInBackend ? './src/models/User.js' : './backend/src/models/User.js';
-    const productPath = isInBackend ? './src/models/Product.js' : './backend/src/models/Product.js';
+    // Update paths for monorepo structure
+    const userPath = './apps/backend/src/models/User.js';
+    const productPath = './apps/backend/src/models/Product.js';
     
     const userModule = await import(userPath);
     const productModule = await import(productPath);
@@ -338,17 +337,59 @@ export const removeOldPixelProducts = async (dryRun = false) => {
   }
 };
 
+// Parse text output from CLI tool
+const parseTextOutput = (textOutput) => {
+  const products = [];
+  const lines = textOutput.split('\n');
+  
+  let currentCategory = '';
+  
+  for (const line of lines) {
+    // Skip empty lines
+    if (!line.trim()) continue;
+    
+    // Check if it's a category header (no leading whitespace)
+    if (!line.startsWith(' ') && !line.startsWith('✱')) {
+      currentCategory = line.trim();
+      continue;
+    }
+    
+    // Parse product line (starts with ✱ and price)
+    const productMatch = line.match(/^✱\s+(\d+)\s+(.+)$/);
+    if (productMatch) {
+      const [, price, name] = productMatch;
+      products.push({
+        name: name.trim(),
+        price: parseFloat(price),
+        category: currentCategory,
+        source: 'webuy'
+      });
+    }
+  }
+  
+  return products;
+};
+
 // Execute CLI command
 export const syncFromCLI = async () => {
   return new Promise((resolve, reject) => {
-    exec("./cli-linux-amd64 -query 'PIXEL'", (error, stdout, stderr) => {
+    const cliPath = path.join(__dirname, 'cli-linux-amd64');
+    const command = `${cliPath} -query 'PIXEL'`;
+    
+    console.log(`Executing: ${command}`);
+    
+    exec(command, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
-        console.error("CLI error:", error);
+        console.error("CLI execution error:", error);
         return reject(error);
       }
       if (stderr) {
-        console.error("CLI stderr:", stderr);
+        console.error("CLI stderr output:", stderr);
       }
+      
+      // Log the first part of stdout for debugging
+      console.log("CLI output preview:", stdout.substring(0, 200));
+      
       resolve(stdout);
     });
   });
@@ -406,7 +447,7 @@ const createProduct = async (productData, adminUser) => {
     sku: sku,
     shortDescription: `${productData.name} with GrapheneOS`,
     longDescription: `${productData.name} flashed with GrapheneOS for enhanced privacy and security.`,
-    price: productData.price || 500,
+    price: (productData.price || 500) + 109.99,
     condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
     stockStatus: 'in_stock',
     stockQuantity: 10,
@@ -433,11 +474,40 @@ const createProduct = async (productData, adminUser) => {
 };
 
 
-// Function to check if a model is an old Pixel (1-5) variant that should be excluded
-const isOldPixelVariant = (productName) => {
+// Function to check if a product should be excluded
+const shouldExcludeProduct = (productName) => {
   if (!productName) return false;
   
-  // Comprehensive patterns to match ALL Pixel 1-5 variants
+  // Check if it's a Final Fantasy game
+  if (productName.includes('Final Fantasy') && productName.includes('Pixel Remaster')) {
+    return true;
+  }
+  
+  // Check if it's a Pixel Watch (not a phone)
+  if (productName.includes('Pixel Watch')) {
+    return true;
+  }
+  
+  // Check if it's Pixel Buds (earphones, not a phone)
+  if (productName.includes('Pixel Buds')) {
+    return true;
+  }
+  
+  // Check if it's camera accessories (PIXEL brand, not Google Pixel)
+  if (productName.includes('[Camera Accessories]') || 
+      productName.includes('Shutter Remote') ||
+      productName.includes('Vertax E-')) {
+    return true;
+  }
+  
+  // Check if it's a movie named "Pixels"
+  if ((productName.includes('Pixels') && 
+       (productName.includes('[Blu-Ray Movies]') || 
+        productName.includes('[DVD Movies]')))) {
+    return true;
+  }
+  
+  // Check if it's an old Pixel phone (1-5) variant
   const oldPixelPatterns = [
     /Pixel\s+[1-5](?!\d)/i,                    // Pixel 1, Pixel 2, etc.
     /Pixel\s+[1-5]\s+XL/i,               // Pixel 2 XL, Pixel 3 XL, etc.
@@ -547,7 +617,92 @@ export const syncAndroidPhones = async () => {
 
     console.log(`Using admin user: ${admin.email}`);
 
-    // ... (rest of the code remains unchanged)
+    // Execute CLI command to get products
+    console.log("\n📱 Fetching products from CLI...");
+    const cliOutput = await syncFromCLI();
+
+    // Parse the text output from CLI
+    let products = [];
+    try {
+      // First, try JSON parsing in case the format changed
+      products = JSON.parse(cliOutput);
+      console.log(`✅ Found ${products.length} products from CLI (JSON format)`);
+    } catch (parseError) {
+      // If JSON parsing fails, parse the text format
+      console.log("📄 Parsing text format output from CLI...");
+      products = parseTextOutput(cliOutput);
+      console.log(`✅ Found ${products.length} products from CLI (text format)`);
+    }
+
+    // Validate that we have an array
+    if (!Array.isArray(products)) {
+      throw new Error("Parsed output is not an array of products");
+    }
+
+    if (products.length === 0) {
+      console.log("⚠️  No products found from CLI");
+      return { created: 0, skipped: 0, failed: 0 };
+    }
+
+    // Filter out old Pixel models and non-phone products
+    console.log("\n🔍 Filtering out old Pixel models and non-phone products...");
+    const modernProducts = products.filter(p => !shouldExcludeProduct(p.name));
+    const filteredCount = products.length - modernProducts.length;
+    
+    console.log(`📊 Filtered out ${filteredCount} products (old Pixels, games, etc.)`);
+    console.log(`📊 ${modernProducts.length} modern Pixel phones remaining`);
+
+    if (modernProducts.length === 0) {
+      console.log("⚠️  No modern products to import after filtering");
+      return { created: 0, skipped: filteredCount, failed: 0 };
+    }
+
+    // Clear existing products if requested
+    if (process.argv.includes('--clear')) {
+      console.log("\n🗑️  Clearing existing products...");
+      const deleteResult = await Product.deleteMany({});
+      console.log(`✅ Deleted ${deleteResult.deletedCount} existing products`);
+    }
+
+    // Create products in database
+    console.log("\n💾 Creating products in database...");
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const productData of modernProducts) {
+      try {
+        // Check if product already exists by name
+        const existingProduct = await Product.findOne({ 
+          name: productData.name 
+        });
+
+        if (existingProduct) {
+          console.log(`⏭️  Skipped (already exists): ${productData.name}`);
+          skipped++;
+          continue;
+        }
+
+        // Create the product
+        const product = await createProduct(productData, admin);
+        console.log(`✅ Created: ${product.name} (${product.condition})`);
+        created++;
+
+      } catch (err) {
+        console.error(`❌ Failed to create ${productData.name}:`, err.message);
+        failed++;
+      }
+    }
+
+    // Summary
+    console.log("\n📊 Import Summary:");
+    console.log(`   Total from CLI: ${products.length}`);
+    console.log(`   Filtered (old): ${filteredCount}`);
+    console.log(`   Created: ${created}`);
+    console.log(`   Skipped: ${skipped}`);
+    console.log(`   Failed: ${failed}`);
+
+    return { created, skipped, failed, filtered: filteredCount };
 
   } catch (error) {
     console.error("Sync error:", error.message);
