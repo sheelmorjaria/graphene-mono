@@ -66,6 +66,9 @@ const GeneralSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
+      console.log('Making request to:', '/api/admin/settings/general');
+      console.log('Token:', token);
+      
       const response = await fetch('/api/admin/settings/general', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -73,11 +76,17 @@ const GeneralSettings = ({ onMessage }) => {
         }
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      const text = await response.text();
+      console.log('Response text:', text);
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = JSON.parse(text);
       if (data.success) {
         setSettings(data.data);
       }
