@@ -77,7 +77,7 @@ export const getAdminProfile = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/profile`, {
+    const response = await fetch(`${API_BASE_URL}/admin/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ export const getAllOrders = async (filters = {}) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/orders?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ export const getOrderById = async (orderId) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/orders/${orderId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -272,7 +272,7 @@ export const updateOrderStatus = async (orderId, statusData) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/orders/${orderId}/status`, {
+    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -306,7 +306,7 @@ export const issueRefund = async (orderId, refundData) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/orders/${orderId}/refund`, {
+    const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/refund`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -378,7 +378,7 @@ export const getAllReturnRequests = async (filters = {}) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/returns?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/returns?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -414,7 +414,7 @@ export const getReturnRequestById = async (returnRequestId) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/returns/${returnRequestId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/returns/${returnRequestId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -450,7 +450,7 @@ export const updateReturnRequestStatus = async (returnRequestId, statusData) => 
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/returns/${returnRequestId}/status`, {
+    const response = await fetch(`${API_BASE_URL}/admin/returns/${returnRequestId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -494,7 +494,7 @@ export const getProducts = async (params = {}) => {
     });
 
     const queryString = queryParams.toString();
-    const url = `${ADMIN_API_BASE}/products${queryString ? `?${queryString}` : ''}`;
+    const url = `${API_BASE_URL}/admin/products${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -528,7 +528,7 @@ export const getProductById = async (productId) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/products/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/products/${productId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -571,7 +571,7 @@ export const createProduct = async (productData) => {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/products`, {
+    const response = await fetch(`${API_BASE_URL}/admin/products`, {
       method: 'POST',
       headers,
       body: isFormData ? productData : JSON.stringify(productData)
@@ -612,7 +612,7 @@ export const updateProduct = async (productId, productData) => {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/products/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/products/${productId}`, {
       method: 'PUT',
       headers,
       body: isFormData ? productData : JSON.stringify(productData)
@@ -642,7 +642,7 @@ export const deleteProduct = async (productId) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/products/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/products/${productId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -685,7 +685,7 @@ export const getAllUsers = async (params = {}) => {
     });
 
     const queryString = queryParams.toString();
-    const url = `${ADMIN_API_BASE}/users${queryString ? `?${queryString}` : ''}`;
+    const url = `${API_BASE_URL}/admin/users${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -719,7 +719,7 @@ export const getUserById = async (userId) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/users/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -751,7 +751,7 @@ export const updateUserStatus = async (userId, statusData) => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/users/${userId}/status`, {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -813,7 +813,7 @@ export const getSalesReport = async (startDate, endDate) => {
     }
 
     const params = new URLSearchParams({ startDate, endDate });
-    const response = await fetch(`${ADMIN_API_BASE}/reports/sales-summary?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/reports/sales-summary?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -849,7 +849,7 @@ export const getProductPerformanceReport = async (startDate, endDate) => {
     }
 
     const params = new URLSearchParams({ startDate, endDate });
-    const response = await fetch(`${ADMIN_API_BASE}/reports/product-performance?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/reports/product-performance?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -885,7 +885,7 @@ export const getCustomerReport = async (startDate, endDate) => {
     }
 
     const params = new URLSearchParams({ startDate, endDate });
-    const response = await fetch(`${ADMIN_API_BASE}/reports/customer-acquisition?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/reports/customer-acquisition?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -920,7 +920,7 @@ export const getInventoryReport = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/reports/inventory-summary`, {
+    const response = await fetch(`${API_BASE_URL}/admin/reports/inventory-summary`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
