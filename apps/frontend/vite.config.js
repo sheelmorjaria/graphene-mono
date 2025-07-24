@@ -23,15 +23,18 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        secure: false,
+        ws: true,
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
+            console.log('🔴 Proxy error:', err.message);
+            console.log('Request was:', req.method, req.url);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
+            console.log('🟡 Proxying request:', req.method, req.url, '→', proxyReq.getHeader('host'));
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            console.log('🟢 Proxy response:', proxyRes.statusCode, req.url);
           });
         }
       }

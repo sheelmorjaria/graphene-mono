@@ -66,9 +66,6 @@ const GeneralSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      console.log('Making request to:', '/api/admin/settings/general');
-      console.log('Token:', token);
-      
       const response = await fetch('/api/admin/settings/general', {
         headers: {
           'Authorization': `Bearer ${token}`,

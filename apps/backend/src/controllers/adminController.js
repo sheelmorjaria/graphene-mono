@@ -10,10 +10,13 @@ import emailService from '../services/emailService.js';
 // Admin login
 export const adminLogin = async (req, res) => {
   try {
+    console.log('🟡 Admin login attempt started');
     const { email, password } = req.body;
+    console.log('🟡 Email:', email);
 
     // Validate input
     if (!email || !password) {
+      console.log('🔴 Missing email or password');
       return res.status(400).json({
         success: false,
         error: 'Email and password are required'
@@ -21,8 +24,12 @@ export const adminLogin = async (req, res) => {
     }
 
     // Find user by email
+    console.log('🟡 Finding user by email...');
     const user = await User.findByEmail(email);
+    console.log('🟡 User found:', !!user);
+    
     if (!user) {
+      console.log('🔴 User not found');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
@@ -30,7 +37,9 @@ export const adminLogin = async (req, res) => {
     }
 
     // Check if user is admin
+    console.log('🟡 User role:', user.role);
     if (user.role !== 'admin') {
+      console.log('🔴 User is not admin');
       return res.status(403).json({
         success: false,
         error: 'Access denied. Admin privileges required.'
@@ -38,7 +47,9 @@ export const adminLogin = async (req, res) => {
     }
 
     // Check if user account is disabled or inactive
+    console.log('🟡 Account status:', user.accountStatus, 'Active:', user.isActive);
     if (user.accountStatus === 'disabled' || !user.isActive) {
+      console.log('🔴 Account disabled or inactive');
       return res.status(401).json({
         success: false,
         error: 'Account has been deactivated'
@@ -46,7 +57,9 @@ export const adminLogin = async (req, res) => {
     }
 
     // Verify password
+    console.log('🟡 Verifying password...');
     const isPasswordValid = await user.comparePassword(password);
+    console.log('🟡 Password valid:', isPasswordValid);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
