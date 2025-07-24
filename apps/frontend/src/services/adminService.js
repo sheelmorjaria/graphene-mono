@@ -1,5 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-const ADMIN_API_BASE = `${API_BASE_URL}/api/admin`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const ADMIN_API_BASE = `${API_BASE_URL}/admin`;
 
 // Admin login
 export const adminLogin = async (credentials) => {
