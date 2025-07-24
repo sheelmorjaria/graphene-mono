@@ -14,6 +14,7 @@ export const searchProducts = async (req, res) => {
       condition
     } = req.query;
 
+
     // Validate search query
     if (!query || typeof query !== 'string' || query.trim() === '') {
       return res.status(400).json({
@@ -82,7 +83,6 @@ export const searchProducts = async (req, res) => {
 
     } catch (error) {
       // Fall back to regex search if text search fails
-      
       // For multi-word queries, prioritize exact matches in the name
       const trimmedQuery = query.trim();
       const words = trimmedQuery.split(/\s+/);
@@ -170,6 +170,7 @@ export const searchProducts = async (req, res) => {
     // Get total count for pagination
     const total = await Product.countDocuments(searchFilter);
     const pages = Math.ceil(total / limitNum);
+    
 
     // Format response
     const formattedProducts = products.map(product => ({
