@@ -25,42 +25,19 @@ export default defineConfig({
     cssCodeSplit: true,
     // Optimize minification
     minify: 'esbuild',
-    // Set target for modern browsers
-    target: 'es2020',
+    // Set target for better compatibility
+    target: 'esnext',
     // Enable source maps for debugging
     sourcemap: false,
     // Tree-shake unused code
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Core React dependencies
-          if (id.includes('react') || id.includes('react-dom')) {
-            return 'react-vendor';
-          }
-          // Router dependencies
-          if (id.includes('react-router')) {
-            return 'router';
-          }
-          // Redux/State management
-          if (id.includes('redux') || id.includes('@reduxjs')) {
-            return 'state';
-          }
-          // Payment related libraries
-          if (id.includes('paypal') || id.includes('qrcode')) {
-            return 'payment';
-          }
-          // UI libraries and icons
-          if (id.includes('@heroicons') || id.includes('react-icons')) {
-            return 'ui-icons';
-          }
-          // Testing libraries (should not be in production, but just in case)
-          if (id.includes('testing-library') || id.includes('vitest')) {
-            return 'testing';
-          }
-          // Other large third-party libraries
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+        format: 'es',
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'payment': ['@paypal/react-paypal-js', 'qrcode.react'],
+          'redux': ['@reduxjs/toolkit', 'react-redux']
         }
       }
     },
