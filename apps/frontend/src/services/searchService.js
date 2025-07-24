@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 export const searchProducts = async (query, options = {}) => {
   try {
@@ -25,7 +25,7 @@ export const searchProducts = async (query, options = {}) => {
     if (options.category) params.append('category', options.category);
 
     // Make API request
-    const response = await fetch(`${API_BASE_URL}/api/products/search?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/products/search?${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

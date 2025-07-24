@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const productsService = {
   async getProducts(params = {}) {
@@ -12,7 +12,7 @@ const productsService = {
 
     // Build query string
     const queryString = new URLSearchParams(filteredParams).toString();
-    const url = `${API_BASE_URL}/api/products${queryString ? `?${queryString}` : ''}`;
+    const url = `${API_BASE_URL}/products${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',

@@ -11,6 +11,8 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: FRONTEND_URL
+        value: https://graphene-frontend.onrender.com
     
   # Frontend Static Site
   - type: web
