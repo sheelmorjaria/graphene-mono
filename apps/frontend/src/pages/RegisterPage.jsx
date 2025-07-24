@@ -26,7 +26,7 @@ const RegisterPage = () => {
 
   // Set page title
   useEffect(() => {
-    document.title = 'Create Account - GrapheneOS Store';
+    document.title = 'Create Account - Graphene Security';
   }, []);
 
   // Email validation

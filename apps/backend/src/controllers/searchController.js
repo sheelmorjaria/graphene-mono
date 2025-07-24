@@ -54,7 +54,6 @@ export const searchProducts = async (req, res) => {
         ]
       };
       
-      console.log(`[SEARCH] Text search query: "${textSearchQuery}" (original: "${trimmedQuery}")`);
 
       // Add additional filters
       if (category) {
@@ -215,7 +214,7 @@ export const searchProducts = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(`[SEARCH] Error searching for "${query}":`, error);
+    console.error('Error searching products:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'

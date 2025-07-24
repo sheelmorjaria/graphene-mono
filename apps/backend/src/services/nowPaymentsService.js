@@ -221,7 +221,7 @@ class NowPaymentsService {
         pay_amount: xmrAmount,
         pay_currency: MONERO_CURRENCY_CODE,
         order_id: orderId,
-        order_description: `GrapheneOS Store Order ${orderId}`,
+        order_description: `Graphene Security Order ${orderId}`,
         success_url: `${process.env.FRONTEND_URL}/order-confirmation/${orderId}`,
         cancel_url: `${process.env.FRONTEND_URL}/checkout`,
         ipn_callback_url: `${process.env.BACKEND_URL}/api/payments/monero/webhook`,

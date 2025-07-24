@@ -165,7 +165,7 @@ const CartPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'Shopping Cart - GrapheneOS Store';
+    document.title = 'Shopping Cart - Graphene Security';
   }, []);
 
   const handleUpdateQuantity = async (productId, quantity) => {

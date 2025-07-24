@@ -294,7 +294,7 @@ class EmailService {
           ${content}
         </div>
         <div class="footer">
-          <p><strong>GrapheneOS Store</strong></p>
+          <p><strong>Graphene Security</strong></p>
           <p>Privacy-focused smartphones and services</p>
           <p>Need help? Contact us at <a href="mailto:${process.env.SUPPORT_EMAIL}">${process.env.SUPPORT_EMAIL}</a></p>
         </div>
@@ -624,7 +624,7 @@ class EmailService {
   async sendContactAcknowledgmentEmail(contactData) {
     try {
       const content = `
-        <p>Thank you for contacting GrapheneOS Store support. We have received your message and will respond as soon as possible.</p>
+        <p>Thank you for contacting Graphene Security support. We have received your message and will respond as soon as possible.</p>
         
         <div class="order-details">
           <h3>Your Request</h3>
@@ -654,7 +654,7 @@ class EmailService {
 
       return await this.sendEmail({
         to: contactData.email,
-        subject: 'We received your message - GrapheneOS Store Support',
+        subject: 'We received your message - Graphene Security Support',
         htmlContent
       });
 
@@ -788,7 +788,7 @@ class EmailService {
     try {
       const emailData = {
         to: user.email,
-        subject: 'Account Status Update - GrapheneOS Store',
+        subject: 'Account Status Update - Graphene Security',
         template: 'account-disabled',
         data: {
           customerName: `${user.firstName} ${user.lastName}`,
@@ -803,7 +803,7 @@ class EmailService {
       logger.debug('Account Disabled Email:', emailData);
 
       const content = `
-        <p>We're writing to inform you that your GrapheneOS Store account has been temporarily disabled.</p>
+        <p>We're writing to inform you that your Graphene Security account has been temporarily disabled.</p>
         
         <div class="order-details">
           <h3>Account Details</h3>
@@ -830,7 +830,7 @@ class EmailService {
 
       const result = await this.sendEmail({
         to: user.email,
-        subject: 'Account Status Update - GrapheneOS Store',
+        subject: 'Account Status Update - Graphene Security',
         htmlContent
       });
 
@@ -862,7 +862,7 @@ class EmailService {
 
       const emailData = {
         to: user.email,
-        subject: 'Account Re-enabled - GrapheneOS Store',
+        subject: 'Account Re-enabled - Graphene Security',
         template: 'account-re-enabled',
         data: {
           customerName: `${user.firstName} ${user.lastName}`,
@@ -878,7 +878,7 @@ class EmailService {
       logger.debug('Account Re-enabled Email:', emailData);
 
       const content = `
-        <p>Good news! Your GrapheneOS Store account has been re-enabled and you can now access all features.</p>
+        <p>Good news! Your Graphene Security account has been re-enabled and you can now access all features.</p>
         
         <div class="order-details">
           <h3>Account Details</h3>
@@ -907,7 +907,7 @@ class EmailService {
 
       const result = await this.sendEmail({
         to: user.email,
-        subject: 'Account Re-enabled - GrapheneOS Store',
+        subject: 'Account Re-enabled - Graphene Security',
         htmlContent
       });
 
@@ -935,7 +935,7 @@ class EmailService {
   async sendPaymentConfirmationEmail(order, paymentDetails) {
     try {
       const content = `
-        <p>Your payment has been successfully processed for your GrapheneOS Store order.</p>
+        <p>Your payment has been successfully processed for your Graphene Security order.</p>
         
         <div class="order-details">
           <h3>Payment Details</h3>

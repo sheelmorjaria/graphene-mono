@@ -1,7 +1,7 @@
 {
-  "name": "@graphene-store/backend",
+  "name": "@graphene-security/backend",
   "version": "1.0.0",
-  "description": "GrapheneOS Store Backend API",
+  "description": "Graphene Security Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

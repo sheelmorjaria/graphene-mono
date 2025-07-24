@@ -15,9 +15,9 @@ const ProductDetailsPage = () => {
   // Set page title when product loads
   useEffect(() => {
     if (product) {
-      document.title = `${product.name} - GrapheneOS Store`;
+      document.title = `${product.name} - Graphene Security`;
     } else {
-      document.title = 'Product Details - GrapheneOS Store';
+      document.title = 'Product Details - Graphene Security';
     }
   }, [product]);
 

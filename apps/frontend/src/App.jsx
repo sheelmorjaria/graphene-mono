@@ -143,9 +143,13 @@ const Header = () => {
           <div className="flex items-center justify-between">
             <Link 
               to="/" 
-              className="text-xl font-bold text-forest-900 hover:text-forest-300 transition-colors duration-200 flex-shrink-0 animate-wave px-3 py-1 rounded"
+              className="flex items-center hover:opacity-80 transition-opacity duration-200 flex-shrink-0 px-3 py-1 rounded"
             >
-              GrapheneOS Store
+              <img 
+                src="/images/logo.png" 
+                alt="Graphene Security" 
+                className="h-20 w-auto"
+              />
             </Link>
             
             {/* Mobile menu button - only visible on small screens */}
@@ -311,7 +315,7 @@ const Header = () => {
 
 const NotFoundPage = () => {
   useEffect(() => {
-    document.title = 'Page Not Found - GrapheneOS Store';
+    document.title = 'Page Not Found - Graphene Security';
   }, []);
 
   return (
@@ -339,7 +343,7 @@ export const AppRoutes = () => {
     // Set default page title only once
     // Individual pages will override this as needed
     if (document.title === 'Test' || document.title === '') {
-      document.title = 'GrapheneOS Store - Privacy-Focused Smartphones';
+      document.title = 'Graphene Security - Privacy-Focused Smartphones';
     }
   }, []);
 
@@ -354,7 +358,7 @@ export const AppRoutes = () => {
       <SEOWrapper
         structuredData={homePageStructuredData}
         additionalMeta={[
-          { name: 'keywords', content: 'GrapheneOS, privacy phone, secure smartphone, Google Pixel, Bitcoin payment, Monero payment' },
+          { name: 'keywords', content: 'Graphene Security, privacy phone, secure smartphone, Google Pixel, Bitcoin payment, Monero payment' },
           { property: 'og:locale', content: 'en_GB' },
           { name: 'twitter:site', content: '@grapheneos' }
         ]}

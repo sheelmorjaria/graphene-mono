@@ -21,7 +21,7 @@ const LoginPage = () => {
 
   // Set page title
   useEffect(() => {
-    document.title = 'Sign In - GrapheneOS Store';
+    document.title = 'Sign In - Graphene Security';
   }, []);
 
   // Email validation

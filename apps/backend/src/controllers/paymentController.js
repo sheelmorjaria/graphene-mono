@@ -268,7 +268,7 @@ export const createPayPalOrder = async (req, res) => {
         }
       }],
       application_context: {
-        brand_name: 'GrapheneOS Store',
+        brand_name: 'Graphene Security',
         landing_page: 'NO_PREFERENCE',
         user_action: 'PAY_NOW',
         return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout/success`,

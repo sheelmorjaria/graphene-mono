@@ -24,7 +24,7 @@ const ContactUsPage = () => {
   ];
 
   useEffect(() => {
-    document.title = "Contact Us - GrapheneOS Store";
+    document.title = "Contact Us - Graphene Security";
   }, []);
 
   useEffect(() => {

@@ -61,7 +61,7 @@ const AdminDashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    document.title = 'Admin Dashboard - GrapheneOS Store';
+    document.title = 'Admin Dashboard - Graphene Security';
     
     // Check authentication
     if (!isAdminAuthenticated()) {
@@ -112,7 +112,7 @@ const AdminDashboardPage = () => {
                 to="/" 
                 className="text-xl font-bold text-gray-900 hover:text-gray-600 transition-colors"
               >
-                GrapheneOS Store
+                Graphene Security
               </Link>
               <span className="ml-2 text-sm text-gray-500">/ Admin</span>
             </div>

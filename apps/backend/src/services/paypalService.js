@@ -55,7 +55,7 @@ class PayPalService {
           }
         }],
         application_context: {
-          brand_name: 'GrapheneOS Store',
+          brand_name: 'Graphene Security',
           landing_page: 'NO_PREFERENCE',
           shipping_preference: 'NO_SHIPPING',
           user_action: 'PAY_NOW'

@@ -6,7 +6,7 @@ const generalSettingsSchema = new mongoose.Schema({
     required: true,
     trim: true,
     maxlength: 100,
-    default: 'GrapheneOS Store'
+    default: 'Graphene Security'
   },
   storeEmail: {
     type: String,
