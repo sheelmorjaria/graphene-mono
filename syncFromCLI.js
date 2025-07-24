@@ -460,7 +460,7 @@ const createProduct = async (productData, adminUser) => {
     sku: sku,
     shortDescription: `${productData.name} with GrapheneOS`,
     longDescription: `${productData.name} flashed with GrapheneOS for enhanced privacy and security.`,
-    price: (productData.price || 500) + 109.99,
+    price: (productData.price) + 120.00,
     condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
     stockStatus: 'in_stock',
     stockQuantity: 10,
