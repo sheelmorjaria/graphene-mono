@@ -59,8 +59,8 @@ const OrderDetailsPage = () => {
 
   useEffect(() => {
     document.title = order 
-      ? `Order ${order.orderNumber} - GrapheneOS Store`
-      : 'Order Details - GrapheneOS Store';
+      ? `Order ${order.orderNumber} - Graphene Security`
+      : 'Order Details - Graphene Security';
   }, [order]);
 
   const canCancelOrder = (status) => {

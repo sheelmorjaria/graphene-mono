@@ -51,7 +51,7 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://grapheneos-store.vercel.app',
+      'https://graphene-security.vercel.app',
       process.env.FRONTEND_URL
     ].filter(Boolean);
     
@@ -120,7 +120,7 @@ app.use('/api', sitemapRoutes);
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'GrapheneOS Store API',
+    message: 'Graphene Security API',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     status: 'operational'

@@ -1,7 +1,7 @@
 {
-  "name": "@graphene-store/monorepo",
+  "name": "@graphene-security/monorepo",
   "version": "1.0.0",
-  "description": "GrapheneOS Store - Privacy-Focused Smartphone E-commerce Platform",
+  "description": "Graphene Security - Privacy-Focused Smartphone E-commerce Platform",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -14,15 +14,15 @@
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "npm run dev --workspace=@graphene-store/frontend",
-    "dev:backend": "npm run dev --workspace=@graphene-store/backend",
+    "dev:frontend": "npm run dev --workspace=@graphene-security/frontend",
+    "dev:backend": "npm run dev --workspace=@graphene-security/backend",
     "build": "npm run build --workspaces --if-present",
-    "build:frontend": "npm run build --workspace=@graphene-store/frontend",
-    "build:backend": "npm run build --workspace=@graphene-store/backend",
+    "build:frontend": "npm run build --workspace=@graphene-security/frontend",
+    "build:backend": "npm run build --workspace=@graphene-security/backend",
     "test": "npm run test --workspaces --if-present",
-    "test:frontend": "npm run test --workspace=@graphene-store/frontend",
-    "test:backend": "npm run test --workspace=@graphene-store/backend",
-    "test:e2e": "npm run test:e2e --workspace=@graphene-store/backend",
+    "test:frontend": "npm run test --workspace=@graphene-security/frontend",
+    "test:backend": "npm run test --workspace=@graphene-security/backend",
+    "test:e2e": "npm run test:e2e --workspace=@graphene-security/backend",
     "lint": "npm run lint --workspaces --if-present",
     "lint:fix": "npm run lint:fix --workspaces --if-present",
     "type-check": "npm run type-check --workspaces --if-present",
@@ -32,7 +32,7 @@
     "docker:dev": "docker-compose -f docker-compose.dev.yml up",
     "docker:prod": "docker-compose -f docker-compose.yml up",
     "docker:test": "docker-compose -f docker-compose.test.yml up",
-    "start": "npm run start --workspace=@graphene-store/backend",
+    "start": "npm run start --workspace=@graphene-security/backend",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
@@ -59,11 +59,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/graphene-store.git"
+    "url": "https://github.com/your-org/graphene-security.git"
   },
-  "author": "GrapheneOS Store Team",
+  "author": "Graphene Security Team",
   "license": "MIT",
-  "homepage": "https://grapheneos-store.com",
+  "homepage": "https://graphene-security.com",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "mongoose": "^8.16.4"

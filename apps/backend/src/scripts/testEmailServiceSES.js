@@ -61,11 +61,11 @@ if (connectionResult.success) {
 console.log(`${colors.yellow}Sending a test email...${colors.reset}`);
 const testResult = await emailService.sendEmail({
   to: process.env.TEST_EMAIL || 'test@example.com',
-  subject: 'AWS SES Integration Test - GrapheneOS Store',
+  subject: 'AWS SES Integration Test - Graphene Security',
   htmlContent: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #667eea;">AWS SES Integration Test</h1>
-      <p>This is a test email from the GrapheneOS Store backend using AWS SES.</p>
+      <p>This is a test email from the Graphene Security backend using AWS SES.</p>
       <p>If you're receiving this email, the AWS SES integration is working correctly! 🎉</p>
       <hr style="border: 1px solid #eee; margin: 20px 0;">
       <p style="color: #666; font-size: 14px;">
@@ -75,7 +75,7 @@ const testResult = await emailService.sendEmail({
       </p>
     </div>
   `,
-  textContent: 'AWS SES Integration Test\n\nThis is a test email from the GrapheneOS Store backend using AWS SES.'
+  textContent: 'AWS SES Integration Test\n\nThis is a test email from the Graphene Security backend using AWS SES.'
 });
 
 if (testResult.success) {

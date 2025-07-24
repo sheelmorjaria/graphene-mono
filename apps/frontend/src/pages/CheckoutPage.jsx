@@ -492,7 +492,7 @@ const CheckoutPage = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    document.title = 'Checkout - GrapheneOS Store';
+    document.title = 'Checkout - Graphene Security';
   }, []);
 
   // Show loading while checking authentication

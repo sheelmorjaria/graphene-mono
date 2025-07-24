@@ -62,11 +62,11 @@ if (connectionResult.success) {
 console.log(`${colors.yellow}Sending a test email...${colors.reset}`);
 const testResult = await emailService.sendEmail({
   to: process.env.TEST_EMAIL || 'test@example.com',
-  subject: 'Mailtrap Integration Test - GrapheneOS Store',
+  subject: 'Mailtrap Integration Test - Graphene Security',
   htmlContent: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #667eea;">Mailtrap Integration Test</h1>
-      <p>This is a test email from the GrapheneOS Store backend.</p>
+      <p>This is a test email from the Graphene Security backend.</p>
       <p>If you're seeing this in Mailtrap, the integration is working correctly! 🎉</p>
       <hr style="border: 1px solid #eee; margin: 20px 0;">
       <p style="color: #666; font-size: 14px;">
@@ -75,7 +75,7 @@ const testResult = await emailService.sendEmail({
       </p>
     </div>
   `,
-  textContent: 'Mailtrap Integration Test\n\nThis is a test email from the GrapheneOS Store backend.'
+  textContent: 'Mailtrap Integration Test\n\nThis is a test email from the Graphene Security backend.'
 });
 
 if (testResult.success) {

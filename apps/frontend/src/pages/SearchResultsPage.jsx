@@ -19,9 +19,9 @@ const SearchResultsPage = () => {
   // Update document title
   useEffect(() => {
     if (query) {
-      document.title = `Search: ${query} - GrapheneOS Store`;
+      document.title = `Search: ${query} - Graphene Security`;
     } else {
-      document.title = 'Search - GrapheneOS Store';
+      document.title = 'Search - Graphene Security';
     }
   }, [query]);
 

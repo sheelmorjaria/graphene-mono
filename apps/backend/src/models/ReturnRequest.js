@@ -155,7 +155,7 @@ const returnRequestSchema = new mongoose.Schema({
   returnShippingAddress: {
     companyName: {
       type: String,
-      default: 'GrapheneOS Store Returns',
+      default: 'Graphene Security Returns',
       trim: true
     },
     addressLine1: {

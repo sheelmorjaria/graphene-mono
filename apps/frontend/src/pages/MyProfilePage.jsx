@@ -24,7 +24,7 @@ const MyProfilePage = () => {
 
   // Set page title
   useEffect(() => {
-    document.title = 'My Profile - GrapheneOS Store';
+    document.title = 'My Profile - Graphene Security';
   }, []);
 
   // Redirect to login if not authenticated
