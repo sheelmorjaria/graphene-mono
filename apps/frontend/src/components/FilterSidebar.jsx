@@ -64,13 +64,6 @@ const FilterSidebar = ({
     return priceRange.min === min && priceRange.max === max;
   };
 
-  const getCategoryButtonClass = (categorySlug) => {
-    const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500";
-    if (selectedCategory === categorySlug) {
-      return `${baseClass} bg-forest-200 text-forest-800 font-medium border border-forest-300`;
-    }
-    return `${baseClass} text-forest-700 hover:bg-forest-50 hover:text-forest-800`;
-  };
 
   const getConditionButtonClass = (conditionValue) => {
     const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500";
@@ -97,27 +90,6 @@ const FilterSidebar = ({
         </button>
       </div>
 
-      {/* Category Filter */}
-      <div className="mb-6">
-        <h3 className="font-medium text-forest-900 mb-3">Category</h3>
-        <div className="space-y-1">
-          <button
-            onClick={() => onCategoryChange('')}
-            className={getCategoryButtonClass('')}
-          >
-            All Categories
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => onCategoryChange(category.slug)}
-              className={getCategoryButtonClass(category.slug)}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Price Range Filter */}
       <div className="mb-6">
@@ -218,14 +190,14 @@ FilterSidebar.propTypes = {
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     slug: PropTypes.string.isRequired
-  })).isRequired,
-  selectedCategory: PropTypes.string.isRequired,
+  })),
+  selectedCategory: PropTypes.string,
   priceRange: PropTypes.shape({
     min: PropTypes.string.isRequired,
     max: PropTypes.string.isRequired
   }).isRequired,
   selectedCondition: PropTypes.string.isRequired,
-  onCategoryChange: PropTypes.func.isRequired,
+  onCategoryChange: PropTypes.func,
   onPriceRangeChange: PropTypes.func.isRequired,
   onConditionChange: PropTypes.func.isRequired,
   onClearFilters: PropTypes.func.isRequired

@@ -126,12 +126,6 @@ const ProductDetailsPage = () => {
     { name: 'Products', url: '/products' }
   ];
   
-  if (product.category) {
-    breadcrumbs.push({
-      name: product.category.name,
-      url: `/products?category=${product.category.slug}`
-    });
-  }
   
   breadcrumbs.push({ name: product.name });
 
@@ -171,19 +165,6 @@ const ProductDetailsPage = () => {
               Products
             </Link>
           </li>
-          {product.category && (
-            <li className="flex items-center">
-              <svg className="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              <Link 
-                to={`/products?category=${product.category.slug}`} 
-                className="hover:text-blue-600 transition-colors"
-              >
-                {product.category.name}
-              </Link>
-            </li>
-          )}
           <li className="flex items-center">
             <svg className="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -243,12 +224,6 @@ const ProductDetailsPage = () => {
               >
                 {formatPrice(product.price)}
               </span>
-              
-              {product.category && (
-                <div className="text-sm text-gray-500">
-                  <span className="font-medium">Category:</span> {product.category.name}
-                </div>
-              )}
             </div>
 
             {/* Lead Time Information */}
