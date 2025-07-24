@@ -77,7 +77,16 @@ const GeneralSettings = ({ onMessage }) => {
         throw new Error('Failed to load settings');
       }
 
-      const data = await response.json();
+      const text = await response.text();
+      console.log('Response text:', text);
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Failed to parse response:', text);
+        throw new Error('Invalid response format');
+      }
       if (data.success) {
         setSettings(data.data);
       }
