@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "name": "grapheneos-store-frontend",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_BASE_URL": "https://your-render-backend-url.onrender.com/api",
+    "VITE_APP_TITLE": "GrapheneOS Store",
+    "VITE_COMPANY_NAME": "GrapheneOS Store",
+    "VITE_ENABLE_BITCOIN_PAYMENTS": "true",
+    "VITE_ENABLE_MONERO_PAYMENTS": "true",
+    "VITE_ENABLE_PAYPAL_PAYMENTS": "true"
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install"
+}

@@ -1,0 +1,38 @@
+services:
+  # Backend API Service
+  - type: web
+    name: graphene-backend
+    env: node
+    region: oregon
+    buildCommand: cd apps/backend && npm install
+    startCommand: cd apps/backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    
+  # Frontend Static Site
+  - type: web
+    name: graphene-frontend  
+    env: static
+    region: oregon
+    buildCommand: cd apps/frontend && npm install && npm run build
+    staticPublishPath: apps/frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://graphene-backend.onrender.com/api
+      - key: VITE_APP_TITLE
+        value: GrapheneOS Store
+      - key: VITE_COMPANY_NAME
+        value: GrapheneOS Store
+      - key: VITE_ENABLE_BITCOIN_PAYMENTS
+        value: true
+      - key: VITE_ENABLE_MONERO_PAYMENTS
+        value: true
+      - key: VITE_ENABLE_PAYPAL_PAYMENTS
+        value: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

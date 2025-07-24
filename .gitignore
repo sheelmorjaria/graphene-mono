@@ -1,3 +1,4 @@
 *.md
 .claude
 node_modules
+.vercel
