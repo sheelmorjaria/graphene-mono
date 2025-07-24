@@ -33,7 +33,7 @@ const ProductCard = ({ product }) => {
     e.preventDefault(); // Prevent navigation if button is inside a link
     e.stopPropagation();
     
-    if (stockStatus === 'out_of_stock' || stockQuantity === 0 || isAddingToCart) {
+    if (stockStatus === 'out_of_stock' || isAddingToCart) {
       return;
     }
 
@@ -165,14 +165,14 @@ const ProductCard = ({ product }) => {
           <button
             data-testid="add-to-cart-button"
             onClick={handleAddToCart}
-            disabled={stockStatus === 'out_of_stock' || stockQuantity === 0 || isAddingToCart}
+            disabled={stockStatus === 'out_of_stock' || isAddingToCart}
             className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              stockStatus === 'out_of_stock' || stockQuantity === 0
+              stockStatus === 'out_of_stock'
                 ? 'bg-muted text-muted-foreground cursor-not-allowed'
                 : 'bg-forest-600 hover:bg-forest-700 focus:ring-forest-500 animate-wave'
             }`}
           >
-            {isAddingToCart ? 'Adding...' : stockStatus === 'out_of_stock' || stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+            {isAddingToCart ? 'Adding...' : stockStatus === 'out_of_stock' ? 'Out of Stock' : 'Add to Cart'}
           </button>
           
           <Link
