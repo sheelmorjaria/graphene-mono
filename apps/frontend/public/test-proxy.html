@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proxy Test</title>
+</head>
+<body>
+    <h1>Proxy Test</h1>
+    <button onclick="testProxy()">Test Proxy</button>
+    <div id="result"></div>
+
+    <script>
+        async function testProxy() {
+            console.log('🔵 Testing admin login from test page...');
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                console.log('🔵 Making request to /api/admin/login');
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@grapheneos-store.com',
+                        password: 'ChangeThisPassword123!'
+                    })
+                });
+                
+                console.log('🔵 Response received');
+                console.log('🔵 Response status:', response.status);
+                console.log('🔵 Response ok:', response.ok);
+                console.log('🔵 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                const text = await response.text();
+                console.log('🔵 Response length:', text.length);
+                console.log('🔵 Response text:', text);
+                
+                if (!text.trim()) {
+                    resultDiv.innerHTML = '<p style="color: red;">Empty response!</p>';
+                } else {
+                    resultDiv.innerHTML = `<p>Status: ${response.status}<br>Response: ${text.substring(0, 500)}</p>`;
+                }
+            } catch (error) {
+                console.error('🔴 Error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

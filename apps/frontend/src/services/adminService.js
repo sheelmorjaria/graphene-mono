@@ -4,15 +4,23 @@ const ADMIN_API_BASE = `${API_BASE_URL}/admin`;
 // Admin login
 export const adminLogin = async (credentials) => {
   try {
-    const response = await fetch(`${ADMIN_API_BASE}/login`, {
+    console.log('🔵 AdminService login attempt');
+    
+    const response = await fetch('/api/admin/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(credentials)
+      body: JSON.stringify({
+        email: credentials.email,
+        password: credentials.password
+      })
     });
 
+    console.log('🔵 AdminService response status:', response.status);
+    
     const data = await response.json();
+    console.log('🔵 AdminService response data:', data);
 
     if (!response.ok) {
       throw new Error(data.error || 'Login failed');
@@ -20,7 +28,7 @@ export const adminLogin = async (credentials) => {
 
     return data;
   } catch (error) {
-    console.error('Admin login error:', error);
+    console.error('🔴 AdminService login error:', error);
     throw error;
   }
 };
@@ -34,7 +42,7 @@ export const getDashboardMetrics = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${ADMIN_API_BASE}/dashboard-metrics`, {
+    const response = await fetch('/api/admin/dashboard-metrics', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
