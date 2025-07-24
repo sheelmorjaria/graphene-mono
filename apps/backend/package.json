@@ -49,6 +49,7 @@
     "test:email": "node src/scripts/testEmailService.js",
     "test:email:simple": "node src/scripts/testEmailServiceSimple.js",
     "test:ses": "node src/scripts/testEmailServiceSES.js",
+    "validate:paypal": "node src/scripts/validatePayPalCredentials.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "type-check": "echo 'No TypeScript configuration'",
