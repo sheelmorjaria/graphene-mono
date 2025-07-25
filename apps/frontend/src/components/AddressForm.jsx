@@ -121,9 +121,9 @@ const AddressForm = ({
   const getErrorId = (fieldName) => `${fieldName}-error`;
 
   return (
-    <form role="form" onSubmit={handleSubmit} className="address-form">
-      <div className="form-group">
-        <label htmlFor={getFieldId('fullName')}>Full Name *</label>
+    <form role="form" onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label htmlFor={getFieldId('fullName')} className="form-label">Full Name *</label>
         <input
           id={getFieldId('fullName')}
           name="fullName"
@@ -134,17 +134,17 @@ const AddressForm = ({
           disabled={isLoading}
           required
           aria-describedby={errors.fullName ? getErrorId('fullName') : undefined}
-          className={errors.fullName ? 'error' : ''}
+          className={`form-input ${errors.fullName ? 'form-input-error' : ''}`}
         />
         {errors.fullName && (
-          <div id={getErrorId('fullName')} className="error-message" role="alert">
+          <div id={getErrorId('fullName')} className="form-error" role="alert">
             {errors.fullName}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('addressLine1')}>Address Line 1 *</label>
+      <div>
+        <label htmlFor={getFieldId('addressLine1')} className="form-label">Address Line 1 *</label>
         <input
           id={getFieldId('addressLine1')}
           name="addressLine1"
@@ -155,17 +155,17 @@ const AddressForm = ({
           disabled={isLoading}
           required
           aria-describedby={errors.addressLine1 ? getErrorId('addressLine1') : undefined}
-          className={errors.addressLine1 ? 'error' : ''}
+          className={`form-input ${errors.addressLine1 ? 'form-input-error' : ''}`}
         />
         {errors.addressLine1 && (
-          <div id={getErrorId('addressLine1')} className="error-message" role="alert">
+          <div id={getErrorId('addressLine1')} className="form-error" role="alert">
             {errors.addressLine1}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('addressLine2')}>Address Line 2</label>
+      <div>
+        <label htmlFor={getFieldId('addressLine2')} className="form-label">Address Line 2</label>
         <input
           id={getFieldId('addressLine2')}
           name="addressLine2"
@@ -175,17 +175,17 @@ const AddressForm = ({
           onBlur={handleBlur}
           disabled={isLoading}
           aria-describedby={errors.addressLine2 ? getErrorId('addressLine2') : undefined}
-          className={errors.addressLine2 ? 'error' : ''}
+          className={`form-input ${errors.addressLine2 ? 'form-input-error' : ''}`}
         />
         {errors.addressLine2 && (
-          <div id={getErrorId('addressLine2')} className="error-message" role="alert">
+          <div id={getErrorId('addressLine2')} className="form-error" role="alert">
             {errors.addressLine2}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('city')}>City *</label>
+      <div>
+        <label htmlFor={getFieldId('city')} className="form-label">City *</label>
         <input
           id={getFieldId('city')}
           name="city"
@@ -196,17 +196,17 @@ const AddressForm = ({
           disabled={isLoading}
           required
           aria-describedby={errors.city ? getErrorId('city') : undefined}
-          className={errors.city ? 'error' : ''}
+          className={`form-input ${errors.city ? 'form-input-error' : ''}`}
         />
         {errors.city && (
-          <div id={getErrorId('city')} className="error-message" role="alert">
+          <div id={getErrorId('city')} className="form-error" role="alert">
             {errors.city}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('stateProvince')}>State/Province *</label>
+      <div>
+        <label htmlFor={getFieldId('stateProvince')} className="form-label">State/Province *</label>
         <input
           id={getFieldId('stateProvince')}
           name="stateProvince"
@@ -217,17 +217,17 @@ const AddressForm = ({
           disabled={isLoading}
           required
           aria-describedby={errors.stateProvince ? getErrorId('stateProvince') : undefined}
-          className={errors.stateProvince ? 'error' : ''}
+          className={`form-input ${errors.stateProvince ? 'form-input-error' : ''}`}
         />
         {errors.stateProvince && (
-          <div id={getErrorId('stateProvince')} className="error-message" role="alert">
+          <div id={getErrorId('stateProvince')} className="form-error" role="alert">
             {errors.stateProvince}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('postalCode')}>Postal Code *</label>
+      <div>
+        <label htmlFor={getFieldId('postalCode')} className="form-label">Postal Code *</label>
         <input
           id={getFieldId('postalCode')}
           name="postalCode"
@@ -238,17 +238,17 @@ const AddressForm = ({
           disabled={isLoading}
           required
           aria-describedby={errors.postalCode ? getErrorId('postalCode') : undefined}
-          className={errors.postalCode ? 'error' : ''}
+          className={`form-input ${errors.postalCode ? 'form-input-error' : ''}`}
         />
         {errors.postalCode && (
-          <div id={getErrorId('postalCode')} className="error-message" role="alert">
+          <div id={getErrorId('postalCode')} className="form-error" role="alert">
             {errors.postalCode}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('country')}>Country *</label>
+      <div>
+        <label htmlFor={getFieldId('country')} className="form-label">Country *</label>
         <input
           id={getFieldId('country')}
           name="country"
@@ -259,17 +259,17 @@ const AddressForm = ({
           disabled={isLoading}
           required
           aria-describedby={errors.country ? getErrorId('country') : undefined}
-          className={errors.country ? 'error' : ''}
+          className={`form-input ${errors.country ? 'form-input-error' : ''}`}
         />
         {errors.country && (
-          <div id={getErrorId('country')} className="error-message" role="alert">
+          <div id={getErrorId('country')} className="form-error" role="alert">
             {errors.country}
           </div>
         )}
       </div>
 
-      <div className="form-group">
-        <label htmlFor={getFieldId('phoneNumber')}>Phone Number</label>
+      <div>
+        <label htmlFor={getFieldId('phoneNumber')} className="form-label">Phone Number</label>
         <input
           id={getFieldId('phoneNumber')}
           name="phoneNumber"
@@ -279,23 +279,16 @@ const AddressForm = ({
           onBlur={handleBlur}
           disabled={isLoading}
           aria-describedby={errors.phoneNumber ? getErrorId('phoneNumber') : undefined}
-          className={errors.phoneNumber ? 'error' : ''}
+          className={`form-input ${errors.phoneNumber ? 'form-input-error' : ''}`}
         />
         {errors.phoneNumber && (
-          <div id={getErrorId('phoneNumber')} className="error-message" role="alert">
+          <div id={getErrorId('phoneNumber')} className="form-error" role="alert">
             {errors.phoneNumber}
           </div>
         )}
       </div>
 
-      <div className="form-actions">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="btn btn-primary"
-        >
-          {isLoading ? 'Saving...' : isEdit ? 'Update Address' : 'Save Address'}
-        </button>
+      <div className="flex justify-end space-x-4 pt-6">
         <button
           type="button"
           onClick={onCancel}
@@ -303,6 +296,13 @@ const AddressForm = ({
           className="btn btn-secondary"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="btn btn-primary"
+        >
+          {isLoading ? 'Saving...' : isEdit ? 'Update Address' : 'Save Address'}
         </button>
       </div>
     </form>
