@@ -103,13 +103,22 @@ export const getStatusColor = (status) => {
 // Place order
 export const placeOrder = async (orderData) => {
   try {
+    // Convert addresses to backend format
+    const formattedOrderData = {
+      ...orderData,
+      shippingAddress: convertAddressFormat(orderData.shippingAddress),
+      billingAddress: convertAddressFormat(orderData.billingAddress || orderData.shippingAddress),
+      shippingMethodId: orderData.shippingMethod?.id || orderData.shippingMethodId,
+      paypalOrderId: orderData.paymentMethod?.paypalOrderId || orderData.paypalOrderId
+    };
+
     const response = await fetch(`${API_BASE_URL}/user/orders/place-order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify(orderData)
+      body: JSON.stringify(formattedOrderData)
     });
 
     const data = await response.json();
@@ -118,11 +127,33 @@ export const placeOrder = async (orderData) => {
       throw new Error(data.error || 'Failed to place order');
     }
 
-    return data.data;
+    return data;
   } catch (error) {
     console.error('Error placing order:', error);
     throw error;
   }
+};
+
+// Convert address format from frontend to backend
+const convertAddressFormat = (address) => {
+  if (!address) return null;
+  
+  // Split fullName into firstName and lastName
+  const nameParts = (address.fullName || '').trim().split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  
+  return {
+    firstName,
+    lastName,
+    addressLine1: address.addressLine1,
+    addressLine2: address.addressLine2 || '',
+    city: address.city,
+    stateProvince: address.stateProvince,
+    postalCode: address.postalCode,
+    country: address.country,
+    phoneNumber: address.phoneNumber || ''
+  };
 };
 
 // Validate order data before placing
@@ -133,32 +164,32 @@ export const validateOrderData = (orderData) => {
     errors.push('Shipping address is required');
   }
 
-  if (!orderData.shippingMethodId) {
+  if (!orderData.shippingMethod) {
     errors.push('Shipping method is required');
   }
 
-  if (!orderData.paymentIntentId) {
-    errors.push('Payment intent is required');
+  if (!orderData.paymentMethod) {
+    errors.push('Payment method is required');
   }
 
   // Validate shipping address fields
   if (orderData.shippingAddress) {
-    const requiredFields = ['firstName', 'lastName', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
+    const requiredFields = ['fullName', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
     
     for (const field of requiredFields) {
       if (!orderData.shippingAddress[field]) {
-        errors.push(`Shipping address ${field} is required`);
+        errors.push(`Delivery address ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required`);
       }
     }
   }
 
   // Validate billing address if provided separately
   if (orderData.billingAddress && !orderData.useSameAsShipping) {
-    const requiredFields = ['firstName', 'lastName', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
+    const requiredFields = ['fullName', 'addressLine1', 'city', 'stateProvince', 'postalCode', 'country'];
     
     for (const field of requiredFields) {
       if (!orderData.billingAddress[field]) {
-        errors.push(`Billing address ${field} is required`);
+        errors.push(`Billing address ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required`);
       }
     }
   }

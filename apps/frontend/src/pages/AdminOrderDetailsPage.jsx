@@ -621,45 +621,94 @@ const AdminOrderDetailsPage = () => {
               </div>
             )}
 
-            {/* Shipping Address */}
-            {order?.shippingAddress && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-medium text-gray-900">Shipping Address</h2>
-                </div>
-                <div className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
-                    <p>{order.shippingAddress.addressLine1}</p>
-                    {order.shippingAddress.addressLine2 && (
-                      <p>{order.shippingAddress.addressLine2}</p>
-                    )}
-                    <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode}</p>
-                    <p>{order.shippingAddress.country}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Address Display - Combined or Separate */}
+            {(() => {
+              const addressesAreSame = order?.shippingAddress && order?.billingAddress &&
+                order.shippingAddress.firstName === order.billingAddress.firstName &&
+                order.shippingAddress.lastName === order.billingAddress.lastName &&
+                order.shippingAddress.addressLine1 === order.billingAddress.addressLine1 &&
+                order.shippingAddress.addressLine2 === order.billingAddress.addressLine2 &&
+                order.shippingAddress.city === order.billingAddress.city &&
+                order.shippingAddress.postalCode === order.billingAddress.postalCode &&
+                order.shippingAddress.country === order.billingAddress.country;
 
-            {/* Billing Address */}
-            {order?.billingAddress && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-medium text-gray-900">Billing Address</h2>
-                </div>
-                <div className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    <p>{order.billingAddress.firstName} {order.billingAddress.lastName}</p>
-                    <p>{order.billingAddress.addressLine1}</p>
-                    {order.billingAddress.addressLine2 && (
-                      <p>{order.billingAddress.addressLine2}</p>
-                    )}
-                    <p>{order.billingAddress.city}, {order.billingAddress.postalCode}</p>
-                    <p>{order.billingAddress.country}</p>
+              if (addressesAreSame) {
+                // Show single delivery address
+                return (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <h2 className="text-lg font-medium text-gray-900">Delivery Address</h2>
+                      <p className="text-sm text-gray-500 mt-1">Shipping and billing address are the same</p>
+                    </div>
+                    <div className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                        <p>{order.shippingAddress.addressLine1}</p>
+                        {order.shippingAddress.addressLine2 && (
+                          <p>{order.shippingAddress.addressLine2}</p>
+                        )}
+                        <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode}</p>
+                        <p>{order.shippingAddress.country}</p>
+                        {order.shippingAddress.phoneNumber && (
+                          <p className="mt-2 text-gray-600">Phone: {order.shippingAddress.phoneNumber}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                );
+              } else {
+                // Show separate addresses
+                return (
+                  <>
+                    {/* Shipping Address */}
+                    {order?.shippingAddress && (
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="px-6 py-4 border-b border-gray-200">
+                          <h2 className="text-lg font-medium text-gray-900">Shipping Address</h2>
+                        </div>
+                        <div className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                            <p>{order.shippingAddress.addressLine1}</p>
+                            {order.shippingAddress.addressLine2 && (
+                              <p>{order.shippingAddress.addressLine2}</p>
+                            )}
+                            <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode}</p>
+                            <p>{order.shippingAddress.country}</p>
+                            {order.shippingAddress.phoneNumber && (
+                              <p className="mt-2 text-gray-600">Phone: {order.shippingAddress.phoneNumber}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Billing Address */}
+                    {order?.billingAddress && (
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div className="px-6 py-4 border-b border-gray-200">
+                          <h2 className="text-lg font-medium text-gray-900">Billing Address</h2>
+                        </div>
+                        <div className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            <p>{order.billingAddress.firstName} {order.billingAddress.lastName}</p>
+                            <p>{order.billingAddress.addressLine1}</p>
+                            {order.billingAddress.addressLine2 && (
+                              <p>{order.billingAddress.addressLine2}</p>
+                            )}
+                            <p>{order.billingAddress.city}, {order.billingAddress.postalCode}</p>
+                            <p>{order.billingAddress.country}</p>
+                            {order.billingAddress.phoneNumber && (
+                              <p className="mt-2 text-gray-600">Phone: {order.billingAddress.phoneNumber}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              }
+            })()}
 
             {/* Payment & Shipping Methods */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">

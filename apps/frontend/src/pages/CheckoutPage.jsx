@@ -4,15 +4,13 @@ import { useCart } from '../contexts/CartContext';
 import { useCheckout } from '../contexts/CheckoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../services/cartService';
-import ShippingAddressSection from '../components/checkout/ShippingAddressSection';
-import BillingAddressSection from '../components/checkout/BillingAddressSection';
+import DeliveryAddressSection from '../components/checkout/DeliveryAddressSection';
 import PaymentMethodSection from '../components/checkout/PaymentMethodSection';
 import { placeOrder, validateOrderData } from '../services/orderService';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
-    { id: 'shipping', label: 'Shipping', icon: '📦' },
-    { id: 'payment', label: 'Payment', icon: '💳' },
+    { id: 'payment', label: 'Payment & Delivery', icon: '💳' },
     { id: 'review', label: 'Review', icon: '✓' }
   ];
 
@@ -137,7 +135,7 @@ const CartSummary = () => {
 };
 
 const PaymentSection = () => {
-  const { nextStep, prevStep, canProceedToReview } = useCheckout();
+  const { nextStep, canProceedToReview } = useCheckout();
   const [_validationState, setValidationState] = useState({ isValid: false, error: null });
 
   const handleValidationChange = (state) => {
@@ -149,24 +147,19 @@ const PaymentSection = () => {
       data-testid="checkout-form"
       className="space-y-6"
     >
-      {/* Billing Address Section */}
-      <BillingAddressSection />
+      {/* Delivery Address and Shipping Method */}
+      <DeliveryAddressSection />
       
       {/* Payment Method Section */}
       <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Payment Method</h2>
         <PaymentMethodSection 
           isActive={true} 
           isCompleted={canProceedToReview}
           onValidationChange={handleValidationChange}
         />
 
-        <div className="flex justify-between mt-6">
-          <button
-            onClick={prevStep}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            Back to Shipping
-          </button>
+        <div className="flex justify-end mt-6">
           <button
             onClick={nextStep}
             disabled={!canProceedToReview}
@@ -189,11 +182,9 @@ const ReviewSection = () => {
   const { 
     checkoutState, 
     paymentState: _paymentState, 
-    shippingAddress, 
-    billingAddress, 
+    deliveryAddress, 
     shippingMethod, 
     paymentMethod, 
-    useSameAsShipping,
     orderSummary: _orderSummary,
     prevStep,
     resetCheckout
@@ -210,7 +201,7 @@ const ReviewSection = () => {
       setOrderError(null);
 
       // Validate required data
-      if (!shippingAddress || !shippingMethod || !paymentMethod) {
+      if (!deliveryAddress || !shippingMethod || !paymentMethod) {
         throw new Error('Please complete all required fields before proceeding.');
       }
 
@@ -224,8 +215,8 @@ const ReviewSection = () => {
       if (paymentMethod.type === 'bitcoin') {
         // For Bitcoin, create the order first, then redirect to Bitcoin payment page
         const orderData = {
-          shippingAddress,
-          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
+          shippingAddress: deliveryAddress,
+          billingAddress: deliveryAddress,
           shippingMethod,
           paymentMethod,
           items: cart.items
@@ -254,8 +245,8 @@ const ReviewSection = () => {
       if (paymentMethod.type === 'monero') {
         // For Monero, create the order first, then redirect to Monero payment page
         const orderData = {
-          shippingAddress,
-          billingAddress: useSameAsShipping ? shippingAddress : billingAddress,
+          shippingAddress: deliveryAddress,
+          billingAddress: deliveryAddress,
           shippingMethod,
           paymentMethod,
           items: cart.items
@@ -299,77 +290,28 @@ const ReviewSection = () => {
     >
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Review Your Order</h2>
       
-      {/* Address Review */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
-        {/* Shipping Address Review */}
-        {checkoutState.shippingAddress && (
-          <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-3">Shipping Address</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
-              <div className="text-sm text-gray-600 mt-1">
-                <div>{checkoutState.shippingAddress.addressLine1}</div>
-                {checkoutState.shippingAddress.addressLine2 && (
-                  <div>{checkoutState.shippingAddress.addressLine2}</div>
-                )}
-                <div>
-                  {checkoutState.shippingAddress.city}, {checkoutState.shippingAddress.stateProvince} {checkoutState.shippingAddress.postalCode}
-                </div>
-                <div>{checkoutState.shippingAddress.country}</div>
-                {checkoutState.shippingAddress.phoneNumber && (
-                  <div className="mt-1">Phone: {checkoutState.shippingAddress.phoneNumber}</div>
-                )}
+      {/* Delivery Address Review */}
+      {deliveryAddress && (
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Delivery Address</h3>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="font-medium">{deliveryAddress.fullName}</div>
+            <div className="text-sm text-gray-600 mt-1">
+              <div>{deliveryAddress.addressLine1}</div>
+              {deliveryAddress.addressLine2 && (
+                <div>{deliveryAddress.addressLine2}</div>
+              )}
+              <div>
+                {deliveryAddress.city}, {deliveryAddress.stateProvince} {deliveryAddress.postalCode}
               </div>
+              <div>{deliveryAddress.country}</div>
+              {deliveryAddress.phoneNumber && (
+                <div className="mt-1">Phone: {deliveryAddress.phoneNumber}</div>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Billing Address Review */}
-        <div>
-          <h3 className="text-lg font-medium text-gray-800 mb-3">Billing Address</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
-            {checkoutState.useSameAsShipping ? (
-              <div>
-                <div className="text-sm text-blue-600 font-medium mb-2">Same as shipping address</div>
-                {checkoutState.shippingAddress && (
-                  <>
-                    <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      <div>{checkoutState.shippingAddress.addressLine1}</div>
-                      {checkoutState.shippingAddress.addressLine2 && (
-                        <div>{checkoutState.shippingAddress.addressLine2}</div>
-                      )}
-                      <div>
-                        {checkoutState.shippingAddress.city}, {checkoutState.shippingAddress.stateProvince} {checkoutState.shippingAddress.postalCode}
-                      </div>
-                      <div>{checkoutState.shippingAddress.country}</div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : checkoutState.billingAddress ? (
-              <>
-                <div className="font-medium">{checkoutState.billingAddress.fullName}</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  <div>{checkoutState.billingAddress.addressLine1}</div>
-                  {checkoutState.billingAddress.addressLine2 && (
-                    <div>{checkoutState.billingAddress.addressLine2}</div>
-                  )}
-                  <div>
-                    {checkoutState.billingAddress.city}, {checkoutState.billingAddress.stateProvince} {checkoutState.billingAddress.postalCode}
-                  </div>
-                  <div>{checkoutState.billingAddress.country}</div>
-                  {checkoutState.billingAddress.phoneNumber && (
-                    <div className="mt-1">Phone: {checkoutState.billingAddress.phoneNumber}</div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-gray-500">No billing address selected</div>
-            )}
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Shipping Method Review */}
       {checkoutState.shippingMethod && (
@@ -461,7 +403,7 @@ const ReviewSection = () => {
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          Back to Payment
+          Back to Payment & Delivery
         </button>
         <button
           onClick={handlePlaceOrder}
@@ -558,14 +500,12 @@ const CheckoutPage = () => {
 
   const renderCurrentStep = () => {
     switch (checkoutState.step) {
-      case 'shipping':
-        return <ShippingAddressSection />;
       case 'payment':
         return <PaymentSection />;
       case 'review':
         return <ReviewSection />;
       default:
-        return <ShippingAddressSection />;
+        return <PaymentSection />;
     }
   };
 
