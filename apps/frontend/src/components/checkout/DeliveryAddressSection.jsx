@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import AddressForm from '../AddressForm';
-import { createAddress } from '../../services/addressService';
+import { addUserAddress } from '../../services/addressService';
 
 const DeliveryAddressSection = () => {
   const {
@@ -43,7 +43,7 @@ const DeliveryAddressSection = () => {
       setIsCreating(true);
       setCreateError('');
       
-      const response = await createAddress(formData);
+      const response = await addUserAddress(formData);
       
       if (response.success) {
         setDeliveryAddress(response.data.address);
