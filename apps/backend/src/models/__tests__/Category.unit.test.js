@@ -73,7 +73,7 @@ describe('Category Model Unit Tests', () => {
     test('should generate basic slug from name', async () => {
       // Mock the actual implementation behavior
       const generateSlug = async (name, excludeId = null) => {
-        let baseSlug = name
+        const baseSlug = name
           .toLowerCase()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/\s+/g, '-')
@@ -91,7 +91,7 @@ describe('Category Model Unit Tests', () => {
 
     test('should handle special characters and spaces', async () => {
       const generateSlug = async (name) => {
-        let baseSlug = name
+        const baseSlug = name
           .toLowerCase()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/\s+/g, '-')
@@ -109,7 +109,7 @@ describe('Category Model Unit Tests', () => {
 
     test('should handle duplicate slugs by adding counter', async () => {
       const generateSlug = async (name) => {
-        let baseSlug = name
+        const baseSlug = name
           .toLowerCase()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/\s+/g, '-')

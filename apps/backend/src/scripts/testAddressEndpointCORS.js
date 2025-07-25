@@ -26,7 +26,7 @@ const testAddressEndpointCORS = async () => {
       console.log(`  Content-Type: ${response.headers.get('content-type')}`);
       console.log(`  Content-Length: ${response.headers.get('content-length')}`);
       console.log(`  Server: ${response.headers.get('server')}`);
-      console.log(`  CORS Headers:`);
+      console.log('  CORS Headers:');
       console.log(`    Access-Control-Allow-Origin: ${response.headers.get('access-control-allow-origin')}`);
       console.log(`    Access-Control-Allow-Methods: ${response.headers.get('access-control-allow-methods')}`);
       console.log(`    Access-Control-Allow-Headers: ${response.headers.get('access-control-allow-headers')}`);
@@ -73,7 +73,7 @@ const testAddressEndpointCORS = async () => {
       
       if (responseText.length > 0) {
         if (responseText.trim().startsWith('<')) {
-          console.log(`  ⚠️  Returns HTML (likely 404 page)`);
+          console.log('  ⚠️  Returns HTML (likely 404 page)');
           console.log(`  HTML Preview: ${responseText.substring(0, 100)}...`);
         } else {
           console.log(`  Response: ${responseText.substring(0, 100)}...`);
@@ -81,7 +81,7 @@ const testAddressEndpointCORS = async () => {
       }
       
     } catch (error) {
-      console.error(`  ❌ Request failed:`, error.message);
+      console.error('  ❌ Request failed:', error.message);
     }
     
     console.log();
@@ -103,7 +103,7 @@ const testAddressEndpointCORS = async () => {
       }
     });
     
-    console.log(`Browser-like request:`);
+    console.log('Browser-like request:');
     console.log(`  Status: ${response.status} - ${response.statusText}`);
     console.log(`  Content-Type: ${response.headers.get('content-type')}`);
     
@@ -111,7 +111,7 @@ const testAddressEndpointCORS = async () => {
     console.log(`  Response: ${responseText.substring(0, 100)}...`);
     
   } catch (error) {
-    console.error(`❌ Browser-like request failed:`, error.message);
+    console.error('❌ Browser-like request failed:', error.message);
   }
   
   console.log('\n🏁 CORS and edge cases test completed!');

@@ -48,7 +48,7 @@ const testProductionDatabase = async () => {
     });
 
     console.log(`Products API Status: ${response.status}`);
-    console.log(`Response Headers:`, Object.fromEntries(response.headers.entries()));
+    console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
 
     const responseText = await response.text();
     console.log(`Response Length: ${responseText.length} characters`);

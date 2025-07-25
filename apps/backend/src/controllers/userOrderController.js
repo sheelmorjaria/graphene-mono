@@ -180,15 +180,32 @@ export const placeOrder = async (req, res) => {
       shippingAddress,
       billingAddress,
       shippingMethodId,
+      paymentMethod,
       paypalOrderId,
       useSameAsShipping = true
     } = req.body;
 
     // Validate required fields
-    if (!shippingAddress || !shippingMethodId || !paypalOrderId) {
+    if (!shippingAddress || !shippingMethodId) {
       return res.status(400).json({
         success: false,
-        error: 'Shipping address, shipping method, and PayPal order are required'
+        error: 'Shipping address and shipping method are required'
+      });
+    }
+
+    // Validate payment method and payment-specific fields
+    if (!paymentMethod || !paymentMethod.type) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment method is required'
+      });
+    }
+
+    // For PayPal payments, validate PayPal order ID
+    if (paymentMethod.type === 'paypal' && !paypalOrderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'PayPal order ID is required for PayPal payments'
       });
     }
 
@@ -210,30 +227,48 @@ export const placeOrder = async (req, res) => {
       });
     }
 
-    // Verify PayPal payment - simplified mock verification for testing
+    // Initialize payment intent based on payment method
     let paymentIntent;
-    try {
-      // In a real implementation, this would verify the PayPal order
-      // For now, we'll mock the verification
-      if (!paypalOrderId || paypalOrderId === 'INVALID-PAYPAL-123') {
+    
+    if (paymentMethod.type === 'paypal') {
+      // Verify PayPal payment - simplified mock verification for testing
+      try {
+        // In a real implementation, this would verify the PayPal order
+        // For now, we'll mock the verification
+        if (!paypalOrderId || paypalOrderId === 'INVALID-PAYPAL-123') {
+          await session.abortTransaction();
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid PayPal order'
+          });
+        }
+        
+        // Mock payment intent data
+        paymentIntent = {
+          amount: 0, // Will be set based on calculated total
+          status: 'succeeded',
+          id: paypalOrderId
+        };
+      } catch (error) {
         await session.abortTransaction();
         return res.status(400).json({
           success: false,
           error: 'Invalid PayPal order'
         });
       }
-      
-      // Mock payment intent data
+    } else if (paymentMethod.type === 'bitcoin' || paymentMethod.type === 'monero') {
+      // For cryptocurrency payments, create pending payment intent
+      // Payment will be initialized separately via payment controller
       paymentIntent = {
         amount: 0, // Will be set based on calculated total
-        status: 'succeeded',
-        id: paypalOrderId
+        status: 'pending',
+        id: null // Will be set when crypto payment is initialized
       };
-    } catch (error) {
+    } else {
       await session.abortTransaction();
       return res.status(400).json({
         success: false,
-        error: 'Invalid PayPal order'
+        error: 'Unsupported payment method'
       });
     }
 
@@ -342,15 +377,29 @@ export const placeOrder = async (req, res) => {
     // In a real implementation, we would verify the PayPal order amount here
     // For testing, we'll just ensure the paymentIntent is properly set
 
-    // Set PayPal payment method details
+    // Set payment method details based on payment type
     const paymentMethodDetails = {
-      type: 'paypal',
-      name: 'PayPal'
+      type: paymentMethod.type,
+      name: paymentMethod.name || paymentMethod.type.charAt(0).toUpperCase() + paymentMethod.type.slice(1)
     };
     
-    const paymentDetails = {
-      paypalOrderId: paypalOrderId
-    };
+    let paymentDetails = {};
+    let paymentStatus = 'pending';
+    let orderStatus = 'pending';
+    
+    if (paymentMethod.type === 'paypal') {
+      paymentDetails = { paypalOrderId: paypalOrderId };
+      paymentStatus = 'completed';
+      orderStatus = 'processing';
+    } else if (paymentMethod.type === 'bitcoin') {
+      paymentDetails = { bitcoinAddress: null, bitcoinAmount: null }; // Will be set when initialized
+      paymentStatus = 'pending';
+      orderStatus = 'pending';
+    } else if (paymentMethod.type === 'monero') {
+      paymentDetails = { moneroAddress: null, moneroAmount: null }; // Will be set when initialized
+      paymentStatus = 'pending';
+      orderStatus = 'pending';
+    }
 
     // Create the order
     const newOrder = new Order({
@@ -398,8 +447,8 @@ export const placeOrder = async (req, res) => {
       },
       paymentMethod: paymentMethodDetails,
       paymentDetails: paymentDetails,
-      paymentStatus: 'completed',
-      status: 'processing'
+      paymentStatus: paymentStatus,
+      status: orderStatus
     });
 
     await newOrder.save({ session });

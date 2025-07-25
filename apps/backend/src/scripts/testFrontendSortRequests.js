@@ -58,7 +58,7 @@ const testFrontendSortRequests = async () => {
       }
 
       if (!Array.isArray(data.data)) {
-        console.log(`❌ Invalid response format`);
+        console.log('❌ Invalid response format');
         console.log();
         continue;
       }
@@ -79,15 +79,15 @@ const testFrontendSortRequests = async () => {
         const isHighToLow = prices.every((price, i) => i === 0 || price <= prices[i-1]);
         
         if (isLowToHigh && test.url.includes('asc')) {
-          console.log(`   🎯 ✅ Correctly sorted: LOW to HIGH`);
+          console.log('   🎯 ✅ Correctly sorted: LOW to HIGH');
         } else if (isHighToLow && test.url.includes('desc')) {
-          console.log(`   🎯 ✅ Correctly sorted: HIGH to LOW`);
+          console.log('   🎯 ✅ Correctly sorted: HIGH to LOW');
         } else if (isLowToHigh) {
-          console.log(`   🎯 ⚠️  Sorted LOW to HIGH (but might be unexpected)`);
+          console.log('   🎯 ⚠️  Sorted LOW to HIGH (but might be unexpected)');
         } else if (isHighToLow) {
-          console.log(`   🎯 ⚠️  Sorted HIGH to LOW (but might be unexpected)`);
+          console.log('   🎯 ⚠️  Sorted HIGH to LOW (but might be unexpected)');
         } else {
-          console.log(`   🎯 ❌ NOT sorted by price`);
+          console.log('   🎯 ❌ NOT sorted by price');
         }
       }
       

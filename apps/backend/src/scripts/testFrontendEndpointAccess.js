@@ -81,24 +81,24 @@ const testFrontendEndpointAccess = async () => {
       
       // Analyze response type
       if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-        console.log(`   📄 Response Type: HTML Document`);
+        console.log('   📄 Response Type: HTML Document');
         const title = responseText.match(/<title>(.*?)<\/title>/i);
         if (title) {
           console.log(`   📄 HTML Title: ${title[1]}`);
         }
         console.log(`   📄 HTML Preview: ${responseText.substring(0, 150).replace(/\s+/g, ' ')}...`);
       } else if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
-        console.log(`   ✅ Response Type: JSON`);
+        console.log('   ✅ Response Type: JSON');
         try {
           const parsed = JSON.parse(responseText);
-          console.log(`   ✅ JSON Content:`, parsed);
+          console.log('   ✅ JSON Content:', parsed);
         } catch (e) {
           console.log(`   ❌ Invalid JSON: ${e.message}`);
         }
       } else if (responseText.trim() === '') {
-        console.log(`   📄 Response Type: Empty`);
+        console.log('   📄 Response Type: Empty');
       } else {
-        console.log(`   📄 Response Type: Other`);
+        console.log('   📄 Response Type: Other');
         console.log(`   📄 Preview: ${responseText.substring(0, 100)}...`);
       }
       

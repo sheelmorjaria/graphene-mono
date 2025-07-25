@@ -72,7 +72,7 @@ const shippingMethodSchema = new mongoose.Schema({
         },
         message: 'All country codes must be valid ISO 3166-1 alpha-2 codes'
       }
-    },
+    }
   },
   pricing: {
     // Weight-based pricing per gram above base weight

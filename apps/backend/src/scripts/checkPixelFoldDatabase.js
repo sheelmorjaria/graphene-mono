@@ -66,7 +66,7 @@ const checkPixelFoldDatabase = async () => {
           console.log();
         });
       } else {
-        console.log(`   ❌ No products found`);
+        console.log('   ❌ No products found');
       }
       console.log();
     }
