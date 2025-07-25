@@ -3,6 +3,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 // Fetch user's order history with pagination and sorting
 export const getUserOrders = async (params = {}) => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
     // Build query parameters
     const queryParams = new URLSearchParams();
     
@@ -17,6 +23,7 @@ export const getUserOrders = async (params = {}) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       credentials: 'include'
     });
@@ -41,10 +48,17 @@ export const getUserOrderDetails = async (orderId) => {
       throw new Error('Order ID is required');
     }
 
+    // Get token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
     const response = await fetch(`${API_BASE_URL}/user/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       credentials: 'include'
     });
@@ -103,6 +117,12 @@ export const getStatusColor = (status) => {
 // Place order
 export const placeOrder = async (orderData) => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
     // Convert addresses to backend format
     const formattedOrderData = {
       ...orderData,
@@ -116,6 +136,7 @@ export const placeOrder = async (orderData) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       credentials: 'include',
       body: JSON.stringify(formattedOrderData)
@@ -234,10 +255,17 @@ export const cancelOrder = async (orderId) => {
       throw new Error('Order ID is required');
     }
 
+    // Get token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
     const response = await fetch(`${API_BASE_URL}/user/orders/${orderId}/cancel`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       credentials: 'include'
     });

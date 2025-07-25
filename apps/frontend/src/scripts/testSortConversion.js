@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 const useProductsContent = readFileSync(join(__dirname, '../hooks/useProducts.js'), 'utf8');
 
 // Extract the function using a simple regex (for testing purposes)
-const convertSortParamsMatch = useProductsContent.match(/const convertSortParams = \(params\) => \{[\s\S]*?\n  \};/);
+const convertSortParamsMatch = useProductsContent.match(/const convertSortParams = \(params\) => \{[\s\S]*?\n {2}\};/);
 if (!convertSortParamsMatch) {
   console.error('Could not extract convertSortParams function');
   process.exit(1);
