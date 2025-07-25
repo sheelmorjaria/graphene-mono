@@ -73,12 +73,6 @@ const shippingMethodSchema = new mongoose.Schema({
         message: 'All country codes must be valid ISO 3166-1 alpha-2 codes'
       }
     },
-    // Free shipping threshold
-    freeShippingThreshold: {
-      type: Number,
-      default: null,
-      min: 0
-    }
   },
   pricing: {
     // Weight-based pricing per gram above base weight
@@ -153,19 +147,6 @@ shippingMethodSchema.methods.calculateCost = function(cartData, shippingAddress)
     return null; // Not eligible
   }
   
-  // Check for free shipping
-  if (this.criteria.freeShippingThreshold && totalValue >= this.criteria.freeShippingThreshold) {
-    return {
-      cost: 0,
-      isFreeShipping: true,
-      details: {
-        baseCost: 0,
-        weightCharge: 0,
-        totalWeight,
-        qualifiesForFreeShipping: true
-      }
-    };
-  }
   
   // Calculate base cost
   let totalCost = this.baseCost;
@@ -188,8 +169,7 @@ shippingMethodSchema.methods.calculateCost = function(cartData, shippingAddress)
     details: {
       baseCost: this.baseCost,
       weightCharge,
-      totalWeight,
-      qualifiesForFreeShipping: false
+      totalWeight
     }
   };
 };
