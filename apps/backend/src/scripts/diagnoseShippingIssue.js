@@ -47,30 +47,30 @@ const diagnoseShippingIssue = async () => {
         const reasons = [];
         
         if (!method.criteria.supportedCountries.includes(country)) {
-          reasons.push(`❌ Country not supported`);
+          reasons.push('❌ Country not supported');
           console.log(`      Country ${country} not in supported list: [${method.criteria.supportedCountries.join(', ')}]`);
         } else {
-          reasons.push(`✅ Country supported`);
+          reasons.push('✅ Country supported');
         }
         
         if (orderValue < method.criteria.minOrderValue) {
-          reasons.push(`❌ Order value too low`);
+          reasons.push('❌ Order value too low');
           console.log(`      Order value £${orderValue} < minimum £${method.criteria.minOrderValue}`);
         } else if (orderValue > method.criteria.maxOrderValue) {
-          reasons.push(`❌ Order value too high`);
+          reasons.push('❌ Order value too high');
           console.log(`      Order value £${orderValue} > maximum £${method.criteria.maxOrderValue}`);
         } else {
-          reasons.push(`✅ Order value in range`);
+          reasons.push('✅ Order value in range');
         }
         
         if (weight < method.criteria.minWeight) {
-          reasons.push(`❌ Weight too low`);
+          reasons.push('❌ Weight too low');
           console.log(`      Weight ${weight}g < minimum ${method.criteria.minWeight}g`);
         } else if (weight > method.criteria.maxWeight) {
-          reasons.push(`❌ Weight too high`);
+          reasons.push('❌ Weight too high');
           console.log(`      Weight ${weight}g > maximum ${method.criteria.maxWeight}g`);
         } else {
-          reasons.push(`✅ Weight in range`);
+          reasons.push('✅ Weight in range');
         }
         
       } else {
@@ -96,8 +96,8 @@ const diagnoseShippingIssue = async () => {
       console.log('\nPossible solutions:');
       console.log(`1. Add ${country} to supported countries for existing methods`);
       console.log(`2. Lower minimum order value (current lowest: £${Math.min(...methods.map(m => m.criteria.minOrderValue))})`);
-      console.log(`3. Increase order value to meet minimums`);
-      console.log(`4. Check if products have valid weights assigned`);
+      console.log('3. Increase order value to meet minimums');
+      console.log('4. Check if products have valid weights assigned');
     } else {
       console.log('✅ SHIPPING METHODS AVAILABLE:');
       availableMethods.forEach(method => {

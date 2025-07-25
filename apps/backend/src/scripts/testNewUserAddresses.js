@@ -86,10 +86,10 @@ const testNewUserAddresses = async () => {
     
     if (registerResponse.ok) {
       const registerData = await registerResponse.json();
-      console.log(`  ✅ Registration successful`);
+      console.log('  ✅ Registration successful');
       
       if (registerData.token) {
-        console.log(`  📝 Token received, testing addresses endpoint...`);
+        console.log('  📝 Token received, testing addresses endpoint...');
         
         const addressResponse = await fetch(`${baseUrl}/api/user/addresses`, {
           method: 'GET',
@@ -106,12 +106,12 @@ const testNewUserAddresses = async () => {
         console.log(`  New User Addresses Response: ${addressText}`);
         
         if (addressResponse.headers.get('content-type')?.includes('text/html')) {
-          console.log(`  ❌ PROBLEM: New user getting HTML instead of JSON!`);
+          console.log('  ❌ PROBLEM: New user getting HTML instead of JSON!');
         } else {
-          console.log(`  ✅ New user getting proper JSON response`);
+          console.log('  ✅ New user getting proper JSON response');
         }
       } else {
-        console.log(`  ⚠️  Registration successful but no token returned`);
+        console.log('  ⚠️  Registration successful but no token returned');
       }
     } else {
       const registerText = await registerResponse.text();

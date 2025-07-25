@@ -130,7 +130,7 @@ const testPixelFoldFiltering = () => {
       /\bPixel\s+2(\s+XL)?\b/i,
       /\bPixel\s+3(a)?(\s+XL)?\b/i,
       /\bPixel\s+4(a)?(\s+(XL|5G))?\b/i,
-      /\bPixel\s+5(a)?(\s+XL)?\b/i,
+      /\bPixel\s+5(a)?(\s+XL)?\b/i
     ];
     
     return oldPixelPatterns.some(pattern => pattern.test(productName));
@@ -140,7 +140,7 @@ const testPixelFoldFiltering = () => {
     'Google Pixel Fold 256GB Obsidian',
     'Google Pixel Fold 512GB Porcelain',
     'Google Pixel 8 Pro 256GB Bay',
-    'Google Pixel 5 128GB Green', // Should be excluded
+    'Google Pixel 5 128GB Green' // Should be excluded
   ];
 
   testProducts.forEach(product => {

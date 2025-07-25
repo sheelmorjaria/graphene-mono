@@ -88,9 +88,9 @@ const testCheckoutFlow = async () => {
         
         console.log('   📋 Order validation data:');
         console.log(`      Shipping Address: ${orderData.shippingAddress.firstName} ${orderData.shippingAddress.lastName}`);
-        console.log(`      Billing Address: Same as shipping ✅`);
+        console.log('      Billing Address: Same as shipping ✅');
         console.log(`      Shipping Method: ${selectedShippingMethod.name}`);
-        console.log(`      Payment: PayPal (Test)`);
+        console.log('      Payment: PayPal (Test)');
         
         // Step 3: Address Format Validation
         console.log('\n🏠 Step 3: Testing Address Format Compatibility');

@@ -69,7 +69,7 @@ const testCheckoutShipping = async () => {
         const data = await response.json();
         
         if (data.success && data.data.shippingRates) {
-          console.log(`   ✅ Available shipping rates:`);
+          console.log('   ✅ Available shipping rates:');
           data.data.shippingRates.forEach(rate => {
             const freeText = rate.isFreeShipping ? ' (FREE)' : '';
             console.log(`      ${rate.name}: £${rate.cost}${freeText} - ${rate.estimatedDelivery}`);
@@ -85,36 +85,36 @@ const testCheckoutShipping = async () => {
           const expressRate = data.data.shippingRates.find(r => r.code === 'EXPRESS');
           
           if (standardRate) {
-            console.log(`   🔍 Standard Shipping Analysis:`);
-            console.log(`      Expected: £7.99 base, free over £60`);
+            console.log('   🔍 Standard Shipping Analysis:');
+            console.log('      Expected: £7.99 base, free over £60');
             console.log(`      Actual: £${standardRate.cost} ${standardRate.isFreeShipping ? '(free)' : ''}`);
             
             if (scenario.cartValue >= 60 && !standardRate.isFreeShipping) {
-              console.log(`      ❌ ERROR: Should be free but isn't!`);
+              console.log('      ❌ ERROR: Should be free but isn\'t!');
             } else if (scenario.cartValue < 60 && standardRate.cost !== 7.99) {
-              console.log(`      ❌ ERROR: Wrong price! Expected £7.99`);
+              console.log('      ❌ ERROR: Wrong price! Expected £7.99');
             } else {
-              console.log(`      ✅ Correct pricing`);
+              console.log('      ✅ Correct pricing');
             }
           }
           
           if (expressRate) {
-            console.log(`   🔍 Express Shipping Analysis:`);
-            console.log(`      Expected: £15.99 base, free over £120`);
+            console.log('   🔍 Express Shipping Analysis:');
+            console.log('      Expected: £15.99 base, free over £120');
             console.log(`      Actual: £${expressRate.cost} ${expressRate.isFreeShipping ? '(free)' : ''}`);
             
             if (scenario.cartValue >= 120 && !expressRate.isFreeShipping) {
-              console.log(`      ❌ ERROR: Should be free but isn't!`);
+              console.log('      ❌ ERROR: Should be free but isn\'t!');
             } else if (scenario.cartValue < 120 && expressRate.cost !== 15.99) {
-              console.log(`      ❌ ERROR: Wrong price! Expected £15.99`);
+              console.log('      ❌ ERROR: Wrong price! Expected £15.99');
             } else {
-              console.log(`      ✅ Correct pricing`);
+              console.log('      ✅ Correct pricing');
             }
           }
           
         } else {
-          console.log(`   ❌ No shipping rates returned`);
-          console.log(`   Response:`, JSON.stringify(data, null, 2));
+          console.log('   ❌ No shipping rates returned');
+          console.log('   Response:', JSON.stringify(data, null, 2));
         }
       } else {
         const errorText = await response.text();

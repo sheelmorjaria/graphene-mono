@@ -12,8 +12,8 @@ const testAddressAPI = async () => {
     const response = await fetch(`${baseUrl}/api/user/addresses`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
     
     console.log(`Status: ${response.status} - ${response.statusText}`);
@@ -46,8 +46,8 @@ const testAddressAPI = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer invalid_token_here',
-      },
+        'Authorization': 'Bearer invalid_token_here'
+      }
     });
     
     console.log(`Status: ${response.status} - ${response.statusText}`);
@@ -77,7 +77,7 @@ const testAddressAPI = async () => {
   console.log('📊 Testing if endpoint exists with OPTIONS:');
   try {
     const response = await fetch(`${baseUrl}/api/user/addresses`, {
-      method: 'OPTIONS',
+      method: 'OPTIONS'
     });
     
     console.log(`Status: ${response.status} - ${response.statusText}`);

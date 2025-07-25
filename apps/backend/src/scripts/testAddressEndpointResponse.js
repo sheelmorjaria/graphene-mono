@@ -13,7 +13,7 @@ const testAddressEndpointResponse = async () => {
     const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         email: 'test@example.com',
@@ -89,20 +89,20 @@ const testAddressEndpointResponse = async () => {
         
         // Try to identify response type
         if (responseText.trim().startsWith('<')) {
-          console.log(`  ⚠️  Response appears to be HTML`);
+          console.log('  ⚠️  Response appears to be HTML');
         } else if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
-          console.log(`  ✅ Response appears to be JSON`);
+          console.log('  ✅ Response appears to be JSON');
           try {
             const parsed = JSON.parse(responseText);
-            console.log(`  ✅ Valid JSON:`, parsed);
+            console.log('  ✅ Valid JSON:', parsed);
           } catch (e) {
             console.log(`  ❌ Invalid JSON: ${e.message}`);
           }
         } else {
-          console.log(`  ❓ Unknown response format`);
+          console.log('  ❓ Unknown response format');
         }
       } else {
-        console.log(`  ⚠️  Empty response`);
+        console.log('  ⚠️  Empty response');
       }
       
     } catch (error) {

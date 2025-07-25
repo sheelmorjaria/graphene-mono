@@ -8,7 +8,7 @@ const isOldPixelVariant = (productName) => {
     /\bPixel\s+2(\s+XL)?\b/i,             // Pixel 2, Pixel 2 XL
     /\bPixel\s+3(a)?(\s+XL)?\b/i,         // Pixel 3, Pixel 3 XL, Pixel 3a, Pixel 3a XL
     /\bPixel\s+4(a)?(\s+(XL|5G))?\b/i,    // Pixel 4, Pixel 4 XL, Pixel 4a, Pixel 4a XL, Pixel 4a 5G
-    /\bPixel\s+5(a)?(\s+XL)?\b/i,         // Pixel 5, Pixel 5a
+    /\bPixel\s+5(a)?(\s+XL)?\b/i         // Pixel 5, Pixel 5a
   ];
   
   return oldPixelPatterns.some(pattern => pattern.test(productName));
@@ -41,7 +41,7 @@ const testCases = [
   'Google Pixel 9 128GB Peony',
   'Google Pixel 9 Pro 256GB Porcelain',
   'Google Pixel Fold 256GB Obsidian',
-  'Google Pixel Fold 512GB Porcelain',
+  'Google Pixel Fold 512GB Porcelain'
 ];
 
 console.log('🧪 Testing Pixel Filtering Logic\n');

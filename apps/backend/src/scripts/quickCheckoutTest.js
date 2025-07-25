@@ -56,7 +56,7 @@ const quickCheckoutTest = async () => {
           isFreeShipping: calculation.isFreeShipping
         });
       } else {
-        console.log(`      ❌ Not available`);
+        console.log('      ❌ Not available');
       }
     }
 

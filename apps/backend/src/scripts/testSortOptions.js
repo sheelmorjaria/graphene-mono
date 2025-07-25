@@ -52,7 +52,7 @@ const testSortOptions = async () => {
       const data = await response.json();
       
       if (!Array.isArray(data.data)) {
-        console.error(`❌ Invalid response format\n`);
+        console.error('❌ Invalid response format\n');
         continue;
       }
 

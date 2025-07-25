@@ -42,11 +42,11 @@ const createPixelFoldProduct = async (Product, Category, productData) => {
 
   // Extract storage and color from product name
   const storageMatch = name.match(/(\d+GB)/);
-  const storage = storageMatch ? storageMatch[1] : "256GB";
+  const storage = storageMatch ? storageMatch[1] : '256GB';
   
   // Extract color
   const colorMatch = name.match(/\b(Obsidian|Porcelain|Hazel|Bay)\b/i);
-  const color = colorMatch ? colorMatch[1] : "Unknown";
+  const color = colorMatch ? colorMatch[1] : 'Unknown';
 
   // Map CLI condition to our schema
   const conditionMap = {
@@ -76,27 +76,27 @@ const createPixelFoldProduct = async (Product, Category, productData) => {
     condition: mappedCondition,
     stockStatus: 'in_stock',
     stockQuantity: 1,
-    images: ["/images/placeholder.png"],
+    images: ['/images/placeholder.png'],
     attributes: [
       {
-        name: "Storage",
+        name: 'Storage',
         value: storage
       },
       {
-        name: "Color", 
+        name: 'Color', 
         value: color
       },
       {
-        name: "OS",
-        value: "GrapheneOS"
+        name: 'OS',
+        value: 'GrapheneOS'
       },
       {
-        name: "Original Condition",
+        name: 'Original Condition',
         value: `Grade ${condition}`
       },
       {
-        name: "Device Type",
-        value: "Foldable"
+        name: 'Device Type',
+        value: 'Foldable'
       }
     ],
     category: smartphonesCategory._id,
@@ -124,29 +124,29 @@ const addMissingPixelFolds = async () => {
     // Define the missing Pixel Fold products from CEX data
     const missingPixelFolds = [
       {
-        name: "Google Pixel Fold 256GB Obsidian",
+        name: 'Google Pixel Fold 256GB Obsidian',
         price: 385, // C condition
-        condition: "C"
+        condition: 'C'
       },
       {
-        name: "Google Pixel Fold 256GB Porcelain", 
+        name: 'Google Pixel Fold 256GB Porcelain', 
         price: 400, // C condition
-        condition: "C"
+        condition: 'C'
       },
       {
-        name: "Google Pixel Fold 256GB Obsidian",
+        name: 'Google Pixel Fold 256GB Obsidian',
         price: 465, // B condition  
-        condition: "B"
+        condition: 'B'
       },
       {
-        name: "Google Pixel Fold 256GB Porcelain",
+        name: 'Google Pixel Fold 256GB Porcelain',
         price: 470, // B condition
-        condition: "B"
+        condition: 'B'
       },
       {
-        name: "Google Pixel Fold 512GB Obsidian",
+        name: 'Google Pixel Fold 512GB Obsidian',
         price: 530, // B condition
-        condition: "B"
+        condition: 'B'
       }
     ];
 
@@ -161,7 +161,7 @@ const addMissingPixelFolds = async () => {
         const existingProduct = await Product.findOne({ 
           name: new RegExp(productData.name.replace(/\s+/g, '\\s+'), 'i'),
           condition: productData.condition.toLowerCase() === 'a' ? 'excellent' : 
-                    productData.condition.toLowerCase() === 'b' ? 'good' : 'fair'
+            productData.condition.toLowerCase() === 'b' ? 'good' : 'fair'
         });
 
         if (existingProduct) {
@@ -181,12 +181,12 @@ const addMissingPixelFolds = async () => {
       }
     }
 
-    console.log(`\n🎉 Addition completed!`);
+    console.log('\n🎉 Addition completed!');
     console.log(`   ✅ Added: ${addedCount} products`);
     console.log(`   ⏭️  Skipped: ${skippedCount} products`);
 
     // Verify the results
-    console.log(`\n🔍 Verifying Pixel Fold products in database...`);
+    console.log('\n🔍 Verifying Pixel Fold products in database...');
     const allFoldProducts = await Product.find({ 
       name: { $regex: /pixel.*fold/i }
     }).select('name price condition');

@@ -29,7 +29,7 @@ const testFrontendURL = async () => {
       
       if (response.ok) {
         const responseText = await response.text();
-        console.log(`   ✅ Frontend accessible`);
+        console.log('   ✅ Frontend accessible');
         console.log(`   Response Length: ${responseText.length} characters`);
         
         if (responseText.includes('<title>')) {
@@ -40,7 +40,7 @@ const testFrontendURL = async () => {
         }
         
         // Test what happens when we try to access an API endpoint on the frontend domain
-        console.log(`   🧪 Testing API endpoint on frontend domain...`);
+        console.log('   🧪 Testing API endpoint on frontend domain...');
         const apiResponse = await fetch(`${frontendUrl}/api/user/addresses`, {
           method: 'GET',
           headers: {
@@ -54,13 +54,13 @@ const testFrontendURL = async () => {
         
         const apiResponseText = await apiResponse.text();
         if (apiResponseText.trim().startsWith('<')) {
-          console.log(`   📄 API returns HTML (SPA fallback)`);
+          console.log('   📄 API returns HTML (SPA fallback)');
         } else {
           console.log(`   📄 API returns: ${apiResponseText.substring(0, 100)}...`);
         }
         
       } else {
-        console.log(`   ❌ Frontend not accessible at this URL`);
+        console.log('   ❌ Frontend not accessible at this URL');
       }
       
     } catch (error) {
@@ -95,7 +95,7 @@ const testFrontendURL = async () => {
     console.log(`🧪 Scenario: ${scenario.name}`);
     console.log(`   Description: ${scenario.description}`);
     console.log(`   Example URL: ${scenario.url}`);
-    console.log(`   Expected result: Would return HTML (React app) instead of JSON`);
+    console.log('   Expected result: Would return HTML (React app) instead of JSON');
     console.log();
   }
   
