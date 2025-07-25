@@ -1,5 +1,23 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Debug environment variable loading
+console.log('🔍 ShippingService Environment Check:');
+console.log('  VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
+console.log('  Current window origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+console.log('  MODE:', import.meta.env.MODE);
+console.log('  PROD:', import.meta.env.PROD);
+
+// Check if API_BASE_URL is undefined or points to frontend
+if (!API_BASE_URL) {
+  console.error('❌ VITE_API_BASE_URL is undefined! This will cause API calls to fail.');
+  console.error('   Please ensure VITE_API_BASE_URL is set in your deployment environment.');
+} else if (typeof window !== 'undefined' && API_BASE_URL.includes(window.location.hostname)) {
+  console.error('❌ VITE_API_BASE_URL points to frontend domain! This will cause errors.');
+  console.error('   Current API_BASE_URL:', API_BASE_URL);
+  console.error('   Frontend hostname:', window.location.hostname);
+  console.error('   Expected format: https://your-backend-domain.com/api');
+}
+
 // Get authentication token
 const getAuthToken = () => {
   return localStorage.getItem('authToken');
