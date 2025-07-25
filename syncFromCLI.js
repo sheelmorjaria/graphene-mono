@@ -458,8 +458,10 @@ const createProduct = async (productData, adminUser) => {
     name: productData.name,
     slug: slug,
     sku: sku,
-    shortDescription: `${productData.name} with GrapheneOS`,
-    longDescription: `${productData.name} flashed with GrapheneOS for enhanced privacy and security.`,
+    shortDescription: `${productData.name} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
+    longDescription: `${productData.name}  with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative 
+     features hardware identical to Google ${modelInfo.modelName}. Custom ROM - GrapheneOS provides enhanced privacy and security while
+     maintaining full functionality.`,
     price: (productData.price) + 120.00,
     condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
     stockStatus: 'in_stock',

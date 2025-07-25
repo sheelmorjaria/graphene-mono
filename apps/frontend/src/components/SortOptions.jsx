@@ -5,7 +5,8 @@ const SortOptions = ({ currentSort, onSortChange }) => {
     { value: 'newest', label: 'Newest First' },
     { value: 'price-low', label: 'Price: Low to High' },
     { value: 'price-high', label: 'Price: High to Low' },
-    { value: 'name-asc', label: 'Name A-Z' }
+    { value: 'name-asc', label: 'Name A-Z' },
+    { value: 'name-desc', label: 'Name Z-A' }
   ];
 
   const handleSortChange = (event) => {
