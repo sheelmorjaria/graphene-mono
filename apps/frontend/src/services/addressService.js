@@ -7,16 +7,26 @@ const getAuthToken = () => {
 
 // Helper function to handle response parsing with better error handling
 const parseResponse = async (response) => {
+  // Add detailed logging for debugging
+  console.log('🔍 parseResponse Debug Info:');
+  console.log('  URL:', response.url);
+  console.log('  Status:', response.status, response.statusText);
+  console.log('  Content-Type:', response.headers.get('content-type'));
+  console.log('  Content-Length:', response.headers.get('content-length'));
+
   // Check if response is ok before trying to parse JSON
   if (!response.ok) {
     // Try to get error message from response
     let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
     try {
       const errorData = await response.json();
-      errorMessage = errorData.error || errorMessage;
+      errorMessage = errorData.error || errorData.message || errorMessage;
+      console.log('  Error response data:', errorData);
     } catch (jsonError) {
       // If JSON parsing fails, use the status text
-      console.error('Failed to parse error response as JSON:', jsonError);
+      console.error('  Failed to parse error response as JSON:', jsonError);
+      const responseText = await response.text();
+      console.error('  Raw error response:', responseText);
     }
     throw new Error(errorMessage);
   }
@@ -25,12 +35,27 @@ const parseResponse = async (response) => {
   const contentType = response.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
     const responseText = await response.text();
-    console.error('Expected JSON response but got:', contentType);
-    console.error('Response body:', responseText);
-    throw new Error('Server returned invalid response format');
+    console.error('❌ Content Type Mismatch:');
+    console.error('  Expected: application/json');
+    console.error('  Received:', contentType);
+    console.error('  Response URL:', response.url);
+    console.error('  Response Status:', response.status);
+    console.error('  Response Headers:', Object.fromEntries(response.headers.entries()));
+    console.error('  Response Body (first 500 chars):', responseText.substring(0, 500));
+    throw new Error(`Server returned invalid response format. Expected JSON but got: ${contentType || 'no content-type'}`);
   }
 
-  return await response.json();
+  try {
+    const data = await response.json();
+    console.log('  ✅ Successfully parsed JSON response');
+    return data;
+  } catch (jsonError) {
+    const responseText = await response.text();
+    console.error('❌ JSON Parse Error:');
+    console.error('  Error:', jsonError.message);
+    console.error('  Response Body:', responseText);
+    throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
+  }
 };
 
 // Fetch all user addresses
@@ -42,7 +67,13 @@ export const getUserAddresses = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/user/addresses`, {
+    const fullUrl = `${API_BASE_URL}/user/addresses`;
+    console.log('🔍 Making request to:', fullUrl);
+    console.log('🔍 API_BASE_URL:', API_BASE_URL);
+    console.log('🔍 Token present:', !!token);
+    console.log('🔍 Token preview:', token ? `${token.substring(0, 20)}...` : 'none');
+
+    const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
