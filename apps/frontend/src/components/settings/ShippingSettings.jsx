@@ -1,5 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Debug environment variable loading
+console.log('🔍 ShippingSettings Environment Check:');
+console.log('  VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
+console.log('  Current window origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+
+// Check if API_BASE_URL is undefined or points to frontend
+if (!API_BASE_URL) {
+  console.error('❌ VITE_API_BASE_URL is undefined! Admin shipping settings will fail.');
+  console.error('   Please ensure VITE_API_BASE_URL is set in your deployment environment.');
+} else if (typeof window !== 'undefined' && API_BASE_URL.includes(window.location.hostname)) {
+  console.error('❌ VITE_API_BASE_URL points to frontend domain! Admin calls will fail.');
+  console.error('   Current API_BASE_URL:', API_BASE_URL);
+  console.error('   Frontend hostname:', window.location.hostname);
+  console.error('   Expected format: https://your-backend-domain.com/api');
+}
+
 const ShippingSettings = ({ onMessage }) => {
   const [shippingMethods, setShippingMethods] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,24 +70,59 @@ const ShippingSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch('/api/admin/settings/shipping', {
+      const fullUrl = `${API_BASE_URL}/admin/settings/shipping`;
+      console.log('🔍 Loading shipping methods from:', fullUrl);
+      console.log('🔍 Admin token present:', !!token);
+      
+      const response = await fetch(fullUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response content-type:', response.headers.get('content-type'));
+      console.log('🔍 Response URL:', response.url);
+
       if (!response.ok) {
-        throw new Error('Failed to load shipping methods');
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If JSON parsing fails, check if we got HTML instead
+          const responseText = await response.text();
+          if (responseText.trim().startsWith('<')) {
+            errorMessage = 'Server returned HTML instead of JSON - check API URL configuration';
+            console.error('❌ Admin API returning HTML:', responseText.substring(0, 200));
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('❌ Admin API Content Type Mismatch:');
+        console.error('  Expected: application/json');
+        console.error('  Received:', contentType);
+        console.error('  Response URL:', response.url);
+        console.error('  Response Body:', responseText.substring(0, 500));
+        throw new Error(`Server returned invalid response format. Expected JSON but got: ${contentType || 'no content-type'}`);
       }
 
       const data = await response.json();
+      console.log('🔍 Shipping methods loaded:', data.data?.shippingMethods?.length || 0, 'methods');
+      
       if (data.success) {
         setShippingMethods(data.data.shippingMethods || []);
+      } else {
+        throw new Error(data.error || 'Failed to load shipping methods');
       }
     } catch (error) {
       console.error('Load shipping methods error:', error);
-      onMessage('Failed to load shipping methods', 'error');
+      onMessage(`Failed to load shipping methods: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -180,8 +233,9 @@ const ShippingSettings = ({ onMessage }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const url = editingMethod 
-        ? `/api/admin/settings/shipping/${editingMethod._id}`
-        : '/api/admin/settings/shipping';
+        ? `${API_BASE_URL}/admin/settings/shipping/${editingMethod._id}`
+        : `${API_BASE_URL}/admin/settings/shipping`;
+      console.log('🔍 Saving shipping method to:', url);
       const method = editingMethod ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -219,7 +273,10 @@ const ShippingSettings = ({ onMessage }) => {
     try {
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch(`/api/admin/settings/shipping/${methodId}`, {
+      const fullUrl = `${API_BASE_URL}/admin/settings/shipping/${methodId}`;
+      console.log('🔍 Deleting shipping method from:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
