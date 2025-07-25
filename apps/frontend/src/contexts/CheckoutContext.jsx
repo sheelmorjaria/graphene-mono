@@ -16,10 +16,8 @@ export const useCheckout = () => {
 
 export const CheckoutProvider = ({ children }) => {
   const [checkoutState, setCheckoutState] = useState({
-    step: 'shipping', // shipping, payment, review
-    shippingAddress: null,
-    billingAddress: null,
-    useSameAsShipping: true,
+    step: 'payment', // payment, review
+    deliveryAddress: null,
     shippingMethod: null,
     shippingCost: 0,
     paymentMethod: null,
@@ -52,10 +50,10 @@ export const CheckoutProvider = ({ children }) => {
       
       // Auto-select default address if available
       const defaultAddress = response.data.addresses?.find(addr => addr.isDefault);
-      if (defaultAddress && !checkoutState.shippingAddress) {
+      if (defaultAddress && !checkoutState.deliveryAddress) {
         setCheckoutState(prev => ({
           ...prev,
-          shippingAddress: defaultAddress
+          deliveryAddress: defaultAddress
         }));
       }
     } catch (err) {
@@ -63,7 +61,7 @@ export const CheckoutProvider = ({ children }) => {
     } finally {
       setAddressesLoading(false);
     }
-  }, [checkoutState.shippingAddress]);
+  }, [checkoutState.deliveryAddress]);
 
   // Load addresses when component mounts and user is authenticated
   useEffect(() => {
@@ -72,28 +70,10 @@ export const CheckoutProvider = ({ children }) => {
     }
   }, [isAuthenticated, loadAddresses]);
 
-  const setShippingAddress = (address) => {
+  const setDeliveryAddress = (address) => {
     setCheckoutState(prev => ({
       ...prev,
-      shippingAddress: address,
-      // If using same as shipping, update billing address too
-      billingAddress: prev.useSameAsShipping ? address : prev.billingAddress
-    }));
-  };
-
-  const setBillingAddress = (address) => {
-    setCheckoutState(prev => ({
-      ...prev,
-      billingAddress: address
-    }));
-  };
-
-  const setUseSameAsShipping = (useSame) => {
-    setCheckoutState(prev => ({
-      ...prev,
-      useSameAsShipping: useSame,
-      // If switching to use shipping address, copy it to billing
-      billingAddress: useSame ? prev.shippingAddress : prev.billingAddress
+      deliveryAddress: address
     }));
   };
 
@@ -119,7 +99,7 @@ export const CheckoutProvider = ({ children }) => {
   };
 
   const nextStep = () => {
-    const steps = ['shipping', 'payment', 'review'];
+    const steps = ['payment', 'review'];
     const currentIndex = steps.indexOf(checkoutState.step);
     if (currentIndex < steps.length - 1) {
       goToStep(steps[currentIndex + 1]);
@@ -127,7 +107,7 @@ export const CheckoutProvider = ({ children }) => {
   };
 
   const prevStep = () => {
-    const steps = ['shipping', 'payment', 'review'];
+    const steps = ['payment', 'review'];
     const currentIndex = steps.indexOf(checkoutState.step);
     if (currentIndex > 0) {
       goToStep(steps[currentIndex - 1]);
@@ -136,10 +116,8 @@ export const CheckoutProvider = ({ children }) => {
 
   const resetCheckout = () => {
     setCheckoutState({
-      step: 'shipping',
-      shippingAddress: null,
-      billingAddress: null,
-      useSameAsShipping: true,
+      step: 'payment',
+      deliveryAddress: null,
       shippingMethod: null,
       shippingCost: 0,
       paymentMethod: null,
@@ -165,8 +143,8 @@ export const CheckoutProvider = ({ children }) => {
     loadAddresses();
   };
 
-  // Load shipping rates when shipping address or cart changes
-  const loadShippingRates = useCallback(async (address = checkoutState.shippingAddress) => {
+  // Load shipping rates when delivery address or cart changes
+  const loadShippingRates = useCallback(async (address = checkoutState.deliveryAddress) => {
     if (!address || !cart.items || cart.items.length === 0) {
       setShippingRates([]);
       return;
@@ -200,14 +178,14 @@ export const CheckoutProvider = ({ children }) => {
     } finally {
       setShippingRatesLoading(false);
     }
-  }, [checkoutState.shippingAddress, cart.items, checkoutState.shippingMethod]);
+  }, [checkoutState.deliveryAddress, cart.items, checkoutState.shippingMethod]);
 
-  // Effect to load shipping rates when shipping address or cart changes
+  // Effect to load shipping rates when delivery address or cart changes
   useEffect(() => {
-    if (checkoutState.shippingAddress && cart.items.length > 0) {
+    if (checkoutState.deliveryAddress && cart.items.length > 0) {
       loadShippingRates();
     }
-  }, [checkoutState.shippingAddress, cart.items.length, loadShippingRates]);
+  }, [checkoutState.deliveryAddress, cart.items.length, loadShippingRates]);
 
   const refreshShippingRates = () => {
     loadShippingRates();
@@ -225,9 +203,7 @@ export const CheckoutProvider = ({ children }) => {
     shippingRatesError,
     
     // Actions
-    setShippingAddress,
-    setBillingAddress,
-    setUseSameAsShipping,
+    setDeliveryAddress,
     setShippingMethod,
     setPaymentMethod,
     setPaymentState,
@@ -240,11 +216,8 @@ export const CheckoutProvider = ({ children }) => {
     refreshShippingRates,
     
     // Computed values
-    canProceedToPayment: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod,
-    canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod &&
-      !!checkoutState.paymentMethod && paymentState.isReady &&
-      (checkoutState.useSameAsShipping || !!checkoutState.billingAddress),
-    isShippingStep: checkoutState.step === 'shipping',
+    canProceedToReview: !!checkoutState.deliveryAddress && !!checkoutState.shippingMethod &&
+      !!checkoutState.paymentMethod && paymentState.isReady,
     isPaymentStep: checkoutState.step === 'payment',
     isReviewStep: checkoutState.step === 'review',
     
@@ -259,16 +232,13 @@ export const CheckoutProvider = ({ children }) => {
       currency: 'GBP',
       items: cart.items || [],
       shippingMethod: checkoutState.shippingMethod,
-      shippingAddress: checkoutState.shippingAddress,
-      billingAddress: checkoutState.useSameAsShipping ? checkoutState.shippingAddress : checkoutState.billingAddress
+      deliveryAddress: checkoutState.deliveryAddress
     },
     
     // Convenience accessors
-    shippingAddress: checkoutState.shippingAddress,
-    billingAddress: checkoutState.useSameAsShipping ? checkoutState.shippingAddress : checkoutState.billingAddress,
+    deliveryAddress: checkoutState.deliveryAddress,
     shippingMethod: checkoutState.shippingMethod,
     paymentMethod: checkoutState.paymentMethod,
-    useSameAsShipping: checkoutState.useSameAsShipping,
     orderNotes: checkoutState.orderNotes
   };
 

@@ -468,25 +468,56 @@ const OrderDetailsPage = () => {
               </div>
             </div>
 
-            {/* Shipping Address */}
-            <div className="address-card animate-fadeIn">
-              <h2 className="address-title">Shipping Address</h2>
-              <div>
-                {formatAddress(order.shippingAddress).map((line, index) => (
-                  <div key={index} className="address-line">{line}</div>
-                ))}
-              </div>
-            </div>
+            {/* Address Display - Combined or Separate */}
+            {(() => {
+              const addressesAreSame = order?.shippingAddress && order?.billingAddress &&
+                order.shippingAddress.fullName === order.billingAddress.fullName &&
+                order.shippingAddress.addressLine1 === order.billingAddress.addressLine1 &&
+                order.shippingAddress.addressLine2 === order.billingAddress.addressLine2 &&
+                order.shippingAddress.city === order.billingAddress.city &&
+                order.shippingAddress.postalCode === order.billingAddress.postalCode &&
+                order.shippingAddress.country === order.billingAddress.country;
 
-            {/* Billing Address */}
-            <div className="address-card animate-fadeIn">
-              <h2 className="address-title">Billing Address</h2>
-              <div>
-                {formatAddress(order.billingAddress).map((line, index) => (
-                  <div key={index} className="address-line">{line}</div>
-                ))}
-              </div>
-            </div>
+              if (addressesAreSame) {
+                // Show single delivery address
+                return (
+                  <div className="address-card animate-fadeIn">
+                    <h2 className="address-title">Delivery Address</h2>
+                    <p className="text-sm text-gray-500 mb-2">Shipping and billing address</p>
+                    <div>
+                      {formatAddress(order.shippingAddress).map((line, index) => (
+                        <div key={index} className="address-line">{line}</div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              } else {
+                // Show separate addresses
+                return (
+                  <>
+                    {/* Shipping Address */}
+                    <div className="address-card animate-fadeIn">
+                      <h2 className="address-title">Shipping Address</h2>
+                      <div>
+                        {formatAddress(order.shippingAddress).map((line, index) => (
+                          <div key={index} className="address-line">{line}</div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Billing Address */}
+                    <div className="address-card animate-fadeIn">
+                      <h2 className="address-title">Billing Address</h2>
+                      <div>
+                        {formatAddress(order.billingAddress).map((line, index) => (
+                          <div key={index} className="address-line">{line}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                );
+              }
+            })()}
 
             {/* Payment Information */}
             <div className="payment-card animate-fadeIn">
