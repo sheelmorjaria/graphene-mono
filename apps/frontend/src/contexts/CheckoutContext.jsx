@@ -217,7 +217,7 @@ export const CheckoutProvider = ({ children }) => {
     
     // Computed values
     canProceedToReview: !!checkoutState.deliveryAddress && !!checkoutState.shippingMethod &&
-      !!checkoutState.paymentMethod && paymentState.isReady,
+      !!checkoutState.paymentMethod,
     isPaymentStep: checkoutState.step === 'payment',
     isReviewStep: checkoutState.step === 'review',
     
