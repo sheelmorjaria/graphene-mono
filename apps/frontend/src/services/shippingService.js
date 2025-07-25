@@ -1,8 +1,59 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Get authentication token
 const getAuthToken = () => {
   return localStorage.getItem('authToken');
+};
+
+// Helper function to handle response parsing with better error handling
+const parseResponse = async (response) => {
+  // Add detailed logging for debugging
+  console.log('🔍 parseResponse Debug Info (Shipping):');
+  console.log('  URL:', response.url);
+  console.log('  Status:', response.status, response.statusText);
+  console.log('  Content-Type:', response.headers.get('content-type'));
+
+  // Check if response is ok before trying to parse JSON
+  if (!response.ok) {
+    // Try to get error message from response
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorData.message || errorMessage;
+      console.log('  Error response data:', errorData);
+    } catch (jsonError) {
+      // If JSON parsing fails, use the status text
+      console.error('  Failed to parse error response as JSON:', jsonError);
+      const responseText = await response.text();
+      console.error('  Raw error response:', responseText);
+    }
+    throw new Error(errorMessage);
+  }
+
+  // Check content type before parsing JSON
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const responseText = await response.text();
+    console.error('❌ Content Type Mismatch (Shipping):');
+    console.error('  Expected: application/json');
+    console.error('  Received:', contentType);
+    console.error('  Response URL:', response.url);
+    console.error('  Response Status:', response.status);
+    console.error('  Response Body (first 500 chars):', responseText.substring(0, 500));
+    throw new Error(`Server returned invalid response format. Expected JSON but got: ${contentType || 'no content-type'}`);
+  }
+
+  try {
+    const data = await response.json();
+    console.log('  ✅ Successfully parsed JSON response');
+    return data;
+  } catch (jsonError) {
+    const responseText = await response.text();
+    console.error('❌ JSON Parse Error (Shipping):');
+    console.error('  Error:', jsonError.message);
+    console.error('  Response Body:', responseText);
+    throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
+  }
 };
 
 // Calculate shipping rates for cart and address
@@ -17,7 +68,13 @@ export const calculateShippingRates = async (cartItems, shippingAddress) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/shipping/calculate-rates`, {
+    const fullUrl = `${API_BASE_URL}/shipping/calculate-rates`;
+    console.log('🔍 Making shipping rates request to:', fullUrl);
+    console.log('🔍 API_BASE_URL:', API_BASE_URL);
+    console.log('🔍 Cart items:', cartItems.length, 'items');
+    console.log('🔍 Shipping address country:', shippingAddress?.country);
+
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers,
       credentials: 'include',
@@ -27,13 +84,7 @@ export const calculateShippingRates = async (cartItems, shippingAddress) => {
       }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to calculate shipping rates');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Calculate shipping rates error:', error);
     throw error;
@@ -52,19 +103,16 @@ export const getShippingMethods = async () => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/shipping/methods`, {
+    const fullUrl = `${API_BASE_URL}/shipping/methods`;
+    console.log('🔍 Making shipping methods request to:', fullUrl);
+
+    const response = await fetch(fullUrl, {
       method: 'GET',
       headers,
       credentials: 'include',
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to fetch shipping methods');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Get shipping methods error:', error);
     throw error;
@@ -83,7 +131,10 @@ export const validateShippingMethod = async (methodId, cartItems, shippingAddres
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/shipping/validate-method`, {
+    const fullUrl = `${API_BASE_URL}/shipping/validate-method`;
+    console.log('🔍 Making validate shipping method request to:', fullUrl);
+
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers,
       credentials: 'include',
@@ -94,13 +145,7 @@ export const validateShippingMethod = async (methodId, cartItems, shippingAddres
       }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to validate shipping method');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Validate shipping method error:', error);
     throw error;
