@@ -29,7 +29,7 @@ describe('SortOptions', () => {
     const select = screen.getByRole('combobox');
     const options = Array.from(select.querySelectorAll('option'));
     
-    expect(options).toHaveLength(4);
+    expect(options).toHaveLength(5);
     expect(options[0]).toHaveTextContent('Newest First');
     expect(options[0]).toHaveValue('newest');
     expect(options[1]).toHaveTextContent('Price: Low to High');
@@ -38,6 +38,8 @@ describe('SortOptions', () => {
     expect(options[2]).toHaveValue('price-high');
     expect(options[3]).toHaveTextContent('Name A-Z');
     expect(options[3]).toHaveValue('name-asc');
+    expect(options[4]).toHaveTextContent('Name Z-A');
+    expect(options[4]).toHaveValue('name-desc');
   });
 
   it('should call onSortChange when selection changes', async () => {

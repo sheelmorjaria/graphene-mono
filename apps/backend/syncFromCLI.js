@@ -21,10 +21,11 @@ let User, Product;
 // Dynamic import to avoid circular dependency issues
 const loadModels = async () => {
   try {
-    // Check if running from root or backend directory
-    const isInBackend = process.cwd().includes('/backend');
-    const userPath = isInBackend ? './src/models/User.js' : './backend/src/models/User.js';
-    const productPath = isInBackend ? './src/models/Product.js' : './backend/src/models/Product.js';
+    // Use absolute paths relative to this file's location
+    const userPath = './src/models/User.js';
+    const productPath = './src/models/Product.js';
+    
+    console.log(`Loading models from: ${userPath} and ${productPath}`);
     
     const userModule = await import(userPath);
     const productModule = await import(productPath);
@@ -33,6 +34,7 @@ const loadModels = async () => {
     console.log("Models loaded successfully");
   } catch (error) {
     console.error("Failed to load models:", error.message);
+    console.error("Current working directory:", process.cwd());
     throw error;
   }
 };
@@ -515,7 +517,7 @@ const createProductFromCLI = async (cliProductData) => {
     slug: `${slug}-${randomSuffix}`,
     sku: sku,
     shortDescription: `${name} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
-<parameter name="longDescription: `${name} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${pixelModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
+    longDescription: `${name} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${pixelModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
     price: finalPrice,
     condition: mappedCondition,
     stockStatus: 'in_stock',
@@ -709,14 +711,13 @@ export const seedSampleProducts = async () => {
 const isOldPixelVariant = (productName) => {
   if (!productName) return false;
   
-  // Comprehensive patterns to match ALL Pixel 1-5 variants
+  // Specific patterns to match ONLY Pixel 1-5 variants (exclude newer models like Pixel Fold)
   const oldPixelPatterns = [
-    /Pixel\s+[1-5](?!\d)/i,                    // Pixel 1, Pixel 2, etc.
-    /Pixel\s+[1-5]\s+XL/i,               // Pixel 2 XL, Pixel 3 XL, etc.
-    /Pixel\s+[3-5]a/i,                   // Pixel 3a, Pixel 4a, Pixel 5a
-    /Pixel\s+[3-5]a\s+XL/i,              // Pixel 3a XL
-    /Pixel\s+4a\s+5G/i,                  // Pixel 4a 5G
-    /Pixel\s+[1-5]([a-zA-Z\s])/i,        // Any other Pixel 1-5 variants
+    /\bPixel\s+1\b/i,                     // Pixel 1
+    /\bPixel\s+2(\s+XL)?\b/i,             // Pixel 2, Pixel 2 XL
+    /\bPixel\s+3(a)?(\s+XL)?\b/i,         // Pixel 3, Pixel 3 XL, Pixel 3a, Pixel 3a XL
+    /\bPixel\s+4(a)?(\s+(XL|5G))?\b/i,    // Pixel 4, Pixel 4 XL, Pixel 4a, Pixel 4a XL, Pixel 4a 5G
+    /\bPixel\s+5(a)?(\s+XL)?\b/i,         // Pixel 5, Pixel 5a
   ];
   
   return oldPixelPatterns.some(pattern => pattern.test(productName));
@@ -775,7 +776,7 @@ const getConditionLabel = (condition) => {
 };
 
 // Main sync function
-export const syncAndroidPhones = async () => {
+export const syncAndroidPhones = async (options = {}) => {
   let connection = null;
 
   try {
@@ -819,15 +820,32 @@ export const syncAndroidPhones = async () => {
 
     console.log(`Using admin user: ${admin.email}`);
 
-    // Step 1: Remove old Pixel products from database (but keep connection open)
-    console.log("\n🗑️  Removing old Pixel products from database...");
+    // Step 1: Remove products from database (but keep connection open)
+    let totalRemoved = 0;
     
-    // Remove old products without closing connection
-    const oldProductQuery = {
-      name: { $regex: /Pixel\s+[1-5]([a-zA-Z\s]|$)/i }
-    };
-    const removeResult = await Product.deleteMany(oldProductQuery);
-    console.log(`Removed ${removeResult.deletedCount} old Pixel products`);
+    if (options.clearAll) {
+      console.log("\n🗑️  Clearing ALL existing products from database...");
+      const result = await Product.deleteMany({});
+      totalRemoved = result.deletedCount;
+      console.log(`Removed ${totalRemoved} products (full clear)`);
+    } else {
+      console.log("\n🗑️  Removing old Pixel products from database...");
+      
+      // Use precise removal patterns that match isOldPixelVariant function
+      const oldProductQueries = [
+        { name: { $regex: /\bPixel\s+1\b/i } },                     // Pixel 1
+        { name: { $regex: /\bPixel\s+2(\s+XL)?\b/i } },             // Pixel 2, Pixel 2 XL
+        { name: { $regex: /\bPixel\s+3(a)?(\s+XL)?\b/i } },         // Pixel 3, Pixel 3 XL, Pixel 3a, Pixel 3a XL
+        { name: { $regex: /\bPixel\s+4(a)?(\s+(XL|5G))?\b/i } },    // Pixel 4, Pixel 4 XL, Pixel 4a, Pixel 4a XL, Pixel 4a 5G
+        { name: { $regex: /\bPixel\s+5(a)?(\s+XL)?\b/i } }          // Pixel 5, Pixel 5a
+      ];
+      
+      for (const query of oldProductQueries) {
+        const result = await Product.deleteMany(query);
+        totalRemoved += result.deletedCount;
+      }
+      console.log(`Removed ${totalRemoved} old Pixel products (1-5 variants only)`);
+    }
 
     // Step 2: Fetch data from CLI tool
     console.log("\n📡 Fetching Pixel products from CLI...");
@@ -900,12 +918,12 @@ export const syncAndroidPhones = async () => {
     console.log(`\n🎉 Sync completed!`);
     console.log(`   ✅ Created: ${syncedCount} products`);
     console.log(`   ⏭️  Skipped: ${skippedCount} products`);
-    console.log(`   🗑️  Removed: ${removeResult.deletedCount} old products`);
+    console.log(`   🗑️  Removed: ${totalRemoved} old products`);
 
     return { 
       syncedCount, 
       skippedCount, 
-      removedCount: removeResult.deletedCount 
+      removedCount: totalRemoved 
     };
 
   } catch (error) {
@@ -958,6 +976,7 @@ const isMainModule = () => {
 if (isMainModule()) {
   const command = process.argv[2];
   const isDryRun = process.argv.includes('--dry-run');
+  const clearAll = process.argv.includes('--clear');
 
   if (command === "test") {
     testConnection().then(() => process.exit(0));
@@ -1006,7 +1025,7 @@ if (isMainModule()) {
         process.exit(1);
       });
   } else {
-    syncAndroidPhones()
+    syncAndroidPhones({ clearAll })
       .then(() => {
         console.log("\n✅ Sync completed successfully!");
         process.exit(0);

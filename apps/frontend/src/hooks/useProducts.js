@@ -16,6 +16,49 @@ const useProducts = () => {
   const latestRequestRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
 
+  // Convert frontend sort values to backend API parameters
+  const convertSortParams = (params) => {
+    const convertedParams = { ...params };
+    
+    if (params.sort) {
+      switch (params.sort) {
+        case 'price-low':
+          convertedParams.sortBy = 'price';
+          convertedParams.sortOrder = 'asc';
+          break;
+        case 'price-high':
+          convertedParams.sortBy = 'price';
+          convertedParams.sortOrder = 'desc';
+          break;
+        case 'name-asc':
+          convertedParams.sortBy = 'name';
+          convertedParams.sortOrder = 'asc';
+          break;
+        case 'name-desc':
+          convertedParams.sortBy = 'name';
+          convertedParams.sortOrder = 'desc';
+          break;
+        case 'newest':
+          convertedParams.sortBy = 'createdAt';
+          convertedParams.sortOrder = 'desc';
+          break;
+        case 'oldest':
+          convertedParams.sortBy = 'createdAt';
+          convertedParams.sortOrder = 'asc';
+          break;
+        default:
+          // Default to newest if unrecognized sort value
+          convertedParams.sortBy = 'createdAt';
+          convertedParams.sortOrder = 'desc';
+      }
+      
+      // Remove the original 'sort' parameter
+      delete convertedParams.sort;
+    }
+    
+    return convertedParams;
+  };
+
   const fetchProducts = useCallback(async (params = {}) => {
     // Clear any pending debounced call
     if (debounceTimeoutRef.current) {
@@ -39,7 +82,9 @@ const useProducts = () => {
         setError(null);
 
         try {
-          const response = await productsService.getProducts(params);
+          // Convert frontend sort parameters to backend format
+          const convertedParams = convertSortParams(params);
+          const response = await productsService.getProducts(convertedParams);
 
           // Only update state if this is still the latest request
           if (latestRequestRef.current === requestId) {

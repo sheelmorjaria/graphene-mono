@@ -34,9 +34,38 @@ const SearchResultsPage = () => {
 
       // Add sorting options
       if (sortBy !== 'relevance') {
-        const [sortField, sortOrder] = sortBy.split('-');
-        options.sortBy = sortField;
-        options.sortOrder = sortOrder;
+        switch (sortBy) {
+          case 'price-low':
+            options.sortBy = 'price';
+            options.sortOrder = 'asc';
+            break;
+          case 'price-high':
+            options.sortBy = 'price';
+            options.sortOrder = 'desc';
+            break;
+          case 'name-asc':
+            options.sortBy = 'name';
+            options.sortOrder = 'asc';
+            break;
+          case 'name-desc':
+            options.sortBy = 'name';
+            options.sortOrder = 'desc';
+            break;
+          case 'newest':
+            options.sortBy = 'createdAt';
+            options.sortOrder = 'desc';
+            break;
+          case 'oldest':
+            options.sortBy = 'createdAt';
+            options.sortOrder = 'asc';
+            break;
+          default:
+            // For any other format, try the old split method as fallback
+            const [sortField, sortOrder] = sortBy.split('-');
+            options.sortBy = sortField;
+            options.sortOrder = sortOrder === 'low' ? 'asc' : 
+                              sortOrder === 'high' ? 'desc' : sortOrder;
+        }
       }
 
       // Add filter options
