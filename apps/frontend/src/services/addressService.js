@@ -5,6 +5,34 @@ const getAuthToken = () => {
   return localStorage.getItem('authToken');
 };
 
+// Helper function to handle response parsing with better error handling
+const parseResponse = async (response) => {
+  // Check if response is ok before trying to parse JSON
+  if (!response.ok) {
+    // Try to get error message from response
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (jsonError) {
+      // If JSON parsing fails, use the status text
+      console.error('Failed to parse error response as JSON:', jsonError);
+    }
+    throw new Error(errorMessage);
+  }
+
+  // Check content type before parsing JSON
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const responseText = await response.text();
+    console.error('Expected JSON response but got:', contentType);
+    console.error('Response body:', responseText);
+    throw new Error('Server returned invalid response format');
+  }
+
+  return await response.json();
+};
+
 // Fetch all user addresses
 export const getUserAddresses = async () => {
   try {
@@ -22,13 +50,7 @@ export const getUserAddresses = async () => {
       },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to fetch addresses');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Get addresses error:', error);
     throw error;
@@ -53,13 +75,7 @@ export const addUserAddress = async (addressData) => {
       body: JSON.stringify(addressData),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to add address');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Add address error:', error);
     throw error;
@@ -84,13 +100,7 @@ export const updateUserAddress = async (addressId, addressData) => {
       body: JSON.stringify(addressData),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to update address');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Update address error:', error);
     throw error;
@@ -114,13 +124,7 @@ export const deleteUserAddress = async (addressId) => {
       },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete address');
-    }
-
-    return data;
+    return await parseResponse(response);
   } catch (error) {
     console.error('Delete address error:', error);
     throw error;
