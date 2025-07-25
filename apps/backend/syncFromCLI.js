@@ -494,6 +494,10 @@ const createProductFromCLI = async (cliProductData) => {
   const colorMatch = name.match(/(\w+),?\s*Unlocked/i);
   const color = colorMatch ? colorMatch[1] : "Unknown";
 
+  // Extract Pixel model for description
+  const pixelModelMatch = name.match(/Google Pixel\s+(\d+a?\s*(?:Pro|XL|Fold)?)/i);
+  const pixelModel = pixelModelMatch ? pixelModelMatch[1].trim() : "Unknown";
+
   // Map CLI condition to our schema
   const conditionMap = {
     'A': 'excellent',
@@ -510,8 +514,8 @@ const createProductFromCLI = async (cliProductData) => {
     name: name,
     slug: `${slug}-${randomSuffix}`,
     sku: sku,
-    shortDescription: `${name} with GrapheneOS pre-installed`,
-    longDescription: `${name} flashed with GrapheneOS for enhanced privacy and security. Sourced from CEX UK.`,
+    shortDescription: `${name} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
+<parameter name="longDescription: `${name} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${pixelModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
     price: finalPrice,
     condition: mappedCondition,
     stockStatus: 'in_stock',
@@ -529,10 +533,6 @@ const createProductFromCLI = async (cliProductData) => {
       {
         name: "OS",
         value: "GrapheneOS"
-      },
-      {
-        name: "Source",
-        value: "CEX UK"
       },
       {
         name: "Original Condition",
@@ -879,7 +879,7 @@ export const syncAndroidPhones = async () => {
           if (existingProduct.price !== newFinalPrice) {
             existingProduct.price = newFinalPrice;
             await existingProduct.save();
-            console.log(`   💰 Updated price to £${newFinalPrice} (CEX: £${productData.price} + £120 service)`);
+            console.log(`   💰 Updated price to £${newFinalPrice} (Base: £${productData.price} + £120 service)`);
           }
           
           skippedCount++;
@@ -888,7 +888,7 @@ export const syncAndroidPhones = async () => {
 
         // Create new product using the CLI data
         const newProduct = await createProductFromCLI(productData);
-        console.log(`✅ Created: ${newProduct.name} - £${newProduct.price} (CEX: £${productData.price} + £120 service)`);
+        console.log(`✅ Created: ${newProduct.name} - £${newProduct.price} (Base: £${productData.price} + £120 service)`);
         syncedCount++;
 
       } catch (productError) {
