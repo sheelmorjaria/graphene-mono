@@ -57,6 +57,13 @@ const AuthenticatedUserMenu = () => {
     setIsDropdownOpen(false);
   };
 
+  console.log('🔍 Frontend Debug:', {
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    API_FALLBACK: import.meta.env.VITE_API_BASE_URL || '/api',
+    MODE: import.meta.env.MODE
+  });
+
+
   return (
     <div className="relative">
       <button
