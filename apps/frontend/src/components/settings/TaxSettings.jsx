@@ -1,5 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Debug environment variable loading
+console.log('🔍 TaxSettings Environment Check:');
+console.log('  VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
+console.log('  Current window origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+
+// Check if API_BASE_URL is undefined or points to frontend
+if (!API_BASE_URL) {
+  console.error('❌ VITE_API_BASE_URL is undefined! Admin tax settings will fail.');
+  console.error('   Please ensure VITE_API_BASE_URL is set in your deployment environment.');
+} else if (typeof window !== 'undefined' && API_BASE_URL.includes(window.location.hostname)) {
+  console.error('❌ VITE_API_BASE_URL points to frontend domain! Admin calls will fail.');
+  console.error('   Current API_BASE_URL:', API_BASE_URL);
+  console.error('   Frontend hostname:', window.location.hostname);
+  console.error('   Expected format: https://your-backend-domain.com/api');
+}
+
 const TaxSettings = ({ onMessage }) => {
   const [taxRates, setTaxRates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +72,11 @@ const TaxSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch('/api/admin/settings/taxes', {
+      const fullUrl = `${API_BASE_URL}/admin/settings/taxes`;
+      console.log('🔍 Loading tax rates from:', fullUrl);
+      console.log('🔍 Admin token present:', !!token);
+      
+      const response = await fetch(fullUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -176,8 +198,9 @@ const TaxSettings = ({ onMessage }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const url = editingTax 
-        ? `/api/admin/settings/taxes/${editingTax._id}`
-        : '/api/admin/settings/taxes';
+        ? `${API_BASE_URL}/admin/settings/taxes/${editingTax._id}`
+        : `${API_BASE_URL}/admin/settings/taxes`;
+      console.log('🔍 Saving tax rate to:', url);
       const method = editingTax ? 'PUT' : 'POST';
       
       const submitData = {
@@ -220,7 +243,10 @@ const TaxSettings = ({ onMessage }) => {
     try {
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch(`/api/admin/settings/taxes/${taxRateId}`, {
+      const fullUrl = `${API_BASE_URL}/admin/settings/taxes/${taxRateId}`;
+      console.log('🔍 Deleting tax rate from:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

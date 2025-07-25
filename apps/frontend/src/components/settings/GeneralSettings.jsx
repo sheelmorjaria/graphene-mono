@@ -1,5 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Debug environment variable loading
+console.log('🔍 GeneralSettings Environment Check:');
+console.log('  VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
+console.log('  Current window origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+
+// Check if API_BASE_URL is undefined or points to frontend
+if (!API_BASE_URL) {
+  console.error('❌ VITE_API_BASE_URL is undefined! Admin general settings will fail.');
+  console.error('   Please ensure VITE_API_BASE_URL is set in your deployment environment.');
+} else if (typeof window !== 'undefined' && API_BASE_URL.includes(window.location.hostname)) {
+  console.error('❌ VITE_API_BASE_URL points to frontend domain! Admin calls will fail.');
+  console.error('   Current API_BASE_URL:', API_BASE_URL);
+  console.error('   Frontend hostname:', window.location.hostname);
+  console.error('   Expected format: https://your-backend-domain.com/api');
+}
+
 const GeneralSettings = ({ onMessage }) => {
   const [settings, setSettings] = useState({
     storeName: '',
@@ -66,30 +84,59 @@ const GeneralSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/admin/settings/general`, {
+      const fullUrl = `${API_BASE_URL}/admin/settings/general`;
+      console.log('🔍 Loading general settings from:', fullUrl);
+      console.log('🔍 Admin token present:', !!token);
+      
+      const response = await fetch(fullUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
-      const text = await response.text();
-      console.log('Response text:', text);
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response content-type:', response.headers.get('content-type'));
+      console.log('🔍 Response URL:', response.url);
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If JSON parsing fails, check if we got HTML instead
+          const responseText = await response.text();
+          if (responseText.trim().startsWith('<')) {
+            errorMessage = 'Server returned HTML instead of JSON - check API URL configuration';
+            console.error('❌️ Admin API returning HTML:', responseText.substring(0, 200));
+          }
+        }
+        throw new Error(errorMessage);
       }
 
-      const data = JSON.parse(text);
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('❌️ Admin API Content Type Mismatch:');
+        console.error('  Expected: application/json');
+        console.error('  Received:', contentType);
+        console.error('  Response URL:', response.url);
+        console.error('  Response Body:', responseText.substring(0, 500));
+        throw new Error(`Server returned invalid response format. Expected JSON but got: ${contentType || 'no content-type'}`);
+      }
+
+      const data = await response.json();
+      console.log('🔍 General settings loaded successfully');
+      
       if (data.success) {
         setSettings(data.data);
+      } else {
+        throw new Error(data.error || 'Failed to load general settings');
       }
     } catch (error) {
       console.error('Load settings error:', error);
-      onMessage('Failed to load general settings', 'error');
+      onMessage(`Failed to load general settings: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -148,7 +195,10 @@ const GeneralSettings = ({ onMessage }) => {
       setSaving(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/admin/settings/general`, {
+      const fullUrl = `${API_BASE_URL}/admin/settings/general`;
+      console.log('🔍 Saving general settings to:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

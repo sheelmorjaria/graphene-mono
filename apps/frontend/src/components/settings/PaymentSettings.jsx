@@ -1,5 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Debug environment variable loading
+console.log('🔍 PaymentSettings Environment Check:');
+console.log('  VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
+console.log('  Current window origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+
+// Check if API_BASE_URL is undefined or points to frontend
+if (!API_BASE_URL) {
+  console.error('❌ VITE_API_BASE_URL is undefined! Admin payment settings will fail.');
+  console.error('   Please ensure VITE_API_BASE_URL is set in your deployment environment.');
+} else if (typeof window !== 'undefined' && API_BASE_URL.includes(window.location.hostname)) {
+  console.error('❌ VITE_API_BASE_URL points to frontend domain! Admin calls will fail.');
+  console.error('   Current API_BASE_URL:', API_BASE_URL);
+  console.error('   Frontend hostname:', window.location.hostname);
+  console.error('   Expected format: https://your-backend-domain.com/api');
+}
+
 const PaymentSettings = ({ onMessage }) => {
   const [paymentGateways, setPaymentGateways] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +113,11 @@ const PaymentSettings = ({ onMessage }) => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch('/api/admin/settings/payments', {
+      const fullUrl = `${API_BASE_URL}/admin/settings/payments`;
+      console.log('🔍 Loading payment gateways from:', fullUrl);
+      console.log('🔍 Admin token present:', !!token);
+      
+      const response = await fetch(fullUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -122,7 +144,10 @@ const PaymentSettings = ({ onMessage }) => {
     try {
       const token = localStorage.getItem('adminToken');
       
-      const response = await fetch(`/api/admin/settings/payments/${gatewayId}/toggle`, {
+      const fullUrl = `${API_BASE_URL}/admin/settings/payments/${gatewayId}/toggle`;
+      console.log('🔍 Toggling payment gateway at:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -299,8 +324,9 @@ const PaymentSettings = ({ onMessage }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const url = editingGateway 
-        ? `/api/admin/settings/payments/${editingGateway._id}`
-        : '/api/admin/settings/payments';
+        ? `${API_BASE_URL}/admin/settings/payments/${editingGateway._id}`
+        : `${API_BASE_URL}/admin/settings/payments`;
+      console.log('🔍 Saving payment gateway to:', url);
       const method = editingGateway ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
