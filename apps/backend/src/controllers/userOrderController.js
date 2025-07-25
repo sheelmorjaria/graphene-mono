@@ -476,11 +476,16 @@ export const placeOrder = async (req, res) => {
 
     res.status(201).json({
       success: true,
+      message: 'Order placed successfully',
       data: {
-        orderId: newOrder._id,
-        orderNumber: newOrder.orderNumber,
-        orderTotal: orderTotal,
-        estimatedDelivery: shippingMethod.estimatedDelivery
+        order: {
+          _id: newOrder._id,
+          orderNumber: newOrder.orderNumber,
+          totalAmount: orderTotal,
+          paymentStatus: paymentStatus,
+          status: orderStatus,
+          estimatedDelivery: shippingMethod.estimatedDelivery
+        }
       }
     });
 
