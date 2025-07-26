@@ -890,29 +890,36 @@ export const handleBlockonomicsWebhook = async (req, res) => {
         order.status = 'processing'; // Move order to processing
         logPaymentEvent('bitcoin_payment_confirmed', { orderId: order._id, confirmations: actualConfirmations });
         
-        // Create payment record when payment is confirmed
+        // Create payment record when payment is confirmed (if it doesn't exist)
         const Payment = (await import('../models/Payment.js')).default;
-        await Payment.create({
-          order: order._id,
-          orderId: order._id.toString(),
-          paymentId: `BTC-${txid.substring(0, 8)}`,
-          user: order.userId,
-          userId: order.userId.toString(),
-          customerEmail: order.customerEmail,
-          amount: order.totalAmount,
-          currency: 'GBP',
-          method: 'bitcoin',
-          paymentMethod: 'bitcoin',
-          orderNumber: order.orderNumber,
-          status: 'completed',
-          transactionId: txid,
-          gatewayResponse: {
-            address: addr,
-            amountReceived,
-            confirmations,
-            transactionHash: txid
-          }
-        });
+        const paymentId = `BTC-${txid.substring(0, 8)}`;
+        
+        // Check if payment record already exists
+        const existingPayment = await Payment.findOne({ paymentId });
+        
+        if (!existingPayment) {
+          await Payment.create({
+            order: order._id,
+            orderId: order._id.toString(),
+            paymentId,
+            user: order.userId,
+            userId: order.userId.toString(),
+            customerEmail: order.customerEmail,
+            amount: order.totalAmount,
+            currency: 'GBP',
+            method: 'bitcoin',
+            paymentMethod: 'bitcoin',
+            orderNumber: order.orderNumber,
+            status: 'completed',
+            transactionId: txid,
+            gatewayResponse: {
+              address: addr,
+              amountReceived,
+              confirmations,
+              transactionHash: txid
+            }
+          });
+        }
       }
       // Payment received but not yet confirmed
       else {
