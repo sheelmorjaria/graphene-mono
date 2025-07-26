@@ -36,6 +36,8 @@ router.post('/bitcoin/initialize', optionalAuth, initializeBitcoinPayment);
 router.get('/bitcoin/status/:orderId', optionalAuth, getBitcoinPaymentStatus);
 
 // Blockonomics webhook (public endpoint for Bitcoin payment notifications)
+// Blockonomics sends GET requests with query parameters
+router.get('/bitcoin/webhook', handleBlockonomicsWebhook);
 router.post('/bitcoin/webhook', handleBlockonomicsWebhook);
 
 // Monero payment routes
