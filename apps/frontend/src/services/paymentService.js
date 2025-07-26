@@ -124,10 +124,17 @@ export const capturePayPalPayment = async ({ paypalOrderId, payerId }) => {
 // Initialize Bitcoin payment
 export const initializeBitcoinPayment = async (orderId) => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
     const response = await fetch(`${API_BASE_URL}/payment/bitcoin/initialize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       credentials: 'include',
       body: JSON.stringify({ orderId })
