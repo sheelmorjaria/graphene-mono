@@ -955,22 +955,20 @@ export const handleBlockonomicsWebhook = async (req, res) => {
 
   } catch (error) {
     logError(error, { context: 'blockonomics_webhook_processing' });
-    console.error('Webhook error details:', error.message, error.stack);
+    console.error('=== WEBHOOK ERROR DEBUG START ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error name:', error.name);
+    console.error('=== WEBHOOK ERROR DEBUG END ===');
     
-    // For debugging in development/testing - return detailed error
-    if (process.env.NODE_ENV !== 'production') {
-      res.status(500).json({
-        success: false,
-        error: 'Webhook processing failed',
-        details: error.message,
-        stack: error.stack
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: 'Webhook processing failed'
-      });
-    }
+    // Always return detailed error for debugging (temporary)
+    res.status(500).json({
+      success: false,
+      error: 'Webhook processing failed',
+      details: error.message,
+      errorType: error.name,
+      timestamp: new Date().toISOString()
+    });
   }
 };
 
