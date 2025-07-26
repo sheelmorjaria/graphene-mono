@@ -579,6 +579,14 @@ export const initializeBitcoinPayment = async (req, res) => {
       });
     }
 
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Order ID format'
+      });
+    }
+
     // Find the order
     const order = await Order.findById(orderId);
     if (!order) {
@@ -647,6 +655,14 @@ export const getBitcoinPaymentStatus = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'Order ID is required'
+      });
+    }
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Order ID format'
       });
     }
 
