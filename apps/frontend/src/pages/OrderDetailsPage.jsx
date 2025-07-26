@@ -15,6 +15,24 @@ const OrderDetailsPage = () => {
   const [returnRequest, setReturnRequest] = useState(null);
   const [loadingReturn, setLoadingReturn] = useState(false);
 
+  const loadReturnRequest = useCallback(async () => {
+    try {
+      setLoadingReturn(true);
+      
+      // Get all return requests and find the one for this order
+      const response = await getUserReturnRequests();
+      if (response.data && response.data.length > 0) {
+        // Get the most recent return request for this order
+        const returnReq = response.data.find(req => req.orderId === orderId);
+        setReturnRequest(returnReq);
+      }
+    } catch (err) {
+      console.error('Failed to load return request:', err);
+    } finally {
+      setLoadingReturn(false);
+    }
+  }, [orderId]);
+
   const loadOrderDetails = useCallback(async () => {
     try {
       setLoading(true);
@@ -34,24 +52,6 @@ const OrderDetailsPage = () => {
       setLoading(false);
     }
   }, [orderId, loadReturnRequest]);
-
-  const loadReturnRequest = useCallback(async () => {
-    try {
-      setLoadingReturn(true);
-      
-      // Get all return requests and find the one for this order
-      const response = await getUserReturnRequests();
-      if (response.data && response.data.length > 0) {
-        // Get the most recent return request for this order
-        const returnReq = response.data.find(req => req.orderId === orderId);
-        setReturnRequest(returnReq);
-      }
-    } catch (err) {
-      console.error('Failed to load return request:', err);
-    } finally {
-      setLoadingReturn(false);
-    }
-  }, [orderId]);
 
   useEffect(() => {
     loadOrderDetails();
