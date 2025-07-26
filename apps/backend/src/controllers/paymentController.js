@@ -807,12 +807,18 @@ export const handleBlockonomicsWebhook = async (req, res) => {
     
     // Extract webhook parameters
     const { addr, value, txid, confirmations, status } = webhookData;
+    
+    // Blockonomics uses 'status' parameter to indicate confirmation level
+    // status=0: Unconfirmed (0 confirmations)
+    // status=1: Partially Confirmed (1 confirmation)
+    // status=2: Confirmed (2+ confirmations)
+    const actualConfirmations = confirmations || (status ? parseInt(status) : 0);
 
     logPaymentEvent('blockonomics_webhook_received', {
       address: addr,
       value,
       txid,
-      confirmations: confirmations || 0,
+      confirmations: actualConfirmations,
       status: status || 0,
       method: isGet ? 'GET' : 'POST'
     });
@@ -865,7 +871,7 @@ export const handleBlockonomicsWebhook = async (req, res) => {
 
       // Update payment details
       order.paymentDetails.bitcoinAmountReceived = amountReceived;
-      order.paymentDetails.bitcoinConfirmations = confirmations || 0;
+      order.paymentDetails.bitcoinConfirmations = actualConfirmations;
       order.paymentDetails.bitcoinTransactionHash = txid;
 
       // Check if payment is expired
@@ -879,10 +885,10 @@ export const handleBlockonomicsWebhook = async (req, res) => {
         logPaymentEvent('bitcoin_payment_underpaid', { orderId: order._id, received: amountReceived, expected: expectedAmount });
       }
       // Check if payment is confirmed (2+ confirmations)
-      else if (bitcoinService.isPaymentConfirmed(confirmations || 0)) {
+      else if (bitcoinService.isPaymentConfirmed(actualConfirmations)) {
         order.paymentStatus = 'completed';
         order.status = 'processing'; // Move order to processing
-        logPaymentEvent('bitcoin_payment_confirmed', { orderId: order._id, confirmations });
+        logPaymentEvent('bitcoin_payment_confirmed', { orderId: order._id, confirmations: actualConfirmations });
         
         // Create payment record when payment is confirmed
         const Payment = (await import('../models/Payment.js')).default;
@@ -911,7 +917,7 @@ export const handleBlockonomicsWebhook = async (req, res) => {
       // Payment received but not yet confirmed
       else {
         order.paymentStatus = 'awaiting_confirmation';
-        logPaymentEvent('bitcoin_payment_pending', { orderId: order._id, confirmations, required: 2 });
+        logPaymentEvent('bitcoin_payment_pending', { orderId: order._id, confirmations: actualConfirmations, required: 2 });
       }
 
       // Save order
@@ -923,7 +929,7 @@ export const handleBlockonomicsWebhook = async (req, res) => {
 
       logPaymentEvent('bitcoin_payment_updated', { orderId: order._id,
         status: order.paymentStatus,
-        confirmations: confirmations,
+        confirmations: actualConfirmations,
         amountReceived
       });
 
