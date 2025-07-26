@@ -7,8 +7,8 @@ class BitcoinService {
     this.blockonomicsBaseUrl = 'https://www.blockonomics.co/api';
     this.blockonomicsApiKey = process.env.BLOCKONOMICS_API_KEY;
     
-    // Exchange rate validity window (15 minutes)
-    this.exchangeRateValidityMs = 15 * 60 * 1000;
+    // Exchange rate validity window (60 minutes to reduce API calls)
+    this.exchangeRateValidityMs = 60 * 60 * 1000;
     
     // Payment expiry window (24 hours)
     this.paymentExpiryMs = 24 * 60 * 60 * 1000;
@@ -18,6 +18,13 @@ class BitcoinService {
       rate: null,
       timestamp: null
     };
+    
+    // Fallback exchange rate (updated manually if needed)
+    this.fallbackRate = 87000; // £87,000 per BTC as of July 2025
+    
+    // Track API call attempts for rate limiting
+    this.lastApiCallTime = 0;
+    this.apiCallMinInterval = 10000; // Minimum 10 seconds between API calls
   }
 
   /**
@@ -37,6 +44,32 @@ class BitcoinService {
           cached: true
         };
       }
+
+      // Rate limiting check - prevent too frequent API calls
+      if (now - this.lastApiCallTime < this.apiCallMinInterval) {
+        logger.warn('CoinGecko API call throttled - too frequent requests');
+        
+        // Use cached rate if available, even if expired
+        if (this.rateCache.rate) {
+          return {
+            rate: this.rateCache.rate,
+            timestamp: new Date(this.rateCache.timestamp),
+            cached: true,
+            throttled: true
+          };
+        }
+        
+        // Otherwise use fallback rate
+        return {
+          rate: this.fallbackRate,
+          timestamp: new Date(),
+          cached: false,
+          fallback: true
+        };
+      }
+
+      // Update last API call time
+      this.lastApiCallTime = now;
 
       // Fetch fresh rate from CoinGecko
       const response = await fetch(
@@ -79,6 +112,11 @@ class BitcoinService {
     } catch (error) {
       logError(error, { context: 'btc_exchange_rate_fetch' });
       
+      // Handle rate limiting specifically
+      if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+        logger.warn('CoinGecko API rate limit exceeded - using fallback');
+      }
+      
       // If we have a cached rate, use it even if expired as fallback
       if (this.rateCache.rate && this.rateCache.timestamp) {
         logger.warn('Using expired cached Bitcoin rate due to API failure');
@@ -90,7 +128,15 @@ class BitcoinService {
         };
       }
       
-      throw new Error('Bitcoin exchange rate service temporarily unavailable');
+      // Use fallback rate as last resort
+      logger.warn(`Using fallback Bitcoin rate: £${this.fallbackRate} per BTC`);
+      return {
+        rate: this.fallbackRate,
+        timestamp: new Date(),
+        cached: false,
+        fallback: true,
+        error: error.message
+      };
     }
   }
 
