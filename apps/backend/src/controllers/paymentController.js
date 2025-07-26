@@ -773,39 +773,48 @@ export const getBitcoinPaymentStatus = async (req, res) => {
 // Blockonomics webhook handler
 export const handleBlockonomicsWebhook = async (req, res) => {
   try {
-    // Verify webhook signature if configured
-    const signature = req.headers['x-signature'] || req.headers['x-blockonomics-signature'];
+    // Blockonomics can send webhooks as GET with query params or POST with body
+    // Extract data from query params (GET) or body (POST)
+    const isGet = req.method === 'GET';
+    const webhookData = isGet ? req.query : req.body;
     
-    // Get Bitcoin gateway configuration
-    const PaymentGateway = (await import('../models/PaymentGateway.js')).default;
-    const bitcoinGateway = await PaymentGateway.findOne({ provider: 'bitcoin' });
-    
-    
-    if (bitcoinGateway?.config?.bitcoinWebhookSecret && signature) {
-      // Verify signature using HMAC
-      const crypto = await import('crypto');
-      const payload = JSON.stringify(req.body);
-      const expectedSignature = crypto.default
-        .createHmac('sha256', bitcoinGateway.config.bitcoinWebhookSecret)
-        .update(payload)
-        .digest('hex');
-        
-      if (signature !== expectedSignature) {
-        logger.warn('Invalid Bitcoin webhook signature');
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid webhook signature'
-        });
+    // Verify webhook signature if configured (only for POST requests)
+    if (!isGet) {
+      const signature = req.headers['x-signature'] || req.headers['x-blockonomics-signature'];
+      
+      // Get Bitcoin gateway configuration
+      const PaymentGateway = (await import('../models/PaymentGateway.js')).default;
+      const bitcoinGateway = await PaymentGateway.findOne({ provider: 'bitcoin' });
+      
+      if (bitcoinGateway?.config?.bitcoinWebhookSecret && signature) {
+        // Verify signature using HMAC
+        const crypto = await import('crypto');
+        const payload = JSON.stringify(req.body);
+        const expectedSignature = crypto.default
+          .createHmac('sha256', bitcoinGateway.config.bitcoinWebhookSecret)
+          .update(payload)
+          .digest('hex');
+          
+        if (signature !== expectedSignature) {
+          logger.warn('Invalid Bitcoin webhook signature');
+          return res.status(401).json({
+            success: false,
+            message: 'Invalid webhook signature'
+          });
+        }
       }
     }
     
-    const { addr, value, txid, confirmations } = req.body;
+    // Extract webhook parameters
+    const { addr, value, txid, confirmations, status } = webhookData;
 
     logPaymentEvent('blockonomics_webhook_received', {
       address: addr,
       value,
       txid,
-      confirmations
+      confirmations: confirmations || 0,
+      status: status || 0,
+      method: isGet ? 'GET' : 'POST'
     });
 
     if (!addr || !txid) {
