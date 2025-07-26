@@ -16,7 +16,7 @@ const OrderConfirmationPage = () => {
       try {
         setLoading(true);
         const response = await getUserOrderDetails(orderId);
-        setOrder(response.order);
+        setOrder(response.data.order);
       } catch (err) {
         console.error('Error fetching order details:', err);
         setError(err.message);
