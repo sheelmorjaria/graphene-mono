@@ -2,22 +2,18 @@
 > @graphene-security/backend@1.0.0 start
 > node server.js
 
-2025-07-26 01:45:40:4540 [32minfo[39m: [32mEmail service disabled - using mock mode[39m
+2025-07-26 01:55:52:5552 [32minfo[39m: [32mEmail service disabled - using mock mode[39m
 ⚠️  Sentry not initialized - missing SENTRY_DSN or not in production
 ⚠️  New Relic not initialized - missing license key or not in production
-2025-07-26 01:45:41:4541 [32minfo[39m: [32mMongoDB connected successfully with connection pooling[39m
-2025-07-26 01:45:41:4541 [32minfo[39m: [32mServer running on port 5000[39m
-2025-07-26 01:45:41:4541 [32minfo[39m: [32mEnvironment: development[39m
+2025-07-26 01:55:53:5553 [32minfo[39m: [32mMongoDB connected successfully with connection pooling[39m
+2025-07-26 01:55:53:5553 [32minfo[39m: [32mServer running on port 5000[39m
+2025-07-26 01:55:53:5553 [32minfo[39m: [32mEnvironment: development[39m
 ValidationError: The Express 'trust proxy' setting is true, which allows anyone to trivially bypass IP-based rate limiting. See https://express-rate-limit.github.io/ERR_ERL_PERMISSIVE_TRUST_PROXY/ for more information.
     at Object.trustProxy (file:///home/sheel/Downloads/graphene-mono/apps/backend/node_modules/express-rate-limit/dist/index.mjs:141:13)
     at wrappedValidations.<computed> [as trustProxy] (file:///home/sheel/Downloads/graphene-mono/apps/backend/node_modules/express-rate-limit/dist/index.mjs:370:22)
     at Object.keyGenerator (file:///home/sheel/Downloads/graphene-mono/apps/backend/node_modules/express-rate-limit/dist/index.mjs:642:20)
     at file:///home/sheel/Downloads/graphene-mono/apps/backend/node_modules/express-rate-limit/dist/index.mjs:696:32
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
     at async file:///home/sheel/Downloads/graphene-mono/apps/backend/node_modules/express-rate-limit/dist/index.mjs:676:5 {
   code: 'ERR_ERL_PERMISSIVE_TRUST_PROXY',
   help: 'https://express-rate-limit.github.io/ERR_ERL_PERMISSIVE_TRUST_PROXY/'
 }
-⚠️  Blockonomics API key not configured - using mock Bitcoin address for development
-🧪 Generated mock Bitcoin address for testing: bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
-2025-07-26 01:47:36:4736 [32minfo[39m: [32mPayment event: bitcoin_payment_initialized[39m
