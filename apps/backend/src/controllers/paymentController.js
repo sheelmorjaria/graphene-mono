@@ -600,7 +600,22 @@ export const initializeBitcoinPayment = async (req, res) => {
     if (order.paymentStatus !== 'pending') {
       return res.status(400).json({
         success: false,
-        error: 'Order is not in pending payment state'
+        error: `Order is not in pending payment state (current: ${order.paymentStatus})`
+      });
+    }
+
+    // Additional validation to prevent 500 errors
+    if (!order.totalAmount || order.totalAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order amount'
+      });
+    }
+
+    if (order.paymentMethod && order.paymentMethod.type !== 'bitcoin') {
+      return res.status(400).json({
+        success: false,
+        error: `Order payment method is not Bitcoin (current: ${order.paymentMethod.type})`
       });
     }
 
@@ -638,10 +653,39 @@ export const initializeBitcoinPayment = async (req, res) => {
     });
 
   } catch (error) {
-    logError(error, { context: 'bitcoin_payment_initialization', cartId: req.body.cartId });
-    res.status(500).json({
+    logError(error, { 
+      context: 'bitcoin_payment_initialization', 
+      orderId: req.body.orderId,
+      errorName: error.name,
+      errorMessage: error.message,
+      stack: error.stack
+    });
+    
+    // Provide more specific error messages based on error type
+    let errorMessage = 'Failed to initialize Bitcoin payment';
+    let statusCode = 500;
+    
+    if (error.name === 'ValidationError') {
+      errorMessage = 'Invalid order data';
+      statusCode = 400;
+    } else if (error.message?.includes('CoinGecko') || error.message?.includes('exchange rate')) {
+      errorMessage = 'Currency exchange service temporarily unavailable';
+      statusCode = 503;
+    } else if (error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT')) {
+      errorMessage = 'Request timeout - please try again';
+      statusCode = 503;
+    } else if (error.message?.includes('ENOTFOUND') || error.message?.includes('network')) {
+      errorMessage = 'Network connectivity issue - please try again';
+      statusCode = 503;
+    }
+    
+    res.status(statusCode).json({
       success: false,
-      error: 'Failed to initialize Bitcoin payment'
+      error: errorMessage,
+      ...(process.env.NODE_ENV !== 'production' && { 
+        details: error.message,
+        type: error.name 
+      })
     });
   }
 };
