@@ -8,7 +8,7 @@ import SEOWrapper from '../components/SEO/SEOWrapper';
 
 const ProductListPage = () => {
   const { products, pagination, loading, error, fetchProducts } = useProducts();
-  const [currentSort, setCurrentSort] = useState('newest');
+  const [currentSort, setCurrentSort] = useState('price-low');
   const [filters, setFilters] = useState({
     condition: '',
     priceRange: { min: '', max: '' }
