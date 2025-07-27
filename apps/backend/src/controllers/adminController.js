@@ -1400,8 +1400,8 @@ export const getProducts = async (req, res) => {
       minPrice = '',
       maxPrice = '',
       stockStatus = '',
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortBy = 'price',
+      sortOrder = 'asc'
     } = req.query;
 
     // Build query
