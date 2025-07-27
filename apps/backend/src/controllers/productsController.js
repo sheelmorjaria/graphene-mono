@@ -7,8 +7,8 @@ export const getProducts = async (req, res) => {
     const {
       page = 1,
       limit = 12,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = 'price',
+      sortOrder = 'asc',
       category,
       minPrice,
       maxPrice,
@@ -67,7 +67,7 @@ export const getProducts = async (req, res) => {
     if (validSortFields.includes(sortBy)) {
       sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
     } else {
-      sortObj.createdAt = -1; // Default sort
+      sortObj.price = 1; // Default sort by price ascending
     }
 
     // Execute query
