@@ -3,6 +3,7 @@ import { Client, Environment } from '@paypal/paypal-server-sdk';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import PaymentGateway from '../models/PaymentGateway.js';
 import bitcoinService from '../services/bitcoinService.js';
 import moneroService from '../services/moneroService.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
@@ -65,34 +66,21 @@ const findOrCreateCart = async (req) => {
 // Get available payment methods
 export const getPaymentMethods = async (req, res) => {
   try {
-    // Check PayPal availability dynamically
-    const paypalClient = getPayPalClient();
-    const paymentMethods = [
-      {
-        id: 'paypal',
-        type: 'paypal',
-        name: 'PayPal',
-        description: 'Pay with your PayPal account',
-        icon: 'paypal',
-        enabled: !!paypalClient
-      },
-      {
-        id: 'bitcoin',
-        type: 'bitcoin',
-        name: 'Bitcoin',
-        description: 'Pay with Bitcoin - private and secure',
-        icon: 'bitcoin',
-        enabled: true
-      },
-      {
-        id: 'monero',
-        type: 'monero',
-        name: 'Monero',
-        description: 'Pay with Monero - private and untraceable',
-        icon: 'monero',
-        enabled: true
-      }
-    ];
+    // Fetch enabled payment gateways from database
+    const gateways = await PaymentGateway.find({ 
+      isEnabled: true,
+      isDeleted: { $ne: true }
+    }).sort({ displayOrder: 1, name: 1 });
+
+    // Transform gateways to frontend format
+    const paymentMethods = gateways.map(gateway => ({
+      id: gateway.provider.toLowerCase(),
+      type: gateway.provider.toLowerCase(),
+      name: gateway.name,
+      description: gateway.customerMessage || gateway.description,
+      icon: gateway.provider.toLowerCase(),
+      enabled: gateway.isEnabled && gateway.isProperlyConfigured()
+    }));
 
     res.json({
       success: true,
@@ -102,7 +90,7 @@ export const getPaymentMethods = async (req, res) => {
     });
 
   } catch (error) {
-    logError(error, { context: 'paypal_payment_methods' });
+    logError(error, { context: 'payment_methods' });
     res.status(500).json({
       success: false,
       error: 'Server error occurred while fetching payment methods'
