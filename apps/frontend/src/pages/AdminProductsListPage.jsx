@@ -26,8 +26,8 @@ function AdminProductsListPage() {
   });
   
   // Sort state
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortBy, setSortBy] = useState('price');
+  const [sortOrder, setSortOrder] = useState('asc');
   
   // Temporary search value (for debouncing)
   const [searchInput, setSearchInput] = useState('');

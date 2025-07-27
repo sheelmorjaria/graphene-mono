@@ -2,9 +2,9 @@ import PropTypes from 'prop-types';
 
 const SortOptions = ({ currentSort, onSortChange }) => {
   const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
     { value: 'price-low', label: 'Price: Low to High' },
     { value: 'price-high', label: 'Price: High to Low' },
+    { value: 'newest', label: 'Newest First' },
     { value: 'name-asc', label: 'Name A-Z' },
     { value: 'name-desc', label: 'Name Z-A' }
   ];
