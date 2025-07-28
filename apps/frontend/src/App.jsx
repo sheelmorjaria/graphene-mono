@@ -40,6 +40,7 @@ import ContactUsPage from './pages/ContactUsPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import SEOWrapper from './components/SEO/SEOWrapper';
+import Footer from './components/Footer';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { CheckoutProvider } from './contexts/CheckoutContext';
@@ -521,6 +522,8 @@ export const AppRoutes = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
+      
+      <Footer />
     </div>
   );
 };

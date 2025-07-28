@@ -17,6 +17,7 @@ import supportRoutes from './routes/support.js';
 import healthRoutes from './routes/health.js';
 import internalOrderRoutes from './routes/internalOrderRoutes.js';
 import sitemapRoutes from './routes/sitemap.js';
+import webhookRoutes from './routes/webhook.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -94,6 +95,7 @@ app.use('/api/shipping', shippingRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/internal/orders', internalOrderRoutes);
+app.use('/api/webhook', webhookRoutes);
 app.use('/api', sitemapRoutes);
 
 // Root endpoint

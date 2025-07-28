@@ -1,6 +1,10 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { fromEnv } from '@aws-sdk/credential-providers';
+import validator from 'validator';
 import logger, { logError } from '../utils/logger.js';
+import EmailPreference from '../models/EmailPreference.js';
+import User from '../models/User.js';
+import EmailMetrics from '../models/EmailMetrics.js';
 
 class EmailService {
   constructor() {
@@ -54,9 +58,106 @@ class EmailService {
     }
   }
 
-  // Send email with template
-  async sendEmail({ to, subject, htmlContent, textContent, from = null }) {
+  // Validate email address
+  validateEmail(email) {
+    if (!email || typeof email !== 'string') {
+      return { isValid: false, reason: 'Email is required' };
+    }
+    
+    const trimmedEmail = email.trim();
+    
+    if (!validator.isEmail(trimmedEmail)) {
+      return { isValid: false, reason: 'Invalid email format' };
+    }
+    
+    // Additional validation rules
+    const domain = trimmedEmail.split('@')[1];
+    const blockedDomains = ['tempmail.com', 'throwaway.email', 'guerrillamail.com'];
+    
+    if (blockedDomains.includes(domain)) {
+      return { isValid: false, reason: 'Temporary email addresses not allowed' };
+    }
+    
+    return { isValid: true, email: validator.normalizeEmail(trimmedEmail) };
+  }
+
+  // Check if email can be sent based on preferences and status
+  async canSendEmail(to, emailType = 'transactional.general') {
     try {
+      // Find user and preferences
+      const user = await User.findOne({ email: to });
+      if (!user) {
+        // Email not in our system - can send
+        return { canSend: true };
+      }
+      
+      const emailPref = await EmailPreference.findOne({ userId: user._id });
+      if (!emailPref) {
+        // No preferences set - can send
+        return { canSend: true };
+      }
+      
+      // Check if email is bounced or complained
+      if (emailPref.emailStatus.isBounced || emailPref.emailStatus.isComplained) {
+        return { 
+          canSend: false, 
+          reason: emailPref.emailStatus.isBounced ? 'Email address has bounced' : 'Email address has complained' 
+        };
+      }
+      
+      // Check preferences for email type
+      const canSend = emailPref.canSendEmail(emailType);
+      
+      return {
+        canSend,
+        reason: canSend ? null : 'User has unsubscribed from this email type',
+        unsubscribeToken: emailPref.unsubscribeToken
+      };
+      
+    } catch (error) {
+      logError(error, { context: 'can_send_email_check', to, emailType });
+      // On error, default to sending
+      return { canSend: true };
+    }
+  }
+
+  // Send email with template
+  async sendEmail({ to, subject, htmlContent, textContent, from = null, emailType = 'transactional.general', skipPreferenceCheck = false }) {
+    let metrics = null;
+    
+    try {
+      // Validate email address
+      const validation = this.validateEmail(to);
+      if (!validation.isValid) {
+        logger.warn('Invalid email address:', { to, reason: validation.reason });
+        return { success: false, error: validation.reason };
+      }
+      
+      const normalizedEmail = validation.email;
+      
+      // Check email preferences unless skipped (for critical transactional emails)
+      if (!skipPreferenceCheck) {
+        const canSendCheck = await this.canSendEmail(normalizedEmail, emailType);
+        if (!canSendCheck.canSend) {
+          logger.info('Email blocked by preferences:', { 
+            to: normalizedEmail, 
+            emailType, 
+            reason: canSendCheck.reason 
+          });
+          return { 
+            success: false, 
+            error: canSendCheck.reason,
+            blocked: true 
+          };
+        }
+        
+        // Add unsubscribe token to context for template
+        if (canSendCheck.unsubscribeToken && !emailType.startsWith('transactional.')) {
+          // Will be used to add unsubscribe link
+          htmlContent = this.addUnsubscribeLink(htmlContent, canSendCheck.unsubscribeToken, emailType);
+        }
+      }
+      
       // If service is disabled, log and return mock response
       if (!this.isEnabled || !this.sesClient) {
         logger.debug('Mock Email (No SES Client):', {
@@ -112,24 +213,45 @@ class EmailService {
         };
       }
 
+      // Create metrics entry before sending
+      const metrics = await EmailMetrics.create({
+        messageId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        emailType: emailType,
+        recipient: normalizedEmail,
+        subject: subject,
+        status: 'pending'
+      });
+
       // Send email via SES
       const command = new SendEmailCommand(params);
       const result = await this.sesClient.send(command);
       
+      // Update metrics with success
+      metrics.metadata.sesMessageId = result.MessageId;
+      metrics.status = 'sent';
+      await metrics.recordEvent('sent', { sesMessageId: result.MessageId });
+      
       logger.info('Email sent successfully via AWS SES:', {
         to,
         subject,
-        messageId: result.MessageId
+        messageId: result.MessageId,
+        metricsId: metrics._id
       });
 
       return {
         success: true,
         messageId: result.MessageId,
+        metricsId: metrics._id,
         message: 'Email sent successfully'
       };
 
     } catch (error) {
       logError(error, { context: 'email_send', to, subject });
+      
+      // Record failure in metrics if metrics was created
+      if (metrics) {
+        await metrics.recordEvent('failed', { error: error.message });
+      }
       
       // Provide helpful error messages for common SES issues
       let errorMessage = error.message;
@@ -148,8 +270,41 @@ class EmailService {
     }
   }
 
+  // Add unsubscribe link to HTML content
+  addUnsubscribeLink(htmlContent, unsubscribeToken, emailType) {
+    const baseUrl = process.env.FRONTEND_URL || 'https://your-domain.com';
+    const category = emailType.split('.')[0];
+    
+    const unsubscribeHtml = `
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #666;">
+        <p>
+          You received this email because you're subscribed to ${category} emails from Graphene Security.
+        </p>
+        <p>
+          <a href="${baseUrl}/api/webhook/unsubscribe/${unsubscribeToken}?category=${category}" 
+             style="color: #667eea; text-decoration: underline;">
+            Unsubscribe from ${category} emails
+          </a>
+          |
+          <a href="${baseUrl}/api/webhook/unsubscribe/${unsubscribeToken}?all=true" 
+             style="color: #667eea; text-decoration: underline;">
+            Unsubscribe from all emails
+          </a>
+          |
+          <a href="${baseUrl}/profile/email-preferences" 
+             style="color: #667eea; text-decoration: underline;">
+            Manage email preferences
+          </a>
+        </p>
+      </div>
+    `;
+    
+    // Insert before closing body tag
+    return htmlContent.replace('</body>', `${unsubscribeHtml}</body>`);
+  }
+
   // Generate HTML email template base
-  generateEmailTemplate(title, content, customerName = 'Valued Customer') {
+  generateEmailTemplate(title, content, customerName = 'Valued Customer', includeUnsubscribe = false, unsubscribeToken = null) {
     return `
     <!DOCTYPE html>
     <html lang="en">
