@@ -143,6 +143,27 @@ const ProductListPage = () => {
         <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-4 animate-wave">GrapheneOS Smartphones</h1>
         <p className="text-lg text-muted-foreground mb-4">Privacy-focused smartphones with GrapheneOS pre-installed</p>
+        
+        {/* Key Benefits */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8 mb-8 text-left max-w-6xl mx-auto">
+          <div className="bg-card rounded-lg p-6 shadow-md border border-border">
+            <h3 className="font-semibold text-forest-800 mb-2">Plug-and-play convenience</h3>
+            <p className="text-sm text-muted-foreground">No technical setup required - we handle the complex flashing process</p>
+          </div>
+          <div className="bg-card rounded-lg p-6 shadow-md border border-border">
+            <h3 className="font-semibold text-forest-800 mb-2">Enhanced privacy</h3>
+            <p className="text-sm text-muted-foreground">Escape Google's surveillance ecosystem while keeping Android compatibility</p>
+          </div>
+          <div className="bg-card rounded-lg p-6 shadow-md border border-border">
+            <h3 className="font-semibold text-forest-800 mb-2">Security benefits</h3>
+            <p className="text-sm text-muted-foreground">Hardened security features, verified boot, network permission controls</p>
+          </div>
+          <div className="bg-card rounded-lg p-6 shadow-md border border-border">
+            <h3 className="font-semibold text-forest-800 mb-2">App compatibility</h3>
+            <p className="text-sm text-muted-foreground">Run your favorite apps without sacrificing privacy</p>
+          </div>
+        </div>
+        
         <p className="text-sm text-muted-foreground">{productCountText}</p>
       </div>
 

@@ -1,6 +1,15 @@
 import express from 'express';
 import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
 import { 
+  getDeliveryStats, 
+  getEngagementStats,
+  getEmailTypeStats,
+  getRecentEmails,
+  getFailedEmails,
+  getEmailDetails,
+  getDashboardSummary
+} from '../controllers/emailMetricsController.js';
+import { 
   getGeneralSettings, 
   updateGeneralSettings, 
   getShippingSettings, 
@@ -93,5 +102,14 @@ router.get('/settings/payments', getPaymentSettings);
 router.post('/settings/payments', createPaymentGateway);
 router.put('/settings/payments/:gatewayId', updatePaymentGateway);
 router.put('/settings/payments/:gatewayId/toggle', togglePaymentGateway);
+
+// Email metrics routes
+router.get('/email-metrics/delivery-stats', getDeliveryStats);
+router.get('/email-metrics/engagement-stats', getEngagementStats);
+router.get('/email-metrics/type-stats', getEmailTypeStats);
+router.get('/email-metrics/recent', getRecentEmails);
+router.get('/email-metrics/failed', getFailedEmails);
+router.get('/email-metrics/dashboard', getDashboardSummary);
+router.get('/email-metrics/:id', getEmailDetails);
 
 export default router;
