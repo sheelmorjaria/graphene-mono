@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">GrapheneOS Store</h3>
+            <h3 className="text-lg font-semibold mb-4">graphene-security.com</h3>
             <p className="text-sm text-forest-200 mb-4">
               Your trusted source for privacy-focused smartphones with GrapheneOS pre-installed.
             </p>
@@ -90,9 +90,6 @@ const Footer = () => {
               <li className="text-sm text-forest-200">
                 <span className="font-medium">Bitcoin</span> - Private transactions
               </li>
-              <li className="text-sm text-forest-200">
-                <span className="font-medium">Monero</span> - Maximum privacy
-              </li>
             </ul>
             <div className="mt-4">
               <p className="text-sm text-forest-200">
@@ -107,7 +104,7 @@ const Footer = () => {
         <div className="mt-8 pt-8 border-t border-forest-700">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-forest-200 mb-4 md:mb-0">
-              &copy; {currentYear} GrapheneOS Store. All rights reserved.
+              &copy; {currentYear} graphene-security.com. All rights reserved.
             </p>
             <div className="flex space-x-6">
               <a 

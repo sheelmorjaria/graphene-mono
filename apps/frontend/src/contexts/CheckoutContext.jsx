@@ -18,6 +18,9 @@ export const CheckoutProvider = ({ children }) => {
   const [checkoutState, setCheckoutState] = useState({
     step: 'payment', // payment, review
     deliveryAddress: null,
+    shippingAddress: null,
+    billingAddress: null,
+    useSameAsShipping: true,
     shippingMethod: null,
     shippingCost: 0,
     paymentMethod: null,
@@ -50,10 +53,11 @@ export const CheckoutProvider = ({ children }) => {
       
       // Auto-select default address if available
       const defaultAddress = response.data.addresses?.find(addr => addr.isDefault);
-      if (defaultAddress && !checkoutState.deliveryAddress) {
+      if (defaultAddress && !checkoutState.shippingAddress) {
         setCheckoutState(prev => ({
           ...prev,
-          deliveryAddress: defaultAddress
+          deliveryAddress: defaultAddress, // Keep for backward compatibility
+          shippingAddress: defaultAddress
         }));
       }
     } catch (err) {
@@ -73,7 +77,31 @@ export const CheckoutProvider = ({ children }) => {
   const setDeliveryAddress = (address) => {
     setCheckoutState(prev => ({
       ...prev,
-      deliveryAddress: address
+      deliveryAddress: address,
+      shippingAddress: address // Keep both for backward compatibility
+    }));
+  };
+
+  const setShippingAddress = (address) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      deliveryAddress: address, // Keep for backward compatibility
+      shippingAddress: address
+    }));
+  };
+
+  const setBillingAddress = (address) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      billingAddress: address
+    }));
+  };
+
+  const setUseSameAsShipping = (useSame) => {
+    setCheckoutState(prev => ({
+      ...prev,
+      useSameAsShipping: useSame,
+      billingAddress: useSame ? prev.shippingAddress : prev.billingAddress
     }));
   };
 
@@ -118,6 +146,9 @@ export const CheckoutProvider = ({ children }) => {
     setCheckoutState({
       step: 'payment',
       deliveryAddress: null,
+      shippingAddress: null,
+      billingAddress: null,
+      useSameAsShipping: true,
       shippingMethod: null,
       shippingCost: 0,
       paymentMethod: null,
@@ -143,8 +174,8 @@ export const CheckoutProvider = ({ children }) => {
     loadAddresses();
   };
 
-  // Load shipping rates when delivery address or cart changes
-  const loadShippingRates = useCallback(async (address = checkoutState.deliveryAddress) => {
+  // Load shipping rates when shipping address or cart changes
+  const loadShippingRates = useCallback(async (address = checkoutState.shippingAddress) => {
     if (!address || !cart.items || cart.items.length === 0) {
       setShippingRates([]);
       return;
@@ -178,14 +209,14 @@ export const CheckoutProvider = ({ children }) => {
     } finally {
       setShippingRatesLoading(false);
     }
-  }, [checkoutState.deliveryAddress, cart.items, checkoutState.shippingMethod]);
+  }, [checkoutState.shippingAddress, cart.items, checkoutState.shippingMethod]);
 
-  // Effect to load shipping rates when delivery address or cart changes
+  // Effect to load shipping rates when shipping address or cart changes
   useEffect(() => {
-    if (checkoutState.deliveryAddress && cart.items.length > 0) {
+    if (checkoutState.shippingAddress && cart.items.length > 0) {
       loadShippingRates();
     }
-  }, [checkoutState.deliveryAddress, cart.items.length, loadShippingRates]);
+  }, [checkoutState.shippingAddress, cart.items.length, loadShippingRates]);
 
   const refreshShippingRates = () => {
     loadShippingRates();
@@ -204,6 +235,9 @@ export const CheckoutProvider = ({ children }) => {
     
     // Actions
     setDeliveryAddress,
+    setShippingAddress,
+    setBillingAddress,
+    setUseSameAsShipping,
     setShippingMethod,
     setPaymentMethod,
     setPaymentState,
@@ -216,8 +250,8 @@ export const CheckoutProvider = ({ children }) => {
     refreshShippingRates,
     
     // Computed values
-    canProceedToReview: !!checkoutState.deliveryAddress && !!checkoutState.shippingMethod &&
-      !!checkoutState.paymentMethod,
+    canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod &&
+      !!checkoutState.paymentMethod && (checkoutState.useSameAsShipping || !!checkoutState.billingAddress),
     isPaymentStep: checkoutState.step === 'payment',
     isReviewStep: checkoutState.step === 'review',
     
@@ -232,11 +266,16 @@ export const CheckoutProvider = ({ children }) => {
       currency: 'GBP',
       items: cart.items || [],
       shippingMethod: checkoutState.shippingMethod,
-      deliveryAddress: checkoutState.deliveryAddress
+      shippingAddress: checkoutState.shippingAddress,
+      billingAddress: checkoutState.useSameAsShipping ? checkoutState.shippingAddress : checkoutState.billingAddress,
+      deliveryAddress: checkoutState.shippingAddress // Keep for backward compatibility
     },
     
-    // Convenience accessors
-    deliveryAddress: checkoutState.deliveryAddress,
+    // Convenience accessors  
+    deliveryAddress: checkoutState.shippingAddress, // Keep for backward compatibility
+    shippingAddress: checkoutState.shippingAddress,
+    billingAddress: checkoutState.useSameAsShipping ? checkoutState.shippingAddress : checkoutState.billingAddress,
+    useSameAsShipping: checkoutState.useSameAsShipping,
     shippingMethod: checkoutState.shippingMethod,
     paymentMethod: checkoutState.paymentMethod,
     orderNotes: checkoutState.orderNotes
