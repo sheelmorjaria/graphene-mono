@@ -5,12 +5,14 @@ import { useCheckout } from '../contexts/CheckoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../services/cartService';
 import DeliveryAddressSection from '../components/checkout/DeliveryAddressSection';
+import ShippingAddressSection from '../components/checkout/ShippingAddressSection';
+import BillingAddressSection from '../components/checkout/BillingAddressSection';
 import PaymentMethodSection from '../components/checkout/PaymentMethodSection';
 import { placeOrder, validateOrderData } from '../services/orderService';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
-    { id: 'payment', label: 'Payment & Delivery', icon: '💳' },
+    { id: 'payment', label: 'Shipping & Payment', icon: '💳' },
     { id: 'review', label: 'Review', icon: '✓' }
   ];
 
@@ -147,8 +149,11 @@ const PaymentSection = () => {
       data-testid="checkout-form"
       className="space-y-6"
     >
-      {/* Delivery Address and Shipping Method */}
-      <DeliveryAddressSection />
+      {/* Shipping Address Section */}
+      <ShippingAddressSection />
+      
+      {/* Billing Address Section */}
+      <BillingAddressSection />
       
       {/* Payment Method Section */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -182,6 +187,8 @@ const ReviewSection = () => {
   const { 
     checkoutState, 
     paymentState: _paymentState, 
+    shippingAddress, 
+    billingAddress,
     deliveryAddress, 
     shippingMethod, 
     paymentMethod, 
@@ -201,7 +208,7 @@ const ReviewSection = () => {
       setOrderError(null);
 
       // Validate required data
-      if (!deliveryAddress || !shippingMethod || !paymentMethod) {
+      if (!shippingAddress || !billingAddress || !shippingMethod || !paymentMethod) {
         throw new Error('Please complete all required fields before proceeding.');
       }
 
@@ -215,8 +222,8 @@ const ReviewSection = () => {
       if (paymentMethod.type === 'bitcoin') {
         // For Bitcoin, create the order first, then redirect to Bitcoin payment page
         const orderData = {
-          shippingAddress: deliveryAddress,
-          billingAddress: deliveryAddress,
+          shippingAddress: shippingAddress,
+          billingAddress: billingAddress,
           shippingMethod,
           paymentMethod,
           items: cart.items
@@ -245,8 +252,8 @@ const ReviewSection = () => {
       if (paymentMethod.type === 'monero') {
         // For Monero, create the order first, then redirect to Monero payment page
         const orderData = {
-          shippingAddress: deliveryAddress,
-          billingAddress: deliveryAddress,
+          shippingAddress: shippingAddress,
+          billingAddress: billingAddress,
           shippingMethod,
           paymentMethod,
           items: cart.items
@@ -290,25 +297,53 @@ const ReviewSection = () => {
     >
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Review Your Order</h2>
       
-      {/* Delivery Address Review */}
-      {deliveryAddress && (
+      {/* Shipping Address Review */}
+      {shippingAddress && (
         <div className="mb-6">
-          <h3 className="text-lg font-medium text-gray-800 mb-3">Delivery Address</h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Shipping Address</h3>
           <div className="bg-gray-50 rounded-lg p-4">
-            <div className="font-medium">{deliveryAddress.fullName}</div>
+            <div className="font-medium">{shippingAddress.fullName}</div>
             <div className="text-sm text-gray-600 mt-1">
-              <div>{deliveryAddress.addressLine1}</div>
-              {deliveryAddress.addressLine2 && (
-                <div>{deliveryAddress.addressLine2}</div>
+              <div>{shippingAddress.addressLine1}</div>
+              {shippingAddress.addressLine2 && (
+                <div>{shippingAddress.addressLine2}</div>
               )}
               <div>
-                {deliveryAddress.city}, {deliveryAddress.stateProvince} {deliveryAddress.postalCode}
+                {shippingAddress.city}, {shippingAddress.stateProvince} {shippingAddress.postalCode}
               </div>
-              <div>{deliveryAddress.country}</div>
-              {deliveryAddress.phoneNumber && (
-                <div className="mt-1">Phone: {deliveryAddress.phoneNumber}</div>
+              <div>{shippingAddress.country}</div>
+              {shippingAddress.phoneNumber && (
+                <div className="mt-1">Phone: {shippingAddress.phoneNumber}</div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Billing Address Review */}
+      {billingAddress && (
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-gray-800 mb-3">Billing Address</h3>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="font-medium">{billingAddress.fullName}</div>
+            <div className="text-sm text-gray-600 mt-1">
+              <div>{billingAddress.addressLine1}</div>
+              {billingAddress.addressLine2 && (
+                <div>{billingAddress.addressLine2}</div>
+              )}
+              <div>
+                {billingAddress.city}, {billingAddress.stateProvince} {billingAddress.postalCode}
+              </div>
+              <div>{billingAddress.country}</div>
+              {billingAddress.phoneNumber && (
+                <div className="mt-1">Phone: {billingAddress.phoneNumber}</div>
+              )}
+            </div>
+            {checkoutState.useSameAsShipping && (
+              <div className="text-xs text-blue-600 mt-2">
+                ✓ Same as shipping address
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -403,7 +438,7 @@ const ReviewSection = () => {
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          Back to Payment & Delivery
+          Back to Shipping & Payment
         </button>
         <button
           onClick={handlePlaceOrder}

@@ -1,5 +1,44 @@
 import React, { useState, useEffect } from 'react';
 
+// List of countries for the dropdown
+const COUNTRIES = [
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'SE', name: 'Sweden' },
+  { code: 'NO', name: 'Norway' },
+  { code: 'DK', name: 'Denmark' },
+  { code: 'FI', name: 'Finland' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'CZ', name: 'Czech Republic' },
+  { code: 'HU', name: 'Hungary' },
+  { code: 'RO', name: 'Romania' },
+  { code: 'BG', name: 'Bulgaria' },
+  { code: 'GR', name: 'Greece' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'HK', name: 'Hong Kong' },
+  { code: 'IN', name: 'India' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'AR', name: 'Argentina' },
+  { code: 'IL', name: 'Israel' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'ZA', name: 'South Africa' }
+].sort((a, b) => a.name.localeCompare(b.name));
+
 const AddressForm = ({ 
   onSubmit, 
   onCancel, 
@@ -14,7 +53,7 @@ const AddressForm = ({
     city: '',
     stateProvince: '',
     postalCode: '',
-    country: '',
+    country: 'United Kingdom', // Default to UK
     phoneNumber: ''
   });
 
@@ -29,9 +68,15 @@ const AddressForm = ({
         city: initialData.city || '',
         stateProvince: initialData.stateProvince || '',
         postalCode: initialData.postalCode || '',
-        country: initialData.country || '',
+        country: initialData.country || 'United Kingdom', // Default to UK
         phoneNumber: initialData.phoneNumber || ''
       });
+    } else {
+      // Set default country for new addresses
+      setFormData(prev => ({
+        ...prev,
+        country: 'United Kingdom'
+      }));
     }
   }, [initialData]);
 
@@ -249,10 +294,9 @@ const AddressForm = ({
 
       <div>
         <label htmlFor={getFieldId('country')} className="form-label">Country *</label>
-        <input
+        <select
           id={getFieldId('country')}
           name="country"
-          type="text"
           value={formData.country}
           onChange={handleInputChange}
           onBlur={handleBlur}
@@ -260,7 +304,14 @@ const AddressForm = ({
           required
           aria-describedby={errors.country ? getErrorId('country') : undefined}
           className={`form-input ${errors.country ? 'form-input-error' : ''}`}
-        />
+        >
+          <option value="">Select a country</option>
+          {COUNTRIES.map(country => (
+            <option key={country.code} value={country.name}>
+              {country.name}
+            </option>
+          ))}
+        </select>
         {errors.country && (
           <div id={getErrorId('country')} className="form-error" role="alert">
             {errors.country}
