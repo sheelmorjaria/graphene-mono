@@ -534,8 +534,8 @@ const OrderDetailsPage = () => {
                 <div>
                   <span className="text-sm font-medium text-gray-700">Payment Status:</span>
                   <div className="mt-1">
-                    <span className={`payment-status ${order.paymentStatus}`}>
-                      {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                    <span className={`payment-status ${order.paymentStatus || 'unknown'}`}>
+                      {order.paymentStatus ? order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) : 'Unknown'}
                     </span>
                   </div>
                 </div>

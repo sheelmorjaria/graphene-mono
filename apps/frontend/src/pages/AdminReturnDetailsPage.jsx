@@ -106,8 +106,9 @@ const AdminReturnDetailsPage = () => {
   };
 
   const formatStatus = (status) => {
+    if (!status || typeof status !== 'string') return 'Unknown';
     return status.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
+      word && typeof word === 'string' ? word.charAt(0).toUpperCase() + word.slice(1) : ''
     ).join(' ');
   };
 
@@ -123,8 +124,9 @@ const AdminReturnDetailsPage = () => {
   };
 
   const formatReason = (reason) => {
+    if (!reason || typeof reason !== 'string') return 'Unknown';
     return reason.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
+      word && typeof word === 'string' ? word.charAt(0).toUpperCase() + word.slice(1) : ''
     ).join(' ');
   };
 

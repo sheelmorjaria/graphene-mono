@@ -1,7 +1,5 @@
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { useCart } from '../contexts/CartContext';
 
 const ProductCard = ({ product }) => {
   const {
@@ -19,8 +17,6 @@ const ProductCard = ({ product }) => {
     isInStock
   } = product;
 
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const { addToCart } = useCart();
 
   // Get the main image or placeholder
   const mainImage = images && images.length > 0 ? images[0] : '/placeholder-product.jpg';
@@ -38,34 +34,6 @@ const ProductCard = ({ product }) => {
     return `${formatPrice(range.min)} - ${formatPrice(range.max)}`;
   };
 
-  // Handle add to cart
-  const handleAddToCart = async (e) => {
-    e.preventDefault(); // Prevent navigation if button is inside a link
-    e.stopPropagation();
-    
-    if (!isInStock || isAddingToCart) {
-      return;
-    }
-
-    setIsAddingToCart(true);
-    try {
-      // Use id (from API) or _id (fallback) to handle both cases
-      const productId = id || _id;
-      
-      if (!productId) {
-        console.error('Product ID is missing in ProductCard');
-        return;
-      }
-      
-      const result = await addToCart(productId, 1);
-      if (result.success) {
-        // Could show a toast notification here
-        console.log('Product added to cart:', productId);
-      }
-    } finally {
-      setIsAddingToCart(false);
-    }
-  };
 
   // Get color badge styling
   const getColorBadgeClass = () => {
@@ -82,6 +50,9 @@ const ProductCard = ({ product }) => {
 
   // Capitalize first letter
   const capitalize = (str) => {
+    if (!str || typeof str !== 'string') {
+      return '';
+    }
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
@@ -159,25 +130,12 @@ const ProductCard = ({ product }) => {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="space-y-2">
-          <button
-            data-testid="add-to-cart-button"
-            onClick={handleAddToCart}
-            disabled={!isInStock || isAddingToCart}
-            className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              !isInStock
-                ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                : 'bg-forest-600 hover:bg-forest-700 focus:ring-forest-500 animate-wave'
-            }`}
-          >
-            {isAddingToCart ? 'Adding...' : !isInStock ? 'Out of Stock' : 'Add to Cart'}
-          </button>
-          
+        {/* Action Button */}
+        <div>
           <Link
             to={`/products/${slug}`}
             data-testid="product-details"
-            className="block w-full bg-forest-700 text-center py-2 px-4 rounded-md hover:bg-forest-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2 transform hover:scale-105"
+            className="block w-full bg-forest-600 text-white text-center py-3 px-4 rounded-md hover:bg-forest-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2 transform hover:scale-105 font-medium"
           >
             View Details
           </Link>

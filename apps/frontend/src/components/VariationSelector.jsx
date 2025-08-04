@@ -59,6 +59,9 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
 
   // Get condition label
   const getConditionLabel = (condition) => {
+    if (!condition || typeof condition !== 'string') {
+      return 'Unknown';
+    }
     return condition.charAt(0).toUpperCase() + condition.slice(1);
   };
 
