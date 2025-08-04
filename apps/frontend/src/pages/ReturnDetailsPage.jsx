@@ -378,7 +378,7 @@ const ReturnDetailsPage = () => {
                       returnRequest.refundStatus === 'canceled' ? 'text-gray-600 bg-gray-50' :
                       'text-yellow-600 bg-yellow-50'
                     }`}>
-                      {returnRequest.refundStatus.charAt(0).toUpperCase() + returnRequest.refundStatus.slice(1)}
+                      {returnRequest.refundStatus ? returnRequest.refundStatus.charAt(0).toUpperCase() + returnRequest.refundStatus.slice(1) : 'Unknown'}
                     </span>
                   </div>
                   
