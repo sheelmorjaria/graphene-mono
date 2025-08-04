@@ -43,7 +43,7 @@ const ProductCard = ({ product }) => {
   // Get stock status display
   const getStockStatusDisplay = () => {
     if (isInStock) {
-      return { text: 'In Stock', className: 'text-forest-600' };
+      return { text: 'Available', className: 'text-forest-600' };
     }
     return { text: 'Out of Stock', className: 'text-coral' };
   };
@@ -135,7 +135,7 @@ const ProductCard = ({ product }) => {
           <Link
             to={`/products/${slug}`}
             data-testid="product-details"
-            className="block w-full bg-forest-600 text-white text-center py-3 px-4 rounded-md hover:bg-forest-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:ring-offset-2 transform hover:scale-105 font-medium"
+            className="block w-full bg-gray-800 text-white text-center py-3 px-4 rounded-md hover:bg-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transform hover:scale-105 font-medium"
           >
             View Details
           </Link>
