@@ -18,21 +18,29 @@ function AdminProductFormPage() {
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
+    baseModel: '',
     shortDescription: '',
     longDescription: '',
-    price: '',
-    salePrice: '',
-    stockQuantity: '',
-    lowStockThreshold: '',
     category: '',
     tags: '',
     status: 'draft',
-    condition: 'new',
-    stockStatus: 'in_stock',
     leadTimeMinDays: '5',
     leadTimeMaxDays: '7',
     leadTimeDisplayText: '5-7 working days'
   });
+
+  const [variations, setVariations] = useState([
+    {
+      condition: 'excellent',
+      color: '',
+      storage: '128GB',
+      price: '',
+      salePrice: '',
+      stockQuantity: '10',
+      stockStatus: 'in_stock',
+      sku: ''
+    }
+  ]);
 
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -65,25 +73,34 @@ function AdminProductFormPage() {
       const response = await getProductById(productId);
       
       if (response.success) {
-        const product = response.data.product;
+        const product = response.data;
         setFormData({
           name: product.name || '',
           sku: product.sku || '',
+          baseModel: product.baseModel || '',
           shortDescription: product.shortDescription || '',
           longDescription: product.longDescription || '',
-          price: product.price?.toString() || '',
-          salePrice: product.salePrice?.toString() || '',
-          stockQuantity: product.stockQuantity?.toString() || '',
-          lowStockThreshold: product.lowStockThreshold?.toString() || '',
           category: product.category?._id || '',
           tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
           status: product.status || 'draft',
-          condition: product.condition || 'new',
-          stockStatus: product.stockStatus || 'in_stock',
           leadTimeMinDays: product.leadTime?.minDays?.toString() || '5',
           leadTimeMaxDays: product.leadTime?.maxDays?.toString() || '7',
           leadTimeDisplayText: product.leadTime?.displayText || '5-7 working days'
         });
+
+        // Set variations or create default if none exist
+        if (product.variations && product.variations.length > 0) {
+          setVariations(product.variations.map(v => ({
+            condition: v.condition || 'excellent',
+            color: v.color || '',
+            storage: v.storage || '128GB',
+            price: v.price?.toString() || '',
+            salePrice: v.salePrice?.toString() || '',
+            stockQuantity: v.stockQuantity?.toString() || '10',
+            stockStatus: v.stockStatus || 'in_stock',
+            sku: v.sku || ''
+          })));
+        }
         
         // Set existing images
         if (product.images && product.images.length > 0) {
@@ -108,20 +125,28 @@ function AdminProductFormPage() {
       newErrors.sku = 'SKU is required';
     }
 
-    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
-      newErrors.price = 'Valid price is required';
+    if (!formData.baseModel.trim()) {
+      newErrors.baseModel = 'Base model is required';
     }
 
-    if (formData.stockQuantity === '' || isNaN(parseInt(formData.stockQuantity)) || parseInt(formData.stockQuantity) < 0) {
-      newErrors.stockQuantity = 'Valid stock quantity is required';
-    }
-
-    if (formData.salePrice && (isNaN(parseFloat(formData.salePrice)) || parseFloat(formData.salePrice) < 0)) {
-      newErrors.salePrice = 'Sale price must be a valid number';
-    }
-
-    if (formData.lowStockThreshold && (isNaN(parseInt(formData.lowStockThreshold)) || parseInt(formData.lowStockThreshold) < 0)) {
-      newErrors.lowStockThreshold = 'Low stock threshold must be a valid number';
+    // Validate variations
+    if (variations.length === 0) {
+      newErrors.variations = 'At least one variation is required';
+    } else {
+      variations.forEach((variation, index) => {
+        if (!variation.color.trim()) {
+          newErrors[`variation_${index}_color`] = `Color is required for variation ${index + 1}`;
+        }
+        if (!variation.price || isNaN(parseFloat(variation.price)) || parseFloat(variation.price) <= 0) {
+          newErrors[`variation_${index}_price`] = `Valid price is required for variation ${index + 1}`;
+        }
+        if (variation.salePrice && (isNaN(parseFloat(variation.salePrice)) || parseFloat(variation.salePrice) < 0)) {
+          newErrors[`variation_${index}_salePrice`] = `Sale price must be valid for variation ${index + 1}`;
+        }
+        if (!variation.sku.trim()) {
+          newErrors[`variation_${index}_sku`] = `SKU is required for variation ${index + 1}`;
+        }
+      });
     }
 
     setErrors(newErrors);
@@ -141,6 +166,53 @@ function AdminProductFormPage() {
         ...prev,
         [name]: ''
       }));
+    }
+  };
+
+  const handleVariationChange = (index, field, value) => {
+    const newVariations = [...variations];
+    newVariations[index] = {
+      ...newVariations[index],
+      [field]: value
+    };
+    setVariations(newVariations);
+
+    // Clear errors for this variation field
+    const errorKey = `variation_${index}_${field}`;
+    if (errors[errorKey]) {
+      setErrors(prev => ({
+        ...prev,
+        [errorKey]: ''
+      }));
+    }
+  };
+
+  const addVariation = () => {
+    setVariations([...variations, {
+      condition: 'excellent',
+      color: '',
+      storage: '128GB',
+      price: '',
+      salePrice: '',
+      stockQuantity: '10',
+      stockStatus: 'in_stock',
+      sku: ''
+    }]);
+  };
+
+  const removeVariation = (index) => {
+    if (variations.length > 1) {
+      const newVariations = variations.filter((_, i) => i !== index);
+      setVariations(newVariations);
+      
+      // Clear related errors
+      const newErrors = { ...errors };
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith(`variation_${index}_`)) {
+          delete newErrors[key];
+        }
+      });
+      setErrors(newErrors);
     }
   };
 
@@ -228,24 +300,28 @@ function AdminProductFormPage() {
       // Add text fields
       formDataToSubmit.append('name', formData.name.trim());
       formDataToSubmit.append('sku', formData.sku.trim());
+      formDataToSubmit.append('baseModel', formData.baseModel.trim());
       formDataToSubmit.append('shortDescription', formData.shortDescription || '');
       formDataToSubmit.append('longDescription', formData.longDescription || '');
-      formDataToSubmit.append('price', parseFloat(formData.price));
-      formDataToSubmit.append('stockQuantity', parseInt(formData.stockQuantity));
-      formDataToSubmit.append('condition', formData.condition);
       formDataToSubmit.append('status', formData.status);
-      formDataToSubmit.append('stockStatus', formData.stockStatus);
       formDataToSubmit.append('tags', formData.tags || '');
       
-      if (formData.salePrice) {
-        formDataToSubmit.append('salePrice', parseFloat(formData.salePrice));
-      }
-      if (formData.lowStockThreshold) {
-        formDataToSubmit.append('lowStockThreshold', parseInt(formData.lowStockThreshold));
-      }
       if (formData.category) {
         formDataToSubmit.append('category', formData.category);
       }
+
+      // Add variations as JSON
+      const processedVariations = variations.map(v => ({
+        condition: v.condition,
+        color: v.color.trim(),
+        storage: v.storage,
+        price: parseFloat(v.price),
+        salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
+        stockQuantity: parseInt(v.stockQuantity),
+        stockStatus: v.stockStatus,
+        sku: v.sku.trim()
+      }));
+      formDataToSubmit.append('variations', JSON.stringify(processedVariations));
 
       // Add lead time information
       if (formData.leadTimeMinDays) {
@@ -353,7 +429,7 @@ function AdminProductFormPage() {
             {/* Basic Information */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                     Product Name <span className="text-red-500">*</span>
@@ -374,7 +450,7 @@ function AdminProductFormPage() {
 
                 <div>
                   <label htmlFor="sku" className="block text-sm font-medium text-gray-700 mb-2">
-                    SKU <span className="text-red-500">*</span>
+                    Base SKU <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -385,9 +461,27 @@ function AdminProductFormPage() {
                     className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
                       errors.sku ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Enter SKU"
+                    placeholder="Enter base SKU"
                   />
                   {errors.sku && <p className="mt-1 text-sm text-red-600">{errors.sku}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="baseModel" className="block text-sm font-medium text-gray-700 mb-2">
+                    Base Model <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="baseModel"
+                    name="baseModel"
+                    value={formData.baseModel}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.baseModel ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Pixel 8"
+                  />
+                  {errors.baseModel && <p className="mt-1 text-sm text-red-600">{errors.baseModel}</p>}
                 </div>
               </div>
 
@@ -422,110 +516,181 @@ function AdminProductFormPage() {
               </div>
             </div>
 
-            {/* Pricing */}
+            {/* Product Variations */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (£) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.price ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="0.00"
-                  />
-                  {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="salePrice" className="block text-sm font-medium text-gray-700 mb-2">
-                    Sale Price (£)
-                  </label>
-                  <input
-                    type="number"
-                    id="salePrice"
-                    name="salePrice"
-                    step="0.01"
-                    min="0"
-                    value={formData.salePrice}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.salePrice ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="0.00"
-                  />
-                  {errors.salePrice && <p className="mt-1 text-sm text-red-600">{errors.salePrice}</p>}
-                </div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Product Variations</h3>
+                <button
+                  type="button"
+                  onClick={addVariation}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  Add Variation
+                </button>
               </div>
-            </div>
+              
+              {errors.variations && <p className="mb-4 text-sm text-red-600">{errors.variations}</p>}
+              
+              <div className="space-y-6">
+                {variations.map((variation, index) => (
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg border">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-md font-medium text-gray-800">Variation {index + 1}</h4>
+                      {variations.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeVariation(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Condition <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={variation.condition}
+                          onChange={(e) => handleVariationChange(index, 'condition', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="new">New</option>
+                          <option value="excellent">Excellent</option>
+                          <option value="good">Good</option>
+                          <option value="fair">Fair</option>
+                        </select>
+                      </div>
 
-            {/* Inventory */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Inventory</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label htmlFor="stockQuantity" className="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Quantity <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="stockQuantity"
-                    name="stockQuantity"
-                    min="0"
-                    value={formData.stockQuantity}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.stockQuantity ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="0"
-                  />
-                  {errors.stockQuantity && <p className="mt-1 text-sm text-red-600">{errors.stockQuantity}</p>}
-                </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Color <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={variation.color}
+                          onChange={(e) => handleVariationChange(index, 'color', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                            errors[`variation_${index}_color`] ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                          placeholder="e.g., Obsidian"
+                        />
+                        {errors[`variation_${index}_color`] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_color`]}</p>
+                        )}
+                      </div>
 
-                <div>
-                  <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 mb-2">
-                    Low Stock Threshold
-                  </label>
-                  <input
-                    type="number"
-                    id="lowStockThreshold"
-                    name="lowStockThreshold"
-                    min="0"
-                    value={formData.lowStockThreshold}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.lowStockThreshold ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="10"
-                  />
-                  {errors.lowStockThreshold && <p className="mt-1 text-sm text-red-600">{errors.lowStockThreshold}</p>}
-                </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Storage
+                        </label>
+                        <select
+                          value={variation.storage}
+                          onChange={(e) => handleVariationChange(index, 'storage', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="128GB">128GB</option>
+                          <option value="256GB">256GB</option>
+                          <option value="512GB">512GB</option>
+                          <option value="1TB">1TB</option>
+                        </select>
+                      </div>
 
-                <div>
-                  <label htmlFor="stockStatus" className="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Status
-                  </label>
-                  <select
-                    id="stockStatus"
-                    name="stockStatus"
-                    value={formData.stockStatus}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="in_stock">In Stock</option>
-                    <option value="out_of_stock">Out of Stock</option>
-                    <option value="low_stock">Low Stock</option>
-                  </select>
-                </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          SKU <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={variation.sku}
+                          onChange={(e) => handleVariationChange(index, 'sku', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                            errors[`variation_${index}_sku`] ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                          placeholder="Unique SKU"
+                        />
+                        {errors[`variation_${index}_sku`] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_sku`]}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Price (£) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={variation.price}
+                          onChange={(e) => handleVariationChange(index, 'price', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                            errors[`variation_${index}_price`] ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                          placeholder="0.00"
+                        />
+                        {errors[`variation_${index}_price`] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_price`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Sale Price (£)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={variation.salePrice}
+                          onChange={(e) => handleVariationChange(index, 'salePrice', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                            errors[`variation_${index}_salePrice`] ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                          placeholder="0.00"
+                        />
+                        {errors[`variation_${index}_salePrice`] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_salePrice`]}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Stock Quantity
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={variation.stockQuantity}
+                          onChange={(e) => handleVariationChange(index, 'stockQuantity', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="10"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Stock Status
+                        </label>
+                        <select
+                          value={variation.stockStatus}
+                          onChange={(e) => handleVariationChange(index, 'stockStatus', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="in_stock">In Stock</option>
+                          <option value="out_of_stock">Out of Stock</option>
+                          <option value="low_stock">Low Stock</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -590,24 +755,6 @@ function AdminProductFormPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Product Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-2">
-                    Condition
-                  </label>
-                  <select
-                    id="condition"
-                    name="condition"
-                    value={formData.condition}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="new">New</option>
-                    <option value="excellent">Excellent</option>
-                    <option value="good">Good</option>
-                    <option value="fair">Fair</option>
-                  </select>
-                </div>
-
-                <div>
                   <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
                     Product Status
                   </label>
@@ -623,22 +770,22 @@ function AdminProductFormPage() {
                     <option value="archived">Archived</option>
                   </select>
                 </div>
-              </div>
 
-              <div className="mt-6">
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  id="tags"
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter tags separated by commas"
-                />
-                <p className="mt-1 text-sm text-gray-500">Separate tags with commas (e.g., smartphone, android, pixel)</p>
+                <div>
+                  <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    id="tags"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter tags separated by commas"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Separate tags with commas (e.g., smartphone, android, pixel)</p>
+                </div>
               </div>
             </div>
 
