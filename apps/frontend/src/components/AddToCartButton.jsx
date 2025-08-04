@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 const AddToCartButton = ({
   productId,
+  variationId = null,
   stockStatus,
   stockQuantity = 0,
   onAddToCart,
@@ -34,7 +35,7 @@ const AddToCartButton = ({
 
   const handleAddToCart = () => {
     if (!disabled && !isLoading && !isOutOfStock) {
-      onAddToCart(productId, showQuantitySelector ? selectedQuantity : 1);
+      onAddToCart(productId, showQuantitySelector ? selectedQuantity : 1, variationId);
     }
   };
 
@@ -186,6 +187,7 @@ const AddToCartButton = ({
 
 AddToCartButton.propTypes = {
   productId: PropTypes.string.isRequired,
+  variationId: PropTypes.string,
   stockStatus: PropTypes.oneOf(['in_stock', 'low_stock', 'out_of_stock']).isRequired,
   stockQuantity: PropTypes.number,
   onAddToCart: PropTypes.func.isRequired,

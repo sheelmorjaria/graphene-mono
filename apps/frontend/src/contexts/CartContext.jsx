@@ -49,12 +49,12 @@ export const CartProvider = ({ children }) => {
     loadCart();
   }, [isAuthenticated, loadCart]);
 
-  const addToCart = async (productId, quantity = 1) => {
+  const addToCart = async (productId, quantity = 1, variationId = null) => {
     try {
       setLoading(true);
       setError('');
       
-      const response = await addToCartService(productId, quantity);
+      const response = await addToCartService(productId, quantity, variationId);
       
       // Update cart state with new totals
       setCart(prevCart => ({

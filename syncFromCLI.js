@@ -371,10 +371,10 @@ const parseTextOutput = (textOutput) => {
 };
 
 // Execute CLI command
-export const syncFromCLI = async () => {
+export const syncFromCLI = async (searchQuery = 'PIXEL') => {
   return new Promise((resolve, reject) => {
     const cliPath = path.join(__dirname, 'cli-linux-amd64');
-    const command = `${cliPath} -query 'PIXEL'`;
+    const command = `${cliPath} -query '${searchQuery}'`;
     
     console.log(`Executing: ${command}`);
     
@@ -422,6 +422,22 @@ const extractModelInfo = (name) => {
   const nameWithoutCondition = name
     .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "") // Remove condition + optional category
     .replace(/\s*\[.*?\]$/, ""); // Remove remaining category if any
+  
+  // Check for Pixel Fold specifically first
+  const foldMatch = nameWithoutCondition.match(
+    /(?:Google\s+)?Pixel\s+Fold\s*(\d+GB)?\s*[,-]?\s*([^,]+)?/i
+  );
+  
+  if (foldMatch) {
+    const [_, storage, color] = foldMatch;
+    return {
+      modelName: "Pixel Fold",
+      storage: storage || "256GB", // Fold typically comes with 256GB
+      color: color ? color.trim() : "Unknown",
+    };
+  }
+
+  // Regular Pixel model matching
   const match = nameWithoutCondition.match(
     /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro|Fold)?\s*(\d+GB)?\s*([^,]+)?,?\s*Unlocked?/i
   );
@@ -441,44 +457,53 @@ const extractModelInfo = (name) => {
   };
 };
 
-// Function to create a product using the new schema
+// Function to create a product using the new schema with variations
 const createProduct = async (productData, adminUser) => {
   const condition = extractConditionFromName(productData.name);
   const modelInfo = extractModelInfo(productData.name);
   
-  // Generate SKU and slug
-  const sku = `PIXEL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`.toUpperCase();
+  // Generate base SKU and slug (shorter format)
+  const baseSku = `PX-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substr(2, 4)}`.toUpperCase();
   const slug = productData.name.toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
 
+  // Create variation SKU (shorter format)
+  const variationSku = `${baseSku}-${condition || 'E'}-${(modelInfo?.color || 'U').substring(0, 2).toUpperCase()}-${(modelInfo?.storage || '128GB').replace('GB', '')}`;
+
+  // Create the variation object
+  const variation = {
+    condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
+    color: modelInfo?.color || 'Unknown',
+    storage: modelInfo?.storage || '128GB',
+    price: (productData.price || 0) + 120.00,
+    stockQuantity: 10,
+    stockStatus: 'in_stock',
+    sku: variationSku,
+    images: ["/images/placeholder.png"]
+  };
+
   const product = new Product({
     name: productData.name,
     slug: slug,
-    sku: sku,
+    sku: baseSku,
+    baseModel: modelInfo?.modelName || 'Unknown Pixel',
     shortDescription: `${productData.name} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
-    longDescription: `${productData.name}  with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative 
-     features hardware identical to Google ${modelInfo.modelName}. Custom ROM - GrapheneOS provides enhanced privacy and security while
+    longDescription: `${productData.name} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative 
+     features hardware identical to Google ${modelInfo?.modelName || 'Pixel'}. Custom ROM - GrapheneOS provides enhanced privacy and security while
      maintaining full functionality.`,
-    price: (productData.price) + 120.00,
-    condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
-    stockStatus: 'in_stock',
-    stockQuantity: 10,
     images: ["/images/placeholder.png"],
+    variations: [variation],
     attributes: [
       {
         name: "Storage",
         value: modelInfo?.storage || "128GB"
       },
       {
-        name: "Color", 
-        value: modelInfo?.color || "Unknown"
-      },
-      {
-        name: "Condition",
-        value: condition ? getConditionDescription(condition) : "Good condition"
+        name: "Model", 
+        value: modelInfo?.modelName || "Unknown Pixel"
       }
     ],
     status: 'active',
@@ -519,6 +544,15 @@ const shouldExcludeProduct = (productName) => {
   if ((productName.includes('Pixels') && 
        (productName.includes('[Blu-Ray Movies]') || 
         productName.includes('[DVD Movies]')))) {
+    return true;
+  }
+  
+  // Check if it's a case or accessory (not actual phone)
+  if (productName.includes('Case') || 
+      productName.includes('[Phone Accessories]') ||
+      productName.includes('Grip Case') ||
+      productName.includes('Bellroy') ||
+      productName.includes('dBrand')) {
     return true;
   }
   
@@ -588,7 +622,7 @@ const getConditionLabel = (condition) => {
 };
 
 // Main sync function
-export const syncAndroidPhones = async () => {
+export const syncAndroidPhones = async (searchQuery = 'PIXEL') => {
   let connection = null;
 
   try {
@@ -633,8 +667,8 @@ export const syncAndroidPhones = async () => {
     console.log(`Using admin user: ${admin.email}`);
 
     // Execute CLI command to get products
-    console.log("\n📱 Fetching products from CLI...");
-    const cliOutput = await syncFromCLI();
+    console.log(`\n📱 Fetching products from CLI with query: ${searchQuery}...`);
+    const cliOutput = await syncFromCLI(searchQuery);
 
     // Parse the text output from CLI
     let products = [];
@@ -679,32 +713,132 @@ export const syncAndroidPhones = async () => {
       console.log(`✅ Deleted ${deleteResult.deletedCount} existing products`);
     }
 
+    // Group products by base model and merge variations
+    console.log("\n🔧 Grouping products by base model...");
+    const productGroups = new Map();
+
+    for (const productData of modernProducts) {
+      const modelInfo = extractModelInfo(productData.name);
+      const baseModel = modelInfo?.modelName || 'Unknown Pixel';
+      
+      if (!productGroups.has(baseModel)) {
+        productGroups.set(baseModel, []);
+      }
+      productGroups.get(baseModel).push(productData);
+    }
+
+    console.log(`📊 Found ${productGroups.size} unique base models`);
+
     // Create products in database
     console.log("\n💾 Creating products in database...");
     let created = 0;
     let skipped = 0;
     let failed = 0;
+    let variationsAdded = 0;
 
-    for (const productData of modernProducts) {
+    for (const [baseModel, productVariations] of productGroups) {
       try {
-        // Check if product already exists by name
-        const existingProduct = await Product.findOne({ 
-          name: productData.name 
-        });
+        // Check if product already exists by base model
+        const existingProduct = await Product.findOne({ baseModel });
 
         if (existingProduct) {
-          console.log(`⏭️  Skipped (already exists): ${productData.name}`);
+          // Add new variations to existing product
+          for (const productData of productVariations) {
+            const condition = extractConditionFromName(productData.name);
+            const modelInfo = extractModelInfo(productData.name);
+            
+            // Check if this variation already exists
+            const existingVariation = existingProduct.variations.find(v => 
+              v.condition === (condition ? getConditionLabel(condition).toLowerCase() : 'excellent') &&
+              v.color === (modelInfo?.color || 'Unknown') &&
+              v.storage === (modelInfo?.storage || '128GB')
+            );
+
+            if (!existingVariation) {
+              const variationSku = `${existingProduct.sku}-${condition || 'E'}-${(modelInfo?.color || 'U').substring(0, 2).toUpperCase()}-${(modelInfo?.storage || '128GB').replace('GB', '')}`;
+              
+              const newVariation = {
+                condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
+                color: modelInfo?.color || 'Unknown',
+                storage: modelInfo?.storage || '128GB',
+                price: (productData.price || 0) + 120.00,
+                stockQuantity: 10,
+                stockStatus: 'in_stock',
+                sku: variationSku,
+                images: ["/images/placeholder.png"]
+              };
+
+              existingProduct.variations.push(newVariation);
+              variationsAdded++;
+            }
+          }
+
+          await existingProduct.save();
+          console.log(`🔄 Updated existing product: ${baseModel} (added ${productVariations.length} variations)`);
           skipped++;
-          continue;
+        } else {
+          // Create new product with all variations
+          const firstProduct = productVariations[0];
+          const modelInfo = extractModelInfo(firstProduct.name);
+          
+          const baseSku = `PX-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substr(2, 4)}`.toUpperCase();
+          const slug = baseModel.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
+
+          // Create variations for all products in this group
+          const variations = productVariations.map((productData, index) => {
+            const condition = extractConditionFromName(productData.name);
+            const modelInfo = extractModelInfo(productData.name);
+            const variationSku = `${baseSku}-${condition || 'E'}-${(modelInfo?.color || 'U').substring(0, 2).toUpperCase()}-${(modelInfo?.storage || '128GB').replace('GB', '')}-${index}`;
+
+            return {
+              condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
+              color: modelInfo?.color || 'Unknown',
+              storage: modelInfo?.storage || '128GB',
+              price: (productData.price || 0) + 120.00,
+              stockQuantity: 10,
+              stockStatus: 'in_stock',
+              sku: variationSku,
+              images: ["/images/placeholder.png"]
+            };
+          });
+
+          const product = new Product({
+            name: `GrapheneOS ${baseModel}`,
+            slug: slug,
+            sku: baseSku,
+            baseModel: baseModel,
+            shortDescription: `${baseModel} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
+            longDescription: `${baseModel} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative 
+             features hardware identical to Google ${baseModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while
+             maintaining full functionality.`,
+            images: ["/images/placeholder.png"],
+            variations: variations,
+            attributes: [
+              {
+                name: "Storage",
+                value: modelInfo?.storage || "128GB"
+              },
+              {
+                name: "Model", 
+                value: baseModel
+              }
+            ],
+            status: 'active',
+            isActive: true
+          });
+
+          await product.save();
+          console.log(`✅ Created: ${baseModel} with ${variations.length} variations`);
+          created++;
+          variationsAdded += variations.length;
         }
 
-        // Create the product
-        const product = await createProduct(productData, admin);
-        console.log(`✅ Created: ${product.name} (${product.condition})`);
-        created++;
-
       } catch (err) {
-        console.error(`❌ Failed to create ${productData.name}:`, err.message);
+        console.error(`❌ Failed to create ${baseModel}:`, err.message);
         failed++;
       }
     }
@@ -713,11 +847,12 @@ export const syncAndroidPhones = async () => {
     console.log("\n📊 Import Summary:");
     console.log(`   Total from CLI: ${products.length}`);
     console.log(`   Filtered (old): ${filteredCount}`);
-    console.log(`   Created: ${created}`);
-    console.log(`   Skipped: ${skipped}`);
+    console.log(`   Base models created: ${created}`);
+    console.log(`   Base models updated: ${skipped}`);
+    console.log(`   Total variations added: ${variationsAdded}`);
     console.log(`   Failed: ${failed}`);
 
-    return { created, skipped, failed, filtered: filteredCount };
+    return { created, skipped, failed, filtered: filteredCount, variationsAdded };
 
   } catch (error) {
     console.error("Sync error:", error.message);
@@ -769,6 +904,10 @@ const isMainModule = () => {
 if (isMainModule()) {
   const command = process.argv[2];
   const isDryRun = process.argv.includes('--dry-run');
+  
+  // Check for search query parameter
+  const queryIndex = process.argv.indexOf('--query');
+  const searchQuery = queryIndex !== -1 && process.argv[queryIndex + 1] ? process.argv[queryIndex + 1] : 'PIXEL';
 
   if (command === "test") {
     testConnection().then(() => process.exit(0));
@@ -807,7 +946,7 @@ if (isMainModule()) {
         process.exit(1);
       });
   } else {
-    syncAndroidPhones()
+    syncAndroidPhones(searchQuery)
       .then(() => {
         console.log("\n✅ Sync completed successfully!");
         process.exit(0);

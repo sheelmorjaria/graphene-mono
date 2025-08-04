@@ -17,7 +17,13 @@ export const getProductBySlug = async (req, res) => {
       });
     }
 
-    // Return product with all details needed for product details page
+    // Return product with all details including variations
+    const priceRange = product.getPriceRange();
+    const availableColors = product.getAvailableColors();
+    const availableConditions = product.getAvailableConditions();
+    const isInStock = product.isInStock();
+    const totalStock = product.getTotalStock();
+
     res.json({
       success: true,
       data: {
@@ -26,13 +32,29 @@ export const getProductBySlug = async (req, res) => {
         slug: product.slug,
         shortDescription: product.shortDescription,
         longDescription: product.longDescription,
-        price: product.price,
+        baseModel: product.baseModel,
+        priceRange,
         images: product.images,
         category: product.category,
-        condition: product.condition,
-        stockStatus: product.stockStatus,
-        stockQuantity: product.stockQuantity,
+        variations: product.variations.map(v => ({
+          _id: v._id,
+          condition: v.condition,
+          color: v.color,
+          price: v.price,
+          salePrice: v.salePrice,
+          stockStatus: v.stockStatus,
+          stockQuantity: v.stockQuantity,
+          sku: v.sku,
+          images: v.images
+        })),
+        availableColors,
+        availableConditions,
+        isInStock,
+        totalStock,
         attributes: product.attributes,
+        weight: product.weight,
+        leadTime: product.leadTime,
+        dimensions: product.dimensions,
         isActive: product.isActive,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt

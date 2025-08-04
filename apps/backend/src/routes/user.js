@@ -2,6 +2,7 @@ import express from 'express';
 import { getUserAddresses, addUserAddress, updateUserAddress, deleteUserAddress } from '../controllers/userAddressController.js';
 import { getUserOrders, getUserOrderDetails, placeOrder, cancelOrder, getEligibleReturnItems } from '../controllers/userOrderController.js';
 import { getUserReturnRequests, getReturnRequestDetails, submitReturnRequest } from '../controllers/userReturnController.js';
+import { requestDataExport, requestAccountDeletion } from '../controllers/privacyController.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -26,5 +27,9 @@ router.get('/orders/:orderId/eligible-returns', getEligibleReturnItems);
 router.get('/returns', getUserReturnRequests);
 router.get('/returns/:returnRequestId', getReturnRequestDetails);
 router.post('/returns/request', submitReturnRequest);
+
+// Privacy/GDPR compliance routes
+router.post('/data/export', requestDataExport);
+router.post('/data/delete-request', requestAccountDeletion);
 
 export default router;

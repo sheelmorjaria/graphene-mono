@@ -16,8 +16,8 @@ router.use(optionalAuth);
 // Cart management routes
 router.get('/', getCart);
 router.post('/add', addToCart);
-router.put('/item/:productId', updateCartItem);
-router.delete('/item/:productId', removeFromCart);
+router.put('/item/:itemId', updateCartItem);
+router.delete('/item/:itemId', removeFromCart);
 router.delete('/clear', clearCart);
 
 

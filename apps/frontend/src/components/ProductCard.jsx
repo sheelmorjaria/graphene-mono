@@ -10,11 +10,13 @@ const ProductCard = ({ product }) => {
     name,
     slug,
     shortDescription,
-    price,
+    baseModel,
+    priceRange,
     images,
-    condition,
-    stockStatus,
-    stockQuantity
+    variations,
+    availableColors,
+    availableConditions,
+    isInStock
   } = product;
 
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -28,12 +30,20 @@ const ProductCard = ({ product }) => {
     return `£${price.toFixed(2)}`;
   };
 
+  // Format price range
+  const formatPriceRange = (range) => {
+    if (!range || range.min === range.max) {
+      return formatPrice(range?.min || 0);
+    }
+    return `${formatPrice(range.min)} - ${formatPrice(range.max)}`;
+  };
+
   // Handle add to cart
   const handleAddToCart = async (e) => {
     e.preventDefault(); // Prevent navigation if button is inside a link
     e.stopPropagation();
     
-    if (stockStatus === 'out_of_stock' || isAddingToCart) {
+    if (!isInStock || isAddingToCart) {
       return;
     }
 
@@ -57,35 +67,17 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  // Get condition badge styling with forest theme
-  const getConditionBadgeClass = (condition) => {
-    const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
-    switch (condition) {
-      case 'new':
-        return `${baseClasses} bg-forest-needle/20 text-forest-needle border border-forest-needle/30`;
-      case 'excellent':
-        return `${baseClasses} bg-forest-600/20 text-forest-600 border border-forest-600/30`;
-      case 'good':
-        return `${baseClasses} bg-forest-moss/20 text-forest-700 border border-forest-moss/30`;
-      case 'fair':
-        return `${baseClasses} bg-coral/20 text-coral-dark border border-coral/30`;
-      default:
-        return `${baseClasses} bg-forest-200 text-forest-700 border border-forest-300`;
-    }
+  // Get color badge styling
+  const getColorBadgeClass = () => {
+    return 'px-2 py-1 text-xs font-medium rounded-full bg-forest-200/50 text-forest-700 border border-forest-300/50';
   };
 
-  // Get stock status styling and text with forest theme
-  const getStockStatusDisplay = (stockStatus) => {
-    switch (stockStatus) {
-      case 'in_stock':
-        return { text: 'In Stock', className: 'text-forest-600' };
-      case 'low_stock':
-        return { text: 'Low Stock', className: 'text-sand-dark' };
-      case 'out_of_stock':
-        return { text: 'Out of Stock', className: 'text-coral' };
-      default:
-        return { text: 'Unknown', className: 'text-forest-500' };
+  // Get stock status display
+  const getStockStatusDisplay = () => {
+    if (isInStock) {
+      return { text: 'In Stock', className: 'text-forest-600' };
     }
+    return { text: 'Out of Stock', className: 'text-coral' };
   };
 
   // Capitalize first letter
@@ -93,7 +85,7 @@ const ProductCard = ({ product }) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
-  const stockStatus_ = getStockStatusDisplay(stockStatus);
+  const stockStatus_ = getStockStatusDisplay();
 
   return (
     <article 
@@ -112,11 +104,18 @@ const ProductCard = ({ product }) => {
 
       {/* Product Info */}
       <div className="p-4">
-        {/* Condition Badge */}
-        <div className="mb-2">
-          <span className={getConditionBadgeClass(condition)}>
-            {capitalize(condition)}
-          </span>
+        {/* Available Options */}
+        <div className="mb-2 flex flex-wrap gap-1">
+          {availableColors && availableColors.length > 0 && (
+            <span className={getColorBadgeClass()}>
+              {availableColors.length} {availableColors.length === 1 ? 'Color' : 'Colors'}
+            </span>
+          )}
+          {availableConditions && availableConditions.length > 0 && (
+            <span className={getColorBadgeClass()}>
+              {availableConditions.length} {availableConditions.length === 1 ? 'Condition' : 'Conditions'}
+            </span>
+          )}
         </div>
 
         {/* Product Name */}
@@ -141,7 +140,7 @@ const ProductCard = ({ product }) => {
             data-testid="product-price"
             className="text-xl font-bold text-forest-900"
           >
-            {formatPrice(price)}
+            {formatPriceRange(priceRange)}
           </span>
           <span className={`text-sm font-medium ${stockStatus_.className}`}>
             {stockStatus_.text}
@@ -165,14 +164,14 @@ const ProductCard = ({ product }) => {
           <button
             data-testid="add-to-cart-button"
             onClick={handleAddToCart}
-            disabled={stockStatus === 'out_of_stock' || isAddingToCart}
+            disabled={!isInStock || isAddingToCart}
             className={`w-full py-2 px-4 rounded-md font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              stockStatus === 'out_of_stock'
+              !isInStock
                 ? 'bg-muted text-muted-foreground cursor-not-allowed'
                 : 'bg-forest-600 hover:bg-forest-700 focus:ring-forest-500 animate-wave'
             }`}
           >
-            {isAddingToCart ? 'Adding...' : stockStatus === 'out_of_stock' ? 'Out of Stock' : 'Add to Cart'}
+            {isAddingToCart ? 'Adding...' : !isInStock ? 'Out of Stock' : 'Add to Cart'}
           </button>
           
           <Link
@@ -194,11 +193,23 @@ ProductCard.propTypes = {
     name: PropTypes.string.isRequired,
     slug: PropTypes.string.isRequired,
     shortDescription: PropTypes.string,
-    price: PropTypes.number.isRequired,
+    baseModel: PropTypes.string,
+    priceRange: PropTypes.shape({
+      min: PropTypes.number,
+      max: PropTypes.number
+    }),
     images: PropTypes.arrayOf(PropTypes.string),
-    condition: PropTypes.oneOf(['new', 'excellent', 'good', 'fair']).isRequired,
-    stockStatus: PropTypes.oneOf(['in_stock', 'low_stock', 'out_of_stock']).isRequired,
-    stockQuantity: PropTypes.number,
+    variations: PropTypes.arrayOf(PropTypes.shape({
+      condition: PropTypes.string,
+      color: PropTypes.string,
+      price: PropTypes.number,
+      salePrice: PropTypes.number,
+      stockStatus: PropTypes.string,
+      sku: PropTypes.string
+    })),
+    availableColors: PropTypes.arrayOf(PropTypes.string),
+    availableConditions: PropTypes.arrayOf(PropTypes.string),
+    isInStock: PropTypes.bool,
     category: PropTypes.shape({
       _id: PropTypes.string,
       name: PropTypes.string,

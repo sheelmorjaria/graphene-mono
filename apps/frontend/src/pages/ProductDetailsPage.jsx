@@ -1,8 +1,9 @@
 import { useParams, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useProductDetails from '../hooks/useProductDetails';
 import ImageGallery from '../components/ImageGallery';
 import AddToCartButton from '../components/AddToCartButton';
+import VariationSelector from '../components/VariationSelector';
 import { useCart } from '../contexts/CartContext';
 import SEOWrapper from '../components/SEO/SEOWrapper';
 import { generateProductStructuredData, generateBreadcrumbStructuredData } from '../utils/structuredData';
@@ -11,6 +12,7 @@ const ProductDetailsPage = () => {
   const { slug } = useParams();
   const { product, loading, error, refetch } = useProductDetails(slug);
   const { addToCart } = useCart();
+  const [selectedVariation, setSelectedVariation] = useState(null);
 
   // Set page title when product loads
   useEffect(() => {
@@ -21,8 +23,8 @@ const ProductDetailsPage = () => {
     }
   }, [product]);
 
-  const handleAddToCart = async (productId, quantity) => {
-    console.log('handleAddToCart called with:', { productId, quantity });
+  const handleAddToCart = async (productId, quantity, variationId) => {
+    console.log('handleAddToCart called with:', { productId, quantity, variationId });
     
     if (!productId) {
       console.error('Product ID is missing in handleAddToCart');
@@ -30,7 +32,7 @@ const ProductDetailsPage = () => {
     }
     
     try {
-      const result = await addToCart(productId, quantity);
+      const result = await addToCart(productId, quantity, variationId);
       if (result.success) {
         console.log('Product added to cart successfully:', result.addedItem);
       } else {
@@ -63,6 +65,13 @@ const ProductDetailsPage = () => {
       return '£0.00';
     }
     return `£${Number(price).toFixed(2)}`;
+  };
+
+  const formatPriceRange = (range) => {
+    if (!range || range.min === range.max) {
+      return formatPrice(range?.min || 0);
+    }
+    return `${formatPrice(range.min)} - ${formatPrice(range.max)}`;
   };
 
   if (loading) {
@@ -197,19 +206,15 @@ const ProductDetailsPage = () => {
         >
           {/* Product Header */}
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                {product.name}
-              </h1>
-              {product.condition && (
-                <span 
-                  className={getConditionBadgeClasses(product.condition)}
-                  data-testid="condition-badge"
-                >
-                  {product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}
-                </span>
-              )}
-            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+              {product.name}
+            </h1>
+            
+            {product.baseModel && (
+              <p className="text-sm text-gray-600 mb-2">
+                Model: {product.baseModel}
+              </p>
+            )}
             
             {product.shortDescription && (
               <p className="text-lg text-gray-600 mb-4">
@@ -217,14 +222,17 @@ const ProductDetailsPage = () => {
               </p>
             )}
 
-            <div className="flex items-center gap-4 mb-6">
-              <span 
-                className="text-3xl font-bold text-blue-600"
-                aria-label={`Price: ${formatPrice(product.price)}`}
-              >
-                {formatPrice(product.price)}
-              </span>
-            </div>
+            {/* Price Display */}
+            {!selectedVariation && product.priceRange && (
+              <div className="flex items-center gap-4 mb-6">
+                <span 
+                  className="text-3xl font-bold text-blue-600"
+                  aria-label={`Price range: ${formatPriceRange(product.priceRange)}`}
+                >
+                  {formatPriceRange(product.priceRange)}
+                </span>
+              </div>
+            )}
 
             {/* Lead Time Information */}
             {product.leadTime && (
@@ -247,12 +255,23 @@ const ProductDetailsPage = () => {
             )}
           </div>
 
+          {/* Variation Selector */}
+          {product.variations && product.variations.length > 0 && (
+            <div className="border-t border-gray-200 pt-6">
+              <VariationSelector
+                variations={product.variations}
+                onVariationSelect={setSelectedVariation}
+              />
+            </div>
+          )}
+
           {/* Add to Cart Section */}
-          {product._id && (
+          {product._id && selectedVariation && (
             <div className="border-t border-gray-200 pt-6">
               <AddToCartButton
                 productId={product._id}
-                stockStatus={product.stockStatus}
+                variationId={selectedVariation._id}
+                stockStatus={selectedVariation.stockStatus}
                 onAddToCart={handleAddToCart}
                 showQuantitySelector={true}
               />

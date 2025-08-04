@@ -37,6 +37,7 @@ import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import BitcoinPaymentPage from './pages/BitcoinPaymentPage';
 import MoneroPaymentPage from './pages/MoneroPaymentPage';
 import ContactUsPage from './pages/ContactUsPage';
+import CustomerPrivacyPage from './pages/CustomerPrivacyPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
 import SEOWrapper from './components/SEO/SEOWrapper';
@@ -114,6 +115,13 @@ const AuthenticatedUserMenu = () => {
             onClick={() => setIsDropdownOpen(false)}
           >
             My Returns
+          </Link>
+          <Link
+            to="/account/privacy"
+            className="block px-4 py-2 text-sm text-forest-800 hover:bg-forest-50 transition-colors duration-200"
+            onClick={() => setIsDropdownOpen(false)}
+          >
+            Data & Privacy
           </Link>
           <Link
             to="/contact-us"
@@ -400,6 +408,9 @@ export const AppRoutes = () => {
           
           {/* My addresses page */}
           <Route path="/addresses" element={<MyAddressesPage />} />
+          
+          {/* Data & Privacy page */}
+          <Route path="/account/privacy" element={<CustomerPrivacyPage />} />
           
           {/* My orders page */}
           <Route path="/orders" element={<MyOrdersPage />} />
