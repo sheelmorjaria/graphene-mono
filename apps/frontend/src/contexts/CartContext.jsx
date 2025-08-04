@@ -110,12 +110,12 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const removeFromCart = async (productId) => {
+  const removeFromCart = async (productId, variationId) => {
     try {
       setLoading(true);
       setError('');
       
-      const response = await removeFromCartService(productId);
+      const response = await removeFromCartService(productId, variationId);
       
       // Reload cart to get updated state
       await loadCart();

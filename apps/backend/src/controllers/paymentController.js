@@ -251,7 +251,7 @@ export const createPayPalOrder = async (req, res) => {
             admin_area_2: shippingAddress.city,
             admin_area_1: shippingAddress.stateProvince,
             postal_code: shippingAddress.postalCode,
-            country_code: shippingAddress.country === 'UK' ? 'GB' : shippingAddress.country
+            country_code: shippingAddress.country
           }
         }
       }],

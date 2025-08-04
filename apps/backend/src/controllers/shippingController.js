@@ -39,6 +39,50 @@ export const calculateShippingRates = async (req, res) => {
       }
     }
 
+    // Handle backward compatibility - convert country names to codes
+    const countryNameToCode = {
+      'United Kingdom': 'GB',
+      'United States': 'US',
+      'Canada': 'CA',
+      'Australia': 'AU',
+      'New Zealand': 'NZ',
+      'Ireland': 'IE',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Spain': 'ES',
+      'Italy': 'IT',
+      'Netherlands': 'NL',
+      'Belgium': 'BE',
+      'Switzerland': 'CH',
+      'Austria': 'AT',
+      'Sweden': 'SE',
+      'Norway': 'NO',
+      'Denmark': 'DK',
+      'Finland': 'FI',
+      'Poland': 'PL',
+      'Portugal': 'PT',
+      'Czech Republic': 'CZ',
+      'Hungary': 'HU',
+      'Romania': 'RO',
+      'Bulgaria': 'BG',
+      'Greece': 'GR',
+      'Japan': 'JP',
+      'Singapore': 'SG',
+      'Hong Kong': 'HK',
+      'India': 'IN',
+      'Brazil': 'BR',
+      'Mexico': 'MX',
+      'Argentina': 'AR',
+      'Israel': 'IL',
+      'United Arab Emirates': 'AE',
+      'South Africa': 'ZA'
+    };
+
+    // Convert country name to code if needed
+    if (countryNameToCode[shippingAddress.country]) {
+      shippingAddress.country = countryNameToCode[shippingAddress.country];
+    }
+
     // Validate country code
     if (!/^[A-Z]{2}$/.test(shippingAddress.country)) {
       return res.status(400).json({

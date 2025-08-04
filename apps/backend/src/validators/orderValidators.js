@@ -1,6 +1,45 @@
 import { body, param } from 'express-validator';
 import { validators } from '../middleware/validation.js';
 
+// Country name to ISO code mapping
+const countryNameToCode = {
+  'United Kingdom': 'GB',
+  'United States': 'US',
+  'Canada': 'CA',
+  'Australia': 'AU',
+  'New Zealand': 'NZ',
+  'Ireland': 'IE',
+  'Germany': 'DE',
+  'France': 'FR',
+  'Spain': 'ES',
+  'Italy': 'IT',
+  'Netherlands': 'NL',
+  'Belgium': 'BE',
+  'Switzerland': 'CH',
+  'Austria': 'AT',
+  'Sweden': 'SE',
+  'Norway': 'NO',
+  'Denmark': 'DK',
+  'Finland': 'FI',
+  'Poland': 'PL',
+  'Portugal': 'PT',
+  'Czech Republic': 'CZ',
+  'Hungary': 'HU',
+  'Romania': 'RO',
+  'Bulgaria': 'BG',
+  'Greece': 'GR',
+  'Japan': 'JP',
+  'Singapore': 'SG',
+  'Hong Kong': 'HK',
+  'India': 'IN',
+  'Brazil': 'BR',
+  'Mexico': 'MX',
+  'Argentina': 'AR',
+  'Israel': 'IL',
+  'United Arab Emirates': 'AE',
+  'South Africa': 'ZA'
+};
+
 export const createOrderValidation = [
   body('cartId')
     .optional()
@@ -41,7 +80,12 @@ export const createOrderValidation = [
   body('shippingAddress.country')
     .trim()
     .notEmpty().withMessage('Country is required')
-    .isLength({ min: 2, max: 2 }).withMessage('Country must be 2-letter ISO code'),
+    .customSanitizer(value => {
+      // Convert country name to ISO code if needed
+      return countryNameToCode[value] || value;
+    })
+    .isLength({ min: 2, max: 2 }).withMessage('Country must be 2-letter ISO code')
+    .matches(/^[A-Z]{2}$/).withMessage('Country must be a valid ISO 3166-1 alpha-2 code'),
   
   body('paymentMethod')
     .trim()
