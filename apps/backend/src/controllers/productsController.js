@@ -61,27 +61,53 @@ export const getProducts = async (req, res) => {
       filter['variations.condition'] = condition;
     }
 
-    // Build sort object
-    const sortObj = {};
-    const validSortFields = ['createdAt', 'price', 'name'];
-    if (validSortFields.includes(sortBy)) {
-      sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    // Execute query - we'll handle price sorting in JavaScript since it requires variation data
+    let products;
+    
+    if (sortBy === 'price') {
+      // For price sorting, get all products without sort and sort them by minimum variation price
+      products = await Product
+        .find(filter)
+        .populate('category', 'name slug')
+        .exec();
+      
+      // Sort by minimum price of variations
+      products.sort((a, b) => {
+        const aMinPrice = Math.min(...a.variations.map(v => v.salePrice || v.price));
+        const bMinPrice = Math.min(...b.variations.map(v => v.salePrice || v.price));
+        return sortOrder === 'asc' ? aMinPrice - bMinPrice : bMinPrice - aMinPrice;
+      });
+      
+      // Apply pagination after sorting
+      const totalProducts = products.length;
+      products = products.slice(skip, skip + limitNum);
+      
+      // Set pagination values for price sorting
+      var total = totalProducts;
+      var pages = Math.ceil(total / limitNum);
+      
     } else {
-      sortObj.price = 1; // Default sort by price ascending
+      // For non-price sorting, use MongoDB sorting
+      const sortObj = {};
+      const validSortFields = ['createdAt', 'name'];
+      if (validSortFields.includes(sortBy)) {
+        sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      } else {
+        sortObj.createdAt = -1; // Default sort by newest
+      }
+      
+      products = await Product
+        .find(filter)
+        .populate('category', 'name slug')
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limitNum)
+        .exec();
+      
+      // Get total count for pagination for non-price sorting
+      total = await Product.countDocuments(filter);
+      pages = Math.ceil(total / limitNum);
     }
-
-    // Execute query
-    const products = await Product
-      .find(filter)
-      .populate('category', 'name slug')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limitNum)
-      .exec();
-
-    // Get total count for pagination
-    const total = await Product.countDocuments(filter);
-    const pages = Math.ceil(total / limitNum);
 
     // Format response with variation data
     const formattedProducts = products.map(product => {
