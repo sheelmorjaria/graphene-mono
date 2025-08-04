@@ -223,16 +223,41 @@ const ProductDetailsPage = () => {
             )}
 
             {/* Price Display */}
-            {!selectedVariation && product.priceRange && (
-              <div className="flex items-center gap-4 mb-6">
-                <span 
-                  className="text-3xl font-bold text-blue-600"
-                  aria-label={`Price range: ${formatPriceRange(product.priceRange)}`}
-                >
-                  {formatPriceRange(product.priceRange)}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-4 mb-6">
+              {selectedVariation ? (
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="text-3xl font-bold text-blue-600"
+                    aria-label={`Price: ${selectedVariation.salePrice ? formatPrice(selectedVariation.salePrice) : formatPrice(selectedVariation.price)}`}
+                  >
+                    {selectedVariation.salePrice ? (
+                      <>
+                        <span className="line-through text-gray-500 text-2xl mr-2">
+                          {formatPrice(selectedVariation.price)}
+                        </span>
+                        {formatPrice(selectedVariation.salePrice)}
+                      </>
+                    ) : (
+                      formatPrice(selectedVariation.price)
+                    )}
+                  </span>
+                  {selectedVariation.salePrice && (
+                    <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
+                      Sale
+                    </span>
+                  )}
+                </div>
+              ) : (
+                product.priceRange && (
+                  <span 
+                    className="text-3xl font-bold text-blue-600"
+                    aria-label={`Price range: ${formatPriceRange(product.priceRange)}`}
+                  >
+                    {formatPriceRange(product.priceRange)}
+                  </span>
+                )
+              )}
+            </div>
 
             {/* Lead Time Information */}
             {product.leadTime && (
