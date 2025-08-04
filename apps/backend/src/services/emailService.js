@@ -1136,8 +1136,173 @@ class EmailService {
       return { success: false, error: error.message };
     }
   }
+
+  // Send data export email
+  async sendDataExportEmail(userEmail, firstName, exportDetails) {
+    try {
+      const content = `
+        <p>Your data export request has been processed and is ready for download.</p>
+        
+        <div class="order-details">
+          <h3>Download Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Download Link:</span>
+            <span class="detail-value"><a href="${exportDetails.downloadUrl}" class="highlight">Download Your Data</a></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Expires:</span>
+            <span class="detail-value">${exportDetails.expiresAt.toLocaleDateString()} at ${exportDetails.expiresAt.toLocaleTimeString()}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Format:</span>
+            <span class="detail-value">JSON</span>
+          </div>
+        </div>
+
+        <div class="important-notice">
+          <h3>Important Information</h3>
+          <ul>
+            <li>Your download link will expire in 48 hours for security purposes</li>
+            <li>The file contains all your personal data in a machine-readable format</li>
+            <li>Please store this data securely and delete it when no longer needed</li>
+            <li>If you have any questions, please contact our support team</li>
+          </ul>
+        </div>
+
+        <p>Thank you for using GrapheneOS Store. We're committed to protecting your privacy and data rights.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Your Data Export is Ready',
+        content,
+        firstName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: userEmail,
+        subject: 'Your Data Export is Ready for Download',
+        htmlContent,
+        emailType: 'account.data_export'
+      });
+
+    } catch (error) {
+      logError(error, { context: 'data_export_email', userEmail });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send account deletion confirmation email
+  async sendAccountDeletionConfirmationEmail(userEmail, firstName, deletionDetails) {
+    try {
+      const content = `
+        <p>We have received your request to delete your account. This email confirms that your deletion request is being processed.</p>
+        
+        <div class="order-details">
+          <h3>Deletion Request Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Request ID:</span>
+            <span class="detail-value highlight">${deletionDetails.requestId}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Requested:</span>
+            <span class="detail-value">${new Date().toLocaleDateString()}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Estimated Completion:</span>
+            <span class="detail-value">${deletionDetails.estimatedCompletion}</span>
+          </div>
+        </div>
+
+        <div class="important-notice">
+          <h3>What Happens Next</h3>
+          <ul>
+            <li>Your account will be deactivated and you will be logged out</li>
+            <li>Personal data will be permanently deleted within ${deletionDetails.estimatedCompletion}</li>
+            <li>Some data may be retained for legal/tax purposes (anonymized)</li>
+            <li>This action cannot be undone once processing is complete</li>
+          </ul>
+        </div>
+
+        <div class="important-notice">
+          <h3>Data Retention Policy</h3>
+          <p>In accordance with legal requirements, some order and transaction data may be retained for tax and legal compliance purposes. However, all personally identifiable information will be removed or anonymized.</p>
+        </div>
+
+        <p>If you did not request this deletion or have changed your mind, please contact our support team immediately at ${process.env.SUPPORT_EMAIL || 'support@graphene-security.com'}.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Account Deletion Request Confirmed',
+        content,
+        firstName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: userEmail,
+        subject: 'Account Deletion Request Confirmed',
+        htmlContent,
+        emailType: 'account.deletion_confirmation'
+      });
+
+    } catch (error) {
+      logError(error, { context: 'account_deletion_confirmation_email', userEmail });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send account deletion completed email
+  async sendAccountDeletionCompletedEmail(userEmail, firstName) {
+    try {
+      const content = `
+        <p>Your account deletion has been completed successfully. All your personal data has been permanently removed from our systems.</p>
+        
+        <div class="important-notice">
+          <h3>What Has Been Deleted</h3>
+          <ul>
+            <li>Personal profile information</li>
+            <li>Contact details and addresses</li>
+            <li>Account preferences and settings</li>
+            <li>Shopping cart and wishlist data</li>
+            <li>Marketing preferences and communications</li>
+          </ul>
+        </div>
+
+        <div class="important-notice">
+          <h3>Data Retained (Anonymized)</h3>
+          <p>In compliance with legal and tax requirements, some transaction and order data has been retained but anonymized to remove all personally identifiable information.</p>
+        </div>
+
+        <p>Thank you for having been a customer of GrapheneOS Store. We respect your privacy choices and your right to control your personal data.</p>
+        
+        <p>If you have any questions about this deletion or our data handling practices, you may contact our support team, though please note that we will not be able to access any of your previous account information.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Account Deletion Completed',
+        content,
+        firstName || 'Former Customer'
+      );
+
+      return await this.sendEmail({
+        to: userEmail,
+        subject: 'Account Deletion Completed',
+        htmlContent,
+        emailType: 'account.deletion_completed',
+        skipPreferenceCheck: true // Send even if user opted out, as this is a legal notification
+      });
+
+    } catch (error) {
+      logError(error, { context: 'account_deletion_completed_email', userEmail });
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Create and export singleton instance
 const emailService = new EmailService();
 export default emailService;
+
+// Export individual functions for convenience
+export const sendDataExportEmail = emailService.sendDataExportEmail.bind(emailService);
+export const sendAccountDeletionConfirmationEmail = emailService.sendAccountDeletionConfirmationEmail.bind(emailService);
+export const sendAccountDeletionCompletedEmail = emailService.sendAccountDeletionCompletedEmail.bind(emailService);

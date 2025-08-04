@@ -54,12 +54,14 @@ export const getCart = async (req, res) => {
       items: cart.items.map(item => ({
         _id: item._id,
         productId: item.productId,
+        variationId: item.variationId,
         productName: item.productName,
         productSlug: item.productSlug,
         productImage: item.productImage,
         unitPrice: item.unitPrice,
         quantity: item.quantity,
-        subtotal: item.subtotal
+        subtotal: item.subtotal,
+        variationDetails: item.variationDetails
       })),
       totalItems: cart.totalItems,
       totalAmount: cart.totalAmount,
@@ -86,7 +88,7 @@ export const getCart = async (req, res) => {
 // Add product to cart
 export const addToCart = async (req, res) => {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, variationId } = req.body;
 
     // Input validation
     if (!productId) {
@@ -119,10 +121,44 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    if (product.stockQuantity < quantity) {
+    // Check if this is a product with variations
+    let selectedVariation = null;
+    let stockQuantity = 0;
+    let price = 0;
+    let sku = '';
+
+    if (product.variations && product.variations.length > 0) {
+      // Product has variations, variationId is required
+      if (!variationId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please select a product variation'
+        });
+      }
+
+      selectedVariation = product.variations.id(variationId);
+      if (!selectedVariation) {
+        return res.status(404).json({
+          success: false,
+          error: 'Selected variation not found'
+        });
+      }
+
+      stockQuantity = selectedVariation.stockQuantity;
+      price = selectedVariation.salePrice || selectedVariation.price;
+      sku = selectedVariation.sku;
+
+      if (selectedVariation.stockStatus === 'out_of_stock' || stockQuantity < quantity) {
+        return res.status(400).json({
+          success: false,
+          error: `Only ${stockQuantity} items available in stock`
+        });
+      }
+    } else {
+      // Legacy product without variations
       return res.status(400).json({
         success: false,
-        error: `Only ${product.stockQuantity} items available in stock`
+        error: 'This product requires variation selection'
       });
     }
 
@@ -130,21 +166,39 @@ export const addToCart = async (req, res) => {
     const cart = await findOrCreateCart(req, res);
 
     // Check if adding this quantity would exceed stock
+    const cartItemId = variationId ? `${productId}_${variationId}` : productId;
     const existingItem = cart.items.find(
-      item => item.productId.toString() === productId
+      item => {
+        if (variationId) {
+          return item.productId.toString() === productId && item.variationId === variationId;
+        }
+        return item.productId.toString() === productId;
+      }
     );
     const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
     const totalQuantityAfterAdd = currentQuantityInCart + quantity;
 
-    if (totalQuantityAfterAdd > product.stockQuantity) {
+    if (totalQuantityAfterAdd > stockQuantity) {
       return res.status(400).json({
         success: false,
-        error: `Cannot add ${quantity} items. You already have ${currentQuantityInCart} in cart. Only ${product.stockQuantity} available.`
+        error: `Cannot add ${quantity} items. You already have ${currentQuantityInCart} in cart. Only ${stockQuantity} available.`
       });
     }
 
-    // Add item to cart
-    cart.addItem(product, quantity);
+    // Add item to cart with variation info
+    const itemData = {
+      product,
+      quantity,
+      variationId: variationId || null,
+      variationDetails: selectedVariation ? {
+        condition: selectedVariation.condition,
+        color: selectedVariation.color,
+        sku: selectedVariation.sku,
+        price: selectedVariation.salePrice || selectedVariation.price
+      } : null
+    };
+    
+    cart.addItem(itemData);
     await cart.save();
 
     res.json({
@@ -158,9 +212,15 @@ export const addToCart = async (req, res) => {
         },
         addedItem: {
           productId: product._id,
+          variationId: variationId || null,
           productName: product.name,
           quantity: quantity,
-          unitPrice: product.price
+          unitPrice: price,
+          sku: sku,
+          variationDetails: selectedVariation ? {
+            condition: selectedVariation.condition,
+            color: selectedVariation.color
+          } : null
         }
       }
     });
@@ -177,8 +237,11 @@ export const addToCart = async (req, res) => {
 // Update item quantity in cart
 export const updateCartItem = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { itemId } = req.params; // Can be productId or productId_variationId
     const { quantity } = req.body;
+
+    // Parse itemId to get productId and variationId
+    const [productId, variationId] = itemId.includes('_') ? itemId.split('_') : [itemId, null];
 
     // Input validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -200,7 +263,12 @@ export const updateCartItem = async (req, res) => {
 
     // Check if item exists in cart
     const existingItem = cart.items.find(
-      item => item.productId.toString() === productId
+      item => {
+        if (variationId) {
+          return item.productId.toString() === productId && item.variationId === variationId;
+        }
+        return item.productId.toString() === productId && !item.variationId;
+      }
     );
 
     if (!existingItem) {
@@ -220,16 +288,35 @@ export const updateCartItem = async (req, res) => {
         });
       }
 
-      if (quantity > product.stockQuantity) {
+      // Check stock based on variation or product
+      let stockQuantity = 0;
+      if (variationId && product.variations && product.variations.length > 0) {
+        const variation = product.variations.id(variationId);
+        if (!variation) {
+          return res.status(404).json({
+            success: false,
+            error: 'Variation not found'
+          });
+        }
+        stockQuantity = variation.stockQuantity;
+      } else {
+        // Should not reach here with new variation system
         return res.status(400).json({
           success: false,
-          error: `Only ${product.stockQuantity} items available in stock`
+          error: 'Product variation required'
+        });
+      }
+
+      if (quantity > stockQuantity) {
+        return res.status(400).json({
+          success: false,
+          error: `Only ${stockQuantity} items available in stock`
         });
       }
     }
 
     // Update item quantity (or remove if quantity is 0)
-    cart.updateItemQuantity(productId, quantity);
+    cart.updateItemQuantity(itemId, quantity);
     await cart.save();
 
     res.json({
@@ -256,7 +343,10 @@ export const updateCartItem = async (req, res) => {
 // Remove item from cart
 export const removeFromCart = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { itemId } = req.params; // Can be productId or productId_variationId
+    
+    // Parse itemId to get productId and variationId
+    const [productId, variationId] = itemId.includes('_') ? itemId.split('_') : [itemId, null];
 
     // Input validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -271,7 +361,12 @@ export const removeFromCart = async (req, res) => {
 
     // Check if item exists in cart
     const existingItem = cart.items.find(
-      item => item.productId.toString() === productId
+      item => {
+        if (variationId) {
+          return item.productId.toString() === productId && item.variationId === variationId;
+        }
+        return item.productId.toString() === productId && !item.variationId;
+      }
     );
 
     if (!existingItem) {
@@ -282,7 +377,7 @@ export const removeFromCart = async (req, res) => {
     }
 
     // Remove item from cart
-    cart.removeItem(productId);
+    cart.removeItem(itemId);
     await cart.save();
 
     res.json({
@@ -332,19 +427,5 @@ export const clearCart = async (req, res) => {
       success: false,
       error: 'Server error occurred while clearing cart'
     });
-  }
-};
-
-
-// Merge guest cart when user logs in (called by auth controller)
-export const mergeGuestCart = async (userId, sessionId) => {
-  try {
-    if (!sessionId) return null;
-    
-    const mergedCart = await Cart.mergeGuestCart(userId, sessionId);
-    return mergedCart;
-  } catch (error) {
-    console.error('Merge guest cart error:', error);
-    throw error;
   }
 };

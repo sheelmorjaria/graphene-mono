@@ -33,20 +33,11 @@ const productSchema = new mongoose.Schema({
     trim: true,
     maxlength: 2000
   },
-  price: {
-    type: Number,
+  baseModel: {
+    type: String,
     required: true,
-    min: 0
-  },
-  salePrice: {
-    type: Number,
-    min: 0,
-    validate: {
-      validator: function(value) {
-        return !value || value < this.price;
-      },
-      message: 'Sale price must be less than regular price'
-    }
+    trim: true,
+    maxlength: 100
   },
   lowStockThreshold: {
     type: Number,
@@ -65,23 +56,54 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category'
   },
-  condition: {
-    type: String,
-    enum: ['new', 'excellent', 'good', 'fair'],
-    required: true,
-    default: 'new'
-  },
-  stockStatus: {
-    type: String,
-    enum: ['in_stock', 'out_of_stock', 'low_stock'],
-    default: 'in_stock'
-  },
-  stockQuantity: {
-    type: Number,
-    required: true,
-    min: 0,
-    default: 10
-  },
+  variations: [{
+    condition: {
+      type: String,
+      enum: ['new', 'excellent', 'good', 'fair'],
+      required: true
+    },
+    color: {
+      type: String,
+      required: true
+    },
+    storage: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    salePrice: {
+      type: Number,
+      min: 0
+    },
+    stockQuantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+    stockStatus: {
+      type: String,
+      enum: ['in_stock', 'out_of_stock', 'low_stock'],
+      default: 'in_stock'
+    },
+    sku: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      trim: true,
+      maxlength: 50
+    },
+    images: {
+      type: [String],
+      default: []
+    }
+  }],
   attributes: [{
     name: {
       type: String,
@@ -153,9 +175,75 @@ productSchema.methods.getUrl = function() {
   return `/products/${this.slug}`;
 };
 
-// Instance method to check if product is in stock
+// Instance method to check if product has any variation in stock
 productSchema.methods.isInStock = function() {
-  return this.stockStatus === 'in_stock' || this.stockStatus === 'low_stock';
+  if (!this.variations || this.variations.length === 0) {
+    return false;
+  }
+  return this.variations.some(v => v.stockStatus === 'in_stock' || v.stockStatus === 'low_stock');
+};
+
+// Instance method to get total stock across all variations
+productSchema.methods.getTotalStock = function() {
+  if (!this.variations || this.variations.length === 0) {
+    return 0;
+  }
+  return this.variations.reduce((total, variation) => total + variation.stockQuantity, 0);
+};
+
+// Instance method to get price range across variations
+productSchema.methods.getPriceRange = function() {
+  if (!this.variations || this.variations.length === 0) {
+    return { min: 0, max: 0 };
+  }
+  
+  const prices = this.variations.map(v => v.salePrice || v.price);
+  return {
+    min: Math.min(...prices),
+    max: Math.max(...prices)
+  };
+};
+
+// Instance method to get available colors
+productSchema.methods.getAvailableColors = function() {
+  if (!this.variations || this.variations.length === 0) {
+    return [];
+  }
+  
+  const colors = new Set();
+  this.variations
+    .filter(v => v.stockStatus !== 'out_of_stock')
+    .forEach(v => colors.add(v.color));
+  
+  return Array.from(colors);
+};
+
+// Instance method to get available conditions
+productSchema.methods.getAvailableConditions = function() {
+  if (!this.variations || this.variations.length === 0) {
+    return [];
+  }
+  
+  const conditions = new Set();
+  this.variations
+    .filter(v => v.stockStatus !== 'out_of_stock')
+    .forEach(v => conditions.add(v.condition));
+  
+  return Array.from(conditions);
+};
+
+// Instance method to get available storage options
+productSchema.methods.getAvailableStorage = function() {
+  if (!this.variations || this.variations.length === 0) {
+    return [];
+  }
+  
+  const storageOptions = new Set();
+  this.variations
+    .filter(v => v.stockStatus !== 'out_of_stock')
+    .forEach(v => storageOptions.add(v.storage));
+  
+  return Array.from(storageOptions);
 };
 
 // Instance method to check if product is archived (soft deleted)
@@ -202,15 +290,18 @@ productSchema.index({
 
 // Create other useful indexes
 productSchema.index({ category: 1 });
-productSchema.index({ condition: 1 });
-productSchema.index({ stockStatus: 1 });
-productSchema.index({ price: 1 });
+productSchema.index({ 'variations.condition': 1 });
+productSchema.index({ 'variations.color': 1 });
+productSchema.index({ 'variations.storage': 1 });
+productSchema.index({ 'variations.stockStatus': 1 });
+productSchema.index({ 'variations.price': 1 });
+productSchema.index({ baseModel: 1 });
 productSchema.index({ status: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ createdAt: -1 });
 
 // Indexes for inventory reports
-productSchema.index({ stockQuantity: 1, isActive: 1 }); // For stock status queries
-productSchema.index({ isActive: 1, stockQuantity: 1 }); // For product counts
+productSchema.index({ 'variations.stockQuantity': 1, isActive: 1 }); // For stock status queries
+productSchema.index({ isActive: 1, 'variations.stockQuantity': 1 }); // For product counts
 
 export default mongoose.model('Product', productSchema);

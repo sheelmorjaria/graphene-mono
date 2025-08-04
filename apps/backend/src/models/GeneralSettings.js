@@ -20,14 +20,14 @@ const generalSettingsSchema = new mongoose.Schema({
     type: String,
     trim: true,
     maxlength: 20,
-    default: '+44 20 1234 5678'
+    default: '+44 7484103481'
   },
   storeAddress: {
     street: {
       type: String,
       trim: true,
       maxlength: 100,
-      default: '123 Privacy Street'
+      default: '70 James Court, Hazel Close'
     },
     city: {
       type: String,
@@ -39,7 +39,7 @@ const generalSettingsSchema = new mongoose.Schema({
       type: String,
       trim: true,
       maxlength: 20,
-      default: 'SW1A 1AA'
+      default: 'NW9 5GD'
     },
     country: {
       type: String,

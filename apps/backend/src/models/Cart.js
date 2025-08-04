@@ -6,6 +6,10 @@ const cartItemSchema = new mongoose.Schema({
     ref: 'Product',
     required: [true, 'Product ID is required']
   },
+  variationId: {
+    type: String,
+    default: null
+  },
   productName: {
     type: String,
     required: [true, 'Product name is required'],
@@ -37,6 +41,11 @@ const cartItemSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Subtotal is required'],
     min: [0, 'Subtotal cannot be negative']
+  },
+  variationDetails: {
+    condition: String,
+    color: String,
+    sku: String
   }
 });
 
@@ -101,9 +110,17 @@ cartSchema.pre('save', function(next) {
 });
 
 // Instance method to add item to cart
-cartSchema.methods.addItem = function(productData, quantity = 1) {
+cartSchema.methods.addItem = function(itemData) {
+  const { product, quantity, variationId, variationDetails } = itemData;
+  
   const existingItemIndex = this.items.findIndex(
-    item => item.productId.toString() === productData._id.toString()
+    item => {
+      if (variationId) {
+        return item.productId.toString() === product._id.toString() && 
+               item.variationId === variationId;
+      }
+      return item.productId.toString() === product._id.toString() && !item.variationId;
+    }
   );
 
   if (existingItemIndex > -1) {
@@ -113,14 +130,20 @@ cartSchema.methods.addItem = function(productData, quantity = 1) {
       this.items[existingItemIndex].unitPrice * this.items[existingItemIndex].quantity;
   } else {
     // Add new item
+    const price = variationDetails ? variationDetails.price : product.price;
+    const image = variationDetails && product.variations?.find(v => v._id.toString() === variationId)?.images?.[0] 
+                  || product.images?.[0] || null;
+    
     this.items.push({
-      productId: productData._id,
-      productName: productData.name,
-      productSlug: productData.slug,
-      productImage: productData.images && productData.images[0] ? productData.images[0] : null,
-      unitPrice: productData.price,
+      productId: product._id,
+      variationId: variationId || null,
+      productName: product.name,
+      productSlug: product.slug,
+      productImage: image,
+      unitPrice: price,
       quantity: quantity,
-      subtotal: productData.price * quantity
+      subtotal: price * quantity,
+      variationDetails: variationDetails || null
     });
   }
 
@@ -128,9 +151,17 @@ cartSchema.methods.addItem = function(productData, quantity = 1) {
 };
 
 // Instance method to update item quantity
-cartSchema.methods.updateItemQuantity = function(productId, quantity) {
+cartSchema.methods.updateItemQuantity = function(itemId, quantity) {
+  // itemId can be either productId or productId_variationId
+  const [productId, variationId] = itemId.includes('_') ? itemId.split('_') : [itemId, null];
+  
   const itemIndex = this.items.findIndex(
-    item => item.productId.toString() === productId.toString()
+    item => {
+      if (variationId) {
+        return item.productId.toString() === productId && item.variationId === variationId;
+      }
+      return item.productId.toString() === productId && !item.variationId;
+    }
   );
 
   if (itemIndex > -1) {
@@ -148,9 +179,17 @@ cartSchema.methods.updateItemQuantity = function(productId, quantity) {
 };
 
 // Instance method to remove item from cart
-cartSchema.methods.removeItem = function(productId) {
+cartSchema.methods.removeItem = function(itemId) {
+  // itemId can be either productId or productId_variationId
+  const [productId, variationId] = itemId.includes('_') ? itemId.split('_') : [itemId, null];
+  
   this.items = this.items.filter(
-    item => item.productId.toString() !== productId.toString()
+    item => {
+      if (variationId) {
+        return !(item.productId.toString() === productId && item.variationId === variationId);
+      }
+      return !(item.productId.toString() === productId && !item.variationId);
+    }
   );
   return this;
 };

@@ -11,11 +11,22 @@ console.log('  Current window origin:', typeof window !== 'undefined' ? window.l
 if (!API_BASE_URL) {
   console.error('❌ VITE_API_BASE_URL is undefined! Admin shipping settings will fail.');
   console.error('   Please ensure VITE_API_BASE_URL is set in your deployment environment.');
-} else if (typeof window !== 'undefined' && API_BASE_URL.includes(window.location.hostname)) {
-  console.error('❌ VITE_API_BASE_URL points to frontend domain! Admin calls will fail.');
-  console.error('   Current API_BASE_URL:', API_BASE_URL);
-  console.error('   Frontend hostname:', window.location.hostname);
-  console.error('   Expected format: https://your-backend-domain.com/api');
+} else if (typeof window !== 'undefined') {
+  const currentOrigin = window.location.origin;
+  const apiUrl = new URL(API_BASE_URL, currentOrigin);
+  
+  // Only warn if the API URL points to the exact same origin (same hostname AND port)
+  if (apiUrl.origin === currentOrigin) {
+    console.error('❌ VITE_API_BASE_URL points to frontend domain! Admin calls will fail.');
+    console.error('   Current API_BASE_URL:', API_BASE_URL);
+    console.error('   Frontend origin:', currentOrigin);
+    console.error('   Expected format: https://your-backend-domain.com/api');
+  } else if (apiUrl.hostname === window.location.hostname && apiUrl.port !== window.location.port) {
+    // This is okay for local development (same hostname, different ports)
+    console.log('✅ Local development detected: API and frontend on same hostname but different ports');
+    console.log('   Frontend:', currentOrigin);
+    console.log('   API:', API_BASE_URL);
+  }
 }
 
 const ShippingSettings = ({ onMessage }) => {

@@ -1,5 +1,6 @@
 import express from 'express';
-import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getProducts, getProductById, createProduct, updateProduct, deleteProduct, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
+import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
+import { getProducts, getProductById, createProduct, updateProduct, deleteProduct, updateVariationStock } from '../controllers/adminProductController.js';
 import { 
   getDeliveryStats, 
   getEngagementStats,
@@ -60,6 +61,7 @@ router.get('/products/:productId', getProductById);
 router.post('/products', uploadProductImages, processProductImages, createProduct, handleImageUploadError);
 router.put('/products/:productId', uploadProductImages, processProductImages, updateProduct, handleImageUploadError);
 router.delete('/products/:productId', deleteProduct);
+router.patch('/products/:productId/variations/:variationId/stock', updateVariationStock);
 
 // Categories management
 router.get('/categories', getCategories);

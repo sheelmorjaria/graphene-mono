@@ -35,7 +35,7 @@ export const getProducts = async (req, res) => {
       }
     }
 
-    // Add price range filter
+    // Add price range filter for variations
     if (minPrice || maxPrice) {
       const priceFilter = {};
       if (minPrice) {
@@ -50,15 +50,15 @@ export const getProducts = async (req, res) => {
           priceFilter.$lte = max;
         }
       }
-      // Only add price filter if at least one valid price was provided
+      // Filter by variation prices
       if (Object.keys(priceFilter).length > 0) {
-        filter.price = priceFilter;
+        filter['variations.price'] = priceFilter;
       }
     }
 
-    // Add condition filter
+    // Add condition filter for variations
     if (condition && ['new', 'excellent', 'good', 'fair'].includes(condition)) {
-      filter.condition = condition;
+      filter['variations.condition'] = condition;
     }
 
     // Build sort object
@@ -83,19 +83,36 @@ export const getProducts = async (req, res) => {
     const total = await Product.countDocuments(filter);
     const pages = Math.ceil(total / limitNum);
 
-    // Format response
-    const formattedProducts = products.map(product => ({
-      id: product._id,
-      name: product.name,
-      slug: product.slug,
-      shortDescription: product.shortDescription,
-      price: product.price,
-      images: product.images,
-      condition: product.condition,
-      stockStatus: product.stockStatus,
-      category: product.category,
-      createdAt: product.createdAt
-    }));
+    // Format response with variation data
+    const formattedProducts = products.map(product => {
+      const priceRange = product.getPriceRange();
+      const availableColors = product.getAvailableColors();
+      const availableConditions = product.getAvailableConditions();
+      const isInStock = product.isInStock();
+      
+      return {
+        id: product._id,
+        name: product.name,
+        slug: product.slug,
+        shortDescription: product.shortDescription,
+        baseModel: product.baseModel,
+        priceRange,
+        images: product.images.length > 0 ? product.images : (product.variations[0]?.images || []),
+        variations: product.variations.map(v => ({
+          condition: v.condition,
+          color: v.color,
+          price: v.price,
+          salePrice: v.salePrice,
+          stockStatus: v.stockStatus,
+          sku: v.sku
+        })),
+        availableColors,
+        availableConditions,
+        isInStock,
+        category: product.category,
+        createdAt: product.createdAt
+      };
+    });
 
     res.status(200).json({
       success: true,

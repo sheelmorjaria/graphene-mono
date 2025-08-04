@@ -49,7 +49,7 @@ export const getCart = async () => {
 };
 
 // Add product to cart
-export const addToCart = async (productId, quantity = 1) => {
+export const addToCart = async (productId, quantity = 1, variationId = null) => {
   try {
     const token = getAuthToken();
     const headers = {
@@ -60,11 +60,16 @@ export const addToCart = async (productId, quantity = 1) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const requestBody = { productId, quantity };
+    if (variationId) {
+      requestBody.variationId = variationId;
+    }
+
     const response = await fetch(`${API_BASE_URL}/cart/add`, {
       method: 'POST',
       headers,
       credentials: 'include', // Include cookies for guest cart sessions
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
@@ -81,7 +86,7 @@ export const addToCart = async (productId, quantity = 1) => {
 };
 
 // Update item quantity in cart
-export const updateCartItem = async (productId, quantity) => {
+export const updateCartItem = async (productId, quantity, variationId = null) => {
   try {
     const token = getAuthToken();
     const headers = {
@@ -92,7 +97,8 @@ export const updateCartItem = async (productId, quantity) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/cart/item/${productId}`, {
+    const itemId = variationId ? `${productId}_${variationId}` : productId;
+    const response = await fetch(`${API_BASE_URL}/cart/item/${itemId}`, {
       method: 'PUT',
       headers,
       credentials: 'include',
@@ -113,7 +119,7 @@ export const updateCartItem = async (productId, quantity) => {
 };
 
 // Remove item from cart
-export const removeFromCart = async (productId) => {
+export const removeFromCart = async (productId, variationId = null) => {
   try {
     const token = getAuthToken();
     const headers = {
@@ -124,7 +130,8 @@ export const removeFromCart = async (productId) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/cart/item/${productId}`, {
+    const itemId = variationId ? `${productId}_${variationId}` : productId;
+    const response = await fetch(`${API_BASE_URL}/cart/item/${itemId}`, {
       method: 'DELETE',
       headers,
       credentials: 'include',
