@@ -75,7 +75,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
     if (window.confirm('Are you sure you want to remove this item from your cart?')) {
       setIsRemoving(true);
       try {
-        await onRemoveItem(item.productId);
+        await onRemoveItem(item.productId, item.variationId);
       } finally {
         setIsRemoving(false);
       }
@@ -177,10 +177,10 @@ const CartPage = () => {
     }
   };
 
-  const handleRemoveItem = async (productId) => {
+  const handleRemoveItem = async (productId, variationId) => {
     setIsUpdating(true);
     try {
-      await removeFromCart(productId);
+      await removeFromCart(productId, variationId);
     } finally {
       setIsUpdating(false);
     }
@@ -355,7 +355,7 @@ const CartPage = () => {
                         {/* Remove Button */}
                         <div className="col-span-1 flex justify-center">
                           <button
-                            onClick={() => handleRemoveItem(item.productId)}
+                            onClick={() => handleRemoveItem(item.productId, item.variationId)}
                             disabled={isUpdating}
                             className="text-red-600 hover:text-red-800 disabled:text-gray-400 disabled:cursor-not-allowed p-2"
                             aria-label="Remove item"

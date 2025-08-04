@@ -42,7 +42,7 @@ describe('AddressForm', () => {
         city: 'New York',
         stateProvince: 'NY',
         postalCode: '10001',
-        country: 'United States',
+        country: 'US',
         phoneNumber: '+1 (555) 123-4567'
       };
 
@@ -158,7 +158,7 @@ describe('AddressForm', () => {
       await userEvent.type(screen.getByLabelText('City *'), 'New York');
       await userEvent.type(screen.getByLabelText('State/Province *'), 'NY');
       await userEvent.type(screen.getByLabelText('Postal Code *'), '10001');
-      await userEvent.type(screen.getByLabelText('Country *'), 'United States');
+      await userEvent.selectOptions(screen.getByLabelText('Country *'), 'US');
       await userEvent.type(screen.getByLabelText('Phone Number'), '+1 (555) 123-4567');
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
@@ -172,7 +172,7 @@ describe('AddressForm', () => {
           city: 'New York',
           stateProvince: 'NY',
           postalCode: '10001',
-          country: 'United States',
+          country: 'US',
           phoneNumber: '+1 (555) 123-4567'
         });
       });
@@ -187,7 +187,7 @@ describe('AddressForm', () => {
       await userEvent.type(screen.getByLabelText('City *'), 'Los Angeles');
       await userEvent.type(screen.getByLabelText('State/Province *'), 'CA');
       await userEvent.type(screen.getByLabelText('Postal Code *'), '90210');
-      await userEvent.type(screen.getByLabelText('Country *'), 'United States');
+      await userEvent.selectOptions(screen.getByLabelText('Country *'), 'US');
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
       await userEvent.click(submitButton);
@@ -200,7 +200,7 @@ describe('AddressForm', () => {
           city: 'Los Angeles',
           stateProvince: 'CA',
           postalCode: '90210',
-          country: 'United States',
+          country: 'US',
           phoneNumber: ''
         });
       });

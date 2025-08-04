@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { getUserOrderDetails, formatCurrency, cancelOrder } from '../services/orderService';
 import { getUserReturnRequests, formatReturnStatus, getReturnStatusColorClass } from '../services/returnService';
 import OrderStatusTimeline from '../components/OrderStatusTimeline';
+import { getCountryName } from '../utils/countryUtils';
 
 const OrderDetailsPage = () => {
   const { orderId } = useParams();
@@ -119,7 +120,7 @@ const OrderDetailsPage = () => {
       address.addressLine1,
       address.addressLine2,
       `${address.city}, ${address.stateProvince} ${address.postalCode}`,
-      address.country
+      getCountryName(address.country)
     ].filter(Boolean);
     
     if (address.phoneNumber) {

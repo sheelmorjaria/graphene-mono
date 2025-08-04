@@ -53,7 +53,7 @@ const AddressForm = ({
     city: '',
     stateProvince: '',
     postalCode: '',
-    country: 'United Kingdom', // Default to UK
+    country: 'GB', // Default to UK
     phoneNumber: ''
   });
 
@@ -68,14 +68,14 @@ const AddressForm = ({
         city: initialData.city || '',
         stateProvince: initialData.stateProvince || '',
         postalCode: initialData.postalCode || '',
-        country: initialData.country || 'United Kingdom', // Default to UK
+        country: initialData.country || 'GB', // Default to UK
         phoneNumber: initialData.phoneNumber || ''
       });
     } else {
       // Set default country for new addresses
       setFormData(prev => ({
         ...prev,
-        country: 'United Kingdom'
+        country: 'GB'
       }));
     }
   }, [initialData]);
@@ -307,7 +307,7 @@ const AddressForm = ({
         >
           <option value="">Select a country</option>
           {COUNTRIES.map(country => (
-            <option key={country.code} value={country.name}>
+            <option key={country.code} value={country.code}>
               {country.name}
             </option>
           ))}
