@@ -1,6 +1,6 @@
 // API service for support/contact functionality
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Submit contact form
 export const submitContactForm = async (formData) => {
@@ -14,10 +14,24 @@ export const submitContactForm = async (formData) => {
       body: JSON.stringify(formData),
     });
 
-    const data = await response.json();
+    // Check if response has content to parse
+    const contentType = response.headers.get('content-type');
+    const hasJsonContent = contentType && contentType.includes('application/json');
+    
+    let data = null;
+    if (hasJsonContent) {
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error('Invalid response format from server');
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to submit contact form');
+      // Use error message from parsed data if available, otherwise create generic message
+      const errorMessage = data?.message || `Request failed with status ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return data;
