@@ -55,8 +55,18 @@ services:
   - type: web
     name: graphene-frontend  
     env: static
-    buildCommand: cd apps/frontend && npm install && rm -rf dist && npm run build
+    buildCommand: cd apps/frontend && ./render-build.sh
     staticPublishPath: apps/frontend/dist
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
     envVars:
       - key: VITE_API_BASE_URL
         value: https://graphene-backend.onrender.com/api
