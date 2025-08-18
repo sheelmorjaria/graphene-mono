@@ -41,8 +41,11 @@ const emailPreferenceSchema = new mongoose.Schema({
     isComplained: { type: Boolean, default: false },
     lastBounceDate: { type: Date, default: null },
     lastComplaintDate: { type: Date, default: null },
+    lastBounceReason: { type: String, default: null },
+    lastComplaintReason: { type: String, default: null },
     bounceCount: { type: Number, default: 0 },
-    complaintCount: { type: Number, default: 0 }
+    complaintCount: { type: Number, default: 0 },
+    lastValidatedAt: { type: Date, default: null }
   },
   
   // Unsubscribe token
@@ -111,12 +114,14 @@ emailPreferenceSchema.methods.canSendEmail = function(emailType) {
 emailPreferenceSchema.methods.recordBounce = function(bounceType, reason) {
   this.emailStatus.isBounced = true;
   this.emailStatus.lastBounceDate = new Date();
+  this.emailStatus.lastBounceReason = reason;
   this.emailStatus.bounceCount += 1;
   
   this.updateHistory.push({
     changes: new Map([
       ['emailStatus.isBounced', true],
-      ['emailStatus.bounceCount', this.emailStatus.bounceCount]
+      ['emailStatus.bounceCount', this.emailStatus.bounceCount],
+      ['emailStatus.lastBounceReason', reason]
     ]),
     source: 'webhook',
     reason: `Bounce: ${bounceType} - ${reason}`
@@ -128,6 +133,7 @@ emailPreferenceSchema.methods.recordBounce = function(bounceType, reason) {
 emailPreferenceSchema.methods.recordComplaint = function(complaintType, reason) {
   this.emailStatus.isComplained = true;
   this.emailStatus.lastComplaintDate = new Date();
+  this.emailStatus.lastComplaintReason = reason;
   this.emailStatus.complaintCount += 1;
   
   // Auto-unsubscribe from all marketing on complaint
@@ -138,11 +144,20 @@ emailPreferenceSchema.methods.recordComplaint = function(complaintType, reason) 
     surveyInvitations: false
   };
   
+  // Also disable non-essential notifications
+  this.notifications.priceDropAlerts = false;
+  this.notifications.backInStockAlerts = false;
+  this.notifications.newProductAlerts = false;
+  
   this.updateHistory.push({
     changes: new Map([
       ['emailStatus.isComplained', true],
       ['emailStatus.complaintCount', this.emailStatus.complaintCount],
-      ['marketing', this.marketing]
+      ['emailStatus.lastComplaintReason', reason],
+      ['marketing', this.marketing],
+      ['notifications.priceDropAlerts', false],
+      ['notifications.backInStockAlerts', false],
+      ['notifications.newProductAlerts', false]
     ]),
     source: 'webhook',
     reason: `Complaint: ${complaintType} - ${reason}`
