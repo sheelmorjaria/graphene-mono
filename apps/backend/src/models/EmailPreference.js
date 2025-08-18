@@ -79,8 +79,7 @@ const emailPreferenceSchema = new mongoose.Schema({
 });
 
 // Indexes
-emailPreferenceSchema.index({ userId: 1 });
-emailPreferenceSchema.index({ unsubscribeToken: 1 });
+// Note: userId and unsubscribeToken already have unique indexes from their schema definitions
 emailPreferenceSchema.index({ 'emailStatus.isBounced': 1 });
 emailPreferenceSchema.index({ 'emailStatus.isComplained': 1 });
 
