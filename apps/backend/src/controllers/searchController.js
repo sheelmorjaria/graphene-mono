@@ -90,7 +90,7 @@ export const searchProducts = async (req, res) => {
       }
 
       if (condition && ['new', 'excellent', 'good', 'fair'].includes(condition)) {
-        searchFilter.$and.push({ condition });
+        searchFilter.$and.push({ 'variations.condition': condition });
       }
 
       // Add price range filter
@@ -109,7 +109,7 @@ export const searchProducts = async (req, res) => {
           }
         }
         if (Object.keys(priceFilter).length > 0) {
-          searchFilter.$and.push({ price: priceFilter });
+          searchFilter.$and.push({ 'variations.price': priceFilter });
         }
       }
 
@@ -174,7 +174,7 @@ export const searchProducts = async (req, res) => {
       }
 
       if (condition && ['new', 'excellent', 'good', 'fair'].includes(condition)) {
-        searchFilter.$and.push({ condition });
+        searchFilter.$and.push({ 'variations.condition': condition });
       }
 
       // Add price range filter
@@ -193,7 +193,7 @@ export const searchProducts = async (req, res) => {
           }
         }
         if (Object.keys(priceFilter).length > 0) {
-          searchFilter.$and.push({ price: priceFilter });
+          searchFilter.$and.push({ 'variations.price': priceFilter });
         }
       }
 
@@ -211,6 +211,7 @@ export const searchProducts = async (req, res) => {
     const products = await Product
       .find(searchFilter)
       .populate('category', 'name slug')
+      .select('name slug shortDescription images variations category createdAt baseModel')
       .sort(sortObj)
       .skip(skip)
       .limit(limitNum)
@@ -223,18 +224,49 @@ export const searchProducts = async (req, res) => {
     
 
     // Format response
-    const formattedProducts = products.map(product => ({
-      id: product._id,
-      name: product.name,
-      slug: product.slug,
-      shortDescription: product.shortDescription,
-      price: product.price,
-      images: product.images,
-      condition: product.condition,
-      stockStatus: product.stockStatus,
-      category: product.category,
-      createdAt: product.createdAt
-    }));
+    const formattedProducts = products.map(product => {
+      // Calculate values from variations
+      const variations = product.variations || [];
+      
+      // Get price range
+      const prices = variations.map(v => v.salePrice || v.price).filter(p => p && p > 0);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+      const displayPrice = minPrice === maxPrice ? minPrice : minPrice; // Show starting price
+      
+      // Get best condition available (new > excellent > good > fair)
+      const conditionRank = { 'new': 4, 'excellent': 3, 'good': 2, 'fair': 1 };
+      const bestCondition = variations
+        .map(v => v.condition)
+        .filter(c => c)
+        .sort((a, b) => (conditionRank[b] || 0) - (conditionRank[a] || 0))[0] || 'good';
+      
+      // Get overall stock status
+      const totalStock = variations.reduce((total, v) => total + (v.stockQuantity || 0), 0);
+      const inStockVariations = variations.filter(v => v.stockStatus === 'in_stock' || v.stockStatus === 'low_stock');
+      
+      let stockStatus = 'out_of_stock';
+      if (inStockVariations.length > 0 && totalStock > 0) {
+        stockStatus = totalStock <= 10 ? 'low_stock' : 'in_stock';
+      }
+      
+      return {
+        id: product._id,
+        name: product.name,
+        slug: product.slug,
+        shortDescription: product.shortDescription,
+        price: displayPrice,
+        priceRange: minPrice === maxPrice ? null : { min: minPrice, max: maxPrice },
+        images: product.images,
+        condition: bestCondition,
+        stockStatus: stockStatus,
+        stockQuantity: totalStock,
+        variationCount: variations.length,
+        category: product.category,
+        baseModel: product.baseModel,
+        createdAt: product.createdAt
+      };
+    });
 
     res.status(200).json({
       success: true,

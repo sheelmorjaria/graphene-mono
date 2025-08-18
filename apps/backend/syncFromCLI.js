@@ -340,24 +340,44 @@ export const removeOldPixelProducts = async (dryRun = false) => {
   }
 };
 
-// Execute CLI command
+// Execute CLI command with multiple queries to capture all Pixel variants
 export const syncFromCLI = async () => {
-  return new Promise((resolve, reject) => {
-    // Use the CLI tool from current directory (backend)
-    // Increase buffer size to handle large output
-    exec("./cli-linux-amd64 -query 'Google Pixel'", { 
-      maxBuffer: 1024 * 1024 * 10 // 10MB buffer
-    }, (error, stdout, stderr) => {
-      if (error) {
-        console.error("CLI error:", error);
-        return reject(error);
-      }
-      if (stderr && !stderr.includes("store update error")) {
-        console.error("CLI stderr:", stderr);
-      }
-      resolve(stdout);
+  const queries = [
+    'Google Pixel',        // General Pixel query (captures most models)
+    'Google Pixel Fold'    // Specific Fold query (captures all Fold variants)
+  ];
+
+  console.log(`📡 Running ${queries.length} CLI queries to capture all Pixel variants...`);
+  
+  const allOutputs = [];
+  
+  for (const query of queries) {
+    console.log(`   🔍 Query: "${query}"`);
+    
+    const output = await new Promise((resolve, reject) => {
+      exec(`./cli-linux-amd64 -query '${query}'`, { 
+        maxBuffer: 1024 * 1024 * 10 // 10MB buffer
+      }, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`CLI error for query "${query}":`, error);
+          return reject(error);
+        }
+        if (stderr && !stderr.includes("store update error")) {
+          console.error(`CLI stderr for query "${query}":`, stderr);
+        }
+        resolve(stdout);
+      });
     });
-  });
+    
+    console.log(`   📊 Query "${query}" returned ${output.length} characters`);
+    allOutputs.push(output);
+  }
+  
+  // Combine all outputs
+  const combinedOutput = allOutputs.join('\n\n');
+  console.log(`📊 Combined output: ${combinedOutput.length} characters total`);
+  
+  return combinedOutput;
 };
 
 // Parse CLI output into structured product data
@@ -409,7 +429,24 @@ const parseCLIOutput = (cliOutput) => {
     }
   }
   
-  return products;
+  // Deduplicate products that might appear in multiple queries
+  // Use name + condition + price as unique key
+  const uniqueProducts = [];
+  const seenProducts = new Set();
+  
+  for (const product of products) {
+    const uniqueKey = `${product.name}|${product.condition}|${product.price}`;
+    if (!seenProducts.has(uniqueKey)) {
+      seenProducts.add(uniqueKey);
+      uniqueProducts.push(product);
+    } else {
+      console.log(`🔄 Skipping duplicate: ${product.name} - £${product.price} - ${product.condition}`);
+    }
+  }
+  
+  console.log(`📊 Parsed ${products.length} total products, ${uniqueProducts.length} unique after deduplication`);
+  
+  return uniqueProducts;
 };
 
 // Filter out old Pixel models (1-5 and variants)
@@ -432,6 +469,18 @@ const filterOldPixels = (products) => {
     
     // Only include if it's a Google Pixel phone (name already contains "Google Pixel")
     if (name.includes('Google Pixel')) {
+      // Special handling for Fold products - always include them
+      if (name.toLowerCase().includes('fold')) {
+        console.log(`✅ Including Fold product: ${name}`);
+        return true;
+      }
+      
+      // For non-Fold products, check they're not 6a
+      if (name.toLowerCase().includes('6a')) {
+        console.log(`🚫 Excluding Pixel 6a: ${name}`);
+        return false;
+      }
+      
       console.log(`✅ Including: ${name}`);
       return true;
     }
@@ -474,31 +523,72 @@ const extractModelInfo = (name) => {
   };
 };
 
-// Function to create a product from CLI data
-const createProductFromCLI = async (cliProductData) => {
-  const { name, price, condition, url } = cliProductData;
+// Helper function to extract base model from product name
+export const extractBaseModel = (productName) => {
+  // Handle different Pixel model patterns
+  const patterns = [
+    // Pixel Fold variants (including 9 Pro Fold)
+    /Google Pixel\s+(\d+\s*Pro\s*Fold)/i,          // "9 Pro Fold"
+    /Google Pixel\s+(Fold)/i,                      // "Fold"
+    // Regular Pixel models  
+    /Google Pixel\s+(\d+a?\s*(?:Pro|XL))/i,        // "8 Pro", "7a", "6 XL", etc.
+    /Google Pixel\s+(\d+a?)/i,                     // "8", "7a", "6", etc.
+  ];
   
-  // Generate unique SKU and slug
-  const timestamp = Date.now();
-  const randomSuffix = Math.random().toString(36).substr(2, 9);
-  const sku = `PIXEL-${timestamp}-${randomSuffix}`.toUpperCase();
-  const slug = name.toLowerCase()
+  for (const pattern of patterns) {
+    const match = productName.match(pattern);
+    if (match) {
+      return match[1].trim();
+    }
+  }
+  
+  return "Unknown";
+};
+
+// Helper function to create a clean product name and slug for the base model
+const createBaseProductInfo = (baseModel) => {
+  const cleanName = `GrapheneOS Pixel ${baseModel}`;
+  const slug = cleanName.toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
+  
+  return { cleanName, slug };
+};
 
+// Function to create or update a product with variations from CLI data
+export const createOrUpdateProductFromCLI = async (cliProductData) => {
+  const { name, price, condition, url } = cliProductData;
+  
   // Extract storage and color from product name
   const storageMatch = name.match(/(\d+GB)/);
   const storage = storageMatch ? storageMatch[1] : "128GB";
   
-  // Extract color (last word before condition indicators)
-  const colorMatch = name.match(/(\w+),?\s*Unlocked/i);
-  const color = colorMatch ? colorMatch[1] : "Unknown";
+  // Extract color from product name
+  let color = "Unknown";
+  
+  // Try multiple patterns to extract color
+  const colorPatterns = [
+    // Standard pattern: after storage size
+    /\d+GB\s+([^,]+)/,
+    // Pro models with parentheses: (12GB+128GB) Color
+    /\([^)]+\)\s+(.+)/,
+    // Fallback: last word(s) in the name
+    /(\w+(?:\s+\w+)?)$/
+  ];
+  
+  for (const pattern of colorPatterns) {
+    const match = name.match(pattern);
+    if (match) {
+      color = match[1].trim();
+      break;
+    }
+  }
 
-  // Extract Pixel model for description
-  const pixelModelMatch = name.match(/Google Pixel\s+(\d+a?\s*(?:Pro|XL|Fold)?)/i);
-  const pixelModel = pixelModelMatch ? pixelModelMatch[1].trim() : "Unknown";
+  // Extract base model
+  const baseModel = extractBaseModel(name);
+  const { cleanName, slug } = createBaseProductInfo(baseModel);
 
   // Map CLI condition to our schema
   const conditionMap = {
@@ -512,40 +602,101 @@ const createProductFromCLI = async (cliProductData) => {
   // Add GrapheneOS service markup of £120 to the CEX price
   const finalPrice = price + 120;
 
-  const product = new Product({
-    name: name,
-    slug: `${slug}-${randomSuffix}`,
-    sku: sku,
-    shortDescription: `${name} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
-    longDescription: `${name} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${pixelModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
-    price: finalPrice,
+  // Create variation data
+  const stockQuantity = 1; // Since it's second-hand, usually just 1 in stock
+  const stockStatus = 'in_stock';
+  
+  const newVariation = {
     condition: mappedCondition,
-    stockStatus: 'in_stock',
-    stockQuantity: 1, // Since it's second-hand, usually just 1 in stock
-    images: ["/images/placeholder.png"],
-    attributes: [
-      {
-        name: "Storage",
-        value: storage
-      },
-      {
-        name: "Color", 
-        value: color
-      },
-      {
-        name: "OS",
-        value: "GrapheneOS"
-      },
-      {
-        name: "Original Condition",
-        value: `Grade ${condition}`
-      }
-    ],
-    status: 'active',
-    isActive: true
+    color: color,
+    storage: storage,
+    price: finalPrice,
+    salePrice: null,
+    stockQuantity: stockQuantity,
+    stockStatus: stockStatus,
+    sku: `PIX-${baseModel.replace(/\s/g, '')}-${storage}-${color}-${condition}`.toUpperCase(),
+    images: ["/images/placeholder.png"]
+  };
+
+  // Check if a product with this base model already exists
+  const existingProduct = await Product.findOne({ 
+    baseModel: baseModel,
+    slug: { $regex: new RegExp(slug, 'i') }
   });
 
-  return await product.save();
+  if (existingProduct) {
+    // Check if this exact variation already exists
+    const existingVariation = existingProduct.variations.find(v => 
+      v.condition === mappedCondition && 
+      v.color === color && 
+      v.storage === storage
+    );
+
+    if (existingVariation) {
+      console.log(`⏭️  Variation already exists: ${cleanName} - ${storage} ${color} (${mappedCondition})`);
+      
+      // Update price if different
+      if (existingVariation.price !== finalPrice) {
+        existingVariation.price = finalPrice;
+        await existingProduct.save();
+        console.log(`   💰 Updated price to £${finalPrice}`);
+      }
+      
+      return existingProduct;
+    } else {
+      // Add new variation to existing product
+      existingProduct.variations.push(newVariation);
+      
+      // Update product price range if needed
+      const prices = existingProduct.variations.map(v => v.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      existingProduct.price = minPrice; // Set base price to minimum
+      
+      await existingProduct.save();
+      console.log(`✅ Added variation: ${cleanName} - ${storage} ${color} (${mappedCondition}) - £${finalPrice}`);
+      return existingProduct;
+    }
+  } else {
+    // Create new product with first variation
+    const sku = `PIXEL-${baseModel.replace(/\s/g, '')}-BASE`.toUpperCase();
+    
+    const product = new Product({
+      name: cleanName,
+      slug: slug,
+      sku: sku,
+      baseModel: baseModel,
+      shortDescription: `${cleanName} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
+      longDescription: `GrapheneOS Pixel ${baseModel} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${baseModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
+      price: finalPrice, // Base price
+      images: ["/images/placeholder.png"],
+      variations: [newVariation],
+      attributes: [
+        {
+          name: "Base Model",
+          value: baseModel
+        },
+        {
+          name: "OS",
+          value: "GrapheneOS"
+        },
+        {
+          name: "Available Storage",
+          value: storage
+        },
+        {
+          name: "Available Colors",
+          value: color
+        }
+      ],
+      status: 'active',
+      isActive: true
+    });
+
+    const savedProduct = await product.save();
+    console.log(`✅ Created new product: ${cleanName} with ${storage} ${color} (${mappedCondition}) - £${finalPrice}`);
+    return savedProduct;
+  }
 };
 
 // Function to create a product using the new schema (legacy function)
@@ -561,17 +712,33 @@ const createProduct = async (productData, adminUser) => {
     .replace(/-+/g, '-')
     .trim();
 
+  // Extract base model for required field
+  const baseModel = modelInfo?.modelName || productData.name.replace('Google ', '');
+  const productCondition = condition ? getConditionLabel(condition).toLowerCase() : 'excellent';
+  const stockQuantity = 10;
+  const stockStatus = 'in_stock';
+  
   const product = new Product({
     name: productData.name,
     slug: slug,
     sku: sku,
+    baseModel: baseModel, // Add required baseModel field
     shortDescription: `${productData.name} with GrapheneOS`,
     longDescription: `${productData.name} flashed with GrapheneOS for enhanced privacy and security.`,
     price: productData.price || 500,
-    condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
-    stockStatus: 'in_stock',
-    stockQuantity: 10,
     images: ["/images/placeholder.png"],
+    // Add variations structure
+    variations: [{
+      condition: productCondition,
+      color: modelInfo?.color || "Unknown",
+      storage: modelInfo?.storage || "128GB",
+      price: productData.price || 500,
+      salePrice: null,
+      stockQuantity: stockQuantity,
+      stockStatus: stockStatus,
+      sku: `${sku}-VAR1`,
+      images: ["/images/placeholder.png"]
+    }],
     attributes: [
       {
         name: "Storage",
@@ -655,25 +822,42 @@ export const seedSampleProducts = async () => {
         .replace(/-+/g, '-')
         .trim();
 
+      // Extract base model from product name
+      const baseModel = productData.name.replace('Google ', '').split(' ').slice(0, 3).join(' ');
+      const storage = productData.name.includes("256GB") ? "256GB" : "128GB";
+      const color = productData.name.split(" ").pop();
+      const stockQuantity = Math.floor(Math.random() * 10) + 1;
+      const stockStatus = 'in_stock';
+
       const product = new Product({
         name: productData.name,
         slug: `${slug}-${randomSuffix}`,
         sku: sku,
+        baseModel: baseModel, // Add required baseModel field
         shortDescription: `${productData.name} with GrapheneOS pre-installed`,
         longDescription: `${productData.name} flashed with GrapheneOS for enhanced privacy and security. Ready to use out of the box.`,
         price: productData.price,
-        condition: productData.condition,
-        stockStatus: 'in_stock',
-        stockQuantity: Math.floor(Math.random() * 10) + 1,
         images: ["/images/placeholder.png"],
+        // Add variations structure
+        variations: [{
+          condition: productData.condition,
+          color: color,
+          storage: storage,
+          price: productData.price,
+          salePrice: null,
+          stockQuantity: stockQuantity,
+          stockStatus: stockStatus,
+          sku: `${sku}-VAR1`,
+          images: ["/images/placeholder.png"]
+        }],
         attributes: [
           {
             name: "Storage",
-            value: productData.name.includes("256GB") ? "256GB" : "128GB"
+            value: storage
           },
           {
             name: "Color", 
-            value: productData.name.split(" ").pop()
+            value: color
           },
           {
             name: "OS",
@@ -707,17 +891,18 @@ export const seedSampleProducts = async () => {
   }
 };
 
-// Function to check if a model is an old Pixel (1-5) variant that should be excluded
-const isOldPixelVariant = (productName) => {
+// Function to check if a model is an old Pixel (1-6a) variant that should be excluded
+export const isOldPixelVariant = (productName) => {
   if (!productName) return false;
   
-  // Specific patterns to match ONLY Pixel 1-5 variants (exclude newer models like Pixel Fold)
+  // Specific patterns to match Pixel 1-6A variants (exclude newer models like Pixel Fold, Pixel 7+)
   const oldPixelPatterns = [
     /\bPixel\s+1\b/i,                     // Pixel 1
     /\bPixel\s+2(\s+XL)?\b/i,             // Pixel 2, Pixel 2 XL
     /\bPixel\s+3(a)?(\s+XL)?\b/i,         // Pixel 3, Pixel 3 XL, Pixel 3a, Pixel 3a XL
     /\bPixel\s+4(a)?(\s+(XL|5G))?\b/i,    // Pixel 4, Pixel 4 XL, Pixel 4a, Pixel 4a XL, Pixel 4a 5G
     /\bPixel\s+5(a)?(\s+XL)?\b/i,         // Pixel 5, Pixel 5a
+    /\bPixel\s+6a\b/i,                    // Pixel 6a (exclude this model specifically)
   ];
   
   return oldPixelPatterns.some(pattern => pattern.test(productName));
@@ -837,7 +1022,8 @@ export const syncAndroidPhones = async (options = {}) => {
         { name: { $regex: /\bPixel\s+2(\s+XL)?\b/i } },             // Pixel 2, Pixel 2 XL
         { name: { $regex: /\bPixel\s+3(a)?(\s+XL)?\b/i } },         // Pixel 3, Pixel 3 XL, Pixel 3a, Pixel 3a XL
         { name: { $regex: /\bPixel\s+4(a)?(\s+(XL|5G))?\b/i } },    // Pixel 4, Pixel 4 XL, Pixel 4a, Pixel 4a XL, Pixel 4a 5G
-        { name: { $regex: /\bPixel\s+5(a)?(\s+XL)?\b/i } }          // Pixel 5, Pixel 5a
+        { name: { $regex: /\bPixel\s+5(a)?(\s+XL)?\b/i } },         // Pixel 5, Pixel 5a
+        { name: { $regex: /\bPixel\s+6a\b/i } }                     // Pixel 6a
       ];
       
       for (const query of oldProductQueries) {
@@ -882,32 +1068,14 @@ export const syncAndroidPhones = async (options = {}) => {
 
     for (const productData of filteredProducts) {
       try {
-        // Check if product already exists (by name)
-        const existingProduct = await Product.findOne({ 
-          name: productData.name 
-        });
-
-        if (existingProduct) {
-          console.log(`⏭️  Product already exists: ${productData.name}`);
-          
-          // Add GrapheneOS service markup to the new price
-          const newFinalPrice = productData.price + 120;
-          
-          // Update price if different
-          if (existingProduct.price !== newFinalPrice) {
-            existingProduct.price = newFinalPrice;
-            await existingProduct.save();
-            console.log(`   💰 Updated price to £${newFinalPrice} (Base: £${productData.price} + £120 service)`);
-          }
-          
+        // Create or update product with grouped variations
+        const result = await createOrUpdateProductFromCLI(productData);
+        
+        if (result) {
+          syncedCount++;
+        } else {
           skippedCount++;
-          continue;
         }
-
-        // Create new product using the CLI data
-        const newProduct = await createProductFromCLI(productData);
-        console.log(`✅ Created: ${newProduct.name} - £${newProduct.price} (Base: £${productData.price} + £120 service)`);
-        syncedCount++;
 
       } catch (productError) {
         console.error(`❌ Failed to create product ${productData.name}:`, productError.message);
@@ -915,10 +1083,14 @@ export const syncAndroidPhones = async (options = {}) => {
       }
     }
 
+    // Get final count of unique products
+    const finalProductCount = await Product.countDocuments();
+    
     console.log(`\n🎉 Sync completed!`);
-    console.log(`   ✅ Created: ${syncedCount} products`);
-    console.log(`   ⏭️  Skipped: ${skippedCount} products`);
+    console.log(`   ✅ Processed: ${syncedCount} variations`);
+    console.log(`   ⏭️  Skipped: ${skippedCount} variations`);
     console.log(`   🗑️  Removed: ${totalRemoved} old products`);
+    console.log(`   📱 Total products in database: ${finalProductCount}`);
 
     return { 
       syncedCount, 
