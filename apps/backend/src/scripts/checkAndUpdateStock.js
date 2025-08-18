@@ -27,41 +27,12 @@ const checkStock = async () => {
       console.log(`${product.name}: ${product.stockQuantity} units - ${status}`);
     });
 
-    // Find the specific Google Pixel 6A product
-    const pixel6a = await Product.findOne({ name: /Google Pixel 6A.*Charcoal/i });
-    
-    if (pixel6a) {
-      console.log('\n=== Google Pixel 6A Charcoal Details ===');
-      console.log(`Name: ${pixel6a.name}`);
-      console.log(`Current Stock: ${pixel6a.stockQuantity}`);
-      console.log(`Active: ${pixel6a.isActive}`);
-      console.log(`Price: £${pixel6a.price}`);
-      
-      if (pixel6a.stockQuantity === 0) {
-        console.log('\n⚠️  This product is out of stock!');
-        console.log('Updating stock to 10 units for testing...');
-        
-        await Product.findByIdAndUpdate(pixel6a._id, { 
-          stockQuantity: 10,
-          isActive: true 
-        });
-        
-        console.log('✅ Stock updated successfully!');
-        
-        // Verify the update
-        const updatedProduct = await Product.findById(pixel6a._id);
-        console.log(`New stock level: ${updatedProduct.stockQuantity}`);
-      }
-    } else {
-      console.log('\n❌ Google Pixel 6A Charcoal not found in database');
-      
-      // Show all Pixel products to help identify the correct one
-      const pixelProducts = await Product.find({ name: /pixel/i }, { name: 1, stockQuantity: 1 });
-      console.log('\nAvailable Pixel products:');
-      pixelProducts.forEach(product => {
-        console.log(`- ${product.name} (Stock: ${product.stockQuantity})`);
-      });
-    }
+    // Show all Pixel products
+    const pixelProducts = await Product.find({ name: /pixel/i }, { name: 1, stockQuantity: 1 });
+    console.log('\nAvailable Pixel products:');
+    pixelProducts.forEach(product => {
+      console.log(`- ${product.name} (Stock: ${product.stockQuantity})`);
+    });
 
   } catch (error) {
     console.error('Error checking stock:', error);

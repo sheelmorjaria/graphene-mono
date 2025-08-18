@@ -30,7 +30,6 @@ const mockProductData = {
     { _id: '2', name: 'Pixel 7', quantitySold: 20, revenue: 10000 }
   ],
   lowStockProducts: [
-    { _id: '3', name: 'Pixel 6a', sku: 'PIX6A', stockQuantity: 5 },
     { _id: '4', name: 'Pixel 6 Pro', sku: 'PIX6P', stockQuantity: 3 }
   ]
 };
@@ -88,7 +87,6 @@ describe('AdminReportsPage', () => {
       // Product Performance
       expect(screen.getByText('Product Performance')).toBeInTheDocument();
       expect(screen.getByText('Pixel 7 Pro')).toBeInTheDocument();
-      expect(screen.getByText('Pixel 6a')).toBeInTheDocument();
       
       // Customer Report
       expect(screen.getByText('Customer Acquisition')).toBeInTheDocument();
@@ -192,12 +190,12 @@ describe('AdminReportsPage', () => {
       expect(screen.getByText('Stock')).toBeInTheDocument();
       
       // Check low stock data
-      expect(screen.getByText('Pixel 6a')).toBeInTheDocument();
-      expect(screen.getByText('PIX6A')).toBeInTheDocument();
+      expect(screen.getByText('Pixel 6 Pro')).toBeInTheDocument();
+      expect(screen.getByText('PIX6P')).toBeInTheDocument();
       
       // Check for stock quantity in the low stock table
       const lowStockSection = screen.getByText('Low Stock Products').closest('div');
-      expect(lowStockSection).toHaveTextContent('5');
+      expect(lowStockSection).toHaveTextContent('3');
     });
   });
 });

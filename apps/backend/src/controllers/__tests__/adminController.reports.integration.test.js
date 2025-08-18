@@ -237,14 +237,6 @@ describe('Admin Reports API', () => {
         isActive: true
       });
 
-      await Product.create({
-        name: 'Pixel 6a',
-        slug: 'pixel-6a',
-        sku: 'PIX6A',
-        price: 400,
-        stockQuantity: 8,
-        isActive: true
-      });
 
       // Create test orders
       const today = new Date();
