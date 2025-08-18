@@ -770,7 +770,7 @@ class EmailService {
       });
 
     } catch (error) {
-      logError(error, { context: 'support_request_email', supportData });
+      logError(error, { context: 'support_request_email', contactRequest });
       return { success: false, error: error.message };
     }
   }
