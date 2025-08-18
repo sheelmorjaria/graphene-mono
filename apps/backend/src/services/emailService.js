@@ -272,7 +272,7 @@ class EmailService {
 
   // Add unsubscribe link to HTML content
   addUnsubscribeLink(htmlContent, unsubscribeToken, emailType) {
-    const baseUrl = process.env.FRONTEND_URL || 'https://your-domain.com';
+    const baseUrl = process.env.FRONTEND_URL || 'https://graphene-security.com';
     const category = emailType.split('.')[0];
     
     const unsubscribeHtml = `
@@ -949,8 +949,8 @@ class EmailService {
           customerName: `${user.firstName} ${user.lastName}`,
           email: user.email,
           disabledDate: new Date().toLocaleDateString(),
-          adminEmail: adminUser ? adminUser.email : 'system@grapheneos-store.com',
-          supportEmail: 'support@grapheneos-store.com'
+          adminEmail: adminUser ? adminUser.email : 'system@graphene-security.com',
+          supportEmail: 'support@graphene-security.com'
         }
       };
 
@@ -1013,7 +1013,7 @@ class EmailService {
     try {
       const loginUrl = process.env.FRONTEND_URL ? 
         `${process.env.FRONTEND_URL}/login` : 
-        'https://grapheneos-store.com/login';
+        'https://graphene-security.com/login';
 
       const emailData = {
         to: user.email,
@@ -1023,8 +1023,8 @@ class EmailService {
           customerName: `${user.firstName} ${user.lastName}`,
           email: user.email,
           reEnabledDate: new Date().toLocaleDateString(),
-          adminEmail: adminUser ? adminUser.email : 'system@grapheneos-store.com',
-          supportEmail: 'support@grapheneos-store.com',
+          adminEmail: adminUser ? adminUser.email : 'system@graphene-security.com',
+          supportEmail: 'support@graphene-security.com',
           loginUrl: loginUrl
         }
       };
@@ -1169,7 +1169,7 @@ class EmailService {
           </ul>
         </div>
 
-        <p>Thank you for using GrapheneOS Store. We're committed to protecting your privacy and data rights.</p>
+        <p>Thank you for using Graphene Security. We're committed to protecting your privacy and data rights.</p>
       `;
 
       const htmlContent = this.generateEmailTemplate(
@@ -1272,7 +1272,7 @@ class EmailService {
           <p>In compliance with legal and tax requirements, some transaction and order data has been retained but anonymized to remove all personally identifiable information.</p>
         </div>
 
-        <p>Thank you for having been a customer of GrapheneOS Store. We respect your privacy choices and your right to control your personal data.</p>
+        <p>Thank you for having been a customer of Graphene Security. We respect your privacy choices and your right to control your personal data.</p>
         
         <p>If you have any questions about this deletion or our data handling practices, you may contact our support team, though please note that we will not be able to access any of your previous account information.</p>
       `;
