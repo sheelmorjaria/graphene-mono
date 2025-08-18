@@ -1,5 +1,34 @@
 import Product from '../models/Product.js';
 
+// Helper function to normalize and expand search terms
+const normalizeSearchQuery = (query) => {
+  const trimmedQuery = query.trim().toLowerCase();
+  
+  // Handle common variations and synonyms
+  const variations = [
+    // Pixel model variations
+    { pattern: /pixel\s*9\s*pro\s*fold/, replacement: 'pixel 9 pro fold' },
+    { pattern: /pixel\s*fold/, replacement: 'pixel fold' },
+    { pattern: /fold\s*pixel/, replacement: 'pixel fold' },
+    { pattern: /pro\s*fold/, replacement: 'pro fold' },
+    
+    // General Pixel variations
+    { pattern: /pixel\s*(\d+)\s*pro/, replacement: 'pixel $1 pro' },
+    { pattern: /pixel\s*(\d+)/, replacement: 'pixel $1' },
+    
+    // Foldable related terms
+    { pattern: /foldable/, replacement: 'fold' },
+    { pattern: /folding/, replacement: 'fold' }
+  ];
+  
+  let normalizedQuery = trimmedQuery;
+  for (const variation of variations) {
+    normalizedQuery = normalizedQuery.replace(variation.pattern, variation.replacement);
+  }
+  
+  return normalizedQuery.trim();
+};
+
 export const searchProducts = async (req, res) => {
   try {
     const {
@@ -34,17 +63,17 @@ export const searchProducts = async (req, res) => {
 
     try {
       // Try MongoDB text search first
-      // For multi-word queries, use phrase search to be more specific
-      const trimmedQuery = query.trim();
-      const words = trimmedQuery.split(/\s+/);
+      // Normalize the query to handle variations
+      const normalizedQuery = normalizeSearchQuery(query);
+      const words = normalizedQuery.split(/\s+/);
       
       let textSearchQuery;
       if (words.length > 1) {
         // For multi-word queries like "pixel 8", use phrase search
-        textSearchQuery = `"${trimmedQuery}"`;
+        textSearchQuery = `"${normalizedQuery}"`;
       } else {
         // For single words, use regular text search
-        textSearchQuery = trimmedQuery;
+        textSearchQuery = normalizedQuery;
       }
       
       searchFilter = {
@@ -99,17 +128,21 @@ export const searchProducts = async (req, res) => {
     } catch (error) {
       // Fall back to regex search if text search fails
       // For multi-word queries, prioritize exact matches in the name
-      const trimmedQuery = query.trim();
-      const words = trimmedQuery.split(/\s+/);
+      const normalizedQuery = normalizeSearchQuery(query);
+      const words = normalizedQuery.split(/\s+/);
       
       // Escape special regex characters
       const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       
       if (words.length > 1) {
-        // For multi-word queries like "pixel 7", require all words to be present in the name
-        // This prevents "pixel 6" from matching when searching for "pixel 7"
+        // For multi-word queries like "pixel 7" or "pixel 9 pro fold", require all words to be present
+        // Also search in shortDescription and longDescription for better matches
         const nameConditions = words.map(word => ({
-          name: { $regex: escapeRegex(word), $options: 'i' }
+          $or: [
+            { name: { $regex: escapeRegex(word), $options: 'i' } },
+            { shortDescription: { $regex: escapeRegex(word), $options: 'i' } },
+            { longDescription: { $regex: escapeRegex(word), $options: 'i' } }
+          ]
         }));
         
         searchFilter = {
@@ -120,7 +153,7 @@ export const searchProducts = async (req, res) => {
         };
       } else {
         // For single word queries, search across all fields
-        const sanitizedQuery = escapeRegex(trimmedQuery);
+        const sanitizedQuery = escapeRegex(normalizedQuery);
         searchFilter = {
           $and: [
             { isActive: true },
