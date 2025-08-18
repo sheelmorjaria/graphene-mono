@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
@@ -18,9 +19,13 @@ import cartRouter from './src/routes/cart.js';
 import shippingRouter from './src/routes/shipping.js';
 import paymentRouter from './src/routes/payment.js';
 import supportRouter from './src/routes/support.js';
+import healthRouter from './src/routes/health.js';
 import internalOrderRouter from './src/routes/internalOrderRoutes.js';
+import sitemapRouter from './src/routes/sitemap.js';
 import adminRouter from './src/routes/admin.js';
 import webhookRouter from './src/routes/webhook.js';
+import { errorHandler } from './src/middleware/errorHandler.js';
+import { notFound } from './src/middleware/notFound.js';
 
 dotenv.config();
 
@@ -35,7 +40,19 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', true);
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ['\'self\''],
+      styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com'],
+      fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
+      imgSrc: ['\'self\'', 'data:', 'https:'],
+      scriptSrc: ['\'self\''],
+      connectSrc: ['\'self\'']
+    }
+  },
+  crossOriginEmbedderPolicy: false
+}));
 
 // HTTP request logging
 if (process.env.NODE_ENV !== 'test') {
@@ -96,6 +113,9 @@ const limiter = rateLimit({
   skip: (req) => req.path === '/health' || req.method === 'OPTIONS'
 });
 app.use('/api/', limiter);
+
+// Compression
+app.use(compression());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -184,104 +204,40 @@ const connectDB = async () => {
   }
 };
 
-// Routes
-app.use('/api/products', productsRouter);
+// API Routes
 app.use('/api/auth', authRouter);
-app.use('/api/user', userRouter);
+app.use('/api/products', productsRouter);
 app.use('/api/cart', cartRouter);
-app.use('/api/shipping', shippingRouter);
-app.use('/api/payment', paymentRouter);
-app.use('/api/support', supportRouter);
-
-// Admin routes
+app.use('/api/user', userRouter);
 app.use('/api/admin', adminRouter);
-
-// Internal admin routes (secured with API key)
-app.use('/api/internal', internalOrderRouter);
-
-// Webhook routes
+app.use('/api/payments', paymentRouter);
+app.use('/api/shipping', shippingRouter);
+app.use('/api/support', supportRouter);
+app.use('/api/health', healthRouter);
+app.use('/api/internal/orders', internalOrderRouter);
 app.use('/api/webhook', webhookRouter);
+app.use('/api', sitemapRouter);
 
-// Health check endpoint with database connectivity check
-app.get('/health', async (req, res) => {
-  try {
-    // Check database connectivity
-    const dbState = mongoose.connection.readyState;
-    const dbStatus = {
-      0: 'disconnected',
-      1: 'connected',
-      2: 'connecting',
-      3: 'disconnecting'
-    };
-    
-    // Perform a simple database operation to verify connectivity
-    if (dbState === 1) {
-      await mongoose.connection.db.admin().ping();
-    }
-    
-    res.status(200).json({ 
-      status: 'OK', 
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: {
-        status: dbStatus[dbState],
-        connected: dbState === 1
-      },
-      uptime: process.uptime()
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: 'ERROR',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: {
-        status: 'error',
-        connected: false
-      },
-      error: 'Database health check failed'
-    });
-  }
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Graphene Security API',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    status: 'operational'
+  });
 });
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
-});
+app.use(notFound);
 
 // Add Sentry error handler before our custom error handler
 if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
   Sentry.setupExpressErrorHandler(app);
 }
 
-// Global error handler
-app.use((error, req, res, _next) => {
-  // Generate request ID for tracking
-  const requestId = crypto.randomBytes(16).toString('hex');
-  
-  logError(error, { 
-    context: 'global_error_handler', 
-    url: req.url, 
-    method: req.method,
-    requestId,
-    ip: req.ip,
-    userAgent: req.get('user-agent')
-  });
-  
-  // Determine status code
-  const statusCode = error.statusCode || 500;
-  
-  res.status(statusCode).json({
-    success: false,
-    message: process.env.NODE_ENV === 'production' 
-      ? 'An error occurred processing your request' 
-      : error.message,
-    requestId,
-    ...(process.env.NODE_ENV !== 'production' && { stack: error.stack })
-  });
-});
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 // Start server
 if (process.env.NODE_ENV !== 'test') {

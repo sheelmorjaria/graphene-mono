@@ -6,44 +6,14 @@
     "auditLog": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/.c49e5d4e63fe7227bc5f602d7252928baa976153-audit.json",
     "files": [
         {
-            "date": 1753277655710,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-23.log",
-            "hash": "87cbeaafebe150b8b0746300f971091d393a91550512690e5aae18986d794132"
-        },
-        {
-            "date": 1753342047834,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-24.log",
-            "hash": "2a3c236587f38cc7830381335da4d94395e674b2a9d90fc4f8be90636849b89a"
-        },
-        {
-            "date": 1753454179509,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-25.log",
-            "hash": "b750468898675cb076c4a04b8e20ac8bba12a1cccacbf59a7e26b69421486712"
-        },
-        {
-            "date": 1753488176744,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-26.log",
-            "hash": "9affb923e6a96ca63b42c95f5d9afc591e2db9b7dcae484d415850e53ce79ec8"
-        },
-        {
-            "date": 1753582932871,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-27.log",
-            "hash": "b7c20fd973e1b97e7670a5383c9b787c3ee1f82f3ce34d6142df0759161da23d"
-        },
-        {
-            "date": 1753700525461,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-28.log",
-            "hash": "44d3af7b487f39162c987e8730e8f19edaf558c8c7b4b1a36c6b78391b0b3264"
-        },
-        {
-            "date": 1753886226714,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-07-30.log",
-            "hash": "df4b8bb863c9366f400533501c97117d9b6e126fbf2d357cd60ad27d72e95400"
-        },
-        {
             "date": 1754322167397,
             "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-08-04.log",
             "hash": "9966c30bc0d6af0488bd344670d8a4c3d2f192b53493b321478fa5dd8005815c"
+        },
+        {
+            "date": 1755527935245,
+            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/error-2025-08-18.log",
+            "hash": "25aca2ffd4993d1cd227764384144bc30eb6aa67f5828511709669fa7c5e4fba"
         }
     ],
     "hashType": "sha256"
