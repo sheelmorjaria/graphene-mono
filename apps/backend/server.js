@@ -37,7 +37,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Trust proxy - required for accurate IP addresses behind reverse proxies (Render, etc)
-app.set('trust proxy', true);
+// Use specific trust proxy setting for security in production
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy (Render's load balancer)
+} else {
+  app.set('trust proxy', 'loopback'); // Only trust localhost in development
+}
 
 // Security middleware
 app.use(helmet({

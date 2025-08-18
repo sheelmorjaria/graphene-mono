@@ -11,7 +11,12 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Skip validation errors about trust proxy setting
-  validate: false
+  validate: false,
+  // Use safer trust proxy configuration
+  skip: (req) => {
+    // Skip rate limiting for health checks and internal requests
+    return req.path === '/health' || req.path === '/ping';
+  }
 });
 
 // Strict rate limiter for auth endpoints
