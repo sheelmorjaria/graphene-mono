@@ -6,51 +6,6 @@
     "auditLog": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/.ead0b25870d3f4131c32cea52be15263a1e60b09-audit.json",
     "files": [
         {
-            "date": 1753277655711,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-23.log",
-            "hash": "e4771f7ea17e270040791a31186606c2e4e09152b09c8081617c2d47a5f592e6"
-        },
-        {
-            "date": 1753342047835,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-24.log",
-            "hash": "c95a290991ddbebfdd0dcd2db51343e3f2b1175dd9d38519872d6bfd1c00d008"
-        },
-        {
-            "date": 1753437862711,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-25.log",
-            "hash": "6570076eaa9d4b23d31bf4028a75a373b459eece3931ac416498c769450a9547"
-        },
-        {
-            "date": 1753484590003,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-26.log",
-            "hash": "946ba205b4a6b3d1901887015bf64d50bb00f001b146044f3b62bf14f23906b3"
-        },
-        {
-            "date": 1753582932873,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-27.log",
-            "hash": "03d0d389a231270d9c8928792c86d900ee938948b9e60f51e2e2c08b96e8f4db"
-        },
-        {
-            "date": 1753696365236,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-28.log",
-            "hash": "9846062407fb6fd6b3bc57bbcbdbe1b6f6bf68e8e14b247b6daddb156216e7bf"
-        },
-        {
-            "date": 1753799695811,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-29.log",
-            "hash": "9e5a0d76e5e36cb6f9087107e14c8fd87b03eb75a6add7a0c2858d7ed3cdca4f"
-        },
-        {
-            "date": 1753885620493,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-30.log",
-            "hash": "3dbee6f5258005a2178e769d123258756546fdcc3db037eb56ba49a04cd8eade"
-        },
-        {
-            "date": 1753983982679,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-07-31.log",
-            "hash": "806499f5007173b496c0ce316798fe6937ddfe7e634b0590c9bc915172d3c531"
-        },
-        {
             "date": 1754322167399,
             "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-04.log",
             "hash": "24f9318847e8e80f8056cd8ad2abbc2b8ae496b7f4842bcac45a742a6a1d7eb0"
@@ -59,6 +14,11 @@
             "date": 1754349436820,
             "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-05.log",
             "hash": "645e8a5a2bd873a2825ab67ddfd38bd812c3a3c11fa0c85306397479bb0f5f2a"
+        },
+        {
+            "date": 1755527935247,
+            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-18.log",
+            "hash": "86f04465983a519eb06b02dae8f86da44462bf4d357c828812fabaeca7f654bf"
         }
     ],
     "hashType": "sha256"
