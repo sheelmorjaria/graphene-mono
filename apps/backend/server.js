@@ -20,6 +20,7 @@ import paymentRouter from './src/routes/payment.js';
 import supportRouter from './src/routes/support.js';
 import internalOrderRouter from './src/routes/internalOrderRoutes.js';
 import adminRouter from './src/routes/admin.js';
+import webhookRouter from './src/routes/webhook.js';
 
 dotenv.config();
 
@@ -197,6 +198,9 @@ app.use('/api/admin', adminRouter);
 
 // Internal admin routes (secured with API key)
 app.use('/api/internal', internalOrderRouter);
+
+// Webhook routes
+app.use('/api/webhook', webhookRouter);
 
 // Health check endpoint with database connectivity check
 app.get('/health', async (req, res) => {
