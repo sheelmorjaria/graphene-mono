@@ -13,7 +13,7 @@ function AdminProductsListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 25; // Increased to show more products per page
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
