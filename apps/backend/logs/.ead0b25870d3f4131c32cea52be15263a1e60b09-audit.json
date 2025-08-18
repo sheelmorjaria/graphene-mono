@@ -6,19 +6,14 @@
     "auditLog": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/.ead0b25870d3f4131c32cea52be15263a1e60b09-audit.json",
     "files": [
         {
-            "date": 1754322167399,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-04.log",
-            "hash": "24f9318847e8e80f8056cd8ad2abbc2b8ae496b7f4842bcac45a742a6a1d7eb0"
-        },
-        {
-            "date": 1754349436820,
-            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-05.log",
-            "hash": "645e8a5a2bd873a2825ab67ddfd38bd812c3a3c11fa0c85306397479bb0f5f2a"
-        },
-        {
             "date": 1755527935247,
             "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-18.log",
             "hash": "86f04465983a519eb06b02dae8f86da44462bf4d357c828812fabaeca7f654bf"
+        },
+        {
+            "date": 1755559174347,
+            "name": "/home/sheel/Downloads/graphene-mono/apps/backend/logs/combined-2025-08-19.log",
+            "hash": "42dd2c3a5f95ed82d27e87f361e2d333ace438fbd8ccd7df2a3025105e7196e3"
         }
     ],
     "hashType": "sha256"

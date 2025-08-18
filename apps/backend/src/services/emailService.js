@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { fromEnv } from '@aws-sdk/credential-providers';
 import validator from 'validator';
@@ -5,6 +6,9 @@ import logger, { logError } from '../utils/logger.js';
 import EmailPreference from '../models/EmailPreference.js';
 import User from '../models/User.js';
 import EmailMetrics from '../models/EmailMetrics.js';
+
+// Ensure environment variables are loaded
+dotenv.config();
 
 class EmailService {
   constructor() {
@@ -32,7 +36,12 @@ class EmailService {
         this.isEnabled = true;
         logger.info('AWS SES email service initialized');
       } else {
-        logger.info('Email service disabled - using mock mode');
+        // Only log if EMAIL_SERVICE is explicitly set to something other than 'ses'
+        if (process.env.EMAIL_SERVICE && process.env.EMAIL_SERVICE !== 'ses') {
+          logger.info(`Email service set to '${process.env.EMAIL_SERVICE}' - using mock mode`);
+        } else if (!process.env.EMAIL_SERVICE) {
+          logger.info('EMAIL_SERVICE not set - using mock mode');
+        }
       }
     } catch (error) {
       logError(error, { context: 'email_service_initialization' });
@@ -126,6 +135,11 @@ class EmailService {
     let metrics = null;
     
     try {
+      // Ensure SES is initialized before sending (handles race condition with dotenv loading)
+      if (!this.isEnabled && process.env.EMAIL_SERVICE === 'ses') {
+        logger.info('Re-initializing email service with loaded environment...');
+        this.initializeSES();
+      }
       // Validate email address
       const validation = this.validateEmail(to);
       if (!validation.isValid) {
