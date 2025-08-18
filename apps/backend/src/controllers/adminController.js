@@ -1428,25 +1428,25 @@ export const getProducts = async (req, res) => {
       query.status = { $ne: 'archived' };
     }
 
-    // Filter by price range
+    // Filter by price range (using variations structure)
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+      const priceQuery = {};
+      if (minPrice) priceQuery.$gte = parseFloat(minPrice);
+      if (maxPrice) priceQuery.$lte = parseFloat(maxPrice);
+      query['variations.price'] = priceQuery;
     }
 
-    // Filter by stock status
+    // Filter by stock status (using variations structure)
     if (stockStatus) {
       switch (stockStatus) {
       case 'in_stock':
-        query.stockQuantity = { $gt: 0 };
+        query['variations.stockStatus'] = 'in_stock';
         break;
       case 'out_of_stock':
-        query.stockQuantity = 0;
+        query['variations.stockStatus'] = 'out_of_stock';
         break;
       case 'low_stock':
-        // Define low stock threshold (e.g., less than 10)
-        query.stockQuantity = { $gt: 0, $lte: 10 };
+        query['variations.stockStatus'] = 'low_stock';
         break;
       }
     }
@@ -1464,10 +1464,51 @@ export const getProducts = async (req, res) => {
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit))
-        .select('name sku price stockQuantity status category images createdAt updatedAt')
+        .select('name sku baseModel status category images variations createdAt updatedAt')
+        .populate('category', 'name slug')
         .lean(),
       Product.countDocuments(query)
     ]);
+
+    // Transform products to include computed fields for admin dashboard
+    const transformedProducts = products.map(product => {
+      // Calculate total stock across all variations
+      const totalStock = product.variations?.reduce((total, variation) => total + (variation.stockQuantity || 0), 0) || 0;
+      
+      // Get overall stock status
+      let stockStatus = 'out_of_stock';
+      if (totalStock > 0) {
+        stockStatus = totalStock <= 10 ? 'low_stock' : 'in_stock';
+      }
+      
+      // Get price range
+      const prices = product.variations?.map(v => v.salePrice || v.price).filter(p => p) || [];
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+      const priceDisplay = minPrice === maxPrice ? `£${minPrice}` : `£${minPrice} - £${maxPrice}`;
+      
+      // Count variations
+      const variationCount = product.variations?.length || 0;
+      
+      return {
+        _id: product._id,
+        name: product.name,
+        sku: product.sku,
+        baseModel: product.baseModel,
+        status: product.status,
+        category: product.category,
+        images: product.images,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+        // Computed fields for admin dashboard
+        stockQuantity: totalStock,
+        stockStatus: stockStatus,
+        price: minPrice,
+        priceDisplay: priceDisplay,
+        variationCount: variationCount,
+        variations: product.variations // Include full variations for detailed view
+      };
+    });
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / parseInt(limit));
@@ -1477,7 +1518,7 @@ export const getProducts = async (req, res) => {
     res.json({
       success: true,
       data: {
-        products,
+        products: transformedProducts,
         pagination: {
           currentPage: parseInt(page),
           totalPages,

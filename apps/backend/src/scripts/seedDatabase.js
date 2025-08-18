@@ -19,6 +19,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 9 Pro',
     slug: 'grapheneos-pixel-9-pro',
+    sku: 'GOS-PIX9PRO-256',
     shortDescription: 'Premium privacy-focused smartphone with GrapheneOS pre-installed',
     longDescription: 'The Pixel 9 Pro with GrapheneOS offers the ultimate in mobile privacy and security. This device features a stunning 6.3-inch OLED display with 120Hz refresh rate, advanced triple-camera system with computational photography, and the latest Titan M security chip. GrapheneOS provides hardened security with app sandboxing, network permission controls, and anti-exploitation mitigations while maintaining full Android app compatibility.',
     price: 899.99,
@@ -46,6 +47,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 9 Pro Fold',
     slug: 'grapheneos-pixel-9-pro-fold',
+    sku: 'GOS-PIX9FOLD-256',
     shortDescription: 'Ultimate foldable privacy smartphone with GrapheneOS',
     longDescription: 'The revolutionary Pixel 9 Pro Fold with GrapheneOS pre-installed combines cutting-edge foldable technology with unparalleled privacy and security. Features a 7.6-inch inner OLED display that unfolds to tablet size, 6.3-inch cover display, Google Tensor G4 processor, and advanced triple camera system. GrapheneOS provides hardened security while maintaining the full foldable Android experience with enhanced privacy controls.',
     price: 1499.99,
@@ -72,6 +74,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 9 Pro Fold 512GB',
     slug: 'grapheneos-pixel-9-pro-fold-512gb',
+    sku: 'GOS-PIX9FOLD-512',
     shortDescription: 'Premium foldable privacy smartphone with extra storage',
     longDescription: 'The Pixel 9 Pro Fold 512GB variant with GrapheneOS offers maximum storage for your private data. This foldable flagship features dual displays, advanced AI capabilities, and the most sophisticated camera system in a foldable device, all secured with GrapheneOS privacy-first approach.',
     price: 1699.99,
@@ -97,6 +100,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 9',
     slug: 'grapheneos-pixel-9',
+    sku: 'GOS-PIX9-128',
     shortDescription: 'High-performance privacy smartphone with GrapheneOS',
     longDescription: 'The standard Pixel 9 with GrapheneOS pre-installed offers the perfect balance of performance, privacy, and value. Featuring a 6.1-inch OLED display, Google Tensor G4 processor, and advanced AI capabilities, all secured with GrapheneOS hardened security features. Includes enhanced app permissions, secure boot verification, and privacy-focused defaults.',
     price: 799.99,
@@ -123,6 +127,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 8 Pro',
     slug: 'grapheneos-pixel-8-pro',
+    sku: 'GOS-PIX8PRO-256',
     shortDescription: 'Previous generation flagship with GrapheneOS',
     longDescription: 'Pixel 8 Pro with GrapheneOS. Excellent value with proven hardware and maximum privacy protection.',
     price: 699.99,
@@ -134,6 +139,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 8',
     slug: 'grapheneos-pixel-8',
+    sku: 'GOS-PIX8-128',
     shortDescription: 'Reliable privacy smartphone with GrapheneOS',
     longDescription: 'Pixel 8 with GrapheneOS pre-configured. Great performance and battery life with privacy-first approach.',
     price: 599.99,
@@ -145,6 +151,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 7 Pro',
     slug: 'grapheneos-pixel-7-pro',
+    sku: 'GOS-PIX7PRO-256',
     shortDescription: 'Previous generation Pro model with GrapheneOS',
     longDescription: 'Pixel 7 Pro with GrapheneOS. Still excellent performance with comprehensive privacy features.',
     price: 549.99,
@@ -156,6 +163,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 7',
     slug: 'grapheneos-pixel-7',
+    sku: 'GOS-PIX7-128',
     shortDescription: 'Budget-friendly GrapheneOS smartphone',
     longDescription: 'Pixel 7 with GrapheneOS. Affordable entry point into privacy-focused mobile computing.',
     price: 449.99,
@@ -167,6 +175,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 6 Pro (Refurbished)',
     slug: 'grapheneos-pixel-6-pro-refurb',
+    sku: 'GOS-PIX6PRO-REF',
     shortDescription: 'Refurbished Pixel 6 Pro with fresh GrapheneOS install',
     longDescription: 'Professionally refurbished Pixel 6 Pro with GrapheneOS. Great value for privacy-conscious users.',
     price: 399.99,
@@ -178,6 +187,7 @@ const sampleProducts = [
   {
     name: 'GrapheneOS Pixel 6 (Refurbished)',
     slug: 'grapheneos-pixel-6-refurb',
+    sku: 'GOS-PIX6-REF',
     shortDescription: 'Budget refurbished Pixel 6 with GrapheneOS',
     longDescription: 'Refurbished Pixel 6 with GrapheneOS pre-installed. Most affordable way to get GrapheneOS.',
     price: 299.99,
@@ -238,13 +248,38 @@ const seedDatabase = async () => {
         const existingProduct = await Product.findOne({ slug: productData.slug });
         
         if (existingProduct) {
-          // Update existing product with new data
+          // Update existing product and ensure it has proper variations
+          const stockQuantity = productData.stockQuantity || existingProduct.stockQuantity || Math.floor(Math.random() * 50) + 5;
+          const stockStatus = stockQuantity === 0 ? 'out_of_stock' : 
+                            stockQuantity <= 10 ? 'low_stock' : 'in_stock';
+          
+          // Ensure the product has variations structure
+          const variations = existingProduct.variations && existingProduct.variations.length > 0 
+            ? existingProduct.variations.map(v => ({
+                ...v.toObject(),
+                stockQuantity: stockQuantity,
+                stockStatus: stockStatus,
+                price: v.price || productData.price
+              }))
+            : [{
+                condition: productData.condition || 'new',
+                color: productData.attributes?.find(attr => attr.name === 'Color')?.value || 'Default',
+                storage: productData.attributes?.find(attr => attr.name === 'Storage')?.value || '256GB',
+                price: productData.price,
+                salePrice: productData.salePrice || null,
+                stockQuantity: stockQuantity,
+                stockStatus: stockStatus,
+                sku: `${productData.name.replace(/[^A-Z0-9]/g, '').substring(0, 10)}-${Date.now()}`,
+                images: productData.images || []
+              }];
+
           const updatedProduct = await Product.findByIdAndUpdate(
             existingProduct._id,
             {
               ...productData,
               category: smartphonesCategory._id,
-              stockQuantity: productData.stockQuantity || existingProduct.stockQuantity || Math.floor(Math.random() * 50) + 5,
+              baseModel: productData.name.replace('GrapheneOS ', ''),
+              variations: variations,
               attributes: productData.attributes || [
                 { name: 'Condition', value: productData.condition || 'new' },
                 { name: 'OS', value: 'GrapheneOS' }
@@ -255,11 +290,26 @@ const seedDatabase = async () => {
           console.log(`🔄 Updated: ${updatedProduct.name}`);
           updatedCount++;
         } else {
-          // Create new product
+          // Create new product with proper variations structure
+          const stockQuantity = productData.stockQuantity || Math.floor(Math.random() * 50) + 5;
+          const stockStatus = stockQuantity === 0 ? 'out_of_stock' : 
+                            stockQuantity <= 10 ? 'low_stock' : 'in_stock';
+          
           const newProductData = {
             ...productData,
             category: smartphonesCategory._id,
-            stockQuantity: productData.stockQuantity || Math.floor(Math.random() * 50) + 5,
+            baseModel: productData.name.replace('GrapheneOS ', ''), // Extract base model name
+            variations: [{
+              condition: productData.condition || 'new',
+              color: productData.attributes?.find(attr => attr.name === 'Color')?.value || 'Default',
+              storage: productData.attributes?.find(attr => attr.name === 'Storage')?.value || '256GB',
+              price: productData.price,
+              salePrice: productData.salePrice || null,
+              stockQuantity: stockQuantity,
+              stockStatus: stockStatus,
+              sku: `${productData.name.replace(/[^A-Z0-9]/g, '').substring(0, 10)}-${Date.now()}`,
+              images: productData.images || []
+            }],
             attributes: productData.attributes || [
               { name: 'Condition', value: productData.condition || 'new' },
               { name: 'OS', value: 'GrapheneOS' }
