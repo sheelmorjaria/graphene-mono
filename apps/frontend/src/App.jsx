@@ -10,6 +10,7 @@ import MyProfilePage from './pages/MyProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmail from './pages/VerifyEmail';
 import MyAddressesPage from './pages/MyAddressesPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
@@ -405,6 +406,9 @@ export const AppRoutes = () => {
           
           {/* Reset password page */}
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* Email verification page */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
           
           {/* My addresses page */}
           <Route path="/addresses" element={<MyAddressesPage />} />

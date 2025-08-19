@@ -13,7 +13,7 @@ export const formatCurrency = (amount) => {
 // Get available payment methods
 export const getPaymentMethods = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/payment/methods`, {
+    const response = await fetch(`${API_BASE_URL}/payments/methods`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export const requiresPaymentMethodSetup = () => {
 // Create PayPal order
 export const createPayPalOrder = async (checkoutData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/payment/paypal/create-order`, {
+    const response = await fetch(`${API_BASE_URL}/payments/paypal/create-order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export const createPayPalOrder = async (checkoutData) => {
 // Capture PayPal payment
 export const capturePayPalPayment = async ({ paypalOrderId, payerId }) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/payment/paypal/capture`, {
+    const response = await fetch(`${API_BASE_URL}/payments/paypal/capture`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ export const initializeBitcoinPayment = async (orderId) => {
       throw new Error('Authentication required. Please log in.');
     }
 
-    const response = await fetch(`${API_BASE_URL}/payment/bitcoin/initialize`, {
+    const response = await fetch(`${API_BASE_URL}/payments/bitcoin/initialize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ export const initializeBitcoinPayment = async (orderId) => {
 // Get Bitcoin payment status
 export const getBitcoinPaymentStatus = async (orderId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/payment/bitcoin/status/${orderId}`, {
+    const response = await fetch(`${API_BASE_URL}/payments/bitcoin/status/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
