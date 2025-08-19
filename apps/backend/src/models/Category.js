@@ -99,8 +99,13 @@ categorySchema.statics.getChildren = async function(parentId) {
 
 // Static method to count products in category
 categorySchema.statics.getProductCount = async function(categoryId) {
-  const Product = mongoose.model('Product');
-  return Product.countDocuments({ category: categoryId });
+  try {
+    const Product = mongoose.model('Product');
+    return await Product.countDocuments({ category: categoryId });
+  } catch (error) {
+    console.warn('Product model not available for category count:', error.message);
+    return 0; // Return 0 if Product model isn't available
+  }
 };
 
 export default mongoose.model('Category', categorySchema);
