@@ -1267,9 +1267,10 @@ class EmailService {
   // Send welcome/email verification email
   async sendWelcomeEmail(userEmail, emailVerificationToken, userData) {
     try {
-      const verificationUrl = process.env.FRONTEND_URL ? 
-        `${process.env.FRONTEND_URL}/verify-email?token=${emailVerificationToken}` : 
-        `https://graphene-security.com/verify-email?token=${emailVerificationToken}`;
+      // Point directly to backend API which will handle verification and redirect
+      const verificationUrl = process.env.BACKEND_URL ? 
+        `${process.env.BACKEND_URL}/api/auth/verify-email?token=${emailVerificationToken}` : 
+        `https://graphene-backend.onrender.com/api/auth/verify-email?token=${emailVerificationToken}`;
 
       const content = `
         <p>Welcome to Graphene Security! Thank you for creating an account with us.</p>
