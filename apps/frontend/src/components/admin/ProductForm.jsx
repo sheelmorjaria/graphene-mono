@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import VariationManager from './VariationManager';
+import { getAdminApiUrl } from '../../utils/apiConfig';
 
 const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) => {
   const [formData, setFormData] = useState({
@@ -57,8 +58,7 @@ const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-        const response = await fetch(`${API_BASE_URL}/admin/categories`);
+        const response = await fetch(getAdminApiUrl('categories'));
         if (response.ok) {
           const data = await response.json();
           setCategories(data.data || []);
