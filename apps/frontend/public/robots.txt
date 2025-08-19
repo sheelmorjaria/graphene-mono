@@ -37,7 +37,7 @@ User-agent: Bingbot
 Allow: /
 
 # Sitemap location
-Sitemap: https://grapheneos-store.com/sitemap.xml
+Sitemap: https://graphene-security.com/sitemap.xml
 
 # Crawl delay for respectful crawling
 Crawl-delay: 1

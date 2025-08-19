@@ -119,6 +119,11 @@ Allow: /
 Sitemap: https://graphene-security.com/sitemap.xml`);
 });
 
+// Favicon endpoint (prevents 404 errors)
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No Content
+});
+
 // 404 handler
 app.use(notFound);
 
