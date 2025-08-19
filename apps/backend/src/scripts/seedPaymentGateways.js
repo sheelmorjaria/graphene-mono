@@ -86,46 +86,6 @@ const PAYMENT_GATEWAYS = [
       pciCompliant: false,
       requires3DS: false
     }
-  },
-  {
-    name: 'Monero',
-    code: 'MONERO',
-    type: 'cryptocurrency',
-    provider: 'monero',
-    isEnabled: true,
-    isTestMode: true,
-    supportedCurrencies: ['XMR', 'GBP', 'USD', 'EUR'],
-    supportedCountries: ['GB', 'US', 'IE', 'FR', 'DE', 'ES', 'IT', 'NL', 'BE', 'CA', 'AU'],
-    displayOrder: 3,
-    description: 'Pay with Monero for complete transaction privacy',
-    customerMessage: 'Monero payments require 10 confirmations (~20 minutes)',
-    config: {
-      moneroApiKey: '',
-      moneroWebhookSecret: ''
-    },
-    fees: {
-      fixedFee: 0,
-      percentageFee: 1.5,
-      feeCurrency: 'GBP'
-    },
-    limits: {
-      minAmount: 0.01,
-      maxAmount: 50000,
-      dailyLimit: null
-    },
-    features: {
-      supportsRefunds: false,
-      supportsPartialRefunds: false,
-      supportsRecurring: false,
-      supportsPreauth: false,
-      requiresRedirect: false,
-      supportsWebhooks: true
-    },
-    security: {
-      requiresSSL: true,
-      pciCompliant: false,
-      requires3DS: false
-    }
   }
 ];
 
