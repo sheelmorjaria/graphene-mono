@@ -541,10 +541,27 @@ export const verifyEmail = async (req, res) => {
 
     // Input validation
     if (!token) {
-      return res.status(400).json({
-        success: false,
-        error: 'Verification token is required'
-      });
+      // Return HTML page for browser access
+      return res.status(400).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Email Verification Failed</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .error { color: #dc3545; }
+            .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; }
+          </style>
+        </head>
+        <body>
+          <h1 class="error">Verification Failed</h1>
+          <p>No verification token provided.</p>
+          <a href="${process.env.FRONTEND_URL || 'https://graphene-security.com'}/login" class="btn">Go to Login</a>
+        </body>
+        </html>
+      `);
     }
 
     // Find user with valid verification token
@@ -554,10 +571,28 @@ export const verifyEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({
-        success: false,
-        error: 'Verification token is invalid or has expired'
-      });
+      // Return HTML page for invalid/expired token
+      return res.status(400).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Email Verification Failed</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .error { color: #dc3545; }
+            .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; }
+          </style>
+        </head>
+        <body>
+          <h1 class="error">Verification Failed</h1>
+          <p>The verification link is invalid or has expired.</p>
+          <p>Please register again or contact support.</p>
+          <a href="${process.env.FRONTEND_URL || 'https://graphene-security.com'}/register" class="btn">Register Again</a>
+        </body>
+        </html>
+      `);
     }
 
     // Mark email as verified and clear token
@@ -569,21 +604,55 @@ export const verifyEmail = async (req, res) => {
     // Log the verification event
     console.log(`Email verified for user ${user.email} at ${new Date().toISOString()}`);
 
-    res.json({
-      success: true,
-      message: 'Email verified successfully',
-      data: {
-        email: user.email,
-        emailVerified: true
-      }
-    });
+    // Return success HTML page with auto-redirect
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Email Verified Successfully</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="refresh" content="3;url=${process.env.FRONTEND_URL || 'https://graphene-security.com'}/login?verified=true">
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          .success { color: #28a745; }
+          .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; }
+        </style>
+      </head>
+      <body>
+        <h1 class="success">✓ Email Verified Successfully!</h1>
+        <p>Your email address has been verified.</p>
+        <p>You will be redirected to the login page in 3 seconds...</p>
+        <a href="${process.env.FRONTEND_URL || 'https://graphene-security.com'}/login?verified=true" class="btn">Go to Login Now</a>
+      </body>
+      </html>
+    `);
 
   } catch (error) {
     console.error('Email verification error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error occurred during email verification'
-    });
+    
+    // Return error HTML page
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Verification Error</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          .error { color: #dc3545; }
+          .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; }
+        </style>
+      </head>
+      <body>
+        <h1 class="error">Verification Error</h1>
+        <p>An error occurred during email verification.</p>
+        <p>Please try again or contact support.</p>
+        <a href="${process.env.FRONTEND_URL || 'https://graphene-security.com'}/contact-us" class="btn">Contact Support</a>
+      </body>
+      </html>
+    `);
   }
 };
 
