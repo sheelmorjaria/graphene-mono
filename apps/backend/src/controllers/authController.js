@@ -534,6 +534,59 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+// Verify email with token
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params || req.query;
+
+    // Input validation
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: 'Verification token is required'
+      });
+    }
+
+    // Find user with valid verification token
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Verification token is invalid or has expired'
+      });
+    }
+
+    // Mark email as verified and clear token
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    // Log the verification event
+    console.log(`Email verified for user ${user.email} at ${new Date().toISOString()}`);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      data: {
+        email: user.email,
+        emailVerified: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error occurred during email verification'
+    });
+  }
+};
+
 // Reset password with token
 export const resetPassword = async (req, res) => {
   try {

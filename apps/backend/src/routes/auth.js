@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { register, login, logout, getProfile, updateProfile, changePassword, forgotPassword, resetPassword } from '../controllers/authController.js';
+import { register, login, logout, getProfile, updateProfile, changePassword, forgotPassword, resetPassword, verifyEmail } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 import { handleValidationErrors } from '../middleware/validation.js';
 import {
@@ -41,6 +41,8 @@ router.post('/register', registerLimiter, registerValidation, handleValidationEr
 router.post('/login', authLimiter, loginValidation, handleValidationErrors, login);
 router.post('/forgot-password', authLimiter, forgotPasswordValidation, handleValidationErrors, forgotPassword);
 router.post('/reset-password', authLimiter, resetPasswordValidation, handleValidationErrors, resetPassword);
+router.get('/verify-email/:token', verifyEmail);
+router.get('/verify-email', verifyEmail); // Also support query param ?token=xxx
 
 // Protected routes
 router.get('/profile', authenticate, getProfile);
