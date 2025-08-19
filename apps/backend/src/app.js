@@ -108,6 +108,17 @@ app.get('/', (req, res) => {
   });
 });
 
+// Robots.txt endpoint
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Allow: /
+
+Sitemap: https://graphene-security.com/sitemap.xml`);
+});
+
 // 404 handler
 app.use(notFound);
 
