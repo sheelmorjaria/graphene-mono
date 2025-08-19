@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getAdminApiUrl } from '../utils/apiConfig';
 
 function AdminCategoryFormPage() {
   const { categoryId } = useParams();
@@ -37,8 +38,7 @@ function AdminCategoryFormPage() {
       const token = localStorage.getItem('adminToken');
       if (!token) return;
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-      const response = await fetch(`${API_BASE_URL}/admin/categories`, {
+      const response = await fetch(getAdminApiUrl('categories'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -69,8 +69,7 @@ function AdminCategoryFormPage() {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-      const response = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}`, {
+      const response = await fetch(getAdminApiUrl(`categories/${categoryId}`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -180,10 +179,9 @@ function AdminCategoryFormPage() {
         parentId: formData.parentId || null
       };
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
       const url = isEditMode 
-        ? `${API_BASE_URL}/admin/categories/${categoryId}`
-        : `${API_BASE_URL}/admin/categories`;
+        ? getAdminApiUrl(`categories/${categoryId}`)
+        : getAdminApiUrl('categories');
       
       const method = isEditMode ? 'PUT' : 'POST';
 

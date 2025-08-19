@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getAdminApiUrl } from '../utils/apiConfig';
 
 function AdminCategoriesListPage() {
   const [categories, setCategories] = useState([]);
@@ -25,8 +26,7 @@ function AdminCategoriesListPage() {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-      const response = await fetch(`${API_BASE_URL}/admin/categories`, {
+      const response = await fetch(getAdminApiUrl('categories'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -55,8 +55,7 @@ function AdminCategoriesListPage() {
         return;
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-      const response = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}`, {
+      const response = await fetch(getAdminApiUrl(`categories/${categoryId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
