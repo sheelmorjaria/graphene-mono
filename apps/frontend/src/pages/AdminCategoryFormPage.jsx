@@ -37,7 +37,8 @@ function AdminCategoryFormPage() {
       const token = localStorage.getItem('adminToken');
       if (!token) return;
 
-      const response = await fetch('/api/admin/categories', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${API_BASE_URL}/admin/categories`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -68,7 +69,8 @@ function AdminCategoryFormPage() {
         return;
       }
 
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -178,9 +180,10 @@ function AdminCategoryFormPage() {
         parentId: formData.parentId || null
       };
 
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
       const url = isEditMode 
-        ? `/api/admin/categories/${categoryId}`
-        : '/api/admin/categories';
+        ? `${API_BASE_URL}/admin/categories/${categoryId}`
+        : `${API_BASE_URL}/admin/categories`;
       
       const method = isEditMode ? 'PUT' : 'POST';
 
