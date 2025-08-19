@@ -1264,6 +1264,71 @@ class EmailService {
     }
   }
 
+  // Send welcome/email verification email
+  async sendWelcomeEmail(userEmail, emailVerificationToken, userData) {
+    try {
+      const verificationUrl = process.env.FRONTEND_URL ? 
+        `${process.env.FRONTEND_URL}/verify-email?token=${emailVerificationToken}` : 
+        `https://graphene-security.com/verify-email?token=${emailVerificationToken}`;
+
+      const content = `
+        <p>Welcome to Graphene Security! Thank you for creating an account with us.</p>
+        
+        <div class="order-details">
+          <h3>Account Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value">${userEmail}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Registration Date:</span>
+            <span class="detail-value">${new Date().toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        <div class="order-details">
+          <h3>Verify Your Email Address</h3>
+          <p>To complete your registration and access all features, please verify your email address by clicking the button below:</p>
+          <a href="${verificationUrl}" class="btn">Verify Email Address</a>
+          <p style="font-size: 14px; color: #666; margin-top: 15px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}" style="color: #667eea; word-break: break-all;">${verificationUrl}</a>
+          </p>
+        </div>
+
+        <div class="order-details">
+          <h3>What's Next?</h3>
+          <ul>
+            <li>Browse our selection of privacy-focused GrapheneOS devices</li>
+            <li>Explore our privacy app installation services</li>
+            <li>Set up your shipping preferences</li>
+            <li>Join our community of privacy-conscious users</li>
+          </ul>
+        </div>
+
+        <p>Welcome aboard! We're excited to help you on your privacy journey.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Welcome to Graphene Security',
+        content,
+        userData.firstName || 'New User'
+      );
+
+      return await this.sendEmail({
+        to: userEmail,
+        subject: 'Welcome to Graphene Security - Please Verify Your Email',
+        htmlContent,
+        emailType: 'transactional.welcome',
+        skipPreferenceCheck: true // Always send welcome emails
+      });
+
+    } catch (error) {
+      logError(error, { context: 'welcome_email', userEmail });
+      return { success: false, error: error.message };
+    }
+  }
+
   // Send account deletion completed email
   async sendAccountDeletionCompletedEmail(userEmail, firstName) {
     try {
@@ -1317,6 +1382,7 @@ const emailService = new EmailService();
 export default emailService;
 
 // Export individual functions for convenience
+export const sendWelcomeEmail = emailService.sendWelcomeEmail.bind(emailService);
 export const sendDataExportEmail = emailService.sendDataExportEmail.bind(emailService);
 export const sendAccountDeletionConfirmationEmail = emailService.sendAccountDeletionConfirmationEmail.bind(emailService);
 export const sendAccountDeletionCompletedEmail = emailService.sendAccountDeletionCompletedEmail.bind(emailService);

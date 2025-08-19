@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import { sendWelcomeEmail } from '../services/emailService.js';
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -126,8 +127,22 @@ export const register = async (req, res) => {
     // Generate email verification token and send welcome email
     const emailVerificationToken = user.generateEmailVerificationToken();
     await user.save();
-    // TODO: await sendWelcomeEmail(user.email, emailVerificationToken);
-    console.log(`Email verification token generated for user: ${user.email}`, { emailVerificationToken });
+    
+    // Send welcome email with verification token
+    try {
+      const emailResult = await sendWelcomeEmail(user.email, emailVerificationToken, {
+        firstName: user.firstName,
+        lastName: user.lastName
+      });
+      
+      if (emailResult.success) {
+        console.log(`Welcome email sent successfully to: ${user.email}`, { messageId: emailResult.messageId });
+      } else {
+        console.error(`Failed to send welcome email to: ${user.email}`, { error: emailResult.error });
+      }
+    } catch (emailError) {
+      console.error(`Email service error for user: ${user.email}`, { error: emailError.message });
+    }
 
     // Return success response with token and user data
     res.status(201).json({
