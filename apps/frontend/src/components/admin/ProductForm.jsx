@@ -57,7 +57,8 @@ const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/admin/categories');
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+        const response = await fetch(`${API_BASE_URL}/admin/categories`);
         if (response.ok) {
           const data = await response.json();
           setCategories(data.data || []);
