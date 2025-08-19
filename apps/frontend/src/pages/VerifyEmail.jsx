@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 const VerifyEmail = () => {
@@ -20,11 +19,19 @@ const VerifyEmail = () => {
       }
 
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/auth/verify-email?token=${token}`
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || ''}/api/auth/verify-email?token=${token}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
 
-        if (response.data.success) {
+        const data = await response.json();
+
+        if (response.ok && data.success) {
           setStatus('success');
           setMessage('Your email has been verified successfully!');
           
@@ -34,12 +41,11 @@ const VerifyEmail = () => {
           }, 3000);
         } else {
           setStatus('error');
-          setMessage(response.data.error || 'Verification failed');
+          setMessage(data.error || 'Verification failed');
         }
       } catch (error) {
         setStatus('error');
         setMessage(
-          error.response?.data?.error || 
           'An error occurred during verification. The link may be expired or invalid.'
         );
       }
