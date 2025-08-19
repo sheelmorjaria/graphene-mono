@@ -537,7 +537,8 @@ export const forgotPassword = async (req, res) => {
 // Verify email with token
 export const verifyEmail = async (req, res) => {
   try {
-    const { token } = req.params || req.query;
+    // Get token from either URL params or query string
+    const token = req.params.token || req.query.token;
 
     // Input validation
     if (!token) {
