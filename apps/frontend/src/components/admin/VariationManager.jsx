@@ -13,6 +13,7 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
       id: Date.now().toString(), // temporary ID for new variations
       condition: 'new',
       color: '',
+      storage: '',
       price: '',
       salePrice: '',
       stockQuantity: 0,
@@ -135,6 +136,21 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
                 />
               </div>
 
+              {/* Storage */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Storage *
+                </label>
+                <input
+                  type="text"
+                  value={variation.storage}
+                  onChange={(e) => updateVariation(index, 'storage', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., 128GB, 256GB, 512GB"
+                  required
+                />
+              </div>
+
               {/* SKU */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -220,7 +236,7 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
             <div className="mt-4 p-3 bg-blue-50 rounded-md">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">
-                  {variation.condition} - {variation.color}
+                  {variation.condition} - {variation.color} - {variation.storage}
                 </span>
                 <div className="text-right">
                   {variation.salePrice && parseFloat(variation.salePrice) > 0 ? (
@@ -262,6 +278,7 @@ VariationManager.propTypes = {
     _id: PropTypes.string,
     condition: PropTypes.string,
     color: PropTypes.string,
+    storage: PropTypes.string,
     price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     salePrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     stockQuantity: PropTypes.number,
