@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProductById, createProduct, updateProduct, deleteProduct } from '../services/adminService';
+import { API_BASE_URL } from '../utils/apiConfig';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 function AdminProductFormPage() {
@@ -805,7 +806,7 @@ function AdminProductFormPage() {
                     {existingImages.map((image, index) => (
                       <div key={index} className="relative group">
                         <img
-                          src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}${image.thumbnailUrl || image.url}`}
+                          src={`${API_BASE_URL.replace('/api', '')}${image.thumbnailUrl || image.url}`}
                           alt={`Product image ${index + 1}`}
                           className="w-full h-24 object-cover rounded-lg border border-gray-200"
                         />
