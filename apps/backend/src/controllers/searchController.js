@@ -12,6 +12,10 @@ const normalizeSearchQuery = (query) => {
     { pattern: /fold\s*pixel/, replacement: 'pixel fold' },
     { pattern: /pro\s*fold/, replacement: 'pro fold' },
     
+    // Handle A-series models (8A, 7A, etc.)
+    { pattern: /pixel\s*(\d+)a/i, replacement: 'pixel $1a' },
+    { pattern: /pixel\s*(\d+)\s*a/i, replacement: 'pixel $1a' },
+    
     // General Pixel variations
     { pattern: /pixel\s*(\d+)\s*pro/, replacement: 'pixel $1 pro' },
     { pattern: /pixel\s*(\d+)/, replacement: 'pixel $1' },
@@ -27,6 +31,25 @@ const normalizeSearchQuery = (query) => {
   }
   
   return normalizedQuery.trim();
+};
+
+// Helper function to expand search for model variants
+const expandModelSearch = (query) => {
+  const trimmed = query.trim().toLowerCase();
+  
+  // Check if searching for Pixel with a number
+  const pixelMatch = trimmed.match(/pixel\s*(\d+)/);
+  if (pixelMatch) {
+    const modelNumber = pixelMatch[1];
+    // Return variations that should match
+    return [
+      `pixel ${modelNumber}`,
+      `pixel ${modelNumber}a`,
+      `pixel ${modelNumber} pro`
+    ];
+  }
+  
+  return [trimmed];
 };
 
 export const searchProducts = async (req, res) => {
@@ -129,43 +152,82 @@ export const searchProducts = async (req, res) => {
       // Fall back to regex search if text search fails
       // For multi-word queries, prioritize exact matches in the name
       const normalizedQuery = normalizeSearchQuery(query);
-      const words = normalizedQuery.split(/\s+/);
+      const expandedQueries = expandModelSearch(normalizedQuery);
       
       // Escape special regex characters
       const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       
-      if (words.length > 1) {
-        // For multi-word queries like "pixel 7" or "pixel 9 pro fold", require all words to be present
-        // Also search in shortDescription and longDescription for better matches
-        const nameConditions = words.map(word => ({
-          $or: [
-            { name: { $regex: escapeRegex(word), $options: 'i' } },
-            { shortDescription: { $regex: escapeRegex(word), $options: 'i' } },
-            { longDescription: { $regex: escapeRegex(word), $options: 'i' } }
-          ]
-        }));
+      // Check if this is a Pixel model search that needs expansion
+      if (expandedQueries.length > 1) {
+        // For Pixel model searches, look for any of the variants
+        const orConditions = expandedQueries.map(expandedQuery => {
+          const words = expandedQuery.split(/\s+/);
+          if (words.length > 1) {
+            // All words must be present for each variant
+            return {
+              $and: words.map(word => ({
+                $or: [
+                  { name: { $regex: escapeRegex(word), $options: 'i' } },
+                  { baseModel: { $regex: escapeRegex(word), $options: 'i' } },
+                  { shortDescription: { $regex: escapeRegex(word), $options: 'i' } }
+                ]
+              }))
+            };
+          } else {
+            return {
+              $or: [
+                { name: { $regex: escapeRegex(expandedQuery), $options: 'i' } },
+                { baseModel: { $regex: escapeRegex(expandedQuery), $options: 'i' } },
+                { shortDescription: { $regex: escapeRegex(expandedQuery), $options: 'i' } }
+              ]
+            };
+          }
+        });
         
         searchFilter = {
           $and: [
             { isActive: true },
-            ...nameConditions
+            { $or: orConditions }
           ]
         };
       } else {
-        // For single word queries, search across all fields
-        const sanitizedQuery = escapeRegex(normalizedQuery);
-        searchFilter = {
-          $and: [
-            { isActive: true },
-            {
-              $or: [
-                { name: { $regex: sanitizedQuery, $options: 'i' } },
-                { shortDescription: { $regex: sanitizedQuery, $options: 'i' } },
-                { longDescription: { $regex: sanitizedQuery, $options: 'i' } }
-              ]
-            }
-          ]
-        };
+        const words = normalizedQuery.split(/\s+/);
+        
+        if (words.length > 1) {
+          // For multi-word queries like "pixel 7" or "pixel 9 pro fold", require all words to be present
+          // Also search in shortDescription and longDescription for better matches
+          const nameConditions = words.map(word => ({
+            $or: [
+              { name: { $regex: escapeRegex(word), $options: 'i' } },
+              { baseModel: { $regex: escapeRegex(word), $options: 'i' } },
+              { shortDescription: { $regex: escapeRegex(word), $options: 'i' } },
+              { longDescription: { $regex: escapeRegex(word), $options: 'i' } }
+            ]
+          }));
+          
+          searchFilter = {
+            $and: [
+              { isActive: true },
+              ...nameConditions
+            ]
+          };
+        } else {
+          // For single word queries, search across all fields
+          const sanitizedQuery = escapeRegex(normalizedQuery);
+          searchFilter = {
+            $and: [
+              { isActive: true },
+              {
+                $or: [
+                  { name: { $regex: sanitizedQuery, $options: 'i' } },
+                  { baseModel: { $regex: sanitizedQuery, $options: 'i' } },
+                  { shortDescription: { $regex: sanitizedQuery, $options: 'i' } },
+                  { longDescription: { $regex: sanitizedQuery, $options: 'i' } }
+                ]
+              }
+            ]
+          };
+        }
       }
 
       // Add additional filters (these work with our new structure)
