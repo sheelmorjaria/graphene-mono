@@ -199,7 +199,15 @@ export const updateProduct = async (req, res) => {
       const price = variation.price !== undefined ? variation.price : existingVariation?.price;
       const sku = variation.sku || existingVariation?.sku;
       
+      // Debug logging
+      console.log('Validating variation:', {
+        variation,
+        existingVariation: existingVariation ? { _id: existingVariation._id, condition: existingVariation.condition, color: existingVariation.color, storage: existingVariation.storage, price: existingVariation.price, sku: existingVariation.sku } : null,
+        resolved: { condition, color, storage, price, sku }
+      });
+      
       if (!condition || !color || !storage || (price === undefined || price === null) || !sku) {
+        console.log('Validation failed for variation:', { condition, color, storage, price, sku });
         return res.status(400).json({
           success: false,
           error: 'Each variation must have condition, color, storage, price, and SKU'
