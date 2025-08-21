@@ -91,6 +91,7 @@ function AdminProductFormPage() {
         // Set variations or create default if none exist
         if (product.variations && product.variations.length > 0) {
           setVariations(product.variations.map(v => ({
+            _id: v._id,
             condition: v.condition || 'excellent',
             color: v.color || '',
             storage: v.storage || '128GB',
@@ -312,6 +313,7 @@ function AdminProductFormPage() {
 
       // Add variations as JSON
       const processedVariations = variations.map(v => ({
+        _id: v._id,
         condition: v.condition,
         color: v.color.trim(),
         storage: v.storage,

@@ -190,7 +190,15 @@ export const updateProduct = async (req, res) => {
 
     // Validate each variation
     for (const variation of variations) {
-      if (!variation.condition || !variation.color || !variation.price || !variation.sku) {
+      // For updates, allow preserving existing values if they exist in the current product
+      const existingVariation = existingProduct.variations.find(v => v._id.toString() === variation._id?.toString());
+      
+      const condition = variation.condition || existingVariation?.condition;
+      const color = variation.color || existingVariation?.color;
+      const price = variation.price || existingVariation?.price;
+      const sku = variation.sku || existingVariation?.sku;
+      
+      if (!condition || !color || !price || !sku) {
         return res.status(400).json({
           success: false,
           error: 'Each variation must have condition, color, price, and SKU'
@@ -199,7 +207,7 @@ export const updateProduct = async (req, res) => {
 
       // Check SKU uniqueness (excluding current product variations)
       const existingSku = await Product.findOne({ 
-        'variations.sku': variation.sku,
+        'variations.sku': sku,
         _id: { $ne: productId }
       });
       
@@ -256,16 +264,21 @@ export const updateProduct = async (req, res) => {
     existingProduct.tags = processedTags;
     
     // Update variations
-    existingProduct.variations = variations.map(v => ({
-      condition: v.condition,
-      color: v.color,
-      price: parseFloat(v.price),
-      salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
-      stockQuantity: parseInt(v.stockQuantity || 0),
-      stockStatus: v.stockStatus || 'in_stock',
-      sku: v.sku.trim().toUpperCase(),
-      images: v.images || []
-    }));
+    existingProduct.variations = variations.map(v => {
+      const existingVariation = existingProduct.variations.find(ev => ev._id.toString() === v._id?.toString());
+      
+      return {
+        _id: v._id || existingVariation?._id,
+        condition: v.condition || existingVariation?.condition,
+        color: v.color || existingVariation?.color,
+        price: parseFloat(v.price || existingVariation?.price),
+        salePrice: v.salePrice !== undefined ? (v.salePrice ? parseFloat(v.salePrice) : undefined) : existingVariation?.salePrice,
+        stockQuantity: parseInt(v.stockQuantity !== undefined ? v.stockQuantity : (existingVariation?.stockQuantity || 0)),
+        stockStatus: v.stockStatus || existingVariation?.stockStatus || 'in_stock',
+        sku: (v.sku || existingVariation?.sku)?.trim()?.toUpperCase(),
+        images: v.images || existingVariation?.images || []
+      };
+    });
 
     // Update optional fields
     if (slug) existingProduct.slug = slug;
