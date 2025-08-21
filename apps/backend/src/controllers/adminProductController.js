@@ -196,10 +196,10 @@ export const updateProduct = async (req, res) => {
       const condition = variation.condition || existingVariation?.condition;
       const color = variation.color || existingVariation?.color;
       const storage = variation.storage || existingVariation?.storage;
-      const price = variation.price || existingVariation?.price;
+      const price = variation.price !== undefined ? variation.price : existingVariation?.price;
       const sku = variation.sku || existingVariation?.sku;
       
-      if (!condition || !color || !storage || !price || !sku) {
+      if (!condition || !color || !storage || (price === undefined || price === null) || !sku) {
         return res.status(400).json({
           success: false,
           error: 'Each variation must have condition, color, storage, price, and SKU'
@@ -273,7 +273,7 @@ export const updateProduct = async (req, res) => {
         condition: v.condition || existingVariation?.condition,
         color: v.color || existingVariation?.color,
         storage: v.storage || existingVariation?.storage,
-        price: parseFloat(v.price || existingVariation?.price),
+        price: parseFloat(v.price !== undefined ? v.price : existingVariation?.price),
         salePrice: v.salePrice !== undefined ? (v.salePrice ? parseFloat(v.salePrice) : undefined) : existingVariation?.salePrice,
         stockQuantity: parseInt(v.stockQuantity !== undefined ? v.stockQuantity : (existingVariation?.stockQuantity || 0)),
         stockStatus: v.stockStatus || existingVariation?.stockStatus || 'in_stock',
