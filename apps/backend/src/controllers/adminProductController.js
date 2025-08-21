@@ -5,7 +5,7 @@ import Category from '../models/Category.js';
 // Create new product with variations
 export const createProduct = async (req, res) => {
   try {
-    const {
+    let {
       name,
       slug,
       shortDescription,
@@ -21,6 +21,18 @@ export const createProduct = async (req, res) => {
       images,
       variations
     } = req.body;
+
+    // Parse variations if it's a string (from FormData)
+    if (typeof variations === 'string') {
+      try {
+        variations = JSON.parse(variations);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid variations JSON format'
+        });
+      }
+    }
 
     // Validate required fields
     if (!name || !baseModel || !variations || variations.length === 0) {
@@ -146,7 +158,7 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { productId } = req.params;
-    const {
+    let {
       name,
       slug,
       shortDescription,
@@ -162,6 +174,21 @@ export const updateProduct = async (req, res) => {
       images,
       variations
     } = req.body;
+
+    // Parse variations if it's a string (from FormData)
+    if (typeof variations === 'string') {
+      console.log('Parsing variations string:', variations.substring(0, 200) + (variations.length > 200 ? '...' : ''));
+      try {
+        variations = JSON.parse(variations);
+        console.log('Successfully parsed variations:', variations.length, 'items');
+      } catch (error) {
+        console.log('Failed to parse variations JSON:', error.message);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid variations JSON format'
+        });
+      }
+    }
 
     // Validate productId
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -199,15 +226,7 @@ export const updateProduct = async (req, res) => {
       const price = variation.price !== undefined ? variation.price : existingVariation?.price;
       const sku = variation.sku || existingVariation?.sku;
       
-      // Debug logging
-      console.log('Validating variation:', {
-        variation,
-        existingVariation: existingVariation ? { _id: existingVariation._id, condition: existingVariation.condition, color: existingVariation.color, storage: existingVariation.storage, price: existingVariation.price, sku: existingVariation.sku } : null,
-        resolved: { condition, color, storage, price, sku }
-      });
-      
       if (!condition || !color || !storage || (price === undefined || price === null) || !sku) {
-        console.log('Validation failed for variation:', { condition, color, storage, price, sku });
         return res.status(400).json({
           success: false,
           error: 'Each variation must have condition, color, storage, price, and SKU'
