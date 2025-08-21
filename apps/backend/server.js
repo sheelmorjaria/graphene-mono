@@ -233,6 +233,21 @@ app.get('/', (req, res) => {
   });
 });
 
+// Robots.txt endpoint
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Disallow: /
+
+# API endpoints should not be indexed
+# The API is meant for programmatic access only`);
+});
+
+// Favicon endpoint (prevents 404 errors)
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No Content
+});
+
 // 404 handler
 app.use(notFound);
 

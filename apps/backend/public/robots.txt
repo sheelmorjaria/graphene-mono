@@ -1,0 +1,8 @@
+# Backend API Robots.txt
+# This is for the API server only
+
+User-agent: *
+Disallow: /
+
+# API endpoints should not be indexed
+# The API is meant for programmatic access only
