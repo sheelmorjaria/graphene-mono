@@ -13,6 +13,7 @@ const ProductDetailsPage = () => {
   const { product, loading, error, refetch } = useProductDetails(slug);
   const { addToCart } = useCart();
   const [selectedVariation, setSelectedVariation] = useState(null);
+  const [currentImages, setCurrentImages] = useState([]);
 
   // Set page title when product loads
   useEffect(() => {
@@ -22,6 +23,19 @@ const ProductDetailsPage = () => {
       document.title = 'Product Details - Graphene Security';
     }
   }, [product]);
+
+  // Update images when product or selected variation changes
+  useEffect(() => {
+    if (product) {
+      if (selectedVariation && selectedVariation.images && selectedVariation.images.length > 0) {
+        // Use variant-specific images if available
+        setCurrentImages(selectedVariation.images);
+      } else {
+        // Fall back to product images
+        setCurrentImages(product.images || []);
+      }
+    }
+  }, [product, selectedVariation]);
 
   const handleAddToCart = async (productId, quantity, variationId) => {
     console.log('handleAddToCart called with:', { productId, quantity, variationId });
@@ -194,7 +208,7 @@ const ProductDetailsPage = () => {
           data-testid="image-section"
         >
           <ImageGallery 
-            images={product.images || []} 
+            images={currentImages} 
             alt={`${product.name} product images`}
           />
         </div>

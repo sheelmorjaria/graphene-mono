@@ -30,7 +30,10 @@ const usbDriveProducts = [
         stockQuantity: 20,
         stockStatus: 'in_stock',
         sku: 'USB-KIVP50-32A',
-        images: ['https://example.com/ironkey-vp50-32gb-usba.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800',
+          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80'
+        ]
       },
       // 64GB variants
       {
@@ -41,7 +44,10 @@ const usbDriveProducts = [
         stockQuantity: 18,
         stockStatus: 'in_stock',
         sku: 'USB-KIVP50-64A',
-        images: ['https://example.com/ironkey-vp50-64gb-usba.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&q=80',
+          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80'
+        ]
       },
       // 128GB variants
       {
@@ -52,7 +58,10 @@ const usbDriveProducts = [
         stockQuantity: 15,
         stockStatus: 'in_stock',
         sku: 'USB-KIVP50-128A',
-        images: ['https://example.com/ironkey-vp50-128gb-usba.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1582112014310-8ebeeb26d8d3?w=800',
+          'https://images.unsplash.com/photo-1582112014310-8ebeeb26d8d3?w=800&crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80'
+        ]
       },
       // 256GB variants
       {
@@ -63,7 +72,10 @@ const usbDriveProducts = [
         stockQuantity: 10,
         stockStatus: 'in_stock',
         sku: 'USB-KIVP50-256A',
-        images: ['https://example.com/ironkey-vp50-256gb-usba.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800',
+          'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80'
+        ]
       }
     ],
     attributes: [
@@ -115,7 +127,10 @@ const usbDriveProducts = [
         stockQuantity: 25,
         stockStatus: 'in_stock',
         sku: 'USB-KILP50-16A',
-        images: ['https://example.com/ironkey-lp50-16gb-usba.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1580048845766-c8ac1b52e1b9?w=800',
+          'https://images.unsplash.com/photo-1580048845766-c8ac1b52e1b9?w=800&crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80'
+        ]
       },
       {
         capacity: '16GB',
@@ -125,7 +140,10 @@ const usbDriveProducts = [
         stockQuantity: 22,
         stockStatus: 'in_stock',
         sku: 'USB-KILP50-16C',
-        images: ['https://example.com/ironkey-lp50-16gb-usbc.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1615736781103-3e70bb2f4722?w=800',
+          'https://images.unsplash.com/photo-1615736781103-3e70bb2f4722?w=800&crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80'
+        ]
       },
       // 32GB variants
       {
@@ -136,7 +154,10 @@ const usbDriveProducts = [
         stockQuantity: 20,
         stockStatus: 'in_stock',
         sku: 'USB-KILP50-32A',
-        images: ['https://example.com/ironkey-lp50-32gb-usba.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&fit=crop&q=80&crop=faces'
+        ]
       },
       {
         capacity: '32GB',
@@ -146,7 +167,10 @@ const usbDriveProducts = [
         stockQuantity: 18,
         stockStatus: 'in_stock',
         sku: 'USB-KILP50-32C',
-        images: ['https://example.com/ironkey-lp50-32gb-usbc.jpg']
+        images: [
+          'https://images.unsplash.com/photo-1615736781103-3e70bb2f4722?w=800&q=80',
+          'https://images.unsplash.com/photo-1615736781103-3e70bb2f4722?w=800&q=80&crop=faces'
+        ]
       },
       // 64GB variants
       {
