@@ -114,6 +114,8 @@ export const getProducts = async (req, res) => {
       const priceRange = product.getPriceRange();
       const availableColors = product.getAvailableColors();
       const availableConditions = product.getAvailableConditions();
+      const availableCapacities = product.getAvailableCapacities();
+      const availableInterfaces = product.getAvailableInterfaces();
       const isInStock = product.isInStock();
       
       return {
@@ -125,15 +127,27 @@ export const getProducts = async (req, res) => {
         priceRange,
         images: product.images.length > 0 ? product.images : (product.variations[0]?.images || []),
         variations: product.variations.map(v => ({
+          // Phone variation fields
           condition: v.condition,
           color: v.color,
+          storage: v.storage,
+          // USB drive variation fields
+          capacity: v.capacity,
+          interface: v.interface,
+          variantName: v.variantName,
+          // Common fields
           price: v.price,
           salePrice: v.salePrice,
           stockStatus: v.stockStatus,
-          sku: v.sku
+          stockQuantity: v.stockQuantity,
+          sku: v.sku,
+          _id: v._id,
+          images: v.images
         })),
         availableColors,
         availableConditions,
+        availableCapacities,
+        availableInterfaces,
         isInStock,
         category: product.category,
         createdAt: product.createdAt
