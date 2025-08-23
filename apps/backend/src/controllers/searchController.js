@@ -303,13 +303,14 @@ export const searchProducts = async (req, res) => {
         .filter(c => c)
         .sort((a, b) => (conditionRank[b] || 0) - (conditionRank[a] || 0))[0] || 'good';
       
-      // Get overall stock status
+      // Get overall stock status - match the logic in Product.isInStock() method
       const totalStock = variations.reduce((total, v) => total + (v.stockQuantity || 0), 0);
       const inStockVariations = variations.filter(v => v.stockStatus === 'in_stock' || v.stockStatus === 'low_stock');
       
       let stockStatus = 'out_of_stock';
-      if (inStockVariations.length > 0 && totalStock > 0) {
-        stockStatus = totalStock <= 10 ? 'low_stock' : 'in_stock';
+      if (inStockVariations.length > 0) {
+        // Use stockStatus from variations, not quantity
+        stockStatus = inStockVariations.some(v => v.stockStatus === 'in_stock') ? 'in_stock' : 'low_stock';
       }
       
       return {
