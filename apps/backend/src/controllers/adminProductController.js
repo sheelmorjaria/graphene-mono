@@ -42,12 +42,24 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Validate each variation
+    // Validate each variation (flexible validation for different product types)
     for (const variation of variations) {
-      if (!variation.condition || !variation.color || !variation.price || !variation.sku) {
+      // Check for required price and SKU
+      if (!variation.price || !variation.sku) {
         return res.status(400).json({
           success: false,
-          error: 'Each variation must have condition, color, price, and SKU'
+          error: 'Each variation must have price and SKU'
+        });
+      }
+
+      // Check for either phone fields (condition, color) or USB drive fields (capacity, interface)
+      const hasPhoneFields = variation.condition && variation.color;
+      const hasUSBFields = variation.capacity && variation.interface;
+      
+      if (!hasPhoneFields && !hasUSBFields) {
+        return res.status(400).json({
+          success: false,
+          error: 'Each variation must have either (condition and color) for phones or (capacity and interface) for USB drives'
         });
       }
 
@@ -98,6 +110,9 @@ export const createProduct = async (req, res) => {
       }
     }
 
+    // Process variation images from processed variation images
+    const processedVariationImages = req.body.processedVariationImages || {};
+
     // Create product data
     const productData = {
       name: name.trim(),
@@ -108,15 +123,22 @@ export const createProduct = async (req, res) => {
       status: status || 'draft',
       tags: processedTags,
       images: images || [],
-      variations: variations.map(v => ({
+      variations: variations.map((v, index) => ({
+        // Phone fields (optional)
         condition: v.condition,
         color: v.color,
+        
+        // USB drive fields (optional)
+        capacity: v.capacity,
+        interface: v.interface,
+        
+        // Common fields
         price: parseFloat(v.price),
         salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
         stockQuantity: parseInt(v.stockQuantity || 0),
         stockStatus: v.stockStatus || 'in_stock',
         sku: v.sku.trim().toUpperCase(),
-        images: v.images || []
+        images: processedVariationImages[index] || v.images || []
       }))
     };
 
@@ -127,9 +149,9 @@ export const createProduct = async (req, res) => {
     if (dimensions) productData.dimensions = dimensions;
     if (leadTime) productData.leadTime = leadTime;
 
-    // Process uploaded images if any
-    if (req.uploadedImages && req.uploadedImages.length > 0) {
-      productData.images = req.uploadedImages;
+    // Process uploaded main product images
+    if (req.body.processedImages && req.body.processedImages.length > 0) {
+      productData.images = req.body.processedImages.map(img => img.url);
     }
 
     // Create product
@@ -215,21 +237,35 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    // Validate each variation
+    // Validate each variation (flexible validation for updates)
     for (const variation of variations) {
       // For updates, allow preserving existing values if they exist in the current product
       const existingVariation = existingProduct.variations.find(v => v._id.toString() === variation._id?.toString());
       
-      const condition = variation.condition || existingVariation?.condition;
-      const color = variation.color || existingVariation?.color;
-      const storage = variation.storage || existingVariation?.storage;
       const price = variation.price !== undefined ? variation.price : existingVariation?.price;
       const sku = variation.sku || existingVariation?.sku;
       
-      if (!condition || !color || !storage || (price === undefined || price === null) || !sku) {
+      // Check required fields
+      if ((price === undefined || price === null) || !sku) {
         return res.status(400).json({
           success: false,
-          error: 'Each variation must have condition, color, storage, price, and SKU'
+          error: 'Each variation must have price and SKU'
+        });
+      }
+
+      // Check for either phone fields or USB drive fields
+      const condition = variation.condition || existingVariation?.condition;
+      const color = variation.color || existingVariation?.color;
+      const capacity = variation.capacity || existingVariation?.capacity;
+      const interfaceType = variation.interface || existingVariation?.interface;
+      
+      const hasPhoneFields = condition && color;
+      const hasUSBFields = capacity && interfaceType;
+      
+      if (!hasPhoneFields && !hasUSBFields) {
+        return res.status(400).json({
+          success: false,
+          error: 'Each variation must have either (condition and color) for phones or (capacity and interface) for USB drives'
         });
       }
 
@@ -242,7 +278,7 @@ export const updateProduct = async (req, res) => {
       if (existingSku) {
         return res.status(400).json({
           success: false,
-          error: `SKU ${variation.sku} already exists in another product`
+          error: `SKU ${sku} already exists in another product`
         });
       }
     }
@@ -291,21 +327,31 @@ export const updateProduct = async (req, res) => {
     existingProduct.status = status || existingProduct.status;
     existingProduct.tags = processedTags;
     
+    // Process variation images from processed variation images
+    const processedVariationImages = req.body.processedVariationImages || {};
+
     // Update variations
-    existingProduct.variations = variations.map(v => {
+    existingProduct.variations = variations.map((v, index) => {
       const existingVariation = existingProduct.variations.find(ev => ev._id.toString() === v._id?.toString());
       
       return {
         _id: v._id || existingVariation?._id,
+        
+        // Phone fields (optional)
         condition: v.condition || existingVariation?.condition,
         color: v.color || existingVariation?.color,
-        storage: v.storage || existingVariation?.storage,
+        
+        // USB drive fields (optional)
+        capacity: v.capacity || existingVariation?.capacity,
+        interface: v.interface || existingVariation?.interface,
+        
+        // Common fields
         price: parseFloat(v.price !== undefined ? v.price : existingVariation?.price),
         salePrice: v.salePrice !== undefined ? (v.salePrice ? parseFloat(v.salePrice) : undefined) : existingVariation?.salePrice,
         stockQuantity: parseInt(v.stockQuantity !== undefined ? v.stockQuantity : (existingVariation?.stockQuantity || 0)),
         stockStatus: v.stockStatus || existingVariation?.stockStatus || 'in_stock',
         sku: (v.sku || existingVariation?.sku)?.trim()?.toUpperCase(),
-        images: v.images || existingVariation?.images || []
+        images: processedVariationImages[index] || v.images || existingVariation?.images || []
       };
     });
 
@@ -318,8 +364,8 @@ export const updateProduct = async (req, res) => {
     if (leadTime) existingProduct.leadTime = leadTime;
     
     // Update images
-    if (req.uploadedImages && req.uploadedImages.length > 0) {
-      existingProduct.images = req.uploadedImages;
+    if (req.body.processedImages && req.body.processedImages.length > 0) {
+      existingProduct.images = req.body.processedImages.map(img => img.url);
     } else if (images) {
       existingProduct.images = images;
     }

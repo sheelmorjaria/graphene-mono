@@ -331,9 +331,18 @@ function AdminProductFormPage() {
         formDataToSubmit.append('leadTimeDisplayText', formData.leadTimeDisplayText.trim());
       }
 
-      // Add image files
+      // Add main product image files
       selectedImages.forEach((file) => {
         formDataToSubmit.append('images', file);
+      });
+
+      // Add variation-specific image files
+      variations.forEach((variation, index) => {
+        if (variation.imageFiles && variation.imageFiles.length > 0) {
+          variation.imageFiles.forEach((file) => {
+            formDataToSubmit.append(`variation_${index}_images`, file);
+          });
+        }
       });
 
       let response;

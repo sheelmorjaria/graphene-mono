@@ -76,6 +76,44 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
     onVariationsChange(updatedVariations);
   };
 
+  const handleVariationImageUpload = (index, files) => {
+    const updatedVariations = [...localVariations];
+    const fileArray = Array.from(files);
+    
+    // Create file URLs for preview
+    const imageUrls = fileArray.map(file => URL.createObjectURL(file));
+    
+    // Store both the files and preview URLs
+    updatedVariations[index] = {
+      ...updatedVariations[index],
+      imageFiles: fileArray, // Store files for upload
+      images: imageUrls // Store URLs for preview
+    };
+    
+    setLocalVariations(updatedVariations);
+    onVariationsChange(updatedVariations);
+  };
+
+  const removeVariationImage = (variationIndex, imageIndex) => {
+    const updatedVariations = [...localVariations];
+    const variation = updatedVariations[variationIndex];
+    
+    // Remove from both arrays
+    if (variation.imageFiles) {
+      variation.imageFiles.splice(imageIndex, 1);
+    }
+    if (variation.images) {
+      // Clean up blob URL if it's a preview
+      if (variation.images[imageIndex] && variation.images[imageIndex].startsWith('blob:')) {
+        URL.revokeObjectURL(variation.images[imageIndex]);
+      }
+      variation.images.splice(imageIndex, 1);
+    }
+    
+    setLocalVariations(updatedVariations);
+    onVariationsChange(updatedVariations);
+  };
+
   const getConditionOptions = () => [
     { value: 'new', label: 'New' },
     { value: 'excellent', label: 'Excellent' },
@@ -332,6 +370,59 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            {/* Variation Images */}
+            <div className="mt-6">
+              <h5 className="text-sm font-medium text-gray-700 mb-3">Variation Images</h5>
+              
+              {/* Existing Images */}
+              {variation.images && variation.images.length > 0 && (
+                <div className="mb-4">
+                  <div className="grid grid-cols-4 gap-2">
+                    {variation.images.map((image, imageIndex) => (
+                      <div key={imageIndex} className="relative group">
+                        <img
+                          src={image}
+                          alt={`Variation ${index + 1} image ${imageIndex + 1}`}
+                          className="w-full h-16 object-cover rounded border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeVariationImage(index, imageIndex)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Upload New Images */}
+              <div>
+                <input
+                  type="file"
+                  id={`variation-images-${index}`}
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleVariationImageUpload(index, e.target.files)}
+                  className="hidden"
+                />
+                <label
+                  htmlFor={`variation-images-${index}`}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 text-sm"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Upload Images
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Upload images specific to this variation (JPEG, PNG, WebP)
+                </p>
               </div>
             </div>
 
