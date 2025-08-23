@@ -49,6 +49,9 @@ const upload = multer({
 // Middleware for multiple image uploads
 export const uploadProductImages = upload.array('images', 10);
 
+// Middleware for product and variation images
+export const uploadProductAndVariationImages = upload.any();
+
 // Image processing middleware
 export const processProductImages = async (req, res, next) => {
   try {
@@ -110,6 +113,109 @@ export const processProductImages = async (req, res, next) => {
       success: false,
       error: 'Error processing uploaded images'
     });
+  }
+};
+
+// Enhanced image processing middleware for products with variations
+export const processProductAndVariationImages = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return next(); // No files to process
+    }
+
+    // Separate main product images from variation images
+    const mainProductImages = [];
+    const variationImages = {};
+
+    for (const file of req.files) {
+      if (file.fieldname === 'images') {
+        // Main product image
+        mainProductImages.push(file);
+      } else if (file.fieldname.startsWith('variation_')) {
+        // Variation image (format: variation_0_images, variation_1_images, etc.)
+        const variationIndex = file.fieldname.split('_')[1];
+        if (!variationImages[variationIndex]) {
+          variationImages[variationIndex] = [];
+        }
+        variationImages[variationIndex].push(file);
+      }
+    }
+
+    // Process main product images
+    const processedMainImages = [];
+    for (const file of mainProductImages) {
+      const processedImage = await processIndividualImage(file);
+      if (processedImage) {
+        processedMainImages.push(processedImage);
+      }
+    }
+
+    // Process variation images
+    const processedVariationImages = {};
+    for (const [variationIndex, files] of Object.entries(variationImages)) {
+      processedVariationImages[variationIndex] = [];
+      for (const file of files) {
+        const processedImage = await processIndividualImage(file, `var${variationIndex}`);
+        if (processedImage) {
+          processedVariationImages[variationIndex].push(processedImage.url);
+        }
+      }
+    }
+
+    // Add processed images to request body
+    req.body.processedImages = processedMainImages;
+    req.body.processedVariationImages = processedVariationImages;
+    next();
+
+  } catch (error) {
+    logError(error, { context: 'variation_image_processing_middleware' });
+    return res.status(400).json({
+      success: false,
+      error: 'Error processing uploaded images'
+    });
+  }
+};
+
+// Helper function to process individual images
+const processIndividualImage = async (file, prefix = 'product') => {
+  try {
+    // Generate unique filename
+    const filename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
+    const filepath = path.join(uploadsDir, filename);
+
+    // Process and save image
+    await sharp(file.buffer)
+      .resize(800, 600, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .webp({ quality: 85 })
+      .toFile(filepath);
+
+    // Generate thumbnail
+    const thumbnailFilename = `thumb-${filename}`;
+    const thumbnailPath = path.join(uploadsDir, thumbnailFilename);
+
+    await sharp(file.buffer)
+      .resize(200, 150, {
+        fit: 'cover'
+      })
+      .webp({ quality: 80 })
+      .toFile(thumbnailPath);
+
+    return {
+      original: filename,
+      thumbnail: thumbnailFilename,
+      url: `/uploads/products/${filename}`,
+      thumbnailUrl: `/uploads/products/${thumbnailFilename}`,
+      originalName: file.originalname,
+      size: file.size,
+      mimetype: 'image/webp'
+    };
+
+  } catch (imageError) {
+    logError(imageError, { context: 'individual_image_processing', filename: file.originalname });
+    return null;
   }
 };
 

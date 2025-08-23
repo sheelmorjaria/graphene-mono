@@ -27,7 +27,7 @@ import {
   togglePaymentGateway
 } from '../controllers/settingsController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
-import { uploadProductImages, processProductImages, handleImageUploadError } from '../middleware/imageUpload.js';
+import { uploadProductImages, processProductImages, uploadProductAndVariationImages, processProductAndVariationImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
 const router = express.Router();
 
@@ -58,8 +58,8 @@ router.put('/returns/:returnRequestId/status', updateReturnRequestStatus);
 // Products management
 router.get('/products', getProducts);
 router.get('/products/:productId', getProductById);
-router.post('/products', uploadProductImages, processProductImages, createProduct, handleImageUploadError);
-router.put('/products/:productId', uploadProductImages, processProductImages, updateProduct, handleImageUploadError);
+router.post('/products', uploadProductAndVariationImages, processProductAndVariationImages, createProduct, handleImageUploadError);
+router.put('/products/:productId', uploadProductAndVariationImages, processProductAndVariationImages, updateProduct, handleImageUploadError);
 router.delete('/products/:productId', deleteProduct);
 router.patch('/products/:productId/variations/:variationId/stock', updateVariationStock);
 
