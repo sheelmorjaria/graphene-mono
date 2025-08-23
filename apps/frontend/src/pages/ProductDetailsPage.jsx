@@ -313,7 +313,7 @@ const ProductDetailsPage = () => {
                     Add to Cart
                   </button>
                   <p className="text-sm text-gray-600">
-                    Please select a condition and color above to add this item to your cart.
+                    Please select product options above to add this item to your cart.
                   </p>
                 </div>
               )}
