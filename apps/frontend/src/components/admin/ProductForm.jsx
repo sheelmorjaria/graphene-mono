@@ -127,12 +127,32 @@ const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) 
 
     // Validate variations
     formData.variations.forEach((variation, index) => {
-      if (!variation.condition) newErrors[`variation_${index}_condition`] = 'Condition is required';
-      if (!variation.color.trim()) newErrors[`variation_${index}_color`] = 'Color is required';
+      // Validate common fields
       if (!variation.price || parseFloat(variation.price) <= 0) {
         newErrors[`variation_${index}_price`] = 'Valid price is required';
       }
       if (!variation.sku.trim()) newErrors[`variation_${index}_sku`] = 'SKU is required';
+      
+      // Validate based on product type
+      const hasPhoneFields = variation.condition && variation.color;
+      const hasUSBFields = variation.capacity && variation.interface;
+      
+      if (!hasPhoneFields && !hasUSBFields) {
+        // Product must have either phone variations or USB drive variations
+        if (!variation.condition && !variation.capacity) {
+          newErrors[`variation_${index}_type`] = 'Product must have either condition/color (phone) or capacity/interface (USB) fields';
+        }
+      }
+      
+      // Phone-specific validation
+      if (variation.condition && !variation.color?.trim()) {
+        newErrors[`variation_${index}_color`] = 'Color is required for phone products';
+      }
+      
+      // USB-specific validation
+      if (variation.capacity && !variation.interface?.trim()) {
+        newErrors[`variation_${index}_interface`] = 'Interface is required for USB products';
+      }
     });
 
     setErrors(newErrors);
