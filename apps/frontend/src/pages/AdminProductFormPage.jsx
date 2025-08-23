@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getProductById, createProduct, updateProduct, deleteProduct } from '../services/adminService';
 import { API_BASE_URL } from '../utils/apiConfig';
 import LoadingSpinner from '../components/LoadingSpinner';
+import VariationManager from '../components/admin/VariationManager';
 
 function AdminProductFormPage() {
   const { productId } = useParams();
@@ -30,18 +31,7 @@ function AdminProductFormPage() {
     leadTimeDisplayText: '5-7 working days'
   });
 
-  const [variations, setVariations] = useState([
-    {
-      condition: 'excellent',
-      color: '',
-      storage: '128GB',
-      price: '',
-      salePrice: '',
-      stockQuantity: '10',
-      stockStatus: 'in_stock',
-      sku: ''
-    }
-  ]);
+  const [variations, setVariations] = useState([]);
 
   const [selectedImages, setSelectedImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -89,18 +79,25 @@ function AdminProductFormPage() {
           leadTimeDisplayText: product.leadTime?.displayText || '5-7 working days'
         });
 
-        // Set variations or create default if none exist
+        // Set variations preserving all fields (phone or USB drive)
         if (product.variations && product.variations.length > 0) {
           setVariations(product.variations.map(v => ({
             _id: v._id,
-            condition: v.condition || 'excellent',
+            // Phone variation fields
+            condition: v.condition || '',
             color: v.color || '',
-            storage: v.storage || '128GB',
+            storage: v.storage || '',
+            // USB drive variation fields  
+            capacity: v.capacity || '',
+            interface: v.interface || '',
+            variantName: v.variantName || '',
+            // Common fields
             price: v.price?.toString() || '',
             salePrice: v.salePrice?.toString() || '',
-            stockQuantity: v.stockQuantity?.toString() || '10',
+            stockQuantity: v.stockQuantity?.toString() || '0',
             stockStatus: v.stockStatus || 'in_stock',
-            sku: v.sku || ''
+            sku: v.sku || '',
+            images: v.images || []
           })));
         }
         
@@ -136,9 +133,7 @@ function AdminProductFormPage() {
       newErrors.variations = 'At least one variation is required';
     } else {
       variations.forEach((variation, index) => {
-        if (!variation.color.trim()) {
-          newErrors[`variation_${index}_color`] = `Color is required for variation ${index + 1}`;
-        }
+        // Validate common fields
         if (!variation.price || isNaN(parseFloat(variation.price)) || parseFloat(variation.price) <= 0) {
           newErrors[`variation_${index}_price`] = `Valid price is required for variation ${index + 1}`;
         }
@@ -147,6 +142,27 @@ function AdminProductFormPage() {
         }
         if (!variation.sku.trim()) {
           newErrors[`variation_${index}_sku`] = `SKU is required for variation ${index + 1}`;
+        }
+        
+        // Validate based on product type
+        const hasPhoneFields = variation.condition && variation.color;
+        const hasUSBFields = variation.capacity && variation.interface;
+        
+        if (!hasPhoneFields && !hasUSBFields) {
+          // Must have either phone or USB fields
+          if (!variation.condition && !variation.capacity) {
+            newErrors[`variation_${index}_type`] = `Variation ${index + 1} must have either condition/color (phone) or capacity/interface (USB) fields`;
+          }
+        }
+        
+        // Phone-specific validation
+        if (variation.condition && !variation.color?.trim()) {
+          newErrors[`variation_${index}_color`] = `Color is required for phone variation ${index + 1}`;
+        }
+        
+        // USB-specific validation  
+        if (variation.capacity && !variation.interface?.trim()) {
+          newErrors[`variation_${index}_interface`] = `Interface is required for USB variation ${index + 1}`;
         }
       });
     }
@@ -171,51 +187,17 @@ function AdminProductFormPage() {
     }
   };
 
-  const handleVariationChange = (index, field, value) => {
-    const newVariations = [...variations];
-    newVariations[index] = {
-      ...newVariations[index],
-      [field]: value
-    };
+  const handleVariationsChange = (newVariations) => {
     setVariations(newVariations);
-
-    // Clear errors for this variation field
-    const errorKey = `variation_${index}_${field}`;
-    if (errors[errorKey]) {
-      setErrors(prev => ({
-        ...prev,
-        [errorKey]: ''
-      }));
-    }
-  };
-
-  const addVariation = () => {
-    setVariations([...variations, {
-      condition: 'excellent',
-      color: '',
-      storage: '128GB',
-      price: '',
-      salePrice: '',
-      stockQuantity: '10',
-      stockStatus: 'in_stock',
-      sku: ''
-    }]);
-  };
-
-  const removeVariation = (index) => {
-    if (variations.length > 1) {
-      const newVariations = variations.filter((_, i) => i !== index);
-      setVariations(newVariations);
-      
-      // Clear related errors
-      const newErrors = { ...errors };
-      Object.keys(newErrors).forEach(key => {
-        if (key.startsWith(`variation_${index}_`)) {
-          delete newErrors[key];
-        }
-      });
-      setErrors(newErrors);
-    }
+    
+    // Clear variation-related errors
+    const newErrors = { ...errors };
+    Object.keys(newErrors).forEach(key => {
+      if (key.startsWith('variation_')) {
+        delete newErrors[key];
+      }
+    });
+    setErrors(newErrors);
   };
 
   const handleImageChange = (e) => {
@@ -312,18 +294,30 @@ function AdminProductFormPage() {
         formDataToSubmit.append('category', formData.category);
       }
 
-      // Add variations as JSON
-      const processedVariations = variations.map(v => ({
-        _id: v._id,
-        condition: v.condition,
-        color: v.color.trim(),
-        storage: v.storage,
-        price: parseFloat(v.price),
-        salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
-        stockQuantity: parseInt(v.stockQuantity),
-        stockStatus: v.stockStatus,
-        sku: v.sku.trim()
-      }));
+      // Add variations as JSON - handle both phone and USB drive fields
+      const processedVariations = variations.map(v => {
+        const baseVariation = {
+          _id: v._id,
+          price: parseFloat(v.price),
+          salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
+          stockQuantity: parseInt(v.stockQuantity) || 0,
+          stockStatus: v.stockStatus,
+          sku: v.sku.trim(),
+          images: v.images || []
+        };
+        
+        // Add phone-specific fields if present
+        if (v.condition) baseVariation.condition = v.condition;
+        if (v.color) baseVariation.color = v.color.trim();
+        if (v.storage) baseVariation.storage = v.storage;
+        
+        // Add USB drive-specific fields if present
+        if (v.capacity) baseVariation.capacity = v.capacity.trim();
+        if (v.interface) baseVariation.interface = v.interface.trim();
+        if (v.variantName) baseVariation.variantName = v.variantName.trim();
+        
+        return baseVariation;
+      });
       formDataToSubmit.append('variations', JSON.stringify(processedVariations));
 
       // Add lead time information
@@ -521,180 +515,15 @@ function AdminProductFormPage() {
 
             {/* Product Variations */}
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Product Variations</h3>
-                <button
-                  type="button"
-                  onClick={addVariation}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  Add Variation
-                </button>
-              </div>
-              
-              {errors.variations && <p className="mb-4 text-sm text-red-600">{errors.variations}</p>}
-              
-              <div className="space-y-6">
-                {variations.map((variation, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg border">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-md font-medium text-gray-800">Variation {index + 1}</h4>
-                      {variations.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeVariation(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Condition <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={variation.condition}
-                          onChange={(e) => handleVariationChange(index, 'condition', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="new">New</option>
-                          <option value="excellent">Excellent</option>
-                          <option value="good">Good</option>
-                          <option value="fair">Fair</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Color <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={variation.color}
-                          onChange={(e) => handleVariationChange(index, 'color', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                            errors[`variation_${index}_color`] ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                          placeholder="e.g., Obsidian"
-                        />
-                        {errors[`variation_${index}_color`] && (
-                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_color`]}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Storage
-                        </label>
-                        <select
-                          value={variation.storage}
-                          onChange={(e) => handleVariationChange(index, 'storage', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="128GB">128GB</option>
-                          <option value="256GB">256GB</option>
-                          <option value="512GB">512GB</option>
-                          <option value="1TB">1TB</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          SKU <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={variation.sku}
-                          onChange={(e) => handleVariationChange(index, 'sku', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                            errors[`variation_${index}_sku`] ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                          placeholder="Unique SKU"
-                        />
-                        {errors[`variation_${index}_sku`] && (
-                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_sku`]}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Price (£) <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={variation.price}
-                          onChange={(e) => handleVariationChange(index, 'price', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                            errors[`variation_${index}_price`] ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                          placeholder="0.00"
-                        />
-                        {errors[`variation_${index}_price`] && (
-                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_price`]}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Sale Price (£)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={variation.salePrice}
-                          onChange={(e) => handleVariationChange(index, 'salePrice', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                            errors[`variation_${index}_salePrice`] ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                          placeholder="0.00"
-                        />
-                        {errors[`variation_${index}_salePrice`] && (
-                          <p className="mt-1 text-sm text-red-600">{errors[`variation_${index}_salePrice`]}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Stock Quantity
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={variation.stockQuantity}
-                          onChange={(e) => handleVariationChange(index, 'stockQuantity', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="10"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Stock Status
-                        </label>
-                        <select
-                          value={variation.stockStatus}
-                          onChange={(e) => handleVariationChange(index, 'stockStatus', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="in_stock">In Stock</option>
-                          <option value="out_of_stock">Out of Stock</option>
-                          <option value="low_stock">Low Stock</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <VariationManager
+                variations={variations}
+                onVariationsChange={handleVariationsChange}
+              />
+              {errors.variations && <p className="mt-2 text-sm text-red-600">{errors.variations}</p>}
+              {/* Display validation errors for variations */}
+              {Object.keys(errors).filter(key => key.startsWith('variation_')).map(key => (
+                <p key={key} className="mt-1 text-sm text-red-600">{errors[key]}</p>
+              ))}
             </div>
 
             {/* Lead Time Information */}
