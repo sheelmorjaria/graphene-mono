@@ -59,6 +59,11 @@ export const processProductImages = async (req, res, next) => {
       return next(); // No files to process
     }
 
+    // Get the base URL for image URLs
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
     const processedImages = [];
 
     for (const file of req.files) {
@@ -87,15 +92,17 @@ export const processProductImages = async (req, res, next) => {
           .webp({ quality: 80 })
           .toFile(thumbnailPath);
 
-        processedImages.push({
+        const imageData = {
           original: filename,
           thumbnail: thumbnailFilename,
-          url: `/uploads/products/${filename}`,
-          thumbnailUrl: `/uploads/products/${thumbnailFilename}`,
+          url: `${baseUrl}/uploads/products/${filename}`,
+          thumbnailUrl: `${baseUrl}/uploads/products/${thumbnailFilename}`,
           originalName: file.originalname,
           size: file.size,
           mimetype: 'image/webp'
-        });
+        };
+        
+        processedImages.push(imageData);
 
       } catch (imageError) {
         logError(imageError, { context: 'image_processing', filename: file.filename });
@@ -123,6 +130,11 @@ export const processProductAndVariationImages = async (req, res, next) => {
       return next(); // No files to process
     }
 
+    // Get the base URL for image URLs
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
     // Separate main product images from variation images
     const mainProductImages = [];
     const variationImages = {};
@@ -144,7 +156,7 @@ export const processProductAndVariationImages = async (req, res, next) => {
     // Process main product images
     const processedMainImages = [];
     for (const file of mainProductImages) {
-      const processedImage = await processIndividualImage(file);
+      const processedImage = await processIndividualImage(file, 'product', baseUrl);
       if (processedImage) {
         processedMainImages.push(processedImage);
       }
@@ -155,7 +167,7 @@ export const processProductAndVariationImages = async (req, res, next) => {
     for (const [variationIndex, files] of Object.entries(variationImages)) {
       processedVariationImages[variationIndex] = [];
       for (const file of files) {
-        const processedImage = await processIndividualImage(file, `var${variationIndex}`);
+        const processedImage = await processIndividualImage(file, `var${variationIndex}`, baseUrl);
         if (processedImage) {
           processedVariationImages[variationIndex].push(processedImage.url);
         }
@@ -177,7 +189,7 @@ export const processProductAndVariationImages = async (req, res, next) => {
 };
 
 // Helper function to process individual images
-const processIndividualImage = async (file, prefix = 'product') => {
+const processIndividualImage = async (file, prefix = 'product', baseUrl = '') => {
   try {
     // Generate unique filename
     const filename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
@@ -206,8 +218,8 @@ const processIndividualImage = async (file, prefix = 'product') => {
     return {
       original: filename,
       thumbnail: thumbnailFilename,
-      url: `/uploads/products/${filename}`,
-      thumbnailUrl: `/uploads/products/${thumbnailFilename}`,
+      url: `${baseUrl}/uploads/products/${filename}`,
+      thumbnailUrl: `${baseUrl}/uploads/products/${thumbnailFilename}`,
       originalName: file.originalname,
       size: file.size,
       mimetype: 'image/webp'
