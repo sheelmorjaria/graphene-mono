@@ -136,7 +136,7 @@ app.use(globalSanitization);
 app.use(metrics.responseTime);
 
 // Static file serving for uploaded images with security headers
-app.use('/uploads', express.static('src/uploads', {
+app.use('/uploads', express.static('uploads', {
   setHeaders: (res, path) => {
     // Security headers for static files
     res.set('X-Content-Type-Options', 'nosniff');
@@ -150,6 +150,7 @@ app.use('/uploads', express.static('src/uploads', {
     
     if (!allowedExtensions.includes(fileExtension)) {
       res.status(403).end();
+      return;
     }
   }
 }));
