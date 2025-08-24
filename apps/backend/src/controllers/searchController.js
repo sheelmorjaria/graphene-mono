@@ -307,11 +307,15 @@ export const searchProducts = async (req, res) => {
       const totalStock = variations.reduce((total, v) => total + (v.stockQuantity || 0), 0);
       const inStockVariations = variations.filter(v => v.stockStatus === 'in_stock' || v.stockStatus === 'low_stock');
       
+      // Check if product is in stock (matching Product.isInStock() method)
+      const isInStock = inStockVariations.length > 0;
+      
       let stockStatus = 'out_of_stock';
-      if (inStockVariations.length > 0) {
+      if (isInStock) {
         // Use stockStatus from variations, not quantity
         stockStatus = inStockVariations.some(v => v.stockStatus === 'in_stock') ? 'in_stock' : 'low_stock';
       }
+      
       
       return {
         id: product._id,
@@ -324,6 +328,7 @@ export const searchProducts = async (req, res) => {
         condition: bestCondition,
         stockStatus: stockStatus,
         stockQuantity: totalStock,
+        isInStock: isInStock,
         variationCount: variations.length,
         category: product.category,
         baseModel: product.baseModel,
