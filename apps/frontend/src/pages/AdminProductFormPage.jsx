@@ -331,10 +331,15 @@ function AdminProductFormPage() {
         formDataToSubmit.append('leadTimeDisplayText', formData.leadTimeDisplayText.trim());
       }
 
-      // Add main product image files
+      // Add main product image files (new uploads)
       selectedImages.forEach((file) => {
         formDataToSubmit.append('images', file);
       });
+
+      // If no new images are selected but we have existing images, send them as URLs
+      if (selectedImages.length === 0 && existingImages.length > 0) {
+        formDataToSubmit.append('images', JSON.stringify(existingImages));
+      }
 
       // Add variation-specific image files
       variations.forEach((variation, index) => {
