@@ -144,6 +144,10 @@ app.use('/uploads', express.static('uploads', {
     res.set('X-XSS-Protection', '1; mode=block');
     res.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache for images
     
+    // CORS headers for cross-origin image loading (needed for production)
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    
     // Restrict file types
     const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     const fileExtension = path.substring(path.lastIndexOf('.')).toLowerCase();
