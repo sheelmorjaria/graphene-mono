@@ -152,6 +152,21 @@ export const createProduct = async (req, res) => {
     // Process uploaded main product images
     if (req.body.processedImages && req.body.processedImages.length > 0) {
       productData.images = req.body.processedImages.map(img => img.url);
+    } else if (images) {
+      // Handle images passed as JSON string or array
+      if (typeof images === 'string') {
+        try {
+          const parsedImages = JSON.parse(images);
+          productData.images = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
+        } catch (e) {
+          // If not valid JSON, treat as single URL
+          productData.images = [images];
+        }
+      } else if (Array.isArray(images)) {
+        productData.images = images;
+      } else {
+        productData.images = [images];
+      }
     }
 
     // Create product
@@ -365,9 +380,23 @@ export const updateProduct = async (req, res) => {
     
     // Update images
     if (req.body.processedImages && req.body.processedImages.length > 0) {
+      // New images were uploaded and processed
       existingProduct.images = req.body.processedImages.map(img => img.url);
     } else if (images) {
-      existingProduct.images = images;
+      // Images passed as parameter (could be JSON string or array)
+      if (typeof images === 'string') {
+        try {
+          const parsedImages = JSON.parse(images);
+          existingProduct.images = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
+        } catch (e) {
+          // If not valid JSON, treat as single URL
+          existingProduct.images = [images];
+        }
+      } else if (Array.isArray(images)) {
+        existingProduct.images = images;
+      } else {
+        existingProduct.images = [images];
+      }
     }
 
     // Save updated product
