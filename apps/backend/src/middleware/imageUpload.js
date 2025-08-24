@@ -59,10 +59,20 @@ export const processProductImages = async (req, res, next) => {
       return next(); // No files to process
     }
 
-    // Get the base URL for image URLs
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    // Get the base URL for image URLs - environment aware
+    const getBaseUrl = () => {
+      // Use environment variable if set (for production)
+      if (process.env.IMAGE_BASE_URL) {
+        return process.env.IMAGE_BASE_URL;
+      }
+      
+      // For development, use request host
+      const protocol = req.protocol;
+      const host = req.get('host');
+      return `${protocol}://${host}`;
+    };
+    
+    const baseUrl = getBaseUrl();
 
     const processedImages = [];
 
@@ -130,10 +140,20 @@ export const processProductAndVariationImages = async (req, res, next) => {
       return next(); // No files to process
     }
 
-    // Get the base URL for image URLs
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    // Get the base URL for image URLs - environment aware
+    const getBaseUrl = () => {
+      // Use environment variable if set (for production)
+      if (process.env.IMAGE_BASE_URL) {
+        return process.env.IMAGE_BASE_URL;
+      }
+      
+      // For development, use request host
+      const protocol = req.protocol;
+      const host = req.get('host');
+      return `${protocol}://${host}`;
+    };
+    
+    const baseUrl = getBaseUrl();
 
     // Separate main product images from variation images
     const mainProductImages = [];
