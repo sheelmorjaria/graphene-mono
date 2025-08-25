@@ -15,6 +15,9 @@ const ProductCard = ({ product }) => {
     availableColors,
     availableConditions,
     availableStorage,
+    availableCapacities,
+    availableInterfaces,
+    category,
     isInStock
   } = product;
 
@@ -78,20 +81,39 @@ const ProductCard = ({ product }) => {
       <div className="p-4">
         {/* Available Options */}
         <div className="mb-2 flex flex-wrap gap-1">
-          {availableColors && availableColors.length > 0 && (
-            <span className={getColorBadgeClass()}>
-              {availableColors.length} {availableColors.length === 1 ? 'Color' : 'Colors'}
-            </span>
-          )}
-          {availableConditions && availableConditions.length > 0 && (
-            <span className={getColorBadgeClass()}>
-              {availableConditions.length} {availableConditions.length === 1 ? 'Condition' : 'Conditions'}
-            </span>
-          )}
-          {availableStorage && availableStorage.length > 0 && (
-            <span className={getColorBadgeClass()}>
-              {availableStorage.length} {availableStorage.length === 1 ? 'Storage' : 'Storage Options'}
-            </span>
+          {/* For USB drives, show capacity and interface options */}
+          {category?.slug === 'usb-drives' ? (
+            <>
+              {availableCapacities && availableCapacities.length > 0 && (
+                <span className={getColorBadgeClass()}>
+                  {availableCapacities.length} {availableCapacities.length === 1 ? 'Capacity' : 'Capacities'}
+                </span>
+              )}
+              {availableInterfaces && availableInterfaces.length > 0 && (
+                <span className={getColorBadgeClass()}>
+                  {availableInterfaces.length} {availableInterfaces.length === 1 ? 'Interface' : 'Interfaces'}
+                </span>
+              )}
+            </>
+          ) : (
+            /* For smartphones, show color, condition, and storage */
+            <>
+              {availableColors && availableColors.length > 0 && (
+                <span className={getColorBadgeClass()}>
+                  {availableColors.length} {availableColors.length === 1 ? 'Color' : 'Colors'}
+                </span>
+              )}
+              {availableConditions && availableConditions.length > 0 && (
+                <span className={getColorBadgeClass()}>
+                  {availableConditions.length} {availableConditions.length === 1 ? 'Condition' : 'Conditions'}
+                </span>
+              )}
+              {availableStorage && availableStorage.length > 0 && (
+                <span className={getColorBadgeClass()}>
+                  {availableStorage.length} {availableStorage.length === 1 ? 'Storage' : 'Storage Options'}
+                </span>
+              )}
+            </>
           )}
         </div>
 
@@ -174,6 +196,8 @@ ProductCard.propTypes = {
     availableColors: PropTypes.arrayOf(PropTypes.string),
     availableConditions: PropTypes.arrayOf(PropTypes.string),
     availableStorage: PropTypes.arrayOf(PropTypes.string),
+    availableCapacities: PropTypes.arrayOf(PropTypes.string),
+    availableInterfaces: PropTypes.arrayOf(PropTypes.string),
     isInStock: PropTypes.bool,
     category: PropTypes.shape({
       _id: PropTypes.string,
