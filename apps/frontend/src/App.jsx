@@ -41,6 +41,7 @@ import ContactUsPage from './pages/ContactUsPage';
 import CustomerPrivacyPage from './pages/CustomerPrivacyPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
+import ProductsDropdown from './components/ProductsDropdown';
 import SEOWrapper from './components/SEO/SEOWrapper';
 import Footer from './components/Footer';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
@@ -192,14 +193,7 @@ const Header = () => {
           {/* Desktop Navigation - always visible on large screens */}
           <nav className="hidden lg:block flex-shrink-0">
             <ul className="flex items-center space-x-6">
-              <li>
-                <Link 
-                  to="/products" 
-                  className="text-forest-900 px-3 py-1 rounded hover:text-forest-300 transition-colors duration-200"
-                >
-                  Products
-                </Link>
-              </li>
+              <ProductsDropdown />
               
               <li>
                 <Link 
@@ -247,15 +241,10 @@ const Header = () => {
           {isMobileMenuOpen && (
             <nav className="lg:hidden border-t border-forest-700 pt-4">
               <ul className="flex flex-col space-y-2">
-                <li>
-                  <Link 
-                    to="/products" 
-                    className="block text-forest-900 px-3 py-2 rounded hover:bg-forest-800 hover:text-forest-300 transition-colors duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Products
-                  </Link>
-                </li>
+                <ProductsDropdown 
+                  isMobile={true} 
+                  onItemClick={() => setIsMobileMenuOpen(false)} 
+                />
                 
                 <li>
                   <Link 
