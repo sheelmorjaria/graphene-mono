@@ -344,7 +344,9 @@ export const removeOldPixelProducts = async (dryRun = false) => {
 export const syncFromCLI = async () => {
   const queries = [
     'Google Pixel',        // General Pixel query (captures most models)
-    'Google Pixel Fold'    // Specific Fold query (captures all Fold variants)
+    'Google Pixel Fold',   // Specific Fold query (captures all Fold variants)
+    'Google Pixel 9 Pro',  // Specific Pixel 9 Pro query
+    'Google Pixel 9 Pro XL' // Specific Pixel 9 Pro XL query
   ];
 
   console.log(`📡 Running ${queries.length} CLI queries to capture all Pixel variants...`);
@@ -530,8 +532,8 @@ export const extractBaseModel = (productName) => {
     // Pixel Fold variants (including 9 Pro Fold)
     /Google Pixel\s+(\d+\s*Pro\s*Fold)/i,          // "9 Pro Fold"
     /Google Pixel\s+(Fold)/i,                      // "Fold"
-    // Regular Pixel models  
-    /Google Pixel\s+(\d+a?\s*(?:Pro|XL))/i,        // "8 Pro", "7a", "6 XL", etc.
+    // Regular Pixel models including Pro and Pro XL variants
+    /Google Pixel\s+(\d+a?\s*(?:Pro\s*XL|Pro|XL))/i, // "9 Pro XL", "9 Pro", "8 Pro", "7a", "6 XL", etc.
     /Google Pixel\s+(\d+a?)/i,                     // "8", "7a", "6", etc.
   ];
   
