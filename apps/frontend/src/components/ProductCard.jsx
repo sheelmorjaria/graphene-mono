@@ -14,6 +14,7 @@ const ProductCard = ({ product }) => {
     variations,
     availableColors,
     availableConditions,
+    availableStorage,
     isInStock
   } = product;
 
@@ -85,6 +86,11 @@ const ProductCard = ({ product }) => {
           {availableConditions && availableConditions.length > 0 && (
             <span className={getColorBadgeClass()}>
               {availableConditions.length} {availableConditions.length === 1 ? 'Condition' : 'Conditions'}
+            </span>
+          )}
+          {availableStorage && availableStorage.length > 0 && (
+            <span className={getColorBadgeClass()}>
+              {availableStorage.length} {availableStorage.length === 1 ? 'Storage' : 'Storage Options'}
             </span>
           )}
         </div>
@@ -167,6 +173,7 @@ ProductCard.propTypes = {
     })),
     availableColors: PropTypes.arrayOf(PropTypes.string),
     availableConditions: PropTypes.arrayOf(PropTypes.string),
+    availableStorage: PropTypes.arrayOf(PropTypes.string),
     isInStock: PropTypes.bool,
     category: PropTypes.shape({
       _id: PropTypes.string,
