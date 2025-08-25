@@ -34,11 +34,22 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
   const capacities = [...new Set(variations.filter(v => v.capacity).map(v => v.capacity))];
   const interfaces = [...new Set(variations.filter(v => v.interface).map(v => v.interface))];
 
-  // Sort capacities by size
+  // Sort capacities by size (handling GB and TB units)
   const sortCapacities = (caps) => {
     return caps.sort((a, b) => {
-      const sizeA = parseInt(a.replace(/[^0-9]/g, ''));
-      const sizeB = parseInt(b.replace(/[^0-9]/g, ''));
+      // Convert to bytes for accurate comparison
+      const getSizeInBytes = (sizeStr) => {
+        const numericValue = parseInt(sizeStr.replace(/[^0-9]/g, ''));
+        if (sizeStr.toUpperCase().includes('TB')) {
+          return numericValue * 1024; // Convert TB to GB equivalent
+        } else if (sizeStr.toUpperCase().includes('GB')) {
+          return numericValue;
+        }
+        return numericValue; // Fallback for unitless numbers
+      };
+      
+      const sizeA = getSizeInBytes(a);
+      const sizeB = getSizeInBytes(b);
       return sizeA - sizeB;
     });
   };

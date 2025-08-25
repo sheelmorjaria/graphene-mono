@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import useProducts from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 import Pagination from '../components/Pagination';
@@ -8,6 +9,7 @@ import SEOWrapper from '../components/SEO/SEOWrapper';
 
 const ProductListPage = () => {
   const { products, pagination, loading, error, fetchProducts } = useProducts();
+  const [searchParams] = useSearchParams();
   const [currentSort, setCurrentSort] = useState('price-low');
   const [filters, setFilters] = useState({
     condition: '',
@@ -16,18 +18,22 @@ const ProductListPage = () => {
 
 
   useEffect(() => {
+    const category = searchParams.get('category');
     const params = {
       sort: currentSort,
+      ...(category && { category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
     };
     fetchProducts(params);
-  }, [fetchProducts, currentSort, filters]);
+  }, [fetchProducts, currentSort, filters, searchParams]);
 
   const handleRetry = () => {
+    const category = searchParams.get('category');
     const params = {
       sort: currentSort,
+      ...(category && { category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
@@ -36,9 +42,11 @@ const ProductListPage = () => {
   };
 
   const handlePageChange = (newPage) => {
+    const category = searchParams.get('category');
     const params = {
       page: newPage,
       sort: currentSort,
+      ...(category && { category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
@@ -48,9 +56,11 @@ const ProductListPage = () => {
 
   const handleSortChange = (newSort) => {
     setCurrentSort(newSort);
+    const category = searchParams.get('category');
     const params = {
       sort: newSort,
       page: 1,
+      ...(category && { category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })

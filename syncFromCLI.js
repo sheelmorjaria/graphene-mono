@@ -438,22 +438,48 @@ const extractModelInfo = (name) => {
   }
 
   // Regular Pixel model matching (including Pro and Pro XL variants)
+  // Updated pattern to handle RAM+ROM format and TB values (e.g., "12GB+128GB", "12GB+256GB", "1TB")
   const match = nameWithoutCondition.match(
-    /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro|Fold)?\s*(\d+GB)?\s*([^,]+)?,?\s*Unlocked?/i
+    /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro)?\s*(?:(\d+(?:GB|TB))\+)?(\d+(?:GB|TB))?\s+([^]+?)(?:\s+Unlocked)?$/i
   );
 
   if (!match) return null;
 
-  const [_, number, variant, storage, color] = match;
+  const [_, number, variant, ram, storage, colorAndRest] = match;
   let modelName = `Pixel ${number}`;
   if (variant) {
     modelName += ` ${variant.trim()}`;
   }
 
+  // Handle storage that might be in the color field (e.g., "1TB Obsidian")
+  let actualStorage = storage || ram || "128GB";
+  let actualColor = colorAndRest ? colorAndRest.trim() : "Unknown";
+  
+  // Check if color field contains storage info (like "1TB Obsidian" or "Obsidian 1TB")
+  if (actualColor) {
+    const colorStorageMatch = actualColor.match(/(\d+(?:GB|TB))\s+(.+)|(.+)\s+(\d+(?:GB|TB))/i);
+    if (colorStorageMatch) {
+      if (colorStorageMatch[1] && colorStorageMatch[2]) {
+        // Format: "1TB Obsidian"
+        actualStorage = colorStorageMatch[1];
+        actualColor = colorStorageMatch[2].trim();
+      } else if (colorStorageMatch[3] && colorStorageMatch[4]) {
+        // Format: "Obsidian 1TB"
+        actualColor = colorStorageMatch[3].trim();
+        actualStorage = colorStorageMatch[4];
+      }
+    }
+  }
+  
+  // For Pixel 7 Pro specifically, ensure we're getting the ROM part, not RAM
+  if (modelName.includes("7 Pro") && ram && storage) {
+    actualStorage = storage; // Use the second part (ROM) after the "+"
+  }
+
   return {
     modelName: modelName.trim(),
-    storage: storage || "128GB",
-    color: color ? color.trim() : "Unknown",
+    storage: actualStorage,
+    color: actualColor,
   };
 };
 
