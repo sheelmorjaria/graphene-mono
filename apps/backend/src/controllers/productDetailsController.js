@@ -21,6 +21,7 @@ export const getProductBySlug = async (req, res) => {
     const priceRange = product.getPriceRange();
     const availableColors = product.getAvailableColors();
     const availableConditions = product.getAvailableConditions();
+    const availableStorage = product.getAvailableStorage();
     const availableCapacities = product.getAvailableCapacities();
     const availableInterfaces = product.getAvailableInterfaces();
     const isInStock = product.isInStock();
@@ -58,6 +59,7 @@ export const getProductBySlug = async (req, res) => {
         })),
         availableColors,
         availableConditions,
+        availableStorage,
         availableCapacities,
         availableInterfaces,
         isInStock,

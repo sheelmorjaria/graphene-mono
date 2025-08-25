@@ -1,6 +1,6 @@
 import express from 'express';
 import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
-import { getProducts, getProductById, createProduct, updateProduct, deleteProduct, updateVariationStock } from '../controllers/adminProductController.js';
+import { getProducts, getProductById, createProduct, updateProduct, deleteProduct, updateVariationStock, exportProductsToCSV } from '../controllers/adminProductController.js';
 import { 
   getDeliveryStats, 
   getEngagementStats,
@@ -56,6 +56,7 @@ router.get('/returns/:returnRequestId', getReturnRequestById);
 router.put('/returns/:returnRequestId/status', updateReturnRequestStatus);
 
 // Products management
+router.get('/products/export/csv', exportProductsToCSV);
 router.get('/products', getProducts);
 router.get('/products/:productId', getProductById);
 router.post('/products', uploadProductAndVariationImages, processProductAndVariationImages, createProduct, handleImageUploadError);

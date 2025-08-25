@@ -437,7 +437,7 @@ const extractModelInfo = (name) => {
     };
   }
 
-  // Regular Pixel model matching
+  // Regular Pixel model matching (including Pro and Pro XL variants)
   const match = nameWithoutCondition.match(
     /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro|Fold)?\s*(\d+GB)?\s*([^,]+)?,?\s*Unlocked?/i
   );
