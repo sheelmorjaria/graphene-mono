@@ -44,5 +44,5 @@ RUN apk add --no-cache curl
 # Expose port
 EXPOSE 3000
 
-# Serve the static files on all interfaces
-CMD ["serve", "-s", "dist", "-l", "3000", "-H", "0.0.0.0"]
+# Serve the static files (defaults to 0.0.0.0:3000)
+CMD ["serve", "-s", "dist", "-p", "3000"]
