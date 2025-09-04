@@ -1,3 +1,6 @@
+// Set NODE_ENV to test BEFORE any imports to ensure rate limiting is disabled
+process.env.NODE_ENV = 'test';
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
@@ -8,6 +11,8 @@ describe('Support Controller', () => {
   // Using global test setup for MongoDB connection
 
   beforeEach(async () => {
+    // Set NODE_ENV to test to disable rate limiting
+    process.env.NODE_ENV = 'test';
     // Clear database before each test
     await Order.deleteMany({});
   });

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
 
 // Set environment variables before importing the service
-process.env.GLOBEE_API_KEY = 'test-globee-api-key';
-process.env.GLOBEE_SECRET = 'test-webhook-secret';
+process.env.NOWPAYMENTS_API_KEY = 'test-nowpayments-api-key';
+process.env.NOWPAYMENTS_IPN_SECRET = 'test-webhook-secret';
 process.env.FRONTEND_URL = 'http://localhost:3000';
 process.env.BACKEND_URL = 'http://localhost:5000';
 
@@ -18,14 +18,14 @@ describe('MoneroService Tests', () => {
     
     // Set test environment variables  
     process.env.NODE_ENV = 'test';
-    process.env.GLOBEE_API_KEY = 'test-globee-api-key';
-    process.env.GLOBEE_SECRET = 'test-webhook-secret';
+    process.env.NOWPAYMENTS_API_KEY = 'test-nowpayments-api-key';
+    process.env.NOWPAYMENTS_IPN_SECRET = 'test-webhook-secret';
     process.env.FRONTEND_URL = 'http://localhost:3000';
     process.env.BACKEND_URL = 'http://localhost:5000';
     
     // Reinitialize service properties
-    moneroService.apiKey = 'test-globee-api-key';
-    moneroService.secret = 'test-webhook-secret';
+    moneroService.nowPayments.apiKey = 'test-nowpayments-api-key';
+    moneroService.nowPayments.ipnSecret = 'test-webhook-secret';
     
     // Mock axios methods using spyOn
     axiosGetSpy = vi.spyOn(axios, 'get').mockResolvedValue({ data: {} });
@@ -41,16 +41,37 @@ describe('MoneroService Tests', () => {
 
   describe('getExchangeRate', () => {
     it('should fetch exchange rate from CoinGecko API', async () => {
-      const mockResponse = {
+      // First mock NowPayments estimate call to fail (to trigger CoinGecko fallback)
+      axiosGetSpy.mockRejectedValueOnce(new Error('NowPayments API error'));
+      
+      // Then mock CoinGecko success response
+      const mockCoinGeckoResponse = {
         data: {
           monero: { gbp: 161.23 } // XMR price in GBP
         }
       };
 
-      axiosGetSpy.mockResolvedValueOnce(mockResponse);
+      axiosGetSpy.mockResolvedValueOnce(mockCoinGeckoResponse);
 
       const result = await moneroService.getExchangeRate();
 
+      // Should have called NowPayments first (which failed)
+      expect(axiosGetSpy).toHaveBeenCalledWith(
+        'https://api.nowpayments.io/v1/estimate',
+        expect.objectContaining({
+          params: {
+            amount: 1,
+            currency_from: 'gbp',
+            currency_to: 'xmr'
+          },
+          headers: {
+            'x-api-key': 'test-nowpayments-api-key'
+          },
+          timeout: 10000
+        })
+      );
+
+      // Then should have called CoinGecko as fallback
       expect(axiosGetSpy).toHaveBeenCalledWith(
         'https://api.coingecko.com/api/v3/simple/price',
         expect.objectContaining({
@@ -91,7 +112,9 @@ describe('MoneroService Tests', () => {
         validUntil: null
       };
 
-      axiosGetSpy.mockRejectedValueOnce(new Error('Network error'));
+      // Mock both NowPayments and CoinGecko to fail
+      axiosGetSpy.mockRejectedValueOnce(new Error('NowPayments network error'));
+      axiosGetSpy.mockRejectedValueOnce(new Error('CoinGecko network error'));
 
       await expect(moneroService.getExchangeRate()).rejects.toThrow(
         'Unable to fetch current Monero exchange rate'
@@ -101,8 +124,8 @@ describe('MoneroService Tests', () => {
 
   describe('convertGbpToXmr', () => {
     beforeEach(() => {
-      // Mock the getExchangeRate method to return predictable values
-      vi.spyOn(moneroService, 'getExchangeRate').mockResolvedValue({
+      // Mock the NowPayments service's getExchangeRate method
+      vi.spyOn(moneroService.nowPayments, 'getExchangeRate').mockResolvedValue({
         rate: 0.01, // 1 GBP = 0.01 XMR
         timestamp: Date.now(),
         validUntil: new Date(Date.now() + 5 * 60 * 1000)
@@ -177,15 +200,15 @@ describe('MoneroService Tests', () => {
     });
 
     it('should handle missing API key', async () => {
-      const originalApiKey = moneroService.apiKey;
-      moneroService.apiKey = null;
+      const originalApiKey = moneroService.nowPayments.apiKey;
+      moneroService.nowPayments.apiKey = null;
 
       await expect(moneroService.createPaymentRequest({
         orderId: 'test',
         amount: 1.0
-      })).rejects.toThrow('GloBee API key not configured');
+      })).rejects.toThrow('NowPayments API key not configured');
 
-      moneroService.apiKey = originalApiKey;
+      moneroService.nowPayments.apiKey = originalApiKey;
     });
   });
 
@@ -209,11 +232,12 @@ describe('MoneroService Tests', () => {
       const result = await moneroService.getPaymentStatus('payment-123');
 
       expect(axiosGetSpy).toHaveBeenCalledWith(
-        'https://api.globee.com/v1/payment-request/payment-123',
+        'https://api.nowpayments.io/v1/payment/payment-123',
         expect.objectContaining({
           headers: {
-            'Authorization': 'Bearer test-globee-api-key'
-          }
+            'x-api-key': 'test-nowpayments-api-key'
+          },
+          timeout: 10000
         })
       );
 

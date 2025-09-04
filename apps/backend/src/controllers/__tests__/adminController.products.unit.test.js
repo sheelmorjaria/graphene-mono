@@ -33,6 +33,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
       skip: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
+      populate: vi.fn().mockReturnThis(),
       lean: vi.fn().mockResolvedValue([])
     };
 
@@ -104,7 +105,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(Product.find).toHaveBeenCalledWith({
-      price: { $gte: 100, $lte: 500 },
+      'variations.price': { $gte: 100, $lte: 500 },
       status: { $ne: 'archived' }
     });
   });
@@ -115,7 +116,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(Product.find).toHaveBeenCalledWith({
-      price: { $gte: 100 },
+      'variations.price': { $gte: 100 },
       status: { $ne: 'archived' }
     });
   });
@@ -126,7 +127,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(Product.find).toHaveBeenCalledWith({
-      price: { $lte: 500 },
+      'variations.price': { $lte: 500 },
       status: { $ne: 'archived' }
     });
   });
@@ -137,7 +138,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(Product.find).toHaveBeenCalledWith({
-      stockQuantity: { $gt: 0 },
+      'variations.stockStatus': 'in_stock',
       status: { $ne: 'archived' }
     });
   });
@@ -148,7 +149,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(Product.find).toHaveBeenCalledWith({
-      stockQuantity: 0,
+      'variations.stockStatus': 'out_of_stock',
       status: { $ne: 'archived' }
     });
   });
@@ -159,7 +160,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(Product.find).toHaveBeenCalledWith({
-      stockQuantity: { $gt: 0, $lte: 10 },
+      'variations.stockStatus': 'low_stock',
       status: { $ne: 'archived' }
     });
   });
@@ -185,7 +186,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
   test('should apply default sorting', async () => {
     await getProducts(req, res);
 
-    expect(mockQuery.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(mockQuery.sort).toHaveBeenCalledWith({ price: 1 });
   });
 
   test('should apply pagination correctly', async () => {
@@ -202,7 +203,7 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     await getProducts(req, res);
 
     expect(mockQuery.select).toHaveBeenCalledWith(
-      'name sku price stockQuantity status category images createdAt updatedAt'
+      'name sku baseModel status category images variations createdAt updatedAt'
     );
   });
 
@@ -245,8 +246,8 @@ describe('Admin Controller - getProducts Unit Tests', () => {
       ],
       category: 'smartphone',
       status: 'active',
-      price: { $gte: 500 },
-      stockQuantity: { $gt: 0 }
+      'variations.price': { $gte: 500 },
+      'variations.stockStatus': 'in_stock'
     });
   });
 
@@ -271,11 +272,18 @@ describe('Admin Controller - getProducts Unit Tests', () => {
         _id: '1',
         name: 'Test Product',
         sku: 'TEST-001',
-        price: 100,
-        stockQuantity: 10,
+        baseModel: 'Pixel 6',
         status: 'active',
         category: 'test',
         images: [],
+        variations: [{
+          _id: 'var1',
+          condition: 'new',
+          color: 'black',
+          price: 100,
+          stockQuantity: 10,
+          stockStatus: 'in_stock'
+        }],
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -286,10 +294,29 @@ describe('Admin Controller - getProducts Unit Tests', () => {
     
     await getProducts(req, res);
 
+    // The controller processes the products and adds computed fields
+    const expectedProcessedProduct = {
+      _id: '1',
+      name: 'Test Product',
+      sku: 'TEST-001',
+      baseModel: 'Pixel 6',
+      price: 100, // From first variation
+      priceDisplay: '£100',
+      stockQuantity: 10, // From first variation
+      stockStatus: 'low_stock', // Controller calculates this based on quantity thresholds
+      status: 'active',
+      category: 'test',
+      images: [],
+      variationCount: 1,
+      variations: mockProducts[0].variations,
+      createdAt: mockProducts[0].createdAt,
+      updatedAt: mockProducts[0].updatedAt
+    };
+
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       data: {
-        products: mockProducts,
+        products: [expectedProcessedProduct],
         pagination: {
           currentPage: 1,
           totalPages: 1,

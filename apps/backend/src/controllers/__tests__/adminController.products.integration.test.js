@@ -3,6 +3,31 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import express from 'express';
 
+// Mock Product model with async import for vite compatibility  
+vi.mock('../../models/Product.js', async () => {
+  const actual = await vi.importActual('../../models/Product.js');
+  return {
+    default: {
+      ...actual.default,
+      find: vi.fn(() => ({
+        populate: vi.fn().mockReturnThis(),
+        sort: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([])
+      })),
+      countDocuments: vi.fn().mockResolvedValue(0),
+      findById: vi.fn().mockResolvedValue(null),
+      findOne: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({}),
+      findByIdAndUpdate: vi.fn().mockResolvedValue(null),
+      findByIdAndDelete: vi.fn().mockResolvedValue(null)
+    }
+  };
+});
+
 // Import dependencies
 import Product from '../../models/Product.js';
 import User from '../../models/User.js';
@@ -10,6 +35,22 @@ import User from '../../models/User.js';
 import Order from '../../models/Order.js';
 import ReturnRequest from '../../models/ReturnRequest.js';
 import emailService from '../../services/emailService.js';
+// Use runtime mocking before importing routes
+vi.doMock('../../models/Product.js', () => ({
+  default: {
+    find: vi.fn(() => ({
+      populate: vi.fn().mockReturnThis(),
+      sort: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockReturnThis(),
+      exec: vi.fn().mockResolvedValue([])
+    })),
+    countDocuments: vi.fn().mockResolvedValue(0)
+  }
+}));
+
 import adminRouter from '../../routes/admin.js';
 
 // Mock authentication middleware

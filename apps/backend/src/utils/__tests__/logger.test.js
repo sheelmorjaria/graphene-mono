@@ -94,6 +94,8 @@ const logSecurityEvent = (event, details = {}) => {
 
 describe('Logger Utility', () => {
   beforeEach(() => {
+    // Set NODE_ENV to test for proper environment detection
+    process.env.NODE_ENV = 'test';
     vi.clearAllMocks();
   });
 

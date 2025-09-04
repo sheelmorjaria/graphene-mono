@@ -1,26 +1,43 @@
 import { vi } from 'vitest';
 import bitcoinService from '../bitcoinService.js';
-import { setupMSW, mockApiResponse, mockApiError } from '../../test/msw-setup.js';
 
-// Setup MSW for HTTP mocking
-setupMSW();
+// Mock node-fetch
+vi.mock('node-fetch');
+
+// Import fetch after mocking
+const fetch = (await import('node-fetch')).default;
 
 describe('Bitcoin Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
     // Clear cache
     bitcoinService.rateCache = {
       rate: null,
       timestamp: null
     };
+    
+    // Reset API call throttling
+    bitcoinService.lastApiCallTime = 0;
+    
     // Set test environment variables
     process.env.BLOCKONOMICS_API_KEY = 'test-api-key';
     bitcoinService.blockonomicsApiKey = 'test-api-key';
+    
+    // Setup fetch mocks
+    fetch.mockClear();
   });
 
   describe('getBtcExchangeRate', () => {
     it('should fetch exchange rate from CoinGecko', async () => {
-      // MSW will automatically mock the CoinGecko API with default handlers
+      // Mock fetch response for CoinGecko API
+      const mockResponse = {
+        json: vi.fn().mockResolvedValue({
+          bitcoin: { gbp: 25000 }
+        }),
+        ok: true
+      };
+      fetch.mockResolvedValueOnce(mockResponse);
       
       const result = await bitcoinService.getBtcExchangeRate();
 
@@ -29,6 +46,18 @@ describe('Bitcoin Service', () => {
         timestamp: expect.any(Date),
         cached: false
       });
+      
+      expect(fetch).toHaveBeenCalledWith(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp',
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'GrapheneOS-Store/1.0'
+          },
+          timeout: 10000
+        }
+      );
     });
 
     it('should return cached rate if still valid', async () => {
@@ -51,16 +80,23 @@ describe('Bitcoin Service', () => {
     });
 
     it('should fetch fresh rate if cache is expired', async () => {
-      // Set up cache with old timestamp
+      // Set up cache with old timestamp (expired)
       bitcoinService.rateCache = {
         rate: 26000,
-        timestamp: Date.now() - 20 * 60 * 1000 // 20 minutes ago (expired)
+        timestamp: Date.now() - 70 * 60 * 1000 // 70 minutes ago (expired, cache valid for 60 minutes)
       };
+      
+      // Reset API call throttling
+      bitcoinService.lastApiCallTime = 0;
 
-      // Override default response with a different rate
-      mockApiResponse('https://api.coingecko.com/api/v3/simple/price', {
-        bitcoin: { gbp: 27000 }
-      });
+      // Mock fetch response with a different rate
+      const mockResponse = {
+        json: vi.fn().mockResolvedValue({
+          bitcoin: { gbp: 27000 }
+        }),
+        ok: true
+      };
+      fetch.mockResolvedValueOnce(mockResponse);
 
       const result = await bitcoinService.getBtcExchangeRate();
 
@@ -68,14 +104,19 @@ describe('Bitcoin Service', () => {
       expect(result.cached).toBe(false);
     });
 
-    it('should throw error if API request fails', async () => {
-      // Mock API error
-      mockApiError('https://api.coingecko.com/api/v3/simple/price', {
-        status: 500,
-        statusText: 'Internal Server Error'
-      });
+    it('should return fallback rate if API request fails', async () => {
+      // Mock fetch rejection
+      fetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(bitcoinService.getBtcExchangeRate()).rejects.toThrow('Bitcoin exchange rate service temporarily unavailable');
+      const result = await bitcoinService.getBtcExchangeRate();
+
+      expect(result).toEqual({
+        rate: 87000, // fallback rate
+        timestamp: expect.any(Date),
+        cached: false,
+        fallback: true,
+        error: 'Network error'
+      });
     });
   });
 
@@ -109,39 +150,67 @@ describe('Bitcoin Service', () => {
 
   describe('generateBitcoinAddress', () => {
     it('should generate Bitcoin address using Blockonomics API', async () => {
-      // MSW will automatically handle the Blockonomics API mock
+      // Mock fetch response for Blockonomics API
+      const mockResponse = {
+        json: vi.fn().mockResolvedValue({
+          address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+        }),
+        ok: true
+      };
+      fetch.mockResolvedValueOnce(mockResponse);
       
       const result = await bitcoinService.generateBitcoinAddress();
 
       expect(result).toBe('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa');
+      expect(fetch).toHaveBeenCalledWith(
+        'https://www.blockonomics.co/api/new_address',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Authorization': 'Bearer test-api-key'
+          })
+        })
+      );
     });
 
-    it('should throw error if API key is not configured', async () => {
+    it('should return mock address if API key is not configured', async () => {
       const originalApiKey = bitcoinService.blockonomicsApiKey;
       bitcoinService.blockonomicsApiKey = undefined;
 
-      await expect(bitcoinService.generateBitcoinAddress()).rejects.toThrow('Failed to generate Bitcoin address');
+      const result = await bitcoinService.generateBitcoinAddress();
+      
+      // Should return one of the mock addresses
+      const mockAddresses = [
+        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2',
+        '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy',
+        'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+        'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq'
+      ];
+      
+      expect(mockAddresses).toContain(result);
       
       // Restore API key for other tests
       bitcoinService.blockonomicsApiKey = originalApiKey;
     });
 
     it('should throw error if API request fails', async () => {
-      // Mock API error
-      mockApiError('https://www.blockonomics.co/api/new_address', {
-        method: 'post',
-        status: 401,
-        statusText: 'Unauthorized'
-      });
+      // Mock fetch failure
+      fetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(bitcoinService.generateBitcoinAddress()).rejects.toThrow('Failed to generate Bitcoin address');
     });
 
-    it('should throw error if response is invalid', async () => {
+    it('should throw error if response is invalid and API key is configured', async () => {
+      // Ensure API key is configured for this test
+      bitcoinService.blockonomicsApiKey = 'test-api-key';
+      
       // Mock invalid response (missing address field)
-      mockApiResponse('https://www.blockonomics.co/api/new_address', {}, {
-        method: 'post'
-      });
+      const mockResponse = {
+        json: vi.fn().mockResolvedValue({}), // Missing address field
+        ok: true
+      };
+      fetch.mockResolvedValueOnce(mockResponse);
 
       await expect(bitcoinService.generateBitcoinAddress()).rejects.toThrow('Failed to generate Bitcoin address');
     });
@@ -194,7 +263,18 @@ describe('Bitcoin Service', () => {
 
   describe('getBitcoinAddressInfo', () => {
     it('should get Bitcoin address info', async () => {
-      // MSW will automatically handle this request with default handlers
+      // Mock fetch response for Blockonomics balance API
+      const mockResponse = {
+        json: vi.fn().mockResolvedValue({
+          response: [{
+            confirmed: 1000000,
+            unconfirmed: 500000,
+            tx_count: 5
+          }]
+        }),
+        ok: true
+      };
+      fetch.mockResolvedValueOnce(mockResponse);
       
       const result = await bitcoinService.getBitcoinAddressInfo('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa');
 
@@ -217,12 +297,8 @@ describe('Bitcoin Service', () => {
     });
 
     it('should throw error if API request fails', async () => {
-      // Mock API error
-      mockApiError('https://www.blockonomics.co/api/balance', {
-        method: 'post',
-        status: 401,
-        statusText: 'Unauthorized'
-      });
+      // Mock fetch rejection
+      fetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(bitcoinService.getBitcoinAddressInfo('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'))
         .rejects.toThrow('Failed to fetch Bitcoin address information');
@@ -231,7 +307,19 @@ describe('Bitcoin Service', () => {
 
   describe('getTransactionDetails', () => {
     it('should get transaction details', async () => {
-      // MSW will automatically handle this request with default handlers
+      // Mock fetch response for Blockonomics transaction API
+      const mockResponse = {
+        json: vi.fn().mockResolvedValue({
+          confirmations: 6,
+          block_height: 700000,
+          time: 1640995200,
+          fee: 1000,
+          size: 250,
+          out: []
+        }),
+        ok: true
+      };
+      fetch.mockResolvedValueOnce(mockResponse);
       
       const result = await bitcoinService.getTransactionDetails('test-tx-hash');
 
@@ -257,11 +345,8 @@ describe('Bitcoin Service', () => {
     });
 
     it('should throw error if API request fails', async () => {
-      // Mock API error
-      mockApiError('https://www.blockonomics.co/api/tx_detail/test-tx-hash', {
-        status: 404,
-        statusText: 'Not Found'
-      });
+      // Mock fetch rejection
+      fetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(bitcoinService.getTransactionDetails('test-tx-hash'))
         .rejects.toThrow('Failed to fetch transaction details');

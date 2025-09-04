@@ -89,7 +89,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Assert
-      expect(screen.getByRole('button', { name: 'Archive Product' })).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: 'Archive Product' })[0]).toBeInTheDocument();
     });
 
     test('should not render delete button in create mode', async () => {
@@ -119,7 +119,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Assert
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       expect(deleteButton).toHaveClass(
         'px-4', 'py-2', 'text-sm', 'font-medium', 'text-white', 
         'bg-red-600', 'border', 'border-transparent', 'rounded-md',
@@ -137,7 +137,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Assert
-      const formActions = screen.getByRole('button', { name: 'Archive Product' }).closest('div');
+      const formActions = screen.getAllByRole('button', { name: 'Archive Product' })[0].closest('div');
       expect(formActions).toHaveClass('flex', 'justify-between', 'items-center');
     });
   });
@@ -152,11 +152,11 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
-      expect(screen.getByText('Archive Product')).toBeInTheDocument();
+      expect(screen.getAllByText('Archive Product')[1]).toBeInTheDocument(); // Modal title should be second element
       expect(screen.getByText(`Are you sure you want to archive "${mockProduct.name}"?`)).toBeInTheDocument();
     });
 
@@ -175,7 +175,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
@@ -191,7 +191,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
@@ -209,7 +209,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
@@ -230,7 +230,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
@@ -247,7 +247,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const cancelButton = screen.getByRole('button', { name: 'Cancel' });
@@ -270,7 +270,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1]; // Modal button
@@ -296,7 +296,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -324,7 +324,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -351,7 +351,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -374,7 +374,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -403,7 +403,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -429,7 +429,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -451,7 +451,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -473,7 +473,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -502,7 +502,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -525,7 +525,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -579,7 +579,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       fireEvent.change(nameInput, { target: { value: 'Updated Product Name' } });
 
       // Open delete modal
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
@@ -604,7 +604,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       fireEvent.change(nameInput, { target: { value: 'Modified Name' } });
 
       // Start delete operation
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
@@ -628,7 +628,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       
       // Assert
       expect(deleteButton).toBeInTheDocument();
@@ -644,7 +644,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
 
       // Assert
@@ -672,7 +672,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       });
 
       // Act
-      const deleteButton = screen.getByRole('button', { name: 'Archive Product' });
+      const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
       
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];

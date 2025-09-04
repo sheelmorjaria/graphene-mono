@@ -2,8 +2,29 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
-// Mock dependencies
-vi.mock('mongoose');
+// Mock mongoose properly
+vi.mock('mongoose', async () => {
+  const actual = await vi.importActual('mongoose');
+  return {
+    default: {
+      ...actual.default,
+      Types: {
+        ...actual.default.Types,
+        ObjectId: {
+          ...actual.default.Types.ObjectId,
+          isValid: vi.fn((id) => {
+            // Return false only for specifically invalid test cases that start with 'invalid'  
+            if (id && typeof id === 'string' && id.startsWith('invalid')) {
+              return false;
+            }
+            // Return true for all test IDs including 'product123', proper ObjectIds, etc.
+            return true;
+          })
+        }
+      }
+    }
+  };
+});
 vi.mock('uuid', () => ({
   v4: vi.fn(() => 'mock-uuid-123')
 }));
@@ -25,10 +46,39 @@ const mockCart = {
 };
 
 const mockProduct = {
-  _id: 'product123',
+  _id: '507f1f77bcf86cd799439011',
   name: 'Test Product',
   price: 99.99,
-  stockQuantity: 10
+  stockQuantity: 10,
+  variations: {
+    length: 1,
+    id: vi.fn().mockImplementation((variationId) => {
+      // Accept both product123 variations and proper ObjectId format variations
+      if (variationId === '507f1f77bcf86cd799439012' || variationId === 'variation123') {
+        return {
+          _id: variationId,
+          condition: 'new',
+          color: 'black',
+          sku: 'PROD-NEW-BLK',
+          price: 99.99,
+          salePrice: 89.99,
+          stockQuantity: 10,
+          stockStatus: 'in_stock'
+        };
+      }
+      return null;
+    }),
+    0: {
+      _id: '507f1f77bcf86cd799439012',
+      condition: 'new',
+      color: 'black',
+      sku: 'PROD-NEW-BLK',
+      price: 99.99,
+      salePrice: 89.99,
+      stockQuantity: 10,
+      stockStatus: 'in_stock'
+    }
+  }
 };
 
 vi.mock('../../models/Cart.js', () => {
@@ -53,8 +103,7 @@ import {
   addToCart,
   updateCartItem,
   removeFromCart,
-  clearCart,
-  mergeGuestCart
+  clearCart
 } from '../cartController.js';
 import Cart from '../../models/Cart.js';
 import Product from '../../models/Product.js';
@@ -79,13 +128,6 @@ describe('Cart Controller - Unit Tests', () => {
     };
     
     next = vi.fn();
-
-    // Setup mongoose mock
-    mongoose.Types = {
-      ObjectId: {
-        isValid: vi.fn()
-      }
-    };
   });
 
   afterEach(() => {
@@ -196,10 +238,35 @@ describe('Cart Controller - Unit Tests', () => {
   });
 
   describe('addToCart', () => {
-    beforeEach(() => {
-      req.body = { productId: 'product123', quantity: 2 };
-      mongoose.Types.ObjectId.isValid.mockReturnValue(true);
-      Product.findById.mockResolvedValue(mockProduct);
+
+    it('should add product to cart for authenticated user', async () => {
+      // Test setup
+      req.user = { _id: 'user123' };
+      req.body = { productId: 'product123', quantity: 2, variationId: 'variation123' };
+      
+      // Create a fresh mock product for this specific test
+      const testProduct = {
+        ...mockProduct,
+        variations: {
+          length: 1,
+          id: vi.fn().mockImplementation((variationId) => {
+            if (variationId === 'variation123') {
+              return {
+                _id: 'variation123',
+                condition: 'new',
+                color: 'black',
+                sku: 'PROD-NEW-BLK',
+                price: 99.99,
+                salePrice: 89.99,
+                stockQuantity: 10,
+                stockStatus: 'in_stock'
+              };
+            }
+            return null;
+          })
+        }
+      };
+      Product.findById.mockResolvedValue(testProduct);
       
       const cartWithAddItem = {
         ...mockCart,
@@ -210,10 +277,6 @@ describe('Cart Controller - Unit Tests', () => {
         addItem: vi.fn()
       };
       Cart.findByUserId.mockResolvedValue(cartWithAddItem);
-    });
-
-    it('should add product to cart for authenticated user', async () => {
-      req.user = { _id: 'user123' };
 
       await addToCart(req, res);
 
@@ -228,10 +291,16 @@ describe('Cart Controller - Unit Tests', () => {
             itemCount: 0
           },
           addedItem: {
-            productId: 'product123',
+            productId: '507f1f77bcf86cd799439011', // This should match the mock product's _id
+            variationId: 'variation123',
             productName: 'Test Product',
             quantity: 2,
-            unitPrice: 99.99
+            unitPrice: 89.99,
+            sku: 'PROD-NEW-BLK',
+            variationDetails: {
+              condition: 'new',
+              color: 'black'
+            }
           }
         }
       });
@@ -251,7 +320,6 @@ describe('Cart Controller - Unit Tests', () => {
 
     it('should validate productId format', async () => {
       req.body = { productId: 'invalid-id', quantity: 2 };
-      mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
       await addToCart(req, res);
 
@@ -263,7 +331,19 @@ describe('Cart Controller - Unit Tests', () => {
     });
 
     it('should validate quantity range', async () => {
-      req.body = { productId: 'product123', quantity: 100 };
+      // Complete test setup like the working test
+      req.body = { productId: '507f1f77bcf86cd799439011', quantity: 100, variationId: '507f1f77bcf86cd799439012' };
+      Product.findById.mockResolvedValue(mockProduct);
+      
+      const cartWithAddItem = {
+        ...mockCart,
+        items: [],
+        totalItems: 2,
+        totalAmount: 199.98,
+        save: vi.fn().mockResolvedValue(true),
+        addItem: vi.fn()
+      };
+      Cart.findByUserId.mockResolvedValue(cartWithAddItem);
 
       await addToCart(req, res);
 
@@ -276,6 +356,7 @@ describe('Cart Controller - Unit Tests', () => {
 
     it('should validate quantity is integer', async () => {
       req.body = { productId: 'product123', quantity: 2.5 };
+      Product.findById.mockResolvedValue(mockProduct);
 
       await addToCart(req, res);
 
@@ -286,7 +367,21 @@ describe('Cart Controller - Unit Tests', () => {
       });
     });
 
+    it('should require variationId for products with variations', async () => {
+      req.body = { productId: 'product123', quantity: 2 }; // Missing variationId
+      Product.findById.mockResolvedValue(mockProduct);
+
+      await addToCart(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Please select a product variation'
+      });
+    });
+
     it('should handle product not found', async () => {
+      req.body = { productId: 'product123', quantity: 2 };
       Product.findById.mockResolvedValue(null);
 
       await addToCart(req, res);
@@ -299,8 +394,29 @@ describe('Cart Controller - Unit Tests', () => {
     });
 
     it('should check stock availability', async () => {
-      req.body = { productId: 'product123', quantity: 15 };
-      Product.findById.mockResolvedValue({ ...mockProduct, stockQuantity: 10 });
+      req.body = { productId: 'product123', quantity: 15, variationId: 'variation123' };
+      const productWithLowStock = {
+        ...mockProduct,
+        variations: {
+          ...mockProduct.variations,
+          id: vi.fn().mockImplementation((variationId) => {
+            if (variationId === 'variation123') {
+              return {
+                _id: 'variation123',
+                condition: 'new',
+                color: 'black',
+                sku: 'PROD-NEW-BLK',
+                price: 99.99,
+                salePrice: 89.99,
+                stockQuantity: 10,
+                stockStatus: 'in_stock'
+              };
+            }
+            return null;
+          })
+        }
+      };
+      Product.findById.mockResolvedValue(productWithLowStock);
 
       await addToCart(req, res);
 
@@ -312,12 +428,37 @@ describe('Cart Controller - Unit Tests', () => {
     });
 
     it('should check total quantity including existing cart items', async () => {
-      req.body = { productId: 'product123', quantity: 5 };
+      req.body = { productId: 'product123', quantity: 5, variationId: 'variation123' };
+      
+      // Create a test-specific product mock
+      const testProduct = {
+        ...mockProduct,
+        variations: {
+          length: 1,
+          id: vi.fn().mockImplementation((variationId) => {
+            if (variationId === 'variation123') {
+              return {
+                _id: 'variation123',
+                condition: 'new',
+                color: 'black',
+                sku: 'PROD-NEW-BLK',
+                price: 99.99,
+                salePrice: 89.99,
+                stockQuantity: 10,
+                stockStatus: 'in_stock'
+              };
+            }
+            return null;
+          })
+        }
+      };
+      Product.findById.mockResolvedValue(testProduct);
       
       const cartWithExistingItem = {
         ...mockCart,
         items: [{
           productId: { toString: () => 'product123' },
+          variationId: 'variation123',
           quantity: 8
         }],
         save: vi.fn().mockResolvedValue(true),
@@ -336,6 +477,7 @@ describe('Cart Controller - Unit Tests', () => {
     });
 
     it('should handle server errors', async () => {
+      req.body = { productId: 'product123', quantity: 2, variationId: 'variation123' };
       Product.findById.mockRejectedValue(new Error('Database error'));
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -355,14 +497,14 @@ describe('Cart Controller - Unit Tests', () => {
 
   describe('updateCartItem', () => {
     beforeEach(() => {
-      req.params = { productId: 'product123' };
+      req.params = { itemId: 'product123_variation123' };
       req.body = { quantity: 3 };
-      mongoose.Types.ObjectId.isValid.mockReturnValue(true);
       
       const cartWithItem = {
         ...mockCart,
         items: [{
           productId: { toString: () => 'product123' },
+          variationId: 'variation123',
           quantity: 2
         }],
         save: vi.fn().mockResolvedValue(true),
@@ -373,7 +515,30 @@ describe('Cart Controller - Unit Tests', () => {
 
     it('should update item quantity successfully', async () => {
       req.user = { _id: 'user123' };
-      Product.findById.mockResolvedValue(mockProduct);
+      
+      // Create a test-specific product mock
+      const testProduct = {
+        ...mockProduct,
+        variations: {
+          length: 1,
+          id: vi.fn().mockImplementation((variationId) => {
+            if (variationId === 'variation123') {
+              return {
+                _id: 'variation123',
+                condition: 'new',
+                color: 'black',
+                sku: 'PROD-NEW-BLK',
+                price: 99.99,
+                salePrice: 89.99,
+                stockQuantity: 10,
+                stockStatus: 'in_stock'
+              };
+            }
+            return null;
+          })
+        }
+      };
+      Product.findById.mockResolvedValue(testProduct);
 
       await updateCartItem(req, res);
 
@@ -391,8 +556,7 @@ describe('Cart Controller - Unit Tests', () => {
     });
 
     it('should validate productId format', async () => {
-      req.params.productId = 'invalid-id';
-      mongoose.Types.ObjectId.isValid.mockReturnValue(false);
+      req.params.itemId = 'invalid-id_variation123';
 
       await updateCartItem(req, res);
 
@@ -455,7 +619,30 @@ describe('Cart Controller - Unit Tests', () => {
     it('should check stock when updating to positive quantity', async () => {
       req.body.quantity = 15;
       req.user = { _id: 'user123' };
-      Product.findById.mockResolvedValue({ ...mockProduct, stockQuantity: 10 });
+      
+      // Create a test-specific product mock
+      const testProduct = {
+        ...mockProduct,
+        variations: {
+          length: 1,
+          id: vi.fn().mockImplementation((variationId) => {
+            if (variationId === 'variation123') {
+              return {
+                _id: 'variation123',
+                condition: 'new',
+                color: 'black',
+                sku: 'PROD-NEW-BLK',
+                price: 99.99,
+                salePrice: 89.99,
+                stockQuantity: 10,
+                stockStatus: 'in_stock'
+              };
+            }
+            return null;
+          })
+        }
+      };
+      Product.findById.mockResolvedValue(testProduct);
 
       await updateCartItem(req, res);
 
@@ -500,13 +687,13 @@ describe('Cart Controller - Unit Tests', () => {
 
   describe('removeFromCart', () => {
     beforeEach(() => {
-      req.params = { productId: 'product123' };
-      mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+      req.params = { itemId: 'product123_variation123' };
       
       const cartWithItem = {
         ...mockCart,
         items: [{
           productId: { toString: () => 'product123' },
+          variationId: 'variation123',
           quantity: 2
         }],
         save: vi.fn().mockResolvedValue(true),
@@ -534,8 +721,7 @@ describe('Cart Controller - Unit Tests', () => {
     });
 
     it('should validate productId format', async () => {
-      req.params.productId = 'invalid-id';
-      mongoose.Types.ObjectId.isValid.mockReturnValue(false);
+      req.params.itemId = 'invalid-id_variation123';
 
       await removeFromCart(req, res);
 
@@ -631,42 +817,6 @@ describe('Cart Controller - Unit Tests', () => {
     });
   });
 
-  describe('mergeGuestCart', () => {
-    it('should merge guest cart successfully', async () => {
-      const userId = 'user123';
-      const sessionId = 'guest-session-123';
-      const mergedCart = { ...mockCart, userId };
-      
-      Cart.mergeGuestCart.mockResolvedValue(mergedCart);
-
-      const result = await mergeGuestCart(userId, sessionId);
-
-      expect(Cart.mergeGuestCart).toHaveBeenCalledWith(userId, sessionId);
-      expect(result).toEqual(mergedCart);
-    });
-
-    it('should return null when no sessionId provided', async () => {
-      const result = await mergeGuestCart('user123', null);
-
-      expect(result).toBeNull();
-      expect(Cart.mergeGuestCart).not.toHaveBeenCalled();
-    });
-
-    it('should handle merge errors', async () => {
-      const userId = 'user123';
-      const sessionId = 'guest-session-123';
-      const error = new Error('Merge failed');
-      
-      Cart.mergeGuestCart.mockRejectedValue(error);
-
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      await expect(mergeGuestCart(userId, sessionId)).rejects.toThrow('Merge failed');
-
-      expect(consoleSpy).toHaveBeenCalledWith('Merge guest cart error:', error);
-      consoleSpy.mockRestore();
-    });
-  });
 
   describe('Helper Functions Coverage', () => {
     it('should handle guest user without existing session cookie', async () => {

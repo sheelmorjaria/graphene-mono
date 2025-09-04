@@ -241,7 +241,7 @@ export const updateCartItem = async (req, res) => {
     const { quantity } = req.body;
 
     // Parse itemId to get productId and variationId
-    const [productId, variationId] = itemId.includes('_') ? itemId.split('_') : [itemId, null];
+    const [productId, variationId] = itemId && itemId.includes('_') ? itemId.split('_') : [itemId, null];
 
     // Input validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -346,7 +346,7 @@ export const removeFromCart = async (req, res) => {
     const { itemId } = req.params; // Can be productId or productId_variationId
     
     // Parse itemId to get productId and variationId
-    const [productId, variationId] = itemId.includes('_') ? itemId.split('_') : [itemId, null];
+    const [productId, variationId] = itemId && itemId.includes('_') ? itemId.split('_') : [itemId, null];
 
     // Input validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {

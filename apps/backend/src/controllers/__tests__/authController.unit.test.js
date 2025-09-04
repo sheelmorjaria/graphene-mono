@@ -1,5 +1,35 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+// Mock email service before importing auth controller
+vi.mock('../../services/emailService.js', () => ({
+  default: {
+    sendWelcomeEmail: vi.fn().mockResolvedValue({
+      success: true,
+      messageId: 'mock-message-id'
+    }),
+    sendPasswordResetEmail: vi.fn().mockResolvedValue({
+      success: true,
+      messageId: 'mock-message-id'
+    }),
+    sendOrderConfirmation: vi.fn().mockResolvedValue({
+      success: true,
+      messageId: 'mock-message-id'
+    })
+  },
+  sendWelcomeEmail: vi.fn().mockResolvedValue({
+    success: true,
+    messageId: 'mock-message-id'
+  }),
+  sendPasswordResetEmail: vi.fn().mockResolvedValue({
+    success: true,
+    messageId: 'mock-message-id'
+  }),
+  sendOrderConfirmation: vi.fn().mockResolvedValue({
+    success: true,
+    messageId: 'mock-message-id'
+  })
+}));
+
 // Import after setup has run (setup.vitest.js already mocks dependencies)
 const { register, login, getProfile, updateProfile, logout, changePassword, forgotPassword, resetPassword } = await import('../authController.js');
 const User = (await import('../../models/User.js')).default;

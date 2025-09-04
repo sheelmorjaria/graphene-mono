@@ -204,10 +204,12 @@ describe('VariationSelector', () => {
       />
     );
 
-    expect(screen.getByText('Condition')).toBeInTheDocument();
-    expect(screen.getByText('Color')).toBeInTheDocument();
+    // Should show "no variations" message instead of selectors
+    expect(screen.getByText('No variations available for this product.')).toBeInTheDocument();
     
-    // Should not show any variation options
+    // Should not show variation selectors or options
+    expect(screen.queryByText('Condition')).not.toBeInTheDocument();
+    expect(screen.queryByText('Color')).not.toBeInTheDocument();
     expect(screen.queryByText('New')).not.toBeInTheDocument();
     expect(screen.queryByText('Black')).not.toBeInTheDocument();
   });

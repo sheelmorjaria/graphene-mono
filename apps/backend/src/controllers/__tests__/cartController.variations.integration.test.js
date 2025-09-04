@@ -34,6 +34,8 @@ describe('Cart Controller - Variations', () => {
       slug: 'google-pixel-8',
       baseModel: 'Pixel 8',
       shortDescription: 'Latest Google Pixel phone',
+      price: 699,
+      sku: 'PIX8-BASE',
       variations: [
         {
           condition: 'new',

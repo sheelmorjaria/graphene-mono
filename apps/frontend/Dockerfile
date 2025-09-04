@@ -4,13 +4,13 @@ FROM node:18-alpine AS base
 WORKDIR /app
 
 # Copy package files
-COPY package.json ./
+COPY package*.json ./
 
 # Development stage
 FROM base AS dev
 ENV NODE_ENV=development
-# Use npm install with legacy peer deps for monorepo
-RUN npm install --legacy-peer-deps
+# Use npm ci with legacy peer deps for monorepo
+RUN npm ci --legacy-peer-deps
 COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
@@ -29,8 +29,8 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_PAYPAL_CLIENT_ID=${VITE_PAYPAL_CLIENT_ID}
 ENV VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
 
-# Use npm install with legacy peer deps for monorepo
-RUN npm install --legacy-peer-deps
+# Use npm ci with legacy peer deps for monorepo
+RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npm run build
 
