@@ -85,11 +85,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:5000/api/health || curl -f http://localhost:5000/api/health/ping || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
 
   # Frontend Service - Built from monorepo root
   frontend:

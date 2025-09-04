@@ -3,16 +3,23 @@ import express from 'express';
 const router = express.Router();
 
 // Health check endpoint
-router.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    port: process.env.PORT,
-    trustProxy: req.app.get('trust proxy'),
-    ip: req.ip,
-    ips: req.ips
-  });
+router.get('/', (req, res) => {
+  try {
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'unknown',
+      port: process.env.PORT || 5000,
+      uptime: process.uptime(),
+      memory: process.memoryUsage()
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Simple ping endpoint
