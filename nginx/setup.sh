@@ -6,7 +6,7 @@
 set -e
 
 DOMAIN="graphene-security.com"
-EMAIL="admin@graphene-security.com"
+EMAIL="contact@graphene-security.com"
 
 echo "🔧 Setting up Nginx reverse proxy for $DOMAIN"
 
