@@ -18,6 +18,22 @@ WORKDIR /app/apps/frontend
 # Use npm install since package-lock.json may not exist in individual apps
 RUN npm install --legacy-peer-deps
 
+# Set build-time environment variables for Vite
+ARG VITE_API_BASE_URL=https://api.graphene-security.com/api
+ARG VITE_APP_TITLE="GrapheneOS Store"
+ARG VITE_COMPANY_NAME="Graphene Security"
+ARG VITE_ENABLE_PAYPAL_PAYMENTS=true
+ARG VITE_ENABLE_BITCOIN_PAYMENTS=true
+ARG VITE_ENABLE_MONERO_PAYMENTS=true
+
+# Export as environment variables for build
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_APP_TITLE=$VITE_APP_TITLE
+ENV VITE_COMPANY_NAME=$VITE_COMPANY_NAME
+ENV VITE_ENABLE_PAYPAL_PAYMENTS=$VITE_ENABLE_PAYPAL_PAYMENTS
+ENV VITE_ENABLE_BITCOIN_PAYMENTS=$VITE_ENABLE_BITCOIN_PAYMENTS
+ENV VITE_ENABLE_MONERO_PAYMENTS=$VITE_ENABLE_MONERO_PAYMENTS
+
 # Ensure dist directory exists and build
 RUN mkdir -p dist && \
     npm run build && \
