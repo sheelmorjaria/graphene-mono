@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   
   // Production domain detection
   if (currentHost === 'graphene-security.com' || currentHost === 'www.graphene-security.com') {
-    return 'http://zsg8w00gsw8swso4gkgc4w44.84.45.134.166.sslip.io/api';
+    return 'https://api.graphene-security.com/api'; // Or keep using the sslip.io URL
   }
   
   // Coolify frontend deployment
