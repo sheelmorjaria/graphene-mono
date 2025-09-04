@@ -22,8 +22,12 @@ const ProductCard = ({ product }) => {
   } = product;
 
 
-  // Get the main image or placeholder
-  const mainImage = images && images.length > 0 ? images[0] : '/placeholder-product.jpg';
+  // Get the main image or placeholder - use out-of-stock placeholder if not in stock
+  const mainImage = isInStock && images && images.length > 0 
+    ? images[0] 
+    : isInStock 
+      ? '/images/placeholder.png' 
+      : '/images/placeholder-out-of-stock.png';
 
   // Format price in GBP
   const formatPrice = (price) => {
@@ -52,6 +56,17 @@ const ProductCard = ({ product }) => {
     return { text: 'Out of Stock', className: 'text-coral' };
   };
 
+  // Get conditional lead time based on stock status
+  const getLeadTime = () => {
+    if (isInStock) {
+      // In stock: 5-7 days
+      return '5-7 working days';
+    } else {
+      // Out of stock: 5-7 days
+      return '5-7 working days';
+    }
+  };
+
   // Capitalize first letter
   const capitalize = (str) => {
     if (!str || typeof str !== 'string') {
@@ -68,11 +83,11 @@ const ProductCard = ({ product }) => {
       className="bg-card rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-forest-600/20 animate-float border border-forest-200/50"
     >
       {/* Product Image */}
-      <div className="aspect-square overflow-hidden">
+      <div className="aspect-square overflow-hidden bg-gray-50">
         <img
           src={mainImage}
           alt={name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain p-4"
           loading="lazy"
         />
       </div>
@@ -147,16 +162,14 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Lead Time */}
-        {product.leadTime && (
-          <div className="mb-4">
-            <div className="flex items-center text-sm text-forest-600">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Lead time: {product.leadTime.displayText || '5-7 working days'}</span>
-            </div>
+        <div className="mb-4">
+          <div className="flex items-center text-sm text-forest-600">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Lead time: {getLeadTime()}</span>
           </div>
-        )}
+        </div>
 
         {/* Action Button */}
         <div>

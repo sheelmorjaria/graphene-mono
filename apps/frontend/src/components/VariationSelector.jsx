@@ -79,15 +79,12 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
 
   // Update selection based on product type
   useEffect(() => {
+    console.log('VariationSelector state:', { selectedCondition, selectedColor, selectedStorage });
     let variation = null;
     
     if (productType === 'phone') {
       // Find variation matching all selected options
       variation = variations.find(v => {
-        const conditionMatch = !selectedCondition || v.condition === selectedCondition;
-        const colorMatch = !selectedColor || v.color === selectedColor;
-        const storageMatch = !selectedStorage || v.storage === selectedStorage;
-        
         // If storage exists in variations, require all three to match
         if (storages.length > 0) {
           return selectedCondition && selectedColor && selectedStorage &&
@@ -100,12 +97,24 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
                v.condition === selectedCondition && 
                v.color === selectedColor;
       });
+      
+      // If no exact match but we have selections, find the first matching variation
+      // This helps with image switching when changing colors
+      if (!variation && (selectedColor || selectedCondition)) {
+        variation = variations.find(v => {
+          const colorMatch = !selectedColor || v.color === selectedColor;
+          const conditionMatch = !selectedCondition || v.condition === selectedCondition;
+          const storageMatch = !selectedStorage || v.storage === selectedStorage;
+          return colorMatch && conditionMatch && storageMatch;
+        });
+      }
     } else if (productType === 'usb-drive' && selectedCapacity && selectedInterface) {
       variation = variations.find(
         v => v.capacity === selectedCapacity && v.interface === selectedInterface
       );
     }
     
+    console.log('VariationSelector: Found variation:', variation);
     setSelectedVariation(variation);
     onVariationSelect(variation);
   }, [selectedCondition, selectedColor, selectedStorage, selectedCapacity, selectedInterface, variations, onVariationSelect, productType, storages.length]);

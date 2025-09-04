@@ -75,7 +75,7 @@ services:
       VITE_PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
       VITE_ENVIRONMENT: development
     ports:
-      - "5173:5173"
+      - "3000:3000"
     volumes:
       - ./apps/frontend:/app
       - /app/node_modules

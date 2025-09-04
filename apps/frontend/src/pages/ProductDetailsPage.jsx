@@ -26,12 +26,15 @@ const ProductDetailsPage = () => {
 
   // Update images when product or selected variation changes
   useEffect(() => {
+    console.log('ProductDetailsPage: selectedVariation changed:', selectedVariation);
     if (product) {
       if (selectedVariation && selectedVariation.images && selectedVariation.images.length > 0) {
         // Use variant-specific images if available
+        console.log('Using variation images:', selectedVariation.images);
         setCurrentImages(selectedVariation.images);
       } else {
         // Fall back to product images
+        console.log('Using product images:', product.images);
         setCurrentImages(product.images || []);
       }
     }

@@ -7,12 +7,15 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json ./
+# For monorepo setup, we'll need to install without lock file in Docker
+# or copy the lock file from root during build
 
 # Development stage
 FROM base AS dev
 ENV NODE_ENV=development
-RUN npm ci
+# Use npm install instead of npm ci for monorepo workspace
+RUN npm install
 COPY . .
 EXPOSE 5000
 CMD ["npm", "run", "dev"]
@@ -20,12 +23,14 @@ CMD ["npm", "run", "dev"]
 # Production dependencies stage
 FROM base AS prod-deps
 ENV NODE_ENV=production
-RUN npm ci --only=production
+# Use npm install instead of npm ci for monorepo workspace
+RUN npm install --only=production
 
 # Build stage
 FROM base AS build
 ENV NODE_ENV=production
-RUN npm ci
+# Use npm install instead of npm ci for monorepo workspace
+RUN npm install
 COPY . .
 # If you have a build step, uncomment the next line
 # RUN npm run build
