@@ -117,7 +117,8 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      VITE_API_URL: ${VITE_API_URL:-http://backend:5000/api}
+      VITE_API_BASE_URL: https://api.graphene-security.com/api
+      VITE_API_URL: ${VITE_API_URL:-https://api.graphene-security.com/api}
       VITE_PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
       VITE_ENVIRONMENT: ${VITE_ENVIRONMENT:-production}
     ports:
