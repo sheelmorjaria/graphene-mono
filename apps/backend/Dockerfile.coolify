@@ -5,19 +5,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files from monorepo root and apps
-COPY package*.json ./
+# Copy backend package files
 COPY apps/backend/package*.json ./apps/backend/
-COPY apps/frontend/package*.json ./apps/frontend/
 
-# Copy entire monorepo first (needed for shared dependencies)
-COPY . .
-
-# Install all dependencies without ignore-scripts
-RUN npm ci --legacy-peer-deps
+# Copy backend source code
+COPY apps/backend ./apps/backend
 
 # Build backend
 WORKDIR /app/apps/backend
+
+# Install dependencies in backend directory
+RUN npm ci --legacy-peer-deps
 RUN npm run build || echo "Build step completed"
 
 # Install curl for healthcheck
