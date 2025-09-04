@@ -24,18 +24,18 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+        cache-dependency-path: apps/backend/package-lock.json
     
     - name: Install backend dependencies
-      working-directory: backend
+      working-directory: apps/backend
       run: npm ci
     
     - name: Install Playwright Browsers
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright install --with-deps ${{ matrix.browser }}
     
     - name: Start application server
-      working-directory: backend
+      working-directory: apps/backend
       run: |
         npm start &
         sleep 30
@@ -51,7 +51,7 @@ jobs:
         BCRYPT_ROUNDS: 8
     
     - name: Run Playwright tests
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright test --project=${{ matrix.browser }}
       env:
         CI: true
@@ -61,7 +61,7 @@ jobs:
       if: always()
       with:
         name: playwright-report-${{ matrix.browser }}
-        path: backend/playwright-report/
+        path: apps/backend/playwright-report/
         retention-days: 30
     
     - name: Upload Test Results
@@ -69,7 +69,7 @@ jobs:
       if: always()
       with:
         name: playwright-results-${{ matrix.browser }}
-        path: backend/test-results/
+        path: apps/backend/test-results/
         retention-days: 30
 
   test-mobile:
@@ -83,18 +83,18 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+        cache-dependency-path: apps/backend/package-lock.json
     
     - name: Install dependencies
-      working-directory: backend
+      working-directory: apps/backend
       run: npm ci
     
     - name: Install Playwright Browsers
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright install --with-deps chromium
     
     - name: Start application server
-      working-directory: backend
+      working-directory: apps/backend
       run: |
         npm start &
         sleep 30
@@ -109,7 +109,7 @@ jobs:
         BCRYPT_ROUNDS: 8
     
     - name: Run Mobile Playwright tests
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright test --project="Mobile Chrome"
       env:
         CI: true
@@ -119,7 +119,7 @@ jobs:
       if: always()
       with:
         name: playwright-mobile-results
-        path: backend/test-results/
+        path: apps/backend/test-results/
         retention-days: 30
 
   visual-regression:
@@ -133,18 +133,18 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+        cache-dependency-path: apps/backend/package-lock.json
     
     - name: Install dependencies
-      working-directory: backend
+      working-directory: apps/backend
       run: npm ci
     
     - name: Install Playwright Browsers
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright install --with-deps chromium
     
     - name: Start application server
-      working-directory: backend
+      working-directory: apps/backend
       run: |
         npm start &
         sleep 30
@@ -159,7 +159,7 @@ jobs:
         BCRYPT_ROUNDS: 8
     
     - name: Run Visual Regression Tests
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright test --grep="screenshot" --project=chromium
       env:
         CI: true
@@ -170,7 +170,7 @@ jobs:
       if: failure()
       with:
         name: visual-regression-diffs
-        path: backend/test-results/
+        path: apps/backend/test-results/
         retention-days: 30
 
   accessibility:
@@ -184,20 +184,20 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+        cache-dependency-path: apps/backend/package-lock.json
     
     - name: Install dependencies
-      working-directory: backend
+      working-directory: apps/backend
       run: npm ci
     
     - name: Install Playwright and axe-core
-      working-directory: backend
+      working-directory: apps/backend
       run: |
         npx playwright install --with-deps chromium
         npm install --save-dev @axe-core/playwright
     
     - name: Start application server
-      working-directory: backend
+      working-directory: apps/backend
       run: |
         npm start &
         sleep 30
@@ -212,7 +212,7 @@ jobs:
         BCRYPT_ROUNDS: 8
     
     - name: Run Accessibility Tests
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright test --grep="Accessibility" --project=chromium
       env:
         CI: true
@@ -222,7 +222,7 @@ jobs:
       if: always()
       with:
         name: accessibility-results
-        path: backend/test-results/
+        path: apps/backend/test-results/
         retention-days: 30
 
   performance:
@@ -236,18 +236,18 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+        cache-dependency-path: apps/backend/package-lock.json
     
     - name: Install dependencies
-      working-directory: backend
+      working-directory: apps/backend
       run: npm ci
     
     - name: Install Playwright Browsers
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright install --with-deps chromium
     
     - name: Start application server
-      working-directory: backend
+      working-directory: apps/backend
       run: |
         npm start &
         sleep 30
@@ -262,7 +262,7 @@ jobs:
         BCRYPT_ROUNDS: 8
     
     - name: Run Performance Tests
-      working-directory: backend
+      working-directory: apps/backend
       run: npx playwright test --grep="Performance" --project=chromium
       env:
         CI: true
@@ -272,7 +272,7 @@ jobs:
       if: always()
       with:
         name: performance-results
-        path: backend/test-results/
+        path: apps/backend/test-results/
         retention-days: 30
 
   summary:
