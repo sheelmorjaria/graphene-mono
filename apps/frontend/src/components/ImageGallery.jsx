@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 const ImageGallery = ({ images, alt }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Reset active image index when images change
+  useEffect(() => {
+    console.log('ImageGallery: Images changed to:', images);
+    setActiveImageIndex(0);
+  }, [images]);
 
   // Handle empty images array
   if (!images || images.length === 0) {
@@ -63,7 +69,7 @@ const ImageGallery = ({ images, alt }) => {
       aria-label="Image gallery"
     >
       {/* Main Image */}
-      <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-square">
+      <div className="relative bg-gray-50 rounded-lg overflow-hidden aspect-square">
         <button
           onClick={handleMainImageClick}
           aria-label="Zoom image"
@@ -72,7 +78,7 @@ const ImageGallery = ({ images, alt }) => {
           <img
             src={images[activeImageIndex]}
             alt={`Main product image - ${alt}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-8"
             loading="lazy"
           />
         </button>
@@ -98,7 +104,7 @@ const ImageGallery = ({ images, alt }) => {
               <img
                 src={image}
                 alt={`Thumbnail ${index + 1} - ${alt}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-1"
                 loading="lazy"
               />
             </button>

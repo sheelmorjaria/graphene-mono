@@ -1,0 +1,46 @@
+# Tor Configuration for GrapheneOS Store
+# This configuration provides hidden services for frontend and backend
+
+# Basic Tor settings
+SocksPort 0.0.0.0:9050
+SocksPolicy accept *
+
+# Logging (adjust for production)
+Log notice file /var/log/tor/notices.log
+
+# Performance tuning
+NumEntryGuards 3
+NumDirectoryGuards 3
+GuardLifetime 6 months
+
+# Hidden service for frontend
+HiddenServiceDir /var/lib/tor/hidden_service/graphene_frontend
+HiddenServicePort 80 frontend:8080
+HiddenServiceVersion 3
+
+# Hidden service for backend API
+HiddenServiceDir /var/lib/tor/hidden_service/graphene_backend  
+HiddenServicePort 80 backend:5000
+HiddenServiceVersion 3
+
+# Optional: Hidden service for MongoDB admin (comment out for production)
+# HiddenServiceDir /var/lib/tor/hidden_service/graphene_mongo
+# HiddenServicePort 27017 mongodb:27017
+# HiddenServiceVersion 3
+
+# Security settings
+HiddenServiceSingleHopMode 0
+HiddenServiceNonAnonymousMode 0
+
+# DDoS Protection
+HiddenServiceEnableIntroDoSDefense 1
+HiddenServiceEnableIntroDoSRatePerSec 25
+HiddenServiceEnableIntroDoSBurstPerSec 200
+
+# Connection limits
+ConnLimit 1000
+MaxClientCircuitsPending 128
+
+# Bandwidth settings (adjust based on your server)
+# RelayBandwidthRate 10 MB
+# RelayBandwidthBurst 20 MB

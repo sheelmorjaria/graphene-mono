@@ -16,7 +16,7 @@ mongoose.set("bufferCommands", false);
 mongoose.set("bufferTimeoutMS", 20000);
 
 // Import models from backend
-let User, Product;
+let User, Product, Category;
 
 // Dynamic import to avoid circular dependency issues
 const loadModels = async () => {
@@ -24,13 +24,16 @@ const loadModels = async () => {
     // Use absolute paths relative to this file's location
     const userPath = './src/models/User.js';
     const productPath = './src/models/Product.js';
+    const categoryPath = './src/models/Category.js';
     
-    console.log(`Loading models from: ${userPath} and ${productPath}`);
+    console.log(`Loading models from: ${userPath}, ${productPath}, and ${categoryPath}`);
     
     const userModule = await import(userPath);
     const productModule = await import(productPath);
+    const categoryModule = await import(categoryPath);
     User = userModule.default;
     Product = productModule.default;
+    Category = categoryModule.default;
     console.log("Models loaded successfully");
   } catch (error) {
     console.error("Failed to load models:", error.message);
@@ -559,9 +562,30 @@ const createBaseProductInfo = (baseModel) => {
   return { cleanName, slug };
 };
 
+// Function to find or create the Smartphones category
+const findSmartphonesCategory = async () => {
+  let category = await Category.findOne({ name: 'Smartphones' });
+  
+  if (!category) {
+    console.log("Smartphones category not found, creating it...");
+    category = new Category({
+      name: 'Smartphones',
+      slug: 'smartphones',
+      description: 'Mobile phones and smartphones'
+    });
+    await category.save();
+    console.log("✅ Created Smartphones category");
+  }
+  
+  return category;
+};
+
 // Function to create or update a product with variations from CLI data
 export const createOrUpdateProductFromCLI = async (cliProductData) => {
   const { name, price, condition, url } = cliProductData;
+  
+  // Get the Smartphones category
+  const category = await findSmartphonesCategory();
   
   // Extract storage and color from product name
   const storageMatch = name.match(/(\d+GB)/);
@@ -668,6 +692,7 @@ export const createOrUpdateProductFromCLI = async (cliProductData) => {
       slug: slug,
       sku: sku,
       baseModel: baseModel,
+      category: category._id,
       shortDescription: `${cleanName} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
       longDescription: `GrapheneOS Pixel ${baseModel} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${baseModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
       price: finalPrice, // Base price
@@ -1081,6 +1106,9 @@ export const syncAndroidPhones = async (options = {}) => {
 
       } catch (productError) {
         console.error(`❌ Failed to create product ${productData.name}:`, productError.message);
+        if (productError.errors) {
+          console.error("Validation errors:", productError.errors);
+        }
         skippedCount++;
       }
     }
