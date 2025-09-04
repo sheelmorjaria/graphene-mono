@@ -15,7 +15,8 @@ COPY apps/frontend ./apps/frontend
 WORKDIR /app/apps/frontend
 
 # Install dependencies in frontend directory
-RUN npm ci --legacy-peer-deps
+# Use npm install since package-lock.json may not exist in individual apps
+RUN npm install --legacy-peer-deps
 
 # Ensure dist directory exists and build
 RUN mkdir -p dist && \
