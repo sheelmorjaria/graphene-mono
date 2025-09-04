@@ -61,7 +61,7 @@ jobs:
         run: npm run build --workspace=packages/*
 
       - name: Run unit tests
-        run: npm run test:unit --workspace=@graphene-store/${{ matrix.workspace }} --if-present
+        run: npm run test:unit --workspace=@graphene-security/${{ matrix.workspace }} --if-present
 
       - name: Upload coverage
         if: matrix.workspace == 'backend'
@@ -105,7 +105,7 @@ jobs:
         run: npm run build --workspace=packages/*
 
       - name: Run integration tests
-        run: npm run test:integration --workspace=@graphene-store/backend
+        run: npm run test:integration --workspace=@graphene-security/backend
         env:
           NODE_ENV: test
           MONGODB_URI: mongodb://admin:password123@localhost:27017/graphene_store_test?authSource=admin
@@ -146,7 +146,7 @@ jobs:
           timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
 
       - name: Run E2E tests
-        run: npm run test:e2e --workspace=@graphene-store/backend
+        run: npm run test:e2e --workspace=@graphene-security/backend
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v3
@@ -211,7 +211,7 @@ jobs:
         run: npm audit --audit-level moderate
 
       - name: Run security tests
-        run: npm run test:security --workspace=@graphene-store/backend --if-present
+        run: npm run test:security --workspace=@graphene-security/backend --if-present
 
   # Deploy to Staging
   deploy-staging:

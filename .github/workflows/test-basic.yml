@@ -3,13 +3,13 @@ name: Basic Test Suite
 on:
   push:
     paths:
-      - 'backend/**'
-      - 'frontend/**'
+      - 'apps/backend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/**'
   pull_request:
     paths:
-      - 'backend/**'
-      - 'frontend/**'
+      - 'apps/backend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/**'
 
 jobs:
@@ -28,14 +28,14 @@ jobs:
         cache: 'npm'
 
     - name: Validate backend package.json
-      working-directory: ./backend
+      working-directory: ./apps/backend
       run: |
         npm ci --dry-run
         npm run lint --if-present
         echo "✅ Backend package validation complete"
 
     - name: Validate frontend package.json  
-      working-directory: ./frontend
+      working-directory: ./apps/frontend
       run: |
         npm ci --dry-run
         npm run lint --if-present
@@ -60,13 +60,13 @@ jobs:
     - name: Check test file structure
       run: |
         echo "Checking backend test structure..."
-        if [ ! -d "backend/src/__tests__" ]; then
+        if [ ! -d "apps/backend/src/__tests__" ]; then
           echo "❌ Backend tests directory missing"
           exit 1
         fi
         
         echo "Checking frontend test structure..."
-        if [ ! -d "frontend/src/__tests__" ] && [ ! -d "frontend/src/components/__tests__" ]; then
+        if [ ! -d "apps/frontend/src/__tests__" ] && [ ! -d "apps/frontend/src/components/__tests__" ]; then
           echo "❌ Frontend tests directory missing"
           exit 1
         fi
@@ -75,8 +75,8 @@ jobs:
 
     - name: Check for test files
       run: |
-        backend_tests=$(find backend -name "*.test.js" -o -name "*.spec.js" | wc -l)
-        frontend_tests=$(find frontend -name "*.test.jsx" -o -name "*.test.js" -o -name "*.spec.jsx" -o -name "*.spec.js" | wc -l)
+        backend_tests=$(find apps/backend -name "*.test.js" -o -name "*.spec.js" | wc -l)
+        frontend_tests=$(find apps/frontend -name "*.test.jsx" -o -name "*.test.js" -o -name "*.spec.jsx" -o -name "*.spec.js" | wc -l)
         
         echo "Backend test files: $backend_tests"
         echo "Frontend test files: $frontend_tests"
