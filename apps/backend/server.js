@@ -67,42 +67,9 @@ if (process.env.NODE_ENV !== 'test') {
 // CORS configuration (must be before rate limiting)
 const corsOptions = {
   credentials: true,
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    
-    // In production, allow specific origins
-    if (process.env.NODE_ENV === 'production') {
-      const allowedOrigins = [
-        process.env.FRONTEND_URL,
-        'https://graphene-frontend.onrender.com',
-        'https://graphene-security.com',
-        'https://www.graphene-security.com'
-      ].filter(Boolean);
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`CORS blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    } else {
-      // In development, allow localhost origins
-      const devOrigins = [
-        'http://localhost:3000',
-        'http://localhost:3001', 
-        'http://localhost:5173',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:5173'
-      ];
-      
-      if (devOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Allow all in development for testing
-      }
-    }
-  }
+  origin: true, // Temporarily allow all origins for debugging
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-csrf-token']
 };
 
 app.use(cors(corsOptions));
