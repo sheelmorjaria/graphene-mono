@@ -11,12 +11,17 @@ COPY apps/backend/package*.json ./apps/backend/
 # Copy backend source code
 COPY apps/backend ./apps/backend
 
+# Copy CLI tool
+COPY apps/backend/cli-linux-amd64 ./apps/backend/cli-linux-amd64
+RUN chmod +x ./apps/backend/cli-linux-amd64
+
 # Build backend
 WORKDIR /app/apps/backend
 
 # Install dependencies in backend directory
 # Use npm install since package-lock.json may not exist in individual apps
-RUN npm install --legacy-peer-deps
+# Skip optional dependencies and use legacy peer deps for compatibility
+RUN npm install --legacy-peer-deps --no-optional
 
 # Create necessary directories
 RUN mkdir -p uploads logs
