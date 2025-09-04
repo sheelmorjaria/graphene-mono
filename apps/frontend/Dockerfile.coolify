@@ -10,15 +10,15 @@ COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
 COPY apps/frontend/package*.json ./apps/frontend/
 
-# Install all dependencies with legacy peer deps flag
-RUN npm ci --legacy-peer-deps --ignore-scripts
-
-# Copy entire monorepo
+# Copy entire monorepo first
 COPY . .
+
+# Install all dependencies without ignore-scripts to properly set up build tools
+RUN npm ci --legacy-peer-deps
 
 # Build frontend
 WORKDIR /app/apps/frontend
-RUN npm run build || echo "Build step completed"
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine
