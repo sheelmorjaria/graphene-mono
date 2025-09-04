@@ -1,7 +1,8 @@
 # Backend Dockerfile for Coolify deployment
 # Must be built from monorepo root context
 
-FROM node:20-alpine
+# Use node:20-slim instead of alpine for better Sharp compatibility
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -18,10 +19,25 @@ RUN chmod +x ./apps/backend/cli-linux-amd64
 # Build backend
 WORKDIR /app/apps/backend
 
-# Install dependencies in backend directory
+# Install system dependencies needed for Sharp (Debian-based)
+RUN apt-get update && apt-get install -y \
+    libvips-dev \
+    python3 \
+    make \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies in backend directory (excluding Sharp initially)
 # Use npm install since package-lock.json may not exist in individual apps
 # Skip optional dependencies and use legacy peer deps for compatibility
-RUN npm install --legacy-peer-deps --no-optional
+RUN npm install --legacy-peer-deps --no-optional --ignore-scripts
+
+# Install Sharp separately with platform-specific build
+RUN npm install sharp --platform=linux --arch=x64
+
+# Install any remaining dependencies with scripts
+RUN npm rebuild
 
 # Create necessary directories
 RUN mkdir -p uploads logs
@@ -29,8 +45,7 @@ RUN mkdir -p uploads logs
 # Run build step (even though it's just an echo for this project)
 RUN npm run build || echo "Build step completed"
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# curl is already installed in the system dependencies above
 
 # Expose port
 EXPOSE 5000
