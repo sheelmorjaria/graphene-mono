@@ -84,7 +84,7 @@ class SESConfigurationChecker {
         }
         
         if (destination.CloudWatchDestination) {
-          console.log(`       CloudWatch: ✅`);
+          console.log('       CloudWatch: ✅');
         }
       }
 

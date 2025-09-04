@@ -6,7 +6,7 @@ import { createObjectCsvStringifier } from 'csv-writer';
 // Create new product with variations
 export const createProduct = async (req, res) => {
   try {
-    let {
+    const {
       name,
       slug,
       shortDescription,
@@ -19,15 +19,16 @@ export const createProduct = async (req, res) => {
       weight,
       dimensions,
       leadTime,
-      images,
-      variations
+      images
     } = req.body;
+
+    let { variations } = req.body;
 
     // Parse variations if it's a string (from FormData)
     if (typeof variations === 'string') {
       try {
         variations = JSON.parse(variations);
-      } catch (error) {
+      } catch (_error) {
         return res.status(400).json({
           success: false,
           error: 'Invalid variations JSON format'
@@ -159,7 +160,7 @@ export const createProduct = async (req, res) => {
         try {
           const parsedImages = JSON.parse(images);
           productData.images = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
-        } catch (e) {
+        } catch (_e) {
           // If not valid JSON, treat as single URL
           productData.images = [images];
         }
@@ -196,7 +197,7 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { productId } = req.params;
-    let {
+    const {
       name,
       slug,
       shortDescription,
@@ -209,9 +210,10 @@ export const updateProduct = async (req, res) => {
       weight,
       dimensions,
       leadTime,
-      images,
-      variations
+      images
     } = req.body;
+
+    let { variations } = req.body;
 
     // Parse variations if it's a string (from FormData)
     if (typeof variations === 'string') {
@@ -389,7 +391,7 @@ export const updateProduct = async (req, res) => {
         try {
           const parsedImages = JSON.parse(images);
           existingProduct.images = Array.isArray(parsedImages) ? parsedImages : [parsedImages];
-        } catch (e) {
+        } catch (_e) {
           // If not valid JSON, treat as single URL
           existingProduct.images = [images];
         }

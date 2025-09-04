@@ -30,34 +30,34 @@ const testGroupedProducts = async () => {
     // Test data - multiple variations of the same base model
     const testVariations = [
       {
-        name: "Google Pixel 8 Pro 128GB Obsidian",
+        name: 'Google Pixel 8 Pro 128GB Obsidian',
         price: 650,
-        condition: "A",
-        url: "https://example.com"
+        condition: 'A',
+        url: 'https://example.com'
       },
       {
-        name: "Google Pixel 8 Pro 256GB Hazel", 
+        name: 'Google Pixel 8 Pro 256GB Hazel', 
         price: 720,
-        condition: "B",
-        url: "https://example.com"
+        condition: 'B',
+        url: 'https://example.com'
       },
       {
-        name: "Google Pixel 8 Pro 128GB Snow",
+        name: 'Google Pixel 8 Pro 128GB Snow',
         price: 630,
-        condition: "B", 
-        url: "https://example.com"
+        condition: 'B', 
+        url: 'https://example.com'
       },
       {
-        name: "Google Pixel 8 256GB Obsidian",
+        name: 'Google Pixel 8 256GB Obsidian',
         price: 550,
-        condition: "A",
-        url: "https://example.com"
+        condition: 'A',
+        url: 'https://example.com'
       },
       {
-        name: "Google Pixel 8 128GB Rose",
+        name: 'Google Pixel 8 128GB Rose',
         price: 520,
-        condition: "C",
-        url: "https://example.com"
+        condition: 'C',
+        url: 'https://example.com'
       }
     ];
 
@@ -78,7 +78,7 @@ const testGroupedProducts = async () => {
     
     const { default: Product } = await import('../src/models/Product.js');
     
-    const products = await Product.find({ baseModel: { $in: ["8 Pro", "8"] } })
+    const products = await Product.find({ baseModel: { $in: ['8 Pro', '8'] } })
       .select('name baseModel price variations')
       .lean();
 

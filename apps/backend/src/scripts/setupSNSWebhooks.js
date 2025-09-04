@@ -144,7 +144,7 @@ class SNSWebhookSetup {
       if (error.name === 'AlreadyExistsException' || error.name === 'ConfigurationSetAlreadyExistsException') {
         console.log(`  ℹ️  Configuration set ${configurationSetName} already exists`);
       } else {
-        console.error(`  ❌ Failed to create configuration set:`, error.message);
+        console.error('  ❌ Failed to create configuration set:', error.message);
         throw error;
       }
     }

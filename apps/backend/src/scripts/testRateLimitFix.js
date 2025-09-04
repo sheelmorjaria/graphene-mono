@@ -45,7 +45,7 @@ const testRateLimitFix = async () => {
     const result3 = await bitcoinService.getBtcExchangeRate();
     console.log(`   ✅ Rate: £${result3.rate}`);
     console.log(`   🔄 Using fallback: ${result3.fallback || false}`);
-    console.log(`   💡 Fallback rate active!`);
+    console.log('   💡 Fallback rate active!');
   } catch (error) {
     console.log(`   ❌ Error: ${error.message}`);
   }
@@ -57,7 +57,7 @@ const testRateLimitFix = async () => {
   console.log('\n4️⃣ Testing Bitcoin payment creation:');
   try {
     const payment = await bitcoinService.createBitcoinPayment(299.99);
-    console.log(`   ✅ Payment created successfully`);
+    console.log('   ✅ Payment created successfully');
     console.log(`   ₿ Address: ${payment.bitcoinAddress}`);
     console.log(`   💰 Amount: ${payment.bitcoinAmount} BTC`);
     console.log(`   📊 Rate: £${payment.bitcoinExchangeRate}`);

@@ -110,7 +110,7 @@ This email was sent from the GrapheneOS Store backend test script.`,
     console.log(`   HTTP Status: ${result.$metadata.httpStatusCode}`);
 
     console.log(`\n${colors.cyan}📧 Check your email at ${process.env.SUPPORT_EMAIL}${colors.reset}`);
-    console.log(`   The test email should arrive within a few minutes.`);
+    console.log('   The test email should arrive within a few minutes.');
 
   } catch (error) {
     console.error(`\n${colors.red}❌ Email send failed:${colors.reset}`);

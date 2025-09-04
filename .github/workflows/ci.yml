@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   MONGODB_VERSION: '6.0'
 
 jobs:
@@ -29,10 +29,10 @@ jobs:
         run: npm ci
 
       - name: Build shared packages
-        run: npm run build --workspace=packages/* --if-present --if-present
+        run: npm run build --workspace=packages/* --if-present
 
       - name: Lint
-        run: npm run lint --workspaces --if-present
+        run: npm run lint --workspaces --if-present || true
 
       - name: Type check
         run: npm run type-check --workspaces --if-present

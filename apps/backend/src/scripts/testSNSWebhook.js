@@ -186,14 +186,14 @@ class SNSWebhookTester {
       
       console.log(`  ← Response: ${response.status} ${response.statusText}`);
       if (response.data) {
-        console.log(`  ← Data:`, JSON.stringify(response.data, null, 2));
+        console.log('  ← Data:', JSON.stringify(response.data, null, 2));
       }
       
       return response;
     } catch (error) {
-      console.error(`  ❌ Error:`, error.message);
+      console.error('  ❌ Error:', error.message);
       if (error.response) {
-        console.error(`  ← Response:`, error.response.status, error.response.data);
+        console.error('  ← Response:', error.response.status, error.response.data);
       }
       throw error;
     }
@@ -299,34 +299,34 @@ class SNSWebhookTester {
       
       try {
         switch (choice) {
-          case '1':
-            await this.testSubscriptionConfirmation();
-            break;
-          case '2':
-            const email1 = await question('Email address [bounce@simulator.amazonses.com]: ');
-            await this.testBounce(email1 || 'bounce@simulator.amazonses.com', 'Permanent');
-            break;
-          case '3':
-            const email2 = await question('Email address [bounce@simulator.amazonses.com]: ');
-            await this.testBounce(email2 || 'bounce@simulator.amazonses.com', 'Transient');
-            break;
-          case '4':
-            const email3 = await question('Email address [complaint@simulator.amazonses.com]: ');
-            await this.testComplaint(email3 || 'complaint@simulator.amazonses.com', 'abuse');
-            break;
-          case '5':
-            const email4 = await question('Email address [success@simulator.amazonses.com]: ');
-            await this.testDelivery(email4 || 'success@simulator.amazonses.com');
-            break;
-          case '6':
-            await this.runAllTests();
-            break;
-          case '0':
-            console.log('Goodbye!');
-            rl.close();
-            return;
-          default:
-            console.log('Invalid choice');
+        case '1':
+          await this.testSubscriptionConfirmation();
+          break;
+        case '2':
+          const email1 = await question('Email address [bounce@simulator.amazonses.com]: ');
+          await this.testBounce(email1 || 'bounce@simulator.amazonses.com', 'Permanent');
+          break;
+        case '3':
+          const email2 = await question('Email address [bounce@simulator.amazonses.com]: ');
+          await this.testBounce(email2 || 'bounce@simulator.amazonses.com', 'Transient');
+          break;
+        case '4':
+          const email3 = await question('Email address [complaint@simulator.amazonses.com]: ');
+          await this.testComplaint(email3 || 'complaint@simulator.amazonses.com', 'abuse');
+          break;
+        case '5':
+          const email4 = await question('Email address [success@simulator.amazonses.com]: ');
+          await this.testDelivery(email4 || 'success@simulator.amazonses.com');
+          break;
+        case '6':
+          await this.runAllTests();
+          break;
+        case '0':
+          console.log('Goodbye!');
+          rl.close();
+          return;
+        default:
+          console.log('Invalid choice');
         }
       } catch (error) {
         console.error('Test failed:', error.message);

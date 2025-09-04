@@ -17,7 +17,7 @@ const testProductionAPI = async () => {
       console.log(`   🗄️  Database: ${healthData.database.connected ? 'Connected' : 'Disconnected'}`);
       console.log(`   ⏱️  Uptime: ${Math.round(healthData.uptime)}s`);
     } else {
-      console.log(`   ❌ Health check failed`);
+      console.log('   ❌ Health check failed');
     }
 
     // Test 2: Payment Methods (Public endpoint)
@@ -52,7 +52,7 @@ const testProductionAPI = async () => {
     });
 
     console.log(`   📡 Status: ${bitcoinResponse.status}`);
-    console.log(`   📋 Response Headers:`);
+    console.log('   📋 Response Headers:');
     
     // Log relevant headers
     const headers = bitcoinResponse.headers;
@@ -73,7 +73,7 @@ const testProductionAPI = async () => {
           console.log(`   📚 Stack Trace: ${errorData.stack}`);
         }
       } catch (parseError) {
-        console.log(`   ⚠️  Could not parse error response as JSON`);
+        console.log('   ⚠️  Could not parse error response as JSON');
         console.log(`   📄 Raw response: ${responseText}`);
       }
     }

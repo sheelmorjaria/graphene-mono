@@ -123,44 +123,44 @@ emailMetricsSchema.methods.recordEvent = function(eventType, details = {}) {
   
   // Update status based on event
   switch(eventType) {
-    case 'sent':
-      this.status = 'sent';
-      break;
-    case 'delivered':
-      this.status = 'delivered';
-      break;
-    case 'bounced':
-      this.status = 'bounced';
-      break;
-    case 'complained':
-      this.status = 'complained';
-      break;
-    case 'failed':
-      this.status = 'failed';
-      this.error.hasError = true;
-      this.error.errorMessage = details.error || 'Unknown error';
-      this.error.errorAt = new Date();
-      break;
-    case 'opened':
-      this.engagement.opened = true;
-      if (!this.engagement.openedAt) {
-        this.engagement.openedAt = new Date();
-      }
-      this.engagement.openCount += 1;
-      break;
-    case 'clicked':
-      this.engagement.clicked = true;
-      if (!this.engagement.clickedAt) {
-        this.engagement.clickedAt = new Date();
-      }
-      this.engagement.clickCount += 1;
-      if (details.url) {
-        this.engagement.clickedLinks.push({
-          url: details.url,
-          clickedAt: new Date()
-        });
-      }
-      break;
+  case 'sent':
+    this.status = 'sent';
+    break;
+  case 'delivered':
+    this.status = 'delivered';
+    break;
+  case 'bounced':
+    this.status = 'bounced';
+    break;
+  case 'complained':
+    this.status = 'complained';
+    break;
+  case 'failed':
+    this.status = 'failed';
+    this.error.hasError = true;
+    this.error.errorMessage = details.error || 'Unknown error';
+    this.error.errorAt = new Date();
+    break;
+  case 'opened':
+    this.engagement.opened = true;
+    if (!this.engagement.openedAt) {
+      this.engagement.openedAt = new Date();
+    }
+    this.engagement.openCount += 1;
+    break;
+  case 'clicked':
+    this.engagement.clicked = true;
+    if (!this.engagement.clickedAt) {
+      this.engagement.clickedAt = new Date();
+    }
+    this.engagement.clickCount += 1;
+    if (details.url) {
+      this.engagement.clickedLinks.push({
+        url: details.url,
+        clickedAt: new Date()
+      });
+    }
+    break;
   }
   
   return this.save();

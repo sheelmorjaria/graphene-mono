@@ -48,7 +48,7 @@ const fixProductVariations = async () => {
         // Extract info from existing product for variation
         const stockQuantity = product.stockQuantity || 20; // Default stock
         const stockStatus = stockQuantity === 0 ? 'out_of_stock' : 
-                          stockQuantity <= 10 ? 'low_stock' : 'in_stock';
+          stockQuantity <= 10 ? 'low_stock' : 'in_stock';
 
         // Extract color from attributes
         const colorAttr = product.attributes?.find(attr => 
@@ -91,7 +91,7 @@ const fixProductVariations = async () => {
       }
     }
 
-    console.log(`\n📊 Fix Summary:`);
+    console.log('\n📊 Fix Summary:');
     console.log(`   ✅ Fixed: ${fixedCount} products`);
     console.log(`   ❌ Errors: ${errorCount} products`);
 

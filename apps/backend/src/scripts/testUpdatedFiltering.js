@@ -2,31 +2,31 @@ import { extractBaseModel, isOldPixelVariant } from '../syncFromCLI.js';
 
 const testProductNames = [
   // Should be EXCLUDED (old models + 6a)
-  "Google Pixel 1 32GB",
-  "Google Pixel 2 64GB",
-  "Google Pixel 2 XL 128GB",
-  "Google Pixel 3 64GB",
-  "Google Pixel 3a 64GB",
-  "Google Pixel 3a XL 64GB",
-  "Google Pixel 4 128GB",
-  "Google Pixel 4a 128GB",
-  "Google Pixel 4a 5G 128GB",
-  "Google Pixel 5 128GB",
-  "Google Pixel 5a 128GB",
-  "Google Pixel 6a 128GB Charcoal", // Should be excluded!
+  'Google Pixel 1 32GB',
+  'Google Pixel 2 64GB',
+  'Google Pixel 2 XL 128GB',
+  'Google Pixel 3 64GB',
+  'Google Pixel 3a 64GB',
+  'Google Pixel 3a XL 64GB',
+  'Google Pixel 4 128GB',
+  'Google Pixel 4a 128GB',
+  'Google Pixel 4a 5G 128GB',
+  'Google Pixel 5 128GB',
+  'Google Pixel 5a 128GB',
+  'Google Pixel 6a 128GB Charcoal', // Should be excluded!
   
   // Should be INCLUDED (newer models + Folds)
-  "Google Pixel 6 128GB Stormy Black",
-  "Google Pixel 6 Pro 256GB Cloudy White", 
-  "Google Pixel 7 128GB Snow",
-  "Google Pixel 7 Pro 256GB Obsidian",
-  "Google Pixel 8 128GB Rose",
-  "Google Pixel 8 Pro 256GB Bay",
-  "Google Pixel 9 128GB Porcelain",
-  "Google Pixel 9 Pro 256GB Hazel",
-  "Google Pixel Fold 256GB Obsidian", // Should be included!
-  "Google Pixel 9 Pro Fold 256GB Porcelain", // Should be included!
-  "Google Pixel 9 Pro Fold 512GB Obsidian"  // Should be included!
+  'Google Pixel 6 128GB Stormy Black',
+  'Google Pixel 6 Pro 256GB Cloudy White', 
+  'Google Pixel 7 128GB Snow',
+  'Google Pixel 7 Pro 256GB Obsidian',
+  'Google Pixel 8 128GB Rose',
+  'Google Pixel 8 Pro 256GB Bay',
+  'Google Pixel 9 128GB Porcelain',
+  'Google Pixel 9 Pro 256GB Hazel',
+  'Google Pixel Fold 256GB Obsidian', // Should be included!
+  'Google Pixel 9 Pro Fold 256GB Porcelain', // Should be included!
+  'Google Pixel 9 Pro Fold 512GB Obsidian'  // Should be included!
 ];
 
 console.log('🧪 Testing updated filtering logic...\n');
@@ -50,9 +50,9 @@ testProductNames.forEach(name => {
 
 console.log('\n🔍 Special Cases:');
 const specialCases = [
-  "Google Pixel 6a 128GB Charcoal",
-  "Google Pixel Fold 256GB Obsidian", 
-  "Google Pixel 9 Pro Fold 512GB Porcelain"
+  'Google Pixel 6a 128GB Charcoal',
+  'Google Pixel Fold 256GB Obsidian', 
+  'Google Pixel 9 Pro Fold 512GB Porcelain'
 ];
 
 specialCases.forEach(name => {

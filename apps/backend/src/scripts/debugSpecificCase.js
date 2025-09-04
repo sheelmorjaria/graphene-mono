@@ -7,8 +7,8 @@ const extractModelInfo = (name) => {
   console.log(`🔍 Input: "${name}"`);
   
   const nameWithoutCondition = name
-    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "")
-    .replace(/\s*\[.*?\]$/, "");
+    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, '')
+    .replace(/\s*\[.*?\]$/, '');
   
   console.log(`🔍 After condition removal: "${nameWithoutCondition}"`);
 
@@ -19,9 +19,9 @@ const extractModelInfo = (name) => {
   if (foldMatch) {
     const [_, storage, color] = foldMatch;
     return {
-      modelName: "Pixel Fold",
-      storage: storage || "256GB",
-      color: color ? color.trim() : "Unknown",
+      modelName: 'Pixel Fold',
+      storage: storage || '256GB',
+      color: color ? color.trim() : 'Unknown'
     };
   }
 
@@ -29,12 +29,12 @@ const extractModelInfo = (name) => {
     /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro)?\s*(?:(\d+(?:GB|TB))\+)?(\d+(?:GB|TB))?\s+([^]+?)(?:\s+Unlocked)?$/i
   );
 
-  console.log(`🔍 Regex match result:`, match);
+  console.log('🔍 Regex match result:', match);
 
   if (!match) return null;
 
   const [_, number, variant, ram, storage, colorAndRest] = match;
-  console.log(`🔍 Parsed components:`, {
+  console.log('🔍 Parsed components:', {
     number,
     variant, 
     ram,
@@ -47,10 +47,10 @@ const extractModelInfo = (name) => {
     modelName += ` ${variant.trim()}`;
   }
 
-  let actualStorage = storage || ram || "128GB";
-  let actualColor = colorAndRest ? colorAndRest.trim() : "Unknown";
+  let actualStorage = storage || ram || '128GB';
+  let actualColor = colorAndRest ? colorAndRest.trim() : 'Unknown';
   
-  console.log(`🔍 Before color-storage separation:`, {
+  console.log('🔍 Before color-storage separation:', {
     actualStorage,
     actualColor
   });
@@ -58,38 +58,38 @@ const extractModelInfo = (name) => {
   // Check if color field contains storage info
   if (actualColor) {
     const colorStorageMatch = actualColor.match(/(\d+(?:GB|TB))\s+(.+)|(.+)\s+(\d+(?:GB|TB))/i);
-    console.log(`🔍 Color-storage match:`, colorStorageMatch);
+    console.log('🔍 Color-storage match:', colorStorageMatch);
     
     if (colorStorageMatch) {
       if (colorStorageMatch[1] && colorStorageMatch[2]) {
-        console.log(`🔍 Found format: "XGB/TB Color"`);
+        console.log('🔍 Found format: "XGB/TB Color"');
         actualStorage = colorStorageMatch[1];
         actualColor = colorStorageMatch[2].trim();
       } else if (colorStorageMatch[3] && colorStorageMatch[4]) {
-        console.log(`🔍 Found format: "Color XGB/TB"`);
+        console.log('🔍 Found format: "Color XGB/TB"');
         actualColor = colorStorageMatch[3].trim();
         actualStorage = colorStorageMatch[4];
       }
     }
   }
   
-  console.log(`🔍 After color-storage separation:`, {
+  console.log('🔍 After color-storage separation:', {
     actualStorage,
     actualColor
   });
   
-  if (modelName.includes("7 Pro") && ram && storage) {
-    console.log(`🔍 Applied Pixel 7 Pro special rule`);
+  if (modelName.includes('7 Pro') && ram && storage) {
+    console.log('🔍 Applied Pixel 7 Pro special rule');
     actualStorage = storage;
   }
 
   const result = {
     modelName: modelName.trim(),
     storage: actualStorage,
-    color: actualColor,
+    color: actualColor
   };
   
-  console.log(`🔍 Final result:`, result);
+  console.log('🔍 Final result:', result);
   return result;
 };
 

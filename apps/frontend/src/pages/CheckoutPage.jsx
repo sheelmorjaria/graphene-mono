@@ -189,7 +189,7 @@ const ReviewSection = () => {
     paymentState: _paymentState, 
     shippingAddress, 
     billingAddress,
-    deliveryAddress, 
+    _deliveryAddress, 
     shippingMethod, 
     paymentMethod, 
     orderSummary: _orderSummary,

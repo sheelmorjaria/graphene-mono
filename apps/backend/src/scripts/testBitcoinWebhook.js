@@ -36,7 +36,7 @@ const testBitcoinWebhook = async () => {
 
     console.log(`   📡 Status: ${response.status}`);
     const data = await response.json();
-    console.log(`   📄 Response:`, JSON.stringify(data, null, 2));
+    console.log('   📄 Response:', JSON.stringify(data, null, 2));
     
     if (response.status === 404) {
       console.log('   ❌ GET endpoint not found - needs deployment');
@@ -73,7 +73,7 @@ const testBitcoinWebhook = async () => {
 
     console.log(`   📡 Status: ${response.status}`);
     const data = await response.json();
-    console.log(`   📄 Response:`, JSON.stringify(data, null, 2));
+    console.log('   📄 Response:', JSON.stringify(data, null, 2));
     
     if (response.status === 200) {
       console.log('   ✅ POST webhook working correctly');

@@ -132,7 +132,7 @@ class EmailService {
 
   // Send email with template
   async sendEmail({ to, subject, htmlContent, textContent, from = null, emailType = 'transactional.general', skipPreferenceCheck = false }) {
-    let metrics = null;
+    const metrics = null;
     
     try {
       // Ensure SES is initialized before sending (handles race condition with dotenv loading)

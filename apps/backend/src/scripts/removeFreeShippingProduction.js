@@ -55,14 +55,14 @@ const removeFreeShippingThresholds = async () => {
       }
     }
 
-    console.log(`\n✅ Update Results:`);
+    console.log('\n✅ Update Results:');
     console.log(`   - UpdateMany 1 (criteria.freeShippingThreshold): ${updateResult1.matchedCount} matched, ${updateResult1.modifiedCount} modified`);
     console.log(`   - UpdateMany 2 (freeShippingThreshold): ${updateResult2.matchedCount} matched, ${updateResult2.modifiedCount} modified`);
-    console.log(`   - Manual cleanup completed`);
+    console.log('   - Manual cleanup completed');
 
     // Verify the update
     const updatedMethods = await ShippingMethod.find({});
-    console.log(`\n📋 Updated Shipping Methods:`);
+    console.log('\n📋 Updated Shipping Methods:');
     
     updatedMethods.forEach((method, index) => {
       const threshold = method.criteria?.freeShippingThreshold;

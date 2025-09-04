@@ -66,9 +66,9 @@ const createSmartphonesCategory = async () => {
         product.category = smartphonesCategory._id;
         await product.save();
         assignedCount++;
-        console.log(`     ✓ Assigned to Smartphones category`);
+        console.log('     ✓ Assigned to Smartphones category');
       } else {
-        console.log(`     → Already in correct category`);
+        console.log('     → Already in correct category');
       }
     }
     
@@ -79,7 +79,7 @@ const createSmartphonesCategory = async () => {
     console.log(`📊 Total products in Smartphones category: ${productsInCategory}`);
     
     // Display category info
-    console.log(`\n📂 Category Details:`);
+    console.log('\n📂 Category Details:');
     console.log(`   ID: ${smartphonesCategory._id}`);
     console.log(`   Name: ${smartphonesCategory.name}`);
     console.log(`   Slug: ${smartphonesCategory.slug}`);

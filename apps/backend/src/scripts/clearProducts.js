@@ -19,7 +19,7 @@ const clearProducts = async () => {
     const productCount = await Product.countDocuments();
     const cartCount = await Cart.countDocuments();
     
-    console.log(`📊 Current database state:`);
+    console.log('📊 Current database state:');
     console.log(`   - Products: ${productCount}`);
     console.log(`   - Carts with items: ${cartCount}`);
 

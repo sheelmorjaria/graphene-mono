@@ -119,7 +119,7 @@ const addPixel9ProFoldProducts = async () => {
       }
     }
 
-    console.log(`\n🎉 Process completed!`);
+    console.log('\n🎉 Process completed!');
     console.log(`   ✅ Added: ${addedCount} products`);
     console.log(`   ⏭️  Skipped: ${skippedCount} products`);
 

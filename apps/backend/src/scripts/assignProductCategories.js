@@ -34,7 +34,7 @@ async function assignProductCategories() {
     }
 
     // Update all uncategorized products to be smartphones
-    console.log(`\\n🔄 Assigning all products to smartphones category...`);
+    console.log('\\n🔄 Assigning all products to smartphones category...');
     const updateResult = await Product.updateMany(
       { category: { $exists: false } },
       { $set: { category: smartphonesCategory._id } }

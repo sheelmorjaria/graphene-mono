@@ -6,8 +6,8 @@ const extractModelInfo = (name) => {
   if (!name) return null;
 
   const nameWithoutCondition = name
-    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "")
-    .replace(/\s*\[.*?\]$/, "");
+    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, '')
+    .replace(/\s*\[.*?\]$/, '');
   
   const foldMatch = nameWithoutCondition.match(
     /(?:Google\s+)?Pixel\s+Fold\s*(\d+GB)?\s*[,-]?\s*([^,]+)?/i
@@ -16,9 +16,9 @@ const extractModelInfo = (name) => {
   if (foldMatch) {
     const [_, storage, color] = foldMatch;
     return {
-      modelName: "Pixel Fold",
-      storage: storage || "256GB",
-      color: color ? color.trim() : "Unknown",
+      modelName: 'Pixel Fold',
+      storage: storage || '256GB',
+      color: color ? color.trim() : 'Unknown'
     };
   }
 
@@ -34,8 +34,8 @@ const extractModelInfo = (name) => {
     modelName += ` ${variant.trim()}`;
   }
 
-  let actualStorage = storage || ram || "128GB";
-  let actualColor = colorAndRest ? colorAndRest.trim() : "Unknown";
+  let actualStorage = storage || ram || '128GB';
+  let actualColor = colorAndRest ? colorAndRest.trim() : 'Unknown';
   
   // Check if color field contains storage info
   if (actualColor) {
@@ -51,14 +51,14 @@ const extractModelInfo = (name) => {
     }
   }
   
-  if (modelName.includes("7 Pro") && ram && storage) {
+  if (modelName.includes('7 Pro') && ram && storage) {
     actualStorage = storage;
   }
 
   return {
     modelName: modelName.trim(),
     storage: actualStorage,
-    color: actualColor,
+    color: actualColor
   };
 };
 
@@ -78,7 +78,7 @@ const testCases = [
   
   // Mixed scenarios
   'Google Pixel 9 Pro XL Obsidian 1TB A [Android Phones]',
-  'Google Pixel 7 Pro 256GB Snow C [Android Phones]',
+  'Google Pixel 7 Pro 256GB Snow C [Android Phones]'
 ];
 
 console.log('📋 Comprehensive Test Results:');

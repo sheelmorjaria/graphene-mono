@@ -136,14 +136,14 @@ const generateDataExport = async (requestId, userId, userEmail) => {
         shippingAddress: order.shippingAddress,
         billingAddress: order.billingAddress,
         paymentMethod: {
-          type: order.paymentMethod?.type,
+          type: order.paymentMethod?.type
           // Don't include sensitive payment data
         },
         createdAt: order.createdAt,
         updatedAt: order.updatedAt
       })),
       preferences: {
-        marketingOptIn: user.marketingOptIn,
+        marketingOptIn: user.marketingOptIn
         // Add other preferences as they're implemented
       },
       metadata: {

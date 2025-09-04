@@ -86,7 +86,7 @@ const removeCustomerUsers = async () => {
     // Verify final state
     const remainingUsers = await User.countDocuments();
     const remainingAdmins = await User.countDocuments({ role: 'admin' });
-    console.log(`\n📊 Final database state:`);
+    console.log('\n📊 Final database state:');
     console.log(`   - Total users remaining: ${remainingUsers}`);
     console.log(`   - Admin users: ${remainingAdmins}`);
     

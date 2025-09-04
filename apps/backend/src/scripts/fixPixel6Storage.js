@@ -33,16 +33,16 @@ async function fixPixel6Storage() {
       // Determine storage based on SKU pattern
       if (sku.includes('-256-')) {
         variation.storage = '256GB';
-        console.log(`  ✅ Setting storage to 256GB`);
+        console.log('  ✅ Setting storage to 256GB');
         updatedCount++;
       } else if (sku.includes('-128-')) {
         variation.storage = '128GB';
-        console.log(`  ✅ Setting storage to 128GB`);
+        console.log('  ✅ Setting storage to 128GB');
         updatedCount++;
       } else {
         // Default to 128GB for older variations without clear storage in SKU
         variation.storage = '128GB';
-        console.log(`  ✅ Setting storage to 128GB (default)`);
+        console.log('  ✅ Setting storage to 128GB (default)');
         updatedCount++;
       }
     });

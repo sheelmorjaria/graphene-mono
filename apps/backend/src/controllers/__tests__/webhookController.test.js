@@ -5,23 +5,23 @@ import { handleSESWebhook, handleUnsubscribe, getEmailPreferences, updateEmailPr
 const EmailPreference = vi.hoisted(() => ({
   findOne: vi.fn(),
   createDefaultPreferences: vi.fn(),
-  findByUnsubscribeToken: vi.fn(),
+  findByUnsubscribeToken: vi.fn()
 }));
 
 const User = vi.hoisted(() => ({
-  findOne: vi.fn(),
+  findOne: vi.fn()
 }));
 
 const EmailMetrics = vi.hoisted(() => ({
   findOne: vi.fn(),
-  countDocuments: vi.fn(),
+  countDocuments: vi.fn()
 }));
 
 const logger = vi.hoisted(() => ({
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-  debug: vi.fn(),
+  debug: vi.fn()
 }));
 
 vi.mock('../../models/EmailPreference.js', () => ({ default: EmailPreference }));

@@ -56,7 +56,7 @@ async function fixAllPixelStorage() {
         const storageOptions = product.getAvailableStorage();
         console.log(`  📊 Available storage: ${storageOptions.join(', ')}`);
       } else {
-        console.log(`  ✓ All variations already have storage set`);
+        console.log('  ✓ All variations already have storage set');
       }
     }
 

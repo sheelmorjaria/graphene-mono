@@ -72,7 +72,7 @@ class SimpleSNSSetup {
       console.log(`✅ Subscription created: ${response.SubscriptionArn}`);
       return response.SubscriptionArn;
     } catch (error) {
-      console.error(`❌ Failed to subscribe to topic:`, error.message);
+      console.error('❌ Failed to subscribe to topic:', error.message);
       throw error;
     }
   }
