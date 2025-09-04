@@ -86,7 +86,7 @@ const cleanupDatabase = async () => {
     console.log(`   - ${customerUsers} customer users`);
     console.log(`   - ${totalOrders} orders`);
     console.log(`   - £${totalRevenue.toFixed(2)} in revenue data`);
-    console.log(`   - All associated customer data`);
+    console.log('   - All associated customer data');
     console.log('\n   Admin users will be PRESERVED');
     console.log('='.repeat(60));
     console.log('\n   Press Ctrl+C to cancel, or wait 10 seconds to proceed...');

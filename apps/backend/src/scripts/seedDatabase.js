@@ -251,27 +251,27 @@ const seedDatabase = async () => {
           // Update existing product and ensure it has proper variations
           const stockQuantity = productData.stockQuantity || existingProduct.stockQuantity || Math.floor(Math.random() * 50) + 5;
           const stockStatus = stockQuantity === 0 ? 'out_of_stock' : 
-                            stockQuantity <= 10 ? 'low_stock' : 'in_stock';
+            stockQuantity <= 10 ? 'low_stock' : 'in_stock';
           
           // Ensure the product has variations structure
           const variations = existingProduct.variations && existingProduct.variations.length > 0 
             ? existingProduct.variations.map(v => ({
-                ...v.toObject(),
-                stockQuantity: stockQuantity,
-                stockStatus: stockStatus,
-                price: v.price || productData.price
-              }))
+              ...v.toObject(),
+              stockQuantity: stockQuantity,
+              stockStatus: stockStatus,
+              price: v.price || productData.price
+            }))
             : [{
-                condition: productData.condition || 'new',
-                color: productData.attributes?.find(attr => attr.name === 'Color')?.value || 'Default',
-                storage: productData.attributes?.find(attr => attr.name === 'Storage')?.value || '256GB',
-                price: productData.price,
-                salePrice: productData.salePrice || null,
-                stockQuantity: stockQuantity,
-                stockStatus: stockStatus,
-                sku: `${productData.name.replace(/[^A-Z0-9]/g, '').substring(0, 10)}-${Date.now()}`,
-                images: productData.images || []
-              }];
+              condition: productData.condition || 'new',
+              color: productData.attributes?.find(attr => attr.name === 'Color')?.value || 'Default',
+              storage: productData.attributes?.find(attr => attr.name === 'Storage')?.value || '256GB',
+              price: productData.price,
+              salePrice: productData.salePrice || null,
+              stockQuantity: stockQuantity,
+              stockStatus: stockStatus,
+              sku: `${productData.name.replace(/[^A-Z0-9]/g, '').substring(0, 10)}-${Date.now()}`,
+              images: productData.images || []
+            }];
 
           const updatedProduct = await Product.findByIdAndUpdate(
             existingProduct._id,
@@ -293,7 +293,7 @@ const seedDatabase = async () => {
           // Create new product with proper variations structure
           const stockQuantity = productData.stockQuantity || Math.floor(Math.random() * 50) + 5;
           const stockStatus = stockQuantity === 0 ? 'out_of_stock' : 
-                            stockQuantity <= 10 ? 'low_stock' : 'in_stock';
+            stockQuantity <= 10 ? 'low_stock' : 'in_stock';
           
           const newProductData = {
             ...productData,

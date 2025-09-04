@@ -59,7 +59,7 @@ const debugShippingDB = async () => {
       if (doc.criteria && doc.criteria.freeShippingThreshold) {
         console.log(`   ⚠️  STILL HAS THRESHOLD: ${doc.criteria.freeShippingThreshold}`);
       } else {
-        console.log(`   ✅ Threshold removed`);
+        console.log('   ✅ Threshold removed');
       }
     });
 

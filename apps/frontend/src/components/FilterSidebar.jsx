@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 const FilterSidebar = ({
-  categories,
-  selectedCategory,
+  _categories,
+  _selectedCategory,
   priceRange,
   selectedCondition,
-  onCategoryChange,
+  _onCategoryChange,
   onPriceRangeChange,
   onConditionChange,
   onClearFilters
@@ -184,18 +184,18 @@ const FilterSidebar = ({
 };
 
 FilterSidebar.propTypes = {
-  categories: PropTypes.arrayOf(PropTypes.shape({
+  _categories: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     slug: PropTypes.string.isRequired
   })),
-  selectedCategory: PropTypes.string,
+  _selectedCategory: PropTypes.string,
   priceRange: PropTypes.shape({
     min: PropTypes.string.isRequired,
     max: PropTypes.string.isRequired
   }).isRequired,
   selectedCondition: PropTypes.string.isRequired,
-  onCategoryChange: PropTypes.func,
+  _onCategoryChange: PropTypes.func,
   onPriceRangeChange: PropTypes.func.isRequired,
   onConditionChange: PropTypes.func.isRequired,
   onClearFilters: PropTypes.func.isRequired

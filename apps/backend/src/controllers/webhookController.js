@@ -453,55 +453,55 @@ export const handleSESWebhook = async (req, res) => {
       
       try {
         switch (notificationType) {
-          case 'Bounce':
-            await handleBounce(notification.bounce, mail);
-            break;
+        case 'Bounce':
+          await handleBounce(notification.bounce, mail);
+          break;
             
-          case 'Complaint':
-            await handleComplaint(notification.complaint, mail);
-            break;
+        case 'Complaint':
+          await handleComplaint(notification.complaint, mail);
+          break;
             
-          case 'Delivery':
-            await handleDelivery(notification.delivery, mail);
-            break;
+        case 'Delivery':
+          await handleDelivery(notification.delivery, mail);
+          break;
             
-          case 'Send':
-            // Log send events but don't process
-            logger.debug('Send event received:', { messageId: mail?.messageId });
-            break;
+        case 'Send':
+          // Log send events but don't process
+          logger.debug('Send event received:', { messageId: mail?.messageId });
+          break;
             
-          case 'Reject':
-            logger.error('Email rejected by SES:', {
-              reason: notification.reject?.reason,
-              messageId: mail?.messageId
-            });
-            break;
+        case 'Reject':
+          logger.error('Email rejected by SES:', {
+            reason: notification.reject?.reason,
+            messageId: mail?.messageId
+          });
+          break;
             
-          case 'Open':
-            // Track email opens if available
-            logger.debug('Email opened:', { messageId: mail?.messageId });
-            break;
+        case 'Open':
+          // Track email opens if available
+          logger.debug('Email opened:', { messageId: mail?.messageId });
+          break;
             
-          case 'Click':
-            // Track link clicks if available
-            logger.debug('Email link clicked:', { 
-              messageId: mail?.messageId,
-              link: notification.click?.link 
-            });
-            break;
+        case 'Click':
+          // Track link clicks if available
+          logger.debug('Email link clicked:', { 
+            messageId: mail?.messageId,
+            link: notification.click?.link 
+          });
+          break;
             
-          case 'Rendering Failure':
-            logger.error('Email rendering failure:', {
-              templateName: notification.failure?.templateName,
-              errorMessage: notification.failure?.errorMessage
-            });
-            break;
+        case 'Rendering Failure':
+          logger.error('Email rendering failure:', {
+            templateName: notification.failure?.templateName,
+            errorMessage: notification.failure?.errorMessage
+          });
+          break;
             
-          default:
-            logger.warn('Unknown notification type:', { 
-              notificationType,
-              messageId: mail?.messageId 
-            });
+        default:
+          logger.warn('Unknown notification type:', { 
+            notificationType,
+            messageId: mail?.messageId 
+          });
         }
         
         return res.status(200).json({ 

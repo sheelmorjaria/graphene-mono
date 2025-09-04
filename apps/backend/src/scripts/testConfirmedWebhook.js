@@ -32,7 +32,7 @@ const testConfirmedWebhook = async () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log(`   📄 Response:`, JSON.stringify(data, null, 2));
+        console.log('   📄 Response:', JSON.stringify(data, null, 2));
       } else {
         const errorText = await response.text();
         console.log(`   ❌ Error: ${errorText}`);

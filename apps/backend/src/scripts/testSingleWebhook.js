@@ -24,11 +24,11 @@ const testSingleWebhook = async () => {
     });
 
     console.log(`\n📊 Response Status: ${response.status}`);
-    console.log(`📊 Response Headers:`, Object.fromEntries(response.headers.entries()));
+    console.log('📊 Response Headers:', Object.fromEntries(response.headers.entries()));
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`📄 Response Body:`, JSON.stringify(data, null, 2));
+      console.log('📄 Response Body:', JSON.stringify(data, null, 2));
       console.log('\n✅ Webhook processed successfully!');
     } else {
       const errorText = await response.text();

@@ -37,12 +37,12 @@ async function testNavbarCategories() {
       const data = await response.json();
       
       if (data.success && data.data) {
-        console.log(`✅ Status: SUCCESS`);
+        console.log('✅ Status: SUCCESS');
         console.log(`📊 Products returned: ${data.data.length}`);
         console.log(`🏷️  Product names: ${data.data.map(p => p.name).join(', ')}`);
         console.log(`📝 ${test.expectedDescription}`);
       } else {
-        console.log(`❌ API response was not successful:`, data.message || 'Unknown error');
+        console.log('❌ API response was not successful:', data.message || 'Unknown error');
       }
       
     } catch (error) {

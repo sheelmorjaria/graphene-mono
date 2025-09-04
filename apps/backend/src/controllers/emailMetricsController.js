@@ -1,5 +1,5 @@
 import EmailMetrics from '../models/EmailMetrics.js';
-import logger, { logError } from '../utils/logger.js';
+import { logError } from '../utils/logger.js';
 
 // Get email delivery statistics
 export const getDeliveryStats = async (req, res) => {
@@ -225,9 +225,9 @@ export const getDashboardSummary = async (req, res) => {
           { status: 'complained' }
         ]
       })
-      .sort({ sentAt: -1 })
-      .limit(10)
-      .select('messageId emailType recipient subject status sentAt')
+        .sort({ sentAt: -1 })
+        .limit(10)
+        .select('messageId emailType recipient subject status sentAt')
     ]);
     
     res.status(200).json({

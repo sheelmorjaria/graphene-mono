@@ -81,7 +81,6 @@ describe('VariationSelector', () => {
     );
 
     // Out of stock variations should be disabled
-    const excellentBlackButton = screen.getByText('Black');
     // Note: We need to check the parent button element
     const blackButtons = screen.getAllByText('Black');
     

@@ -3,15 +3,12 @@ import { Link } from 'react-router-dom';
 
 const ProductCard = ({ product }) => {
   const {
-    id,
     _id,
     name,
     slug,
     shortDescription,
-    baseModel,
     priceRange,
     images,
-    variations,
     availableColors,
     availableConditions,
     availableStorage,
@@ -67,13 +64,6 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  // Capitalize first letter
-  const capitalize = (str) => {
-    if (!str || typeof str !== 'string') {
-      return '';
-    }
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
 
   const stockStatus_ = getStockStatusDisplay();
 

@@ -8,8 +8,8 @@ const testExtractModelInfo = () => {
 
     // Remove condition letter (A, B, or C) and category from the name for parsing
     const nameWithoutCondition = name
-      .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "") // Remove condition + optional category
-      .replace(/\s*\[.*?\]$/, ""); // Remove remaining category if any
+      .replace(/\s+[ABC](?:\s*\[.*?\])?$/, '') // Remove condition + optional category
+      .replace(/\s*\[.*?\]$/, ''); // Remove remaining category if any
     
     // Check for Pixel Fold specifically first
     const foldMatch = nameWithoutCondition.match(
@@ -19,9 +19,9 @@ const testExtractModelInfo = () => {
     if (foldMatch) {
       const [_, storage, color] = foldMatch;
       return {
-        modelName: "Pixel Fold",
-        storage: storage || "256GB", // Fold typically comes with 256GB
-        color: color ? color.trim() : "Unknown",
+        modelName: 'Pixel Fold',
+        storage: storage || '256GB', // Fold typically comes with 256GB
+        color: color ? color.trim() : 'Unknown'
       };
     }
 
@@ -41,17 +41,17 @@ const testExtractModelInfo = () => {
 
     // Handle RAM+ROM format: if we have both ram and storage, use storage
     // If we only have one value, treat it as storage (backward compatibility)
-    let actualStorage = storage || ram || "128GB";
+    let actualStorage = storage || ram || '128GB';
     
     // For Pixel 7 Pro specifically, ensure we're getting the ROM part, not RAM
-    if (modelName.includes("7 Pro") && ram && storage) {
+    if (modelName.includes('7 Pro') && ram && storage) {
       actualStorage = storage; // Use the second part (ROM) after the "+"
     }
 
     return {
       modelName: modelName.trim(),
       storage: actualStorage,
-      color: color ? color.trim() : "Unknown",
+      color: color ? color.trim() : 'Unknown'
     };
   };
 
@@ -68,7 +68,7 @@ const testExtractModelInfo = () => {
     
     // Other models for comparison
     'Google Pixel 6 128GB Sorta Sunny A [Android Phones]',
-    'Google Pixel Fold 256GB Obsidian A [Android Phones]',
+    'Google Pixel Fold 256GB Obsidian A [Android Phones]'
   ];
 
   console.log('📋 Test Results:');
@@ -80,7 +80,7 @@ const testExtractModelInfo = () => {
       console.log(`   💾 Storage: ${result.storage}`);
       console.log(`   🎨 Color: ${result.color}`);
     } else {
-      console.log(`   ❌ Failed to parse`);
+      console.log('   ❌ Failed to parse');
     }
   });
 

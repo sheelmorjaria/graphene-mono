@@ -31,7 +31,7 @@ const checkOrderStatus = async () => {
       return;
     }
 
-    console.log(`✅ Order found:`);
+    console.log('✅ Order found:');
     console.log(`   Order ID: ${order._id}`);
     console.log(`   Payment Status: ${order.paymentStatus}`);
     console.log(`   Order Status: ${order.status}`);

@@ -7,8 +7,8 @@ const extractModelInfo = (name) => {
 
   // Remove condition letter (A, B, or C) and category from the name for parsing
   const nameWithoutCondition = name
-    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "") // Remove condition + optional category
-    .replace(/\s*\[.*?\]$/, ""); // Remove remaining category if any
+    .replace(/\s+[ABC](?:\s*\[.*?\])?$/, '') // Remove condition + optional category
+    .replace(/\s*\[.*?\]$/, ''); // Remove remaining category if any
   
   // Check for Pixel Fold specifically first
   const foldMatch = nameWithoutCondition.match(
@@ -18,9 +18,9 @@ const extractModelInfo = (name) => {
   if (foldMatch) {
     const [_, storage, color] = foldMatch;
     return {
-      modelName: "Pixel Fold",
-      storage: storage || "256GB",
-      color: color ? color.trim() : "Unknown",
+      modelName: 'Pixel Fold',
+      storage: storage || '256GB',
+      color: color ? color.trim() : 'Unknown'
     };
   }
 
@@ -39,8 +39,8 @@ const extractModelInfo = (name) => {
   }
 
   // Handle storage that might be in the color field (e.g., "1TB Obsidian")
-  let actualStorage = storage || ram || "128GB";
-  let actualColor = colorAndRest ? colorAndRest.trim() : "Unknown";
+  let actualStorage = storage || ram || '128GB';
+  let actualColor = colorAndRest ? colorAndRest.trim() : 'Unknown';
   
   // Check if color field contains storage info (like "1TB Obsidian" or "Obsidian 1TB")
   if (actualColor) {
@@ -59,14 +59,14 @@ const extractModelInfo = (name) => {
   }
   
   // For Pixel 7 Pro specifically, ensure we're getting the ROM part, not RAM
-  if (modelName.includes("7 Pro") && ram && storage) {
+  if (modelName.includes('7 Pro') && ram && storage) {
     actualStorage = storage; // Use the second part (ROM) after the "+"
   }
 
   return {
     modelName: modelName.trim(),
     storage: actualStorage,
-    color: actualColor,
+    color: actualColor
   };
 };
 
@@ -82,7 +82,7 @@ const problematicCases = [
   
   // Or maybe it's getting confused with mixed formats
   'Google Pixel 9 Pro XL 12GB+1TB Obsidian A [Android Phones]',
-  'Google Pixel 9 Pro XL 256GB 1TB Obsidian B [Android Phones]',
+  'Google Pixel 9 Pro XL 256GB 1TB Obsidian B [Android Phones]'
 ];
 
 console.log('🔧 Testing Potential 1TB Cases:');
@@ -97,8 +97,8 @@ problematicCases.forEach((testCase, index) => {
     
     // Show the match breakdown for debugging
     const nameWithoutCondition = testCase
-      .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "")
-      .replace(/\s*\[.*?\]$/, "");
+      .replace(/\s+[ABC](?:\s*\[.*?\])?$/, '')
+      .replace(/\s*\[.*?\]$/, '');
     const match = nameWithoutCondition.match(
       /Google Pixel\s+(\d+a?)\s*(Pro\s*XL|Pro)?\s*(?:(\d+GB)\+)?(\d+GB)?\s+([^]+?)(?:\s+Unlocked)?$/i
     );

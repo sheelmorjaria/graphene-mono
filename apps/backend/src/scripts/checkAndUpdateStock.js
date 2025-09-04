@@ -23,7 +23,7 @@ const checkStock = async () => {
     console.log('\n=== Current Stock Levels ===');
     products.forEach(product => {
       const status = product.stockQuantity === 0 ? '❌ OUT OF STOCK' : 
-                    product.stockQuantity < 5 ? '⚠️  LOW STOCK' : '✅ IN STOCK';
+        product.stockQuantity < 5 ? '⚠️  LOW STOCK' : '✅ IN STOCK';
       console.log(`${product.name}: ${product.stockQuantity} units - ${status}`);
     });
 

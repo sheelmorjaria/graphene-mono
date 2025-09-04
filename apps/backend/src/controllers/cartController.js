@@ -166,7 +166,7 @@ export const addToCart = async (req, res) => {
     const cart = await findOrCreateCart(req, res);
 
     // Check if adding this quantity would exceed stock
-    const cartItemId = variationId ? `${productId}_${variationId}` : productId;
+    const _cartItemId = variationId ? `${productId}_${variationId}` : productId;
     const existingItem = cart.items.find(
       item => {
         if (variationId) {
