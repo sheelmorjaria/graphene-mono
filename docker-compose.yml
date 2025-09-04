@@ -1,5 +1,6 @@
 version: '3.8'
 
+# Web deployment - uses .env.web
 services:
   # MongoDB Database
   mongodb:

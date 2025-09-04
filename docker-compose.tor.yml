@@ -1,5 +1,6 @@
 version: '3.8'
 
+# Tor deployment - uses .env.tor
 services:
   # Tor Service - Provides onion addresses for frontend and backend
   tor:
