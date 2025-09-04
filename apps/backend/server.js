@@ -67,7 +67,12 @@ if (process.env.NODE_ENV !== 'test') {
 // CORS configuration (must be before rate limiting)
 const corsOptions = {
   credentials: true,
-  origin: true, // Temporarily allow all origins for debugging
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
+    /192\.168\.\d+\.\d+/
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-csrf-token']
 };
