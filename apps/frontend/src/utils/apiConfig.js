@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   
   // Production domain detection
   if (currentHost === 'graphene-security.com' || currentHost === 'www.graphene-security.com') {
-    return 'https://graphene-backend.onrender.com/api';
+    return 'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io/api';
   }
   
   // Localhost development
@@ -24,7 +24,7 @@ const getApiBaseUrl = () => {
   
   // Vercel preview deployments or other hosting
   if (currentHost.includes('vercel.app') || currentHost.includes('netlify.app')) {
-    return 'https://graphene-backend.onrender.com/api';
+    return 'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io/api';
   }
   
   // Default fallback
