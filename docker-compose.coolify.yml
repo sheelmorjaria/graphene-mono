@@ -49,6 +49,12 @@ services:
       dockerfile: ./apps/backend/Dockerfile.coolify
     container_name: graphene-backend
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.privacy-store.com`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=5000"
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 5000
@@ -98,6 +104,12 @@ services:
       dockerfile: ./apps/frontend/Dockerfile.coolify
     container_name: graphene-frontend
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`privacy-store.com`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       VITE_API_URL: ${VITE_API_URL:-http://backend:5000/api}
