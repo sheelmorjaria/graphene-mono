@@ -14,7 +14,12 @@ const getApiBaseUrl = () => {
   
   // Production domain detection
   if (currentHost === 'graphene-security.com' || currentHost === 'www.graphene-security.com') {
-    return 'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io/api';
+    return 'http://zsg8w00gsw8swso4gkgc4w44.84.45.134.166.sslip.io/api';
+  }
+  
+  // Coolify frontend deployment
+  if (currentHost === 'ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io') {
+    return 'http://zsg8w00gsw8swso4gkgc4w44.84.45.134.166.sslip.io/api';
   }
   
   // Localhost development
@@ -24,7 +29,7 @@ const getApiBaseUrl = () => {
   
   // Vercel preview deployments or other hosting
   if (currentHost.includes('vercel.app') || currentHost.includes('netlify.app')) {
-    return 'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io/api';
+    return 'http://zsg8w00gsw8swso4gkgc4w44.84.45.134.166.sslip.io/api';
   }
   
   // Default fallback
