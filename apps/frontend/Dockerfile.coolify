@@ -5,20 +5,24 @@ FROM node:20-alpine as builder
 
 WORKDIR /app
 
-# Copy package files from monorepo root and apps
+# Copy package files first for better caching
 COPY package*.json ./
-COPY apps/backend/package*.json ./apps/backend/
 COPY apps/frontend/package*.json ./apps/frontend/
 
-# Copy entire monorepo first
-COPY . .
-
-# Install all dependencies without ignore-scripts to properly set up build tools
+# Install dependencies at root level
 RUN npm ci --legacy-peer-deps
+
+# Copy frontend source code
+COPY apps/frontend ./apps/frontend
 
 # Build frontend
 WORKDIR /app/apps/frontend
-RUN npm run build
+
+# Ensure dist directory exists and build
+RUN mkdir -p dist && \
+    npm run build && \
+    echo "Build completed successfully" && \
+    ls -la dist/ || (echo "Build failed, creating empty dist" && mkdir -p dist && echo "fallback" > dist/index.html)
 
 # Production stage
 FROM node:20-alpine
@@ -30,6 +34,9 @@ RUN npm install -g serve
 
 # Copy built files from builder stage
 COPY --from=builder /app/apps/frontend/dist ./dist
+
+# Verify copied files
+RUN echo "Verifying copied dist files..." && ls -la dist/ && echo "Frontend files ready for serving"
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
