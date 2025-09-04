@@ -5,18 +5,17 @@ FROM node:20-alpine as builder
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package*.json ./
+# Copy frontend package files
 COPY apps/frontend/package*.json ./apps/frontend/
-
-# Install dependencies at root level
-RUN npm ci --legacy-peer-deps
 
 # Copy frontend source code
 COPY apps/frontend ./apps/frontend
 
 # Build frontend
 WORKDIR /app/apps/frontend
+
+# Install dependencies in frontend directory
+RUN npm ci --legacy-peer-deps
 
 # Ensure dist directory exists and build
 RUN mkdir -p dist && \
