@@ -55,6 +55,7 @@ describe('Products Controller Simple Unit Tests', () => {
       
       Product.find.mockReturnValue(mockQuery);
       Product.countDocuments.mockResolvedValue(1);
+      Category.findOne.mockResolvedValue(null); // No category filter in this test
 
       await getProducts(req, res);
 
@@ -121,6 +122,7 @@ describe('Products Controller Simple Unit Tests', () => {
       };
       Product.find.mockReturnValue(productQuery);
       Product.countDocuments.mockResolvedValue(0);
+      Category.findOne.mockResolvedValue(null); // No category filter in this test
 
       req.query = { minPrice: '100', maxPrice: '500' };
 
@@ -140,6 +142,7 @@ describe('Products Controller Simple Unit Tests', () => {
       };
       Product.find.mockReturnValue(productQuery);
       Product.countDocuments.mockResolvedValue(23); // 5 pages with limit 5
+      Category.findOne.mockResolvedValue(null); // No category filter in this test
 
       req.query = { page: '2', limit: '5' };
 

@@ -4,6 +4,7 @@ import * as paymentController from '../paymentController.js';
 import Cart from '../../models/Cart.js';
 import Product from '../../models/Product.js';
 import Order from '../../models/Order.js';
+import PaymentGateway from '../../models/PaymentGateway.js';
 import bitcoinService from '../../services/bitcoinService.js';
 import moneroService from '../../services/moneroService.js';
 import paypalService from '../../services/paypalService.js';
@@ -14,6 +15,7 @@ import { logError, logPaymentEvent } from '../../utils/logger.js';
 vi.mock('../../models/Cart.js');
 vi.mock('../../models/Product.js');
 vi.mock('../../models/Order.js');
+vi.mock('../../models/PaymentGateway.js');
 vi.mock('../../services/bitcoinService.js');
 vi.mock('../../services/moneroService.js');
 vi.mock('../../services/paypalService.js');
@@ -45,6 +47,23 @@ vi.mock('../../models/ShippingMethod.js', () => ({
 }));
 vi.mock('mongoose', async () => {
   const actual = await vi.importActual('mongoose');
+  
+  // Create a proper ObjectId constructor mock
+  const MockObjectId = vi.fn().mockImplementation((id) => {
+    const mockId = id || `mock-objectid-${Math.random().toString(36).substr(2, 9)}`;
+    return {
+      toString: () => mockId,
+      valueOf: () => mockId,
+      _id: mockId,
+      id: mockId,
+      toHexString: () => mockId
+    };
+  });
+  
+  // Add static methods to the constructor
+  MockObjectId.isValid = vi.fn().mockReturnValue(true);
+  MockObjectId.createFromHexString = vi.fn().mockImplementation((str) => new MockObjectId(str));
+  
   return {
     ...actual,
     default: {
@@ -52,6 +71,10 @@ vi.mock('mongoose', async () => {
       startSession: vi.fn(),
       connection: {
         readyState: 1
+      },
+      Types: {
+        ...actual.default.Types,
+        ObjectId: MockObjectId
       }
     }
   };
@@ -151,7 +174,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     };
 
     mockOrder = {
-      _id: 'order123',
+      _id: '507f1f77bcf86cd799439011',
       orderNumber: 'ORD001',
       userId: 'user123',
       totalAmount: 199.99,
@@ -170,6 +193,35 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
   });
 
   describe('getPaymentMethods', () => {
+    beforeEach(() => {
+      // Mock PaymentGateway.find to return expected gateways
+      PaymentGateway.find = vi.fn().mockReturnValue({
+        sort: vi.fn().mockResolvedValue([
+          {
+            provider: 'PayPal',
+            name: 'PayPal',
+            customerMessage: 'Pay with your PayPal account',
+            isEnabled: true,
+            isProperlyConfigured: vi.fn().mockReturnValue(true)
+          },
+          {
+            provider: 'Bitcoin',
+            name: 'Bitcoin',
+            customerMessage: 'Pay with Bitcoin - private and secure',
+            isEnabled: true,
+            isProperlyConfigured: vi.fn().mockReturnValue(true)
+          },
+          {
+            provider: 'Monero',
+            name: 'Monero',
+            customerMessage: 'Pay with Monero - private and untraceable',
+            isEnabled: true,
+            isProperlyConfigured: vi.fn().mockReturnValue(true)
+          }
+        ])
+      });
+    });
+
     it('should return all available payment methods', async () => {
       await paymentController.getPaymentMethods(req, res);
 
@@ -208,11 +260,14 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should handle errors gracefully', async () => {
       const error = new Error('Database error');
-      res.json.mockImplementationOnce(() => { throw error; });
+      // Mock PaymentGateway.find to throw an error
+      PaymentGateway.find = vi.fn().mockReturnValue({
+        sort: vi.fn().mockRejectedValue(error)
+      });
 
       await paymentController.getPaymentMethods(req, res);
 
-      expect(logError).toHaveBeenCalledWith(error, { context: 'paypal_payment_methods' });
+      expect(logError).toHaveBeenCalledWith(error, { context: 'payment_methods' });
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
@@ -273,7 +328,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
       // Mock order creation
       Order.prototype.save = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         orderNumber: 'ORD-123456',
         userId: 'user123',
         orderTotal: 200
@@ -407,12 +462,12 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
   describe('capturePayPalPayment', () => {
     beforeEach(() => {
-      req.body = { orderId: 'order123', paypalOrderId: 'paypal123' };
+      req.body = { orderId: '507f1f77bcf86cd799439011', paypalOrderId: 'paypal123' };
 
       Order.findById = vi.fn().mockReturnValue({
         session: vi.fn().mockReturnThis(),
         exec: vi.fn().mockResolvedValue({
-          _id: 'order123',
+          _id: '507f1f77bcf86cd799439011',
           userId: 'user123',
           paymentStatus: 'pending',
           paymentDetails: {},
@@ -441,6 +496,13 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     });
 
     it('should capture PayPal payment successfully', async () => {
+      // Set up the request with proper user context (authenticated user)
+      req.user = { 
+        _id: 'user123', 
+        email: 'user@example.com',
+        firstName: 'John',
+        lastName: 'Doe'
+      };
       // Mock the ordersController capture response
       mockOrdersController.ordersCapture.mockResolvedValue({
         result: {
@@ -478,22 +540,29 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
         }
       });
 
-      // Mock cart and order creation
-      Cart.findBySessionId.mockResolvedValue(mockCart);
+      // Mock cart - for authenticated user, controller uses findByUserId
+      Cart.findByUserId = vi.fn().mockResolvedValue(mockCart);
+      
+      // Mock the NEW order that will be created (not found)
       const mockNewOrder = {
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         orderNumber: 'ORD-NEW-001',
         save: vi.fn().mockResolvedValue(true)
       };
+      
+      // Mock Order constructor to return our mock
       Order.mockImplementation(() => mockNewOrder);
       Order.countDocuments.mockResolvedValue(100);
+      
+      // Mock the final findOne call that fetches the created order
       Order.findOne.mockReturnValue({
         lean: vi.fn().mockResolvedValue({
-          _id: 'order123',
+          _id: '507f1f77bcf86cd799439011',
           orderNumber: 'ORD-NEW-001'
         })
       });
       
+      // Mock cart clearCart method
       mockCart.clearCart = vi.fn().mockResolvedValue(true);
 
       await paymentController.capturePayPalPayment(req, res);
@@ -501,14 +570,14 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       expect(mockOrdersController.ordersCapture).toHaveBeenCalledWith({
         id: 'paypal123'
       });
-      expect(Cart.findBySessionId).toHaveBeenCalled();
-      expect(mockNewOrder.save).toHaveBeenCalled();
+      expect(Cart.findByUserId).toHaveBeenCalledWith('user123');
+      expect(mockNewOrder.save).toHaveBeenCalled(); // This is the NEW order being created
       expect(mockCart.clearCart).toHaveBeenCalled();
       
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
-          orderId: 'order123',
+          orderId: '507f1f77bcf86cd799439011',
           orderNumber: 'ORD-NEW-001',
           amount: 200,
           paymentMethod: 'paypal',
@@ -518,7 +587,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     });
 
     it('should validate required fields', async () => {
-      req.body = { orderId: 'order123' }; // Missing paypalOrderId
+      req.body = { orderId: '507f1f77bcf86cd799439011' }; // Missing paypalOrderId
 
       await paymentController.capturePayPalPayment(req, res);
 
@@ -614,10 +683,10 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
   describe('initializeBitcoinPayment', () => {
     beforeEach(() => {
-      req.body = { orderId: 'order123' };
+      req.body = { orderId: '507f1f77bcf86cd799439011' };
 
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         userId: 'user123',
         totalAmount: 199.99,
         paymentMethod: { type: 'bitcoin' },
@@ -639,7 +708,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     it('should create Bitcoin payment successfully', async () => {
       await paymentController.initializeBitcoinPayment(req, res);
 
-      expect(Order.findById).toHaveBeenCalledWith('order123');
+      expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(bitcoinService.createBitcoinPayment).toHaveBeenCalledWith(199.99);
       expect(logPaymentEvent).toHaveBeenCalledWith('bitcoin_payment_initialized', expect.any(Object));
 
@@ -669,7 +738,9 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Failed to initialize Bitcoin payment'
+        error: 'Failed to initialize Bitcoin payment',
+        details: 'Cast to ObjectId failed',
+        type: 'Error'
       });
     });
 
@@ -687,7 +758,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should handle wrong payment method', async () => {
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         userId: 'user123',
         paymentMethod: { type: 'paypal' },
         paymentStatus: 'completed' // Not pending
@@ -698,7 +769,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Order is not in pending payment state'
+        error: 'Order is not in pending payment state (current: completed)'
       });
     });
 
@@ -711,17 +782,19 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Failed to initialize Bitcoin payment'
+        error: 'Failed to initialize Bitcoin payment',
+        type: 'Error',
+        details: 'API error'
       });
     });
   });
 
   describe('getBitcoinPaymentStatus', () => {
     beforeEach(() => {
-      req.params = { orderId: 'order123' };
+      req.params = { orderId: '507f1f77bcf86cd799439011' };
 
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         orderNumber: 'ORD-123456',
         userId: 'user123',
         paymentStatus: 'awaiting_confirmation',
@@ -746,14 +819,14 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     it('should check Bitcoin payment status successfully', async () => {
       await paymentController.getBitcoinPaymentStatus(req, res);
 
-      expect(Order.findById).toHaveBeenCalledWith('order123');
+      expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(bitcoinService.isPaymentExpired).toHaveBeenCalled();
       expect(bitcoinService.isPaymentConfirmed).toHaveBeenCalledWith(2);
       
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
-          orderId: 'order123',
+          orderId: '507f1f77bcf86cd799439011',
           orderNumber: 'ORD-123456',
           paymentStatus: 'awaiting_confirmation',
           bitcoinAddress: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
@@ -771,7 +844,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should detect expired payments', async () => {
       const expiredOrder = {
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         orderNumber: 'ORD-123456',
         userId: 'user123',
         paymentStatus: 'awaiting_confirmation',
@@ -802,7 +875,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should handle insufficient confirmations', async () => {
       const orderWithLowConfirmations = {
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         orderNumber: 'ORD-123456',
         userId: 'user123',
         paymentStatus: 'awaiting_confirmation',
@@ -833,7 +906,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should handle no payment received', async () => {
       const orderWithNoPayment = {
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         orderNumber: 'ORD-123456',
         userId: 'user123',
         paymentStatus: 'awaiting_confirmation',
@@ -866,7 +939,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     let originalIsValid;
     
     beforeEach(() => {
-      req.body = { orderId: 'order123' };
+      req.body = { orderId: '507f1f77bcf86cd799439011' };
       
       // Save and mock ObjectId validation to accept our test ID
       originalIsValid = mongoose.Types.ObjectId.isValid;
@@ -874,7 +947,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
       // Mock for existing order path
       const mockOrder = {
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         userId: 'user123',
         totalAmount: 199.99,
         paymentMethod: { type: 'monero' },
@@ -916,6 +989,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       moneroService.createPaymentRequest = vi.fn().mockResolvedValue({
         paymentId: 'globee-123',
         address: '4AdUndXHHZ6cfufTMvppY6JwXNouMBzSkbLYfpAV5Usx3skxNgYeYTRJ5AmD5H3F',
+        amount: 1.234567, // Add the missing amount field
         paymentUrl: 'https://globee.com/payment/123',
         expirationTime: new Date(Date.now() + 86400000),
         requiredConfirmations: 10,
@@ -927,12 +1001,12 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       await paymentController.createMoneroPayment(req, res);
 
       // The function might call Order.findById twice due to the implementation
-      expect(Order.findById).toHaveBeenCalledWith('order123');
+      expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(moneroService.convertGbpToXmr).toHaveBeenCalledWith(199.99);
       expect(moneroService.createPaymentRequest).toHaveBeenCalledWith({
-        orderId: 'order123',
-        amount: 1.234567,
-        currency: 'XMR',
+        orderId: '507f1f77bcf86cd799439011',
+        amount: 199.99,
+        currency: 'GBP',
         customerEmail: 'test@example.com'
       });
       // Note: createMoneroPayment doesn't call logPaymentEvent for success cases
@@ -940,7 +1014,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
-          orderId: 'order123',
+          orderId: '507f1f77bcf86cd799439011',
           orderNumber: 'ORD-123456',
           moneroAddress: '4AdUndXHHZ6cfufTMvppY6JwXNouMBzSkbLYfpAV5Usx3skxNgYeYTRJ5AmD5H3F',
           xmrAmount: 1.234567,
@@ -960,7 +1034,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
       
       // Need to reset mocks for this specific test
       const mockOrderForNoSession = {
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         userId: 'user123',
         totalAmount: 199.99,
         paymentMethod: { type: 'monero' },
@@ -1034,10 +1108,10 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
   describe('checkMoneroPaymentStatus', () => {
     beforeEach(() => {
-      req.params = { orderId: 'order123' };
+      req.params = { orderId: '507f1f77bcf86cd799439011' };
 
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         paymentMethod: { type: 'monero' },
         paymentDetails: {
           globeePaymentId: 'globee-123',
@@ -1059,13 +1133,13 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     it('should check Monero payment status successfully', async () => {
       await paymentController.checkMoneroPaymentStatus(req, res);
 
-      expect(Order.findById).toHaveBeenCalledWith('order123');
+      expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(moneroService.getPaymentStatus).toHaveBeenCalledWith('globee-123');
       
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
-          orderId: 'order123',
+          orderId: '507f1f77bcf86cd799439011',
           paymentStatus: 'pending',
           confirmations: 5,
           paidAmount: 0.5,
@@ -1077,7 +1151,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should handle missing payment details', async () => {
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         paymentMethod: { type: 'monero' },
         paymentDetails: {} // No globeePaymentId
       });
@@ -1093,7 +1167,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
     it('should detect expired payments', async () => {
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         paymentMethod: { type: 'monero' },
         paymentDetails: {
           globeePaymentId: 'globee-123',
@@ -1121,11 +1195,11 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
         status: 'paid',
         confirmations: 12,
         paid_amount: 1.234567,
-        order_id: 'order123'
+        order_id: '507f1f77bcf86cd799439011'
       };
 
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         paymentDetails: {},
         paymentStatus: 'pending',
         save: vi.fn().mockResolvedValue(true)
@@ -1133,7 +1207,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
       moneroService.verifyWebhookSignature = vi.fn().mockReturnValue(true);
       moneroService.processWebhookNotification = vi.fn().mockReturnValue({
-        orderId: 'order123',
+        orderId: '507f1f77bcf86cd799439011',
         status: 'confirmed',
         confirmations: 12,
         paidAmount: 1.234567
@@ -1145,7 +1219,7 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
 
       expect(moneroService.verifyWebhookSignature).toHaveBeenCalled();
       expect(moneroService.processWebhookNotification).toHaveBeenCalledWith(req.body);
-      expect(Order.findById).toHaveBeenCalledWith('order123');
+      expect(Order.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(logPaymentEvent).toHaveBeenCalledWith('monero_payment_confirmed', expect.any(Object));
 
       expect(res.status).toHaveBeenCalledWith(200);
@@ -1193,13 +1267,13 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
         vi.clearAllMocks();
         
         moneroService.processWebhookNotification = vi.fn().mockReturnValue({
-          orderId: 'order123',
+          orderId: '507f1f77bcf86cd799439011',
           status: webhook,
           confirmations: 5
         });
 
         const order = {
-          _id: 'order123',
+          _id: '507f1f77bcf86cd799439011',
           paymentDetails: {},
           paymentStatus: 'pending',
           save: vi.fn().mockResolvedValue(true)
@@ -1248,14 +1322,14 @@ describe('Payment Controller - Comprehensive Unit Tests', () => {
     });
 
     it('should handle very large order amounts', async () => {
-      req.body = { orderId: 'order123' };
+      req.body = { orderId: '507f1f77bcf86cd799439011' };
       
       // Mock mongoose.Types.ObjectId.isValid to return true for valid format
       const originalIsValid = mongoose.Types.ObjectId.isValid;
       mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
       
       Order.findById = vi.fn().mockResolvedValue({
-        _id: 'order123',
+        _id: '507f1f77bcf86cd799439011',
         userId: 'user123',
         totalAmount: 999999999.99, // Very large amount - use correct field name
         paymentMethod: { type: 'bitcoin' },
