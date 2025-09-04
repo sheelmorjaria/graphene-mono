@@ -15,7 +15,8 @@ COPY apps/backend ./apps/backend
 WORKDIR /app/apps/backend
 
 # Install dependencies in backend directory
-RUN npm ci --legacy-peer-deps
+# Use npm install since package-lock.json may not exist in individual apps
+RUN npm install --legacy-peer-deps
 RUN npm run build || echo "Build step completed"
 
 # Install curl for healthcheck
