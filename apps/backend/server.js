@@ -70,7 +70,10 @@ const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'https://graphene-security.com',
+    'https://www.graphene-security.com',
     'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
+    'https://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
     /192\.168\.\d+\.\d+/
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
