@@ -10,11 +10,11 @@ COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
 COPY apps/frontend/package*.json ./apps/frontend/
 
-# Install all dependencies with legacy peer deps flag
-RUN npm ci --legacy-peer-deps --ignore-scripts
-
-# Copy entire monorepo (needed for shared dependencies)
+# Copy entire monorepo first (needed for shared dependencies)
 COPY . .
+
+# Install all dependencies without ignore-scripts
+RUN npm ci --legacy-peer-deps
 
 # Build backend
 WORKDIR /app/apps/backend
