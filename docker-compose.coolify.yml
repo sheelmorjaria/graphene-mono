@@ -51,8 +51,10 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.privacy-store.com`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.backend.rule=Host(`api.graphene-security.com`)"
+      - "traefik.http.routers.backend.entrypoints=http,https"
+      - "traefik.http.routers.backend.tls=true"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
     environment:
@@ -85,6 +87,7 @@ services:
       - backend-logs:/app/logs
     networks:
       - graphene-network
+      - coolify
     depends_on:
       mongodb:
         condition: service_healthy
@@ -106,8 +109,10 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`privacy-store.com`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.frontend.rule=Host(`graphene-security.com`) || Host(`www.graphene-security.com`)"
+      - "traefik.http.routers.frontend.entrypoints=http,https"
+      - "traefik.http.routers.frontend.tls=true"
       - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     environment:
@@ -119,6 +124,7 @@ services:
       - "${FRONTEND_PORT:-3000}:3000"
     networks:
       - graphene-network
+      - coolify
     depends_on:
       backend:
         condition: service_healthy
@@ -132,6 +138,8 @@ services:
 networks:
   graphene-network:
     driver: bridge
+  coolify:
+    external: true
 
 volumes:
   mongodb_data:
