@@ -60,22 +60,6 @@ const ProductDetailsPage = () => {
     }
   };
 
-  const getConditionBadgeClasses = (condition) => {
-    const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-    
-    switch (condition) {
-      case 'new':
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case 'excellent':
-        return `${baseClasses} bg-blue-100 text-blue-800`;
-      case 'good':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'fair':
-        return `${baseClasses} bg-orange-100 text-orange-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
-    }
-  };
 
   const formatPrice = (price) => {
     if (price === null || price === undefined || isNaN(price)) {
