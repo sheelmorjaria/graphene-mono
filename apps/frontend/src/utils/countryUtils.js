@@ -44,6 +44,6 @@ export const getCountryName = (code) => {
 
 // Convert country name to code (for backward compatibility)
 export const getCountryCode = (name) => {
-  const entry = Object.entries(COUNTRY_MAP).find(([_, countryName]) => countryName === name);
+  const entry = Object.entries(COUNTRY_MAP).find(([, countryName]) => countryName === name);
   return entry ? entry[0] : name;
 };

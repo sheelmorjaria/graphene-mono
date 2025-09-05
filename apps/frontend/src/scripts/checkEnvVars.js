@@ -8,7 +8,7 @@ console.log('PROD:', import.meta.env.PROD);
 console.log('All import.meta.env:', import.meta.env);
 
 // Check what the services are using
-import { getUserAddresses } from '../services/addressService.js';
+// import { getUserAddresses } from '../services/addressService.js';
 
 console.log('\n🔍 Service URL Check:');
 console.log('====================');

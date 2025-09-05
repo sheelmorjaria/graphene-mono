@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
@@ -66,7 +69,7 @@ export default defineConfig({
     mockReset: true,
     
     // Reporter configuration
-    reporter: process.env.CI ? ['junit', 'json'] : ['verbose']
+    reporter: globalThis.process?.env?.CI ? ['junit', 'json'] : ['verbose']
   },
   
   resolve: {

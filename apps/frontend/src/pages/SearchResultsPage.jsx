@@ -59,12 +59,14 @@ const SearchResultsPage = () => {
             options.sortBy = 'createdAt';
             options.sortOrder = 'asc';
             break;
-          default:
+          default: {
             // For any other format, try the old split method as fallback
             const [sortField, sortOrder] = sortBy.split('-');
             options.sortBy = sortField;
             options.sortOrder = sortOrder === 'low' ? 'asc' : 
                               sortOrder === 'high' ? 'desc' : sortOrder;
+            break;
+          }
         }
       }
 

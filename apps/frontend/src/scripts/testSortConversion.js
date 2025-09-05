@@ -13,7 +13,7 @@ const useProductsContent = readFileSync(join(__dirname, '../hooks/useProducts.js
 const convertSortParamsMatch = useProductsContent.match(/const convertSortParams = \(params\) => \{[\s\S]*?\n {2}\};/);
 if (!convertSortParamsMatch) {
   console.error('Could not extract convertSortParams function');
-  process.exit(1);
+  globalThis.process?.exit(1);
 }
 
 // Create a test function

@@ -116,10 +116,10 @@ describe('AdminReportsPage', () => {
     fireEvent.change(selectElement, { target: { value: 'daily' } });
     
     await waitFor(() => {
-      expect(adminService.getSalesReport).toHaveBeenCalledTimes(2);
-      expect(adminService.getProductPerformanceReport).toHaveBeenCalledTimes(2);
-      expect(adminService.getCustomerReport).toHaveBeenCalledTimes(2);
-      expect(adminService.getInventoryReport).toHaveBeenCalledTimes(2);
+      expect(getSalesReport).toHaveBeenCalledTimes(2);
+      expect(getProductPerformanceReport).toHaveBeenCalledTimes(2);
+      expect(getCustomerReport).toHaveBeenCalledTimes(2);
+      expect(getInventoryReport).toHaveBeenCalledTimes(2);
     });
   });
 
