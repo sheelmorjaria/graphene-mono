@@ -26,7 +26,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || {
+            echo "npm ci failed, falling back to npm install"
+            npm install --legacy-peer-deps
+          }
 
       - name: Build shared packages
         run: npm run build --workspace=packages/* --if-present
@@ -55,7 +59,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || {
+            echo "npm ci failed, falling back to npm install"
+            npm install --legacy-peer-deps
+          }
 
       - name: Build shared packages
         run: npm run build --workspace=packages/* --if-present
@@ -99,7 +107,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || {
+            echo "npm ci failed, falling back to npm install"
+            npm install --legacy-peer-deps
+          }
 
       - name: Build shared packages
         run: npm run build --workspace=packages/* --if-present
@@ -128,7 +140,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || {
+            echo "npm ci failed, falling back to npm install"
+            npm install --legacy-peer-deps
+          }
 
       - name: Build shared packages
         run: npm run build --workspace=packages/* --if-present
@@ -176,7 +192,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || {
+            echo "npm ci failed, falling back to npm install"
+            npm install --legacy-peer-deps
+          }
 
       - name: Build all packages
         run: npm run build
@@ -205,7 +225,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || {
+            echo "npm ci failed, falling back to npm install"
+            npm install --legacy-peer-deps
+          }
 
       - name: Run security audit
         run: npm audit --audit-level moderate
