@@ -33,7 +33,9 @@ jobs:
           }
 
       - name: Build shared packages
-        run: npm run build --workspace=packages/* --if-present
+        run: |
+          npm run build --workspace=@graphene-store/shared-types --if-present
+          npm run build --workspace=@graphene-store/shared-utils --if-present
 
       - name: Lint
         run: npm run lint --workspaces --if-present || true
@@ -66,7 +68,9 @@ jobs:
           }
 
       - name: Build shared packages
-        run: npm run build --workspace=packages/* --if-present
+        run: |
+          npm run build --workspace=@graphene-store/shared-types --if-present
+          npm run build --workspace=@graphene-store/shared-utils --if-present
 
       - name: Run unit tests
         run: npm run test:unit --workspace=@graphene-security/${{ matrix.workspace }} --if-present
@@ -114,7 +118,9 @@ jobs:
           }
 
       - name: Build shared packages
-        run: npm run build --workspace=packages/* --if-present
+        run: |
+          npm run build --workspace=@graphene-store/shared-types --if-present
+          npm run build --workspace=@graphene-store/shared-utils --if-present
 
       - name: Run integration tests
         run: npm run test:integration --workspace=@graphene-security/backend
@@ -147,7 +153,9 @@ jobs:
           }
 
       - name: Build shared packages
-        run: npm run build --workspace=packages/* --if-present
+        run: |
+          npm run build --workspace=@graphene-store/shared-types --if-present
+          npm run build --workspace=@graphene-store/shared-utils --if-present
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
