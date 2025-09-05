@@ -1,5 +1,5 @@
 # Frontend Dockerfile
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 WORKDIR /app
 
@@ -18,7 +18,8 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 # Build stage
 FROM base AS build
-ENV NODE_ENV=production
+# Don't set NODE_ENV to production yet, as we need devDependencies for building
+ENV NODE_ENV=development
 
 # Accept build arguments for Vite environment variables
 ARG VITE_API_URL
@@ -32,10 +33,12 @@ ENV VITE_PAYPAL_CLIENT_ID=${VITE_PAYPAL_CLIENT_ID}
 ENV VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
 ENV VITE_ENABLE_PAYPAL_PAYMENTS=${VITE_ENABLE_PAYPAL_PAYMENTS}
 
-# Install dependencies
+# Install all dependencies including devDependencies (needed for vite)
 RUN npm install --legacy-peer-deps
 # Copy application code
 COPY . .
+# Now set NODE_ENV to production for the build
+ENV NODE_ENV=production
 # Build the frontend app and verify output
 RUN npm run build && ls -la /app/dist
 
