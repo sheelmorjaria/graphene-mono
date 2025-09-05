@@ -24,18 +24,20 @@ ENV NODE_ENV=production
 ARG VITE_API_URL
 ARG VITE_PAYPAL_CLIENT_ID
 ARG VITE_ENVIRONMENT
+ARG VITE_ENABLE_PAYPAL_PAYMENTS
 
 # Set environment variables for the build
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_PAYPAL_CLIENT_ID=${VITE_PAYPAL_CLIENT_ID}
 ENV VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
+ENV VITE_ENABLE_PAYPAL_PAYMENTS=${VITE_ENABLE_PAYPAL_PAYMENTS}
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
 # Copy application code
 COPY . .
-# Build the frontend app
-RUN npm run build
+# Build the frontend app and verify output
+RUN npm run build && ls -la /app/dist
 
 # Production stage with nginx
 FROM nginx:alpine AS production
