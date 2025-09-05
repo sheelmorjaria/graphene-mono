@@ -43,7 +43,7 @@ const VerifyEmail = () => {
           setStatus('error');
           setMessage(data.error || 'Verification failed');
         }
-      } catch (error) {
+      } catch {
         setStatus('error');
         setMessage(
           'An error occurred during verification. The link may be expired or invalid.'

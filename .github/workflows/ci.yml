@@ -38,7 +38,7 @@ jobs:
           npm run build --workspace=@graphene-store/shared-utils --if-present
 
       - name: Lint
-        run: npm run lint --workspaces --if-present || true
+        run: npm run lint --workspaces --if-present || echo "⚠️ Lint issues found but not blocking CI"
 
       - name: Type check
         run: npm run type-check --workspaces --if-present
@@ -73,7 +73,10 @@ jobs:
           npm run build --workspace=@graphene-store/shared-utils --if-present
 
       - name: Run unit tests
-        run: npm run test:unit --workspace=@graphene-security/${{ matrix.workspace }} --if-present
+        run: |
+          # Ensure Vitest dependencies are available
+          npm install @vitest/utils --workspace=@graphene-security/${{ matrix.workspace }} --if-present || true
+          npm run test:unit --workspace=@graphene-security/${{ matrix.workspace }} --if-present
 
       - name: Upload coverage
         if: matrix.workspace == 'backend'

@@ -261,9 +261,9 @@ describe('Privacy Service', () => {
   });
 
   describe('API Configuration', () => {
-    it('should create axios instance with correct configuration', () => {
+    it('should create axios instance with correct configuration', async () => {
       // Import the service to trigger axios.create
-      require('../privacyService');
+      await import('../privacyService');
 
       expect(axios.create).toHaveBeenCalledWith({
         baseURL: expect.stringContaining('/api'),
@@ -274,7 +274,7 @@ describe('Privacy Service', () => {
       });
     });
 
-    it('should include authorization header when token is available', () => {
+    it('should include authorization header when token is available', async () => {
       // Mock localStorage
       const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test';
       Object.defineProperty(window, 'localStorage', {
@@ -286,7 +286,7 @@ describe('Privacy Service', () => {
 
       // Re-import to trigger the service initialization
       vi.resetModules();
-      require('../privacyService');
+      await import('../privacyService');
 
       // The service should set up an interceptor that adds the Authorization header
       expect(axios.create).toHaveBeenCalled();
