@@ -40,9 +40,9 @@ FROM nginx:alpine AS production
 # Install tini for proper signal handling
 RUN apk add --no-cache tini
 
-# Create nginx user and group
-RUN addgroup -g 1001 -S nginx && \
-    adduser -S nginx -u 1001
+# The nginx:alpine image already includes nginx user and group
+# We just need to ensure consistent UID/GID if needed
+# Note: nginx user already exists in the base image
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
