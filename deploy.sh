@@ -162,7 +162,12 @@ if [ "$DEPLOYMENT_TYPE" == "web" ]; then
     
     # Validate Docker Compose file
     echo "🔍 Validating docker-compose.yml..."
-    if docker-compose -f docker-compose.yml config > /dev/null 2>&1; then
+    # Try docker compose v2 first, then fall back to docker-compose v1
+    if docker compose -f docker-compose.yml config > /dev/null 2>&1; then
+        echo "✅ Docker Compose configuration is valid!"
+        docker compose -f docker-compose.yml up -d
+        echo "✅ Web deployment complete"
+    elif docker-compose -f docker-compose.yml config > /dev/null 2>&1; then
         echo "✅ Docker Compose configuration is valid!"
         docker-compose -f docker-compose.yml up -d
         echo "✅ Web deployment complete"
@@ -183,7 +188,13 @@ elif [ "$DEPLOYMENT_TYPE" == "tor" ]; then
     
     # Validate Docker Compose file
     echo "🔍 Validating docker-compose.tor.yml..."
-    if docker-compose -f docker-compose.tor.yml config > /dev/null 2>&1; then
+    # Try docker compose v2 first, then fall back to docker-compose v1
+    if docker compose -f docker-compose.tor.yml config > /dev/null 2>&1; then
+        echo "✅ Docker Compose configuration is valid!"
+        docker compose -f docker-compose.tor.yml up -d
+        echo "✅ Tor deployment complete"
+        echo "📝 Check tor_keys volume for your .onion addresses"
+    elif docker-compose -f docker-compose.tor.yml config > /dev/null 2>&1; then
         echo "✅ Docker Compose configuration is valid!"
         docker-compose -f docker-compose.tor.yml up -d
         echo "✅ Tor deployment complete"
