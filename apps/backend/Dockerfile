@@ -1,5 +1,5 @@
 # Backend Dockerfile
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies for bcrypt and other native modules
 RUN apk add --no-cache python3 make g++
@@ -14,8 +14,8 @@ COPY package.json ./
 # Development stage
 FROM base AS dev
 ENV NODE_ENV=development
-# Use npm install instead of npm ci for monorepo workspace
-RUN npm install
+# Use npm install with legacy peer deps for monorepo workspace
+RUN npm install --legacy-peer-deps
 COPY . .
 EXPOSE 5000
 CMD ["npm", "run", "dev"]
@@ -23,20 +23,20 @@ CMD ["npm", "run", "dev"]
 # Production dependencies stage
 FROM base AS prod-deps
 ENV NODE_ENV=production
-# Use npm install instead of npm ci for monorepo workspace
-RUN npm install --only=production
+# Use npm install with legacy peer deps for monorepo workspace
+RUN npm install --only=production --legacy-peer-deps
 
 # Build stage
 FROM base AS build
 ENV NODE_ENV=production
-# Use npm install instead of npm ci for monorepo workspace
-RUN npm install
+# Use npm install with legacy peer deps for monorepo workspace
+RUN npm install --legacy-peer-deps
 COPY . .
 # If you have a build step, uncomment the next line
 # RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 RUN apk add --no-cache tini
 WORKDIR /app
 
@@ -69,7 +69,7 @@ ENTRYPOINT ["/sbin/tini", "--"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
+  CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
 
 # Start the application
 CMD ["node", "server.js"]
