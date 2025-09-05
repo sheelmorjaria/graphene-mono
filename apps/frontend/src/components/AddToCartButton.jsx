@@ -5,7 +5,6 @@ const AddToCartButton = ({
   productId,
   variationId = null,
   stockStatus,
-  _stockQuantity = 0,
   onAddToCart,
   disabled = false,
   isLoading = false,
