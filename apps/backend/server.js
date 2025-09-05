@@ -239,13 +239,42 @@ if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// Simple health check endpoint (before database connection)
+app.get('/health/simple', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
+
 // Start server
 if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
-      logger.info(`Server running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('🚀 Starting GrapheneOS Backend Server...');
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Port: ${PORT}`);
+  console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'configured' : 'not configured'}`);
+  
+  // Start server first, then connect to database
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Connect to database after server is running
+    connectDB().catch((error) => {
+      console.error('❌ Database connection failed:', error.message);
+      logger.error('Database connection failed during startup');
+      // Don't exit - let health check handle this
     });
+  });
+
+  server.on('error', (error) => {
+    console.error('❌ Server failed to start:', error.message);
+    logger.error('Server startup error:', error);
+    process.exit(1);
   });
 }
 
