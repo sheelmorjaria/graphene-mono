@@ -72,8 +72,8 @@ describe('App Routing', () => {
   it('should have navigation links in header', () => {
     renderWithRouter(['/']);
     
-    expect(screen.getByRole('link', { name: /grapheneos store/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /products/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /graphene security/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /all products/i })).toBeInTheDocument();
   });
 
   it('should navigate between routes correctly', async () => {

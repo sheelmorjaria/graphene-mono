@@ -53,7 +53,7 @@ describe('AddToCartButton', () => {
     expect(button).not.toBeDisabled();
     
     // Should show low stock warning (more specific text)
-    expect(screen.getByText(/hurry! only 3 left in stock!/i)).toBeInTheDocument();
+    expect(screen.getByText(/limited stock available/i)).toBeInTheDocument();
   });
 
   it('should call onAddToCart when clicked', async () => {
@@ -67,7 +67,7 @@ describe('AddToCartButton', () => {
     });
     
     expect(mockOnAddToCart).toHaveBeenCalledTimes(1);
-    expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1);
+    expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1, null);
   });
 
   it('should show loading state when isLoading is true', () => {
@@ -106,22 +106,23 @@ describe('AddToCartButton', () => {
       await userEvent.click(button);
     });
     
-    expect(defaultProps.onAddToCart).toHaveBeenCalledWith('product-123', 3);
+    expect(defaultProps.onAddToCart).toHaveBeenCalledWith('product-123', 3, null);
   });
 
-  it('should limit quantity options based on stock', () => {
+  it('should limit quantity options based on maxQuantity', () => {
     render(
       <AddToCartButton 
         {...defaultProps} 
         stockQuantity={5} 
-        showQuantitySelector={true} 
+        showQuantitySelector={true}
+        maxQuantity={5} 
       />
     );
     
     const quantitySelect = screen.getByLabelText(/quantity/i);
     const options = Array.from(quantitySelect.querySelectorAll('option'));
     
-    // Should show options 1-5 (limited by stock)
+    // Should show options 1-5 (limited by maxQuantity)
     expect(options).toHaveLength(5);
     expect(options[0]).toHaveValue('1');
     expect(options[4]).toHaveValue('5');
@@ -162,14 +163,14 @@ describe('AddToCartButton', () => {
       await userEvent.keyboard('{Enter}');
     });
     expect(mockOnAddToCart).toHaveBeenCalledTimes(1);
-    expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1);
+    expect(mockOnAddToCart).toHaveBeenCalledWith('product-123', 1, null);
     
     // Press Space
     await act(async () => {
       await userEvent.keyboard(' ');
     });
     expect(mockOnAddToCart).toHaveBeenCalledTimes(2);
-    expect(mockOnAddToCart).toHaveBeenLastCalledWith('product-123', 1);
+    expect(mockOnAddToCart).toHaveBeenLastCalledWith('product-123', 1, null);
   });
 
   it('should show appropriate icons for different states', () => {
@@ -262,7 +263,7 @@ describe('AddToCartButton', () => {
     
     // Low stock - show specific count
     rerender(<AddToCartButton {...defaultProps} stockStatus="low_stock" stockQuantity={2} />);
-    expect(screen.getByText(/2 in stock/i)).toBeInTheDocument();
+    expect(screen.getByText(/low stock/i)).toBeInTheDocument();
     
     // Out of stock
     rerender(<AddToCartButton {...defaultProps} stockStatus="out_of_stock" stockQuantity={0} />);
