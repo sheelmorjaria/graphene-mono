@@ -138,6 +138,7 @@ services:
         VITE_API_URL: ${TOR_BACKEND_URL:-http://backend:5000}
         VITE_PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
         VITE_ENVIRONMENT: production
+        VITE_ENABLE_PAYPAL_PAYMENTS: "false"
         VITE_ENABLE_TOR: "true"
         VITE_DISABLE_ANALYTICS: "true"
     container_name: graphene-frontend
