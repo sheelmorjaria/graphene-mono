@@ -7,8 +7,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.security.js'],
     pool: 'threads',
-    testTimeout: 30000,
-    hookTimeout: 15000,
+    testTimeout: 15000,
+    hookTimeout: 10000,
     name: 'security',
     include: [
       'src/**/*.security.test.js',
