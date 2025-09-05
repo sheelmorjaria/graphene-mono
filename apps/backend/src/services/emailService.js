@@ -1387,3 +1387,5 @@ export const sendWelcomeEmail = emailService.sendWelcomeEmail.bind(emailService)
 export const sendDataExportEmail = emailService.sendDataExportEmail.bind(emailService);
 export const sendAccountDeletionConfirmationEmail = emailService.sendAccountDeletionConfirmationEmail.bind(emailService);
 export const sendAccountDeletionCompletedEmail = emailService.sendAccountDeletionCompletedEmail.bind(emailService);
+export const sendAccountDisabledEmail = emailService.sendAccountDisabledEmail.bind(emailService);
+export const sendAccountReEnabledEmail = emailService.sendAccountReEnabledEmail.bind(emailService);
