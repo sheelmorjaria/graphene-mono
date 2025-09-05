@@ -1,12 +1,22 @@
 #!/bin/bash
 
 # Deployment script for GrapheneOS Store
-# Usage: ./deploy.sh [web|tor] [--generate-secrets]
+# Usage: ./deploy.sh [web|tor] [--generate-secrets] [--verbose]
 
 set -e
 
 DEPLOYMENT_TYPE=${1:-web}
 GENERATE_SECRETS=${2:-""}
+VERBOSE=${3:-""}
+
+# Check for verbose flag in any position
+for arg in "$@"; do
+  if [[ "$arg" == "--verbose" || "$arg" == "-v" ]]; then
+    VERBOSE="--verbose"
+    set -x  # Enable bash debug mode
+    break
+  fi
+done
 
 echo "🚀 GrapheneOS Store - Deployment Script"
 echo "======================================"
@@ -165,11 +175,31 @@ if [ "$DEPLOYMENT_TYPE" == "web" ]; then
     # Try docker compose v2 first, then fall back to docker-compose v1
     if docker compose -f docker-compose.yml config > /dev/null 2>&1; then
         echo "✅ Docker Compose configuration is valid!"
-        docker compose -f docker-compose.yml up -d
+        
+        if [[ "$VERBOSE" == "--verbose" ]]; then
+            echo "🐳 Starting containers with verbose output..."
+            docker compose -f docker-compose.yml up -d --build
+            echo "📊 Container status after startup:"
+            docker compose -f docker-compose.yml ps
+            echo "📋 Backend container logs (last 20 lines):"
+            docker compose -f docker-compose.yml logs --tail=20 backend
+        else
+            docker compose -f docker-compose.yml up -d
+        fi
         echo "✅ Web deployment complete"
     elif docker-compose -f docker-compose.yml config > /dev/null 2>&1; then
         echo "✅ Docker Compose configuration is valid!"
-        docker-compose -f docker-compose.yml up -d
+        
+        if [[ "$VERBOSE" == "--verbose" ]]; then
+            echo "🐳 Starting containers with verbose output..."
+            docker-compose -f docker-compose.yml up -d --build
+            echo "📊 Container status after startup:"
+            docker-compose -f docker-compose.yml ps
+            echo "📋 Backend container logs (last 20 lines):"
+            docker-compose -f docker-compose.yml logs --tail=20 backend
+        else
+            docker-compose -f docker-compose.yml up -d
+        fi
         echo "✅ Web deployment complete"
     else
         echo "❌ Docker Compose configuration is invalid!"
@@ -191,12 +221,44 @@ elif [ "$DEPLOYMENT_TYPE" == "tor" ]; then
     # Try docker compose v2 first, then fall back to docker-compose v1
     if docker compose -f docker-compose.tor.yml config > /dev/null 2>&1; then
         echo "✅ Docker Compose configuration is valid!"
-        docker compose -f docker-compose.tor.yml up -d
+        
+        if [[ "$VERBOSE" == "--verbose" ]]; then
+            echo "🐳 Starting Tor containers with verbose output..."
+            docker compose -f docker-compose.tor.yml up -d --build
+            echo "⏳ Waiting 10 seconds for containers to initialize..."
+            sleep 10
+            echo "📊 Container status after startup:"
+            docker compose -f docker-compose.tor.yml ps
+            echo "📋 Backend container logs (last 30 lines):"
+            docker compose -f docker-compose.tor.yml logs --tail=30 backend
+            echo "📋 MongoDB container logs (last 10 lines):"
+            docker compose -f docker-compose.tor.yml logs --tail=10 mongodb
+            echo "🩺 Backend health check test:"
+            docker compose -f docker-compose.tor.yml exec -T backend curl -f http://localhost:5000/health/simple || echo "❌ Health check failed"
+        else
+            docker compose -f docker-compose.tor.yml up -d
+        fi
         echo "✅ Tor deployment complete"
         echo "📝 Check tor_keys volume for your .onion addresses"
     elif docker-compose -f docker-compose.tor.yml config > /dev/null 2>&1; then
         echo "✅ Docker Compose configuration is valid!"
-        docker-compose -f docker-compose.tor.yml up -d
+        
+        if [[ "$VERBOSE" == "--verbose" ]]; then
+            echo "🐳 Starting Tor containers with verbose output..."
+            docker-compose -f docker-compose.tor.yml up -d --build
+            echo "⏳ Waiting 10 seconds for containers to initialize..."
+            sleep 10
+            echo "📊 Container status after startup:"
+            docker-compose -f docker-compose.tor.yml ps
+            echo "📋 Backend container logs (last 30 lines):"
+            docker-compose -f docker-compose.tor.yml logs --tail=30 backend
+            echo "📋 MongoDB container logs (last 10 lines):"
+            docker-compose -f docker-compose.tor.yml logs --tail=10 mongodb
+            echo "🩺 Backend health check test:"
+            docker-compose -f docker-compose.tor.yml exec -T backend curl -f http://localhost:5000/health/simple || echo "❌ Health check failed"
+        else
+            docker-compose -f docker-compose.tor.yml up -d
+        fi
         echo "✅ Tor deployment complete"
         echo "📝 Check tor_keys volume for your .onion addresses"
     else
@@ -206,7 +268,12 @@ elif [ "$DEPLOYMENT_TYPE" == "tor" ]; then
     
 else
     echo "❌ Invalid deployment type. Use 'web' or 'tor'"
-    echo "Usage: ./deploy.sh [web|tor] [--generate-secrets]"
+    echo "Usage: ./deploy.sh [web|tor] [--generate-secrets] [--verbose|-v]"
+    echo ""
+    echo "Options:"
+    echo "  web|tor           - Deployment type"
+    echo "  --generate-secrets - Generate new environment files with secure secrets"
+    echo "  --verbose, -v     - Show detailed output including container logs and status"
     exit 1
 fi
 
