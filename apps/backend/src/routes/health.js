@@ -6,11 +6,11 @@ const router = express.Router();
 router.get('/', (req, res) => {
   try {
     res.status(200).json({
-      status: 'healthy',
+      status: 'OK',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'unknown',
-      port: process.env.PORT || 5000,
+      environment: process.env.NODE_ENV || 'development',
       uptime: process.uptime(),
+      message: 'Server is running',
       memory: process.memoryUsage()
     });
   } catch (error) {
@@ -20,6 +20,17 @@ router.get('/', (req, res) => {
       timestamp: new Date().toISOString()
     });
   }
+});
+
+// Simple health check endpoint (for load balancers)
+router.get('/simple', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
 });
 
 // Simple ping endpoint
