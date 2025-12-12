@@ -27,8 +27,21 @@ const getApiBaseUrl = () => {
     return 'http://localhost:5000/api';
   }
   
+  // Coolify deployments
+  if (currentHost.includes('coolify.app') || currentHost.includes('coolify.io')) {
+    // Try to detect backend URL from frontend URL pattern
+    // Frontend: graphene-frontend-coolify-app.coolify.app
+    // Backend:  graphene-backend-coolify-app.coolify.app
+    const backendHost = currentHost.replace('frontend', 'backend');
+    return `https://${backendHost}/api`;
+  }
+
   // Vercel preview deployments or other hosting
   if (currentHost.includes('vercel.app') || currentHost.includes('netlify.app')) {
+    // Try environment variable first for these platforms
+    if (envApiUrl && envApiUrl !== '/api') {
+      return envApiUrl;
+    }
     return 'https://api.graphene-security.com/api';
   }
   

@@ -19,7 +19,7 @@ WORKDIR /app/apps/frontend
 RUN npm install --legacy-peer-deps
 
 # Set build-time environment variables for Vite
-ARG VITE_API_BASE_URL=https://api.graphene-security.com/api
+ARG VITE_API_BASE_URL
 ARG VITE_APP_TITLE="GrapheneOS Store"
 ARG VITE_COMPANY_NAME="Graphene Security"
 ARG VITE_ENABLE_PAYPAL_PAYMENTS=true
