@@ -129,6 +129,27 @@ app.use('/uploads', express.static('uploads', {
   }
 }));
 
+// Health check endpoints (accessible before API routes)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
+
+app.get('/health/simple', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -178,27 +199,5 @@ if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
-
-// Health check endpoint (before database connection)
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    uptime: process.uptime(),
-    message: 'Server is running'
-  });
-});
-
-// Simple health check endpoint (before database connection)
-app.get('/health/simple', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    uptime: process.uptime(),
-    message: 'Server is running'
-  });
-});
 
 export default app;
