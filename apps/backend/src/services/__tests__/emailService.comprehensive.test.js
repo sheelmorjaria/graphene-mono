@@ -119,12 +119,20 @@ describe('Email Service - Comprehensive Tests', () => {
 
   describe('Support and Communication Emails', () => {
     const mockContactRequest = {
-      from: 'customer@example.com',
-      customerName: 'Test Customer',
-      subject: 'Product Inquiry',
+      fullName: 'Test Customer',
+      email: 'customer@example.com',
+      subject: 'product-question',
       message: 'I have a question about GrapheneOS compatibility.',
+      submittedAt: new Date(),
       orderNumber: 'ORD-001'
     };
+
+    beforeEach(() => {
+      // Set required environment variables for support emails
+      process.env.SUPPORT_EMAIL = 'support@graphene-security.com';
+      process.env.FROM_EMAIL = 'noreply@graphene-security.com';
+      process.env.FROM_NAME = 'Graphene Security';
+    });
 
     it('should send support request email', async () => {
       const result = await emailService.sendSupportRequestEmail(mockContactRequest);
@@ -141,7 +149,7 @@ describe('Email Service - Comprehensive Tests', () => {
     it('should handle support request without order number', async () => {
       const requestWithoutOrder = { ...mockContactRequest };
       delete requestWithoutOrder.orderNumber;
-      
+
       const result = await emailService.sendSupportRequestEmail(requestWithoutOrder);
       expect(result.success).toBe(true);
       expect(result.messageId).toBeDefined();

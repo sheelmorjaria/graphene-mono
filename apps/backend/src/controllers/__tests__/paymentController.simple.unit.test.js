@@ -289,10 +289,12 @@ describe('Payment Controller - Simple Coverage Tests', () => {
     it('should export all required functions', () => {
       const expectedExports = [
         'getPaymentMethods',
-        'createPayPalOrder', 
+        'createPayPalOrder',
         'capturePayPalPayment',
+        'handlePayPalWebhook',
         'initializeBitcoinPayment',
         'getBitcoinPaymentStatus',
+        'handleBlockonomicsWebhook',
         'createMoneroPayment',
         'checkMoneroPaymentStatus',
         'handleMoneroWebhook'
@@ -306,8 +308,8 @@ describe('Payment Controller - Simple Coverage Tests', () => {
     
     it('should not export unexpected functions', () => {
       const exportedKeys = Object.keys(paymentController);
-      const expectedCount = 8; // Number of expected exported functions
-      
+      const expectedCount = 10; // Number of expected exported functions
+
       // Should not have significantly more exports than expected
       expect(exportedKeys.length).toBeLessThanOrEqual(expectedCount + 2);
     });

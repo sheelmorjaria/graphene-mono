@@ -29,18 +29,36 @@ describe('Products Controller Simple Unit Tests', () => {
 
   describe('getProducts', () => {
     it('should return products successfully with default pagination', async () => {
-      // Mock product data
+      // Mock product data with variations as expected by controller
       const mockProducts = [{
         _id: 'product1',
         name: 'iPhone 14',
         slug: 'iphone-14',
         shortDescription: 'Latest iPhone',
-        price: 999,
+        baseModel: 'iPhone 14',
         images: ['image1.jpg'],
-        condition: 'new',
-        stockStatus: 'in-stock',
         category: { name: 'Smartphones', slug: 'smartphones' },
-        createdAt: new Date('2023-01-01')
+        createdAt: new Date('2023-01-01'),
+        variations: [{
+          _id: 'var1',
+          condition: 'new',
+          color: 'black',
+          storage: '128gb',
+          price: 999,
+          salePrice: null,
+          stockStatus: 'in-stock',
+          stockQuantity: 10,
+          sku: 'IP14-128-BLK',
+          images: ['image1.jpg']
+        }],
+        // Mock methods expected by controller
+        getPriceRange: vi.fn().mockReturnValue({ min: 999, max: 999 }),
+        getAvailableColors: vi.fn().mockReturnValue(['black']),
+        getAvailableConditions: vi.fn().mockReturnValue(['new']),
+        getAvailableStorage: vi.fn().mockReturnValue(['128gb']),
+        getAvailableCapacities: vi.fn().mockReturnValue([]),
+        getAvailableInterfaces: vi.fn().mockReturnValue([]),
+        isInStock: vi.fn().mockReturnValue(true)
       }];
 
       // Set up mongoose query chain mock
@@ -52,7 +70,7 @@ describe('Products Controller Simple Unit Tests', () => {
         select: vi.fn().mockReturnThis(),
         exec: vi.fn().mockResolvedValue(mockProducts)
       };
-      
+
       Product.find.mockReturnValue(mockQuery);
       Product.countDocuments.mockResolvedValue(1);
       Category.findOne.mockResolvedValue(null); // No category filter in this test
@@ -67,10 +85,30 @@ describe('Products Controller Simple Unit Tests', () => {
           name: 'iPhone 14',
           slug: 'iphone-14',
           shortDescription: 'Latest iPhone',
-          price: 999,
+          baseModel: 'iPhone 14',
+          priceRange: { min: 999, max: 999 },
           images: ['image1.jpg'],
-          condition: 'new',
-          stockStatus: 'in-stock',
+          variations: [{
+            condition: 'new',
+            color: 'black',
+            storage: '128gb',
+            capacity: undefined,
+            interface: undefined,
+            variantName: undefined,
+            price: 999,
+            salePrice: null,
+            stockStatus: 'in-stock',
+            stockQuantity: 10,
+            sku: 'IP14-128-BLK',
+            _id: 'var1',
+            images: ['image1.jpg']
+          }],
+          availableColors: ['black'],
+          availableConditions: ['new'],
+          availableStorage: ['128gb'],
+          availableCapacities: [],
+          availableInterfaces: [],
+          isInStock: true,
           category: { name: 'Smartphones', slug: 'smartphones' },
           createdAt: new Date('2023-01-01')
         }],
@@ -132,19 +170,51 @@ describe('Products Controller Simple Unit Tests', () => {
     });
 
     it('should handle pagination parameters', async () => {
+      // Mock products with variations for price sorting
+      const mockProducts = Array.from({ length: 5 }, (_, i) => ({
+        _id: `product${i}`,
+        name: `Product ${i}`,
+        slug: `product-${i}`,
+        shortDescription: `Product ${i} description`,
+        baseModel: `Product ${i}`,
+        images: [`image${i}.jpg`],
+        category: { name: 'Test Category', slug: 'test-category' },
+        createdAt: new Date('2023-01-01'),
+        variations: [{
+          _id: `var${i}`,
+          condition: 'new',
+          color: 'black',
+          storage: '128gb',
+          price: 100 + i * 10,
+          salePrice: null,
+          stockStatus: 'in-stock',
+          stockQuantity: 10,
+          sku: `PROD${i}-128-BLK`,
+          images: [`image${i}.jpg`]
+        }],
+        // Mock methods expected by controller
+        getPriceRange: vi.fn().mockReturnValue({ min: 100 + i * 10, max: 100 + i * 10 }),
+        getAvailableColors: vi.fn().mockReturnValue(['black']),
+        getAvailableConditions: vi.fn().mockReturnValue(['new']),
+        getAvailableStorage: vi.fn().mockReturnValue(['128gb']),
+        getAvailableCapacities: vi.fn().mockReturnValue([]),
+        getAvailableInterfaces: vi.fn().mockReturnValue([]),
+        isInStock: vi.fn().mockReturnValue(true)
+      }));
+
       const productQuery = {
         sort: vi.fn().mockReturnThis(),
         skip: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
         populate: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue([])
+        exec: vi.fn().mockResolvedValue(mockProducts)
       };
       Product.find.mockReturnValue(productQuery);
       Product.countDocuments.mockResolvedValue(23); // 5 pages with limit 5
       Category.findOne.mockResolvedValue(null); // No category filter in this test
 
-      req.query = { page: '2', limit: '5' };
+      req.query = { page: '2', limit: '5', sortBy: 'createdAt' }; // Use non-price sorting to avoid complex price sorting logic
 
       await getProducts(req, res);
 
