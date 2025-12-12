@@ -3,7 +3,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import path from 'path';
+import * as Sentry from '@sentry/node';
+import logger, { logError } from '../utils/logger.js';
+import { metrics } from '../config/monitoring.js';
+import { globalSanitization } from '../middleware/validation.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -25,8 +31,13 @@ import { notFound } from './middleware/notFound.js';
 
 const app = express();
 
-// Trust proxy for correct IP addresses
-app.set('trust proxy', 1);
+// Trust proxy - required for accurate IP addresses behind reverse proxies (Render, etc)
+// Use specific trust proxy setting for security in production
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy (Render's load balancer)
+} else {
+  app.set('trust proxy', 'loopback'); // Only trust localhost in development
+}
 
 // Security middleware
 app.use(helmet({
@@ -43,46 +54,80 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
+// HTTP request logging
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('combined', { stream: logger.stream }));
+}
+
+// CORS configuration (must be before rate limiting)
 const corsOptions = {
-  origin: true, // Temporarily allow all origins for debugging
   credentials: true,
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://graphene-security.com',
+    'https://www.graphene-security.com',
+    'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
+    'https://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
+    /192\.168\.\d+\.\d+/
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
-  exposedHeaders: ['set-cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-csrf-token']
 };
 
 app.use(cors(corsOptions));
 
-// Rate limiting
+// Rate limiting (after CORS so preflight requests get proper headers)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: 15 * 60 // 15 minutes in seconds
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health checks and in test environment
-    return req.path === '/api/health' || process.env.NODE_ENV === 'test';
-  }
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Skip rate limiting for health checks and OPTIONS preflight requests
+  skip: (req) => req.path === '/health' || req.path === '/health/simple' || req.method === 'OPTIONS'
 });
-
 app.use('/api/', limiter);
 
 // Compression
 app.use(compression());
 
-// Logging
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('combined'));
-}
-
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Global input sanitization
+app.use(globalSanitization);
+
+// Sentry middleware is automatically set up by the expressIntegration in monitoring.js
+
+// Add custom metrics middleware
+app.use(metrics.responseTime);
+
+// Static file serving for uploaded images with security headers
+app.use('/uploads', express.static('uploads', {
+  setHeaders: (res, filePath) => {
+    // Security headers for static files
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('X-Frame-Options', 'DENY');
+    res.set('X-XSS-Protection', '1; mode=block');
+    res.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache for images
+
+    // CORS headers for cross-origin image loading (needed for production)
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+
+    // Restrict file types
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const fileExtension = path.extname(filePath).toLowerCase();
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      res.status(403).end();
+      return;
+    }
+  }
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -112,11 +157,10 @@ app.get('/', (req, res) => {
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   res.send(`User-agent: *
-Disallow: /api/
-Disallow: /admin/
-Allow: /
+Disallow: /
 
-Sitemap: https://graphene-security.com/sitemap.xml`);
+# API endpoints should not be indexed
+# The API is meant for programmatic access only`);
 });
 
 // Favicon endpoint (prevents 404 errors)
@@ -127,7 +171,34 @@ app.get('/favicon.ico', (req, res) => {
 // 404 handler
 app.use(notFound);
 
+// Add Sentry error handler before our custom error handler
+if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+// Health check endpoint (before database connection)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
+
+// Simple health check endpoint (before database connection)
+app.get('/health/simple', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
 
 export default app;
