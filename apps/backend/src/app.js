@@ -7,9 +7,9 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
 import * as Sentry from '@sentry/node';
-import logger, { logError } from '../utils/logger.js';
-import { metrics } from '../config/monitoring.js';
-import { globalSanitization } from '../middleware/validation.js';
+import logger, { logError } from './utils/logger.js';
+import { metrics } from './config/monitoring.js';
+import { globalSanitization } from './middleware/validation.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
