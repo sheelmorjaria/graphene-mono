@@ -15,22 +15,22 @@ describe('MoneroService Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Set test environment variables  
+
+    // Set test environment variables
     process.env.NODE_ENV = 'test';
     process.env.NOWPAYMENTS_API_KEY = 'test-nowpayments-api-key';
     process.env.NOWPAYMENTS_IPN_SECRET = 'test-webhook-secret';
     process.env.FRONTEND_URL = 'http://localhost:3000';
     process.env.BACKEND_URL = 'http://localhost:5000';
-    
+
     // Reinitialize service properties
     moneroService.nowPayments.apiKey = 'test-nowpayments-api-key';
     moneroService.nowPayments.ipnSecret = 'test-webhook-secret';
-    
+
     // Mock axios methods using spyOn
     axiosGetSpy = vi.spyOn(axios, 'get').mockResolvedValue({ data: {} });
     axiosPostSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
-    
+
     // Reset cache
     moneroService.exchangeRateCache = {
       rate: null,
@@ -148,53 +148,72 @@ describe('MoneroService Tests', () => {
   });
 
   describe('createPaymentRequest', () => {
-    it('should create payment request with GloBee API', async () => {
-      const mockGloBeeResponse = {
+    it('should create payment request with NowPayments API', async () => {
+      // Mock the estimate call first
+      axiosGetSpy.mockResolvedValueOnce({
         data: {
-          id: 'globee-payment-123',
-          payment_address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
-          total: 1.9999,
-          currency: 'XMR',
-          expiration_time: '2024-01-01T12:00:00Z',
-          payment_url: 'https://globee.com/payment/123',
-          status: 'pending'
+          estimated_amount: 0.00620333
+        }
+      });
+
+      const mockNowPaymentsResponse = {
+        data: {
+          payment_id: 'nowpayments-payment-123',
+          pay_address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
+          pay_amount: 0.00620333,
+          pay_currency: 'xmr',
+          invoice_url: 'https://nowpayments.io/payment/123',
+          payment_status: 'waiting'
         }
       };
 
-      axiosPostSpy.mockResolvedValueOnce(mockGloBeeResponse);
+      axiosPostSpy.mockResolvedValueOnce(mockNowPaymentsResponse);
 
       const paymentData = {
         orderId: 'order-123',
-        amount: 1.9999,
-        currency: 'XMR',
+        amount: 100, // GBP amount
+        currency: 'GBP',
         customerEmail: 'test@example.com'
       };
 
       const result = await moneroService.createPaymentRequest(paymentData);
 
-      expect(axiosPostSpy).toHaveBeenCalledWith(
-        'https://api.globee.com/v1/payment-request',
+      // Should have called estimate endpoint first
+      expect(axiosGetSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/estimate'),
         expect.objectContaining({
-          total: 1.9999,
-          currency: 'XMR',
+          params: expect.objectContaining({
+            amount: 100,
+            currency_from: 'gbp',
+            currency_to: 'xmr'
+          })
+        })
+      );
+
+      // Should have called payment creation endpoint
+      expect(axiosPostSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/payment'),
+        expect.objectContaining({
+          pay_amount: 0.00620333,
+          pay_currency: 'xmr',
           order_id: 'order-123',
-          customer_email: 'test@example.com'
+          order_description: expect.stringContaining('Graphene Security Order order-123')
         }),
         expect.objectContaining({
           headers: {
-            'Authorization': 'Bearer test-globee-api-key',
+            'x-api-key': 'test-nowpayments-api-key',
             'Content-Type': 'application/json'
           }
         })
       );
 
       expect(result).toEqual({
-        paymentId: 'globee-payment-123',
+        paymentId: 'nowpayments-payment-123',
         address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
-        amount: 1.9999,
+        amount: 0.00620333,
         currency: 'XMR',
-        expirationTime: '2024-01-01T12:00:00Z',
-        paymentUrl: 'https://globee.com/payment/123',
+        expirationTime: expect.any(Date),
+        paymentUrl: 'https://nowpayments.io/payment/123',
         status: 'pending'
       });
     });
@@ -213,17 +232,20 @@ describe('MoneroService Tests', () => {
   });
 
   describe('getPaymentStatus', () => {
-    it('should fetch payment status from GloBee', async () => {
+    it('should fetch payment status from NowPayments', async () => {
       const mockStatusResponse = {
         data: {
-          id: 'payment-123',
-          status: 'paid',
-          confirmations: 12,
-          paid_amount: 1.5,
-          transaction_hash: 'abc123',
-          payment_address: '4AdUndXHHZ...',
+          payment_id: 'payment-123',
+          payment_status: 'confirmed',
+          outcome: {
+            confirmations: 12,
+            hash: 'abc123'
+          },
+          actually_paid: 1.5,
+          pay_address: '4AdUndXHHZ...',
           created_at: '2024-01-01T10:00:00Z',
-          expires_at: '2024-01-02T10:00:00Z'
+          updated_at: '2024-01-01T12:00:00Z',
+          time_limit: 3600
         }
       };
 
@@ -232,7 +254,7 @@ describe('MoneroService Tests', () => {
       const result = await moneroService.getPaymentStatus('payment-123');
 
       expect(axiosGetSpy).toHaveBeenCalledWith(
-        'https://api.nowpayments.io/v1/payment/payment-123',
+        expect.stringContaining('/payment/payment-123'),
         expect.objectContaining({
           headers: {
             'x-api-key': 'test-nowpayments-api-key'
@@ -243,13 +265,13 @@ describe('MoneroService Tests', () => {
 
       expect(result).toEqual({
         id: 'payment-123',
-        status: 'paid',
+        status: 'confirmed',
         confirmations: 12,
         paid_amount: 1.5,
         transaction_hash: 'abc123',
         payment_address: '4AdUndXHHZ...',
         created_at: '2024-01-01T10:00:00Z',
-        expires_at: '2024-01-02T10:00:00Z'
+        expires_at: expect.any(Date)
       });
     });
   });
@@ -257,12 +279,14 @@ describe('MoneroService Tests', () => {
   describe('processWebhookNotification', () => {
     it('should process confirmed payment webhook', () => {
       const webhookData = {
-        id: 'payment-123',
-        status: 'paid',
-        confirmations: 12,
-        paid_amount: 1.5,
-        total_amount: 1.5,
-        transaction_hash: 'abc123',
+        payment_id: 'payment-123',
+        payment_status: 'confirmed',
+        actually_paid: 1.5,
+        pay_amount: 1.5,
+        outcome: {
+          confirmations: 12,
+          hash: 'abc123'
+        },
         order_id: 'order-456'
       };
 
@@ -274,7 +298,7 @@ describe('MoneroService Tests', () => {
         status: 'confirmed', // Because confirmations >= 10
         confirmations: 12,
         paidAmount: 1.5,
-        totalAmount: 1.5,
+        totalAmount: 1.5, // Legacy wrapper maps expectedAmount to totalAmount
         transactionHash: 'abc123',
         isFullyConfirmed: true,
         requiresAction: false
@@ -283,11 +307,13 @@ describe('MoneroService Tests', () => {
 
     it('should detect underpaid transactions', () => {
       const webhookData = {
-        id: 'payment-123',
-        status: 'underpaid',
-        confirmations: 5,
-        paid_amount: 1.2,
-        total_amount: 1.5,
+        payment_id: 'payment-123',
+        payment_status: 'partially_paid',
+        actually_paid: 1.2,
+        pay_amount: 1.5,
+        outcome: {
+          confirmations: 5
+        },
         order_id: 'order-456'
       };
 
@@ -300,11 +326,13 @@ describe('MoneroService Tests', () => {
 
     it('should handle partially confirmed payments', () => {
       const webhookData = {
-        id: 'payment-123',
-        status: 'paid',
-        confirmations: 5, // Less than required 10
-        paid_amount: 1.5,
-        total_amount: 1.5,
+        payment_id: 'payment-123',
+        payment_status: 'confirming',
+        actually_paid: 1.5,
+        pay_amount: 1.5,
+        outcome: {
+          confirmations: 5, // Less than required 10
+        },
         order_id: 'order-456'
       };
 
