@@ -90,7 +90,7 @@ const limiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // Skip rate limiting for health checks and OPTIONS preflight requests
-  skip: (req) => req.path === '/health' || req.method === 'OPTIONS'
+  skip: (req) => req.path === '/health' || req.path === '/health/simple' || req.method === 'OPTIONS'
 });
 app.use('/api/', limiter);
 
@@ -239,10 +239,21 @@ if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// Health check endpoint (before database connection)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
+
 // Simple health check endpoint (before database connection)
 app.get('/health/simple', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     uptime: process.uptime(),
