@@ -62,17 +62,49 @@ if (process.env.NODE_ENV !== 'test') {
 // CORS configuration (must be before rate limiting)
 const corsOptions = {
   credentials: true,
-  origin: [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'https://graphene-security.com',
-    'https://www.graphene-security.com',
-    'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
-    'https://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
-    /192\.168\.\d+\.\d+/
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    // Allowed origins array
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173', // Vite dev server
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173',
+      'https://graphene-security.com',
+      'https://www.graphene-security.com',
+      'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
+      'https://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io'
+    ];
+
+    // Coolify deployment URLs (using regex to match any subdomain)
+    if (origin.match(/.*\.coolify\.app$/) || origin.match(/.*\.coolify\.io$/)) {
+      return callback(null, true);
+    }
+
+    // Local network IPs
+    if (origin.match(/192\.168\.\d+\.\d+/) || origin.match(/10\.\d+\.\d+\.\d+/) || origin.match(/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+/)) {
+      return callback(null, true);
+    }
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // In development, be more permissive
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
+    // Log blocked origin for debugging
+    console.log(`CORS blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-csrf-token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-csrf-token'],
+  exposedHeaders: ['set-cookie']
 };
 
 app.use(cors(corsOptions));
