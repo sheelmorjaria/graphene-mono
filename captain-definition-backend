@@ -4,10 +4,10 @@
     "FROM node:20-alpine AS base",
     "RUN apk add --no-cache python3 make g++ curl",
     "WORKDIR /app",
-    "COPY apps/backend/package.json ./apps/backend/",
-    "WORKDIR /app/apps/backend",
+    "COPY apps/backend/package.json ./",
+    "COPY apps/backend ./",
+    "WORKDIR /app",
     "RUN npm install --only=production --legacy-peer-deps",
-    "COPY apps/backend ./apps/backend",
     "RUN addgroup -g 1001 -S nodejs && \\",
     "    adduser -S nodejs -u 1001",
     "RUN mkdir -p uploads/products logs && \\",
@@ -16,7 +16,7 @@
     "USER nodejs",
     "EXPOSE 5000",
     "ENTRYPOINT [\"/sbin/tini\", \"--\"]",
-    "CMD [\"sh\", \"-c\", \"echo '🚀 Starting backend container...' && node --version && npm --version && echo '📁 Starting server...' && node server.js\"]"
+    "CMD [\"sh\", \"-c\", \"echo '🚀 Starting backend container...' && node --version && npm --version && echo '📁 Starting server...' && ls -la && node server.js\"]"
   ],
   "containerHttpPort": 5000,
   "healthCheckPath": "/health",
@@ -27,11 +27,11 @@
   "volumes": [
     {
       "volumeName": "backend-uploads",
-      "containerPath": "/app/apps/backend/uploads"
+      "containerPath": "/app/uploads"
     },
     {
       "volumeName": "backend-logs",
-      "containerPath": "/app/apps/backend/logs"
+      "containerPath": "/app/logs"
     }
   ],
   "envVars": [
