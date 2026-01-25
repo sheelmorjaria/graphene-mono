@@ -71,5 +71,5 @@ ENTRYPOINT ["/sbin/tini", "--"]
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
 
-# Start with test server for debugging
-CMD ["sh", "-c", "echo '🚀 Starting backend container...' && node --version && npm --version && echo '📁 Testing with minimal server...' && node test-server.js"]
+# Start the application
+CMD ["sh", "-c", "echo '🚀 Starting backend container...' && node --version && npm --version && echo '📁 Starting server...' && node server.js"]

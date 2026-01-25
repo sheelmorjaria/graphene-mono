@@ -39,6 +39,11 @@ const productSchema = new mongoose.Schema({
     trim: true,
     maxlength: 100
   },
+  sourceUrl: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
   lowStockThreshold: {
     type: Number,
     min: 0,

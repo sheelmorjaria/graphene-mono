@@ -10,7 +10,7 @@ const FilterSidebar = ({
 }) => {
   // Local state for price inputs to prevent immediate API calls
   const [localPriceRange, setLocalPriceRange] = useState(priceRange);
-  
+
   // Update local state when external priceRange changes (e.g., from preset buttons)
   useEffect(() => {
     setLocalPriceRange(priceRange);
@@ -59,44 +59,58 @@ const FilterSidebar = ({
     return priceRange.min === min && priceRange.max === max;
   };
 
-
   const getConditionButtonClass = (conditionValue) => {
-    const baseClass = "w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500";
+    const baseClass = "w-full text-left px-4 py-3 text-sm font-mono uppercase tracking-wider rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 border";
     if (selectedCondition === conditionValue) {
-      return `${baseClass} bg-forest-200 text-forest-800 font-medium border border-forest-300`;
+      return `${baseClass} bg-cyan-subtle text-cyan-400 border-cyan-400 shadow-glow-cyan`;
     }
-    return `${baseClass} text-forest-700 hover:bg-forest-50 hover:text-forest-800`;
+    return `${baseClass} bg-bg-elevated text-text-secondary border-border-subtle hover:border-border-cyan hover:text-cyan-400`;
   };
 
   return (
-    <aside 
-      className="bg-white p-6 rounded-lg border border-forest-200 h-fit shadow-md transition-all duration-300 hover:shadow-lg hover:border-forest-300"
+    <aside
+      className="bg-bg-card p-6 rounded-lg border border-border-subtle h-fit"
       aria-label="Filter products"
     >
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-forest-900 mb-4">Filters</h2>
-        
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading font-semibold text-lg text-text-primary uppercase tracking-wider flex items-center gap-2">
+            <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.707.293l-6.414-6.414A1 1 0 015 6.586V4z" />
+            </svg>
+            Filters
+          </h2>
+        </div>
+
         {/* Clear Filters Button */}
         <button
           onClick={onClearFilters}
-          className="w-full mb-6 px-4 py-2 text-sm text-forest-600 border border-forest-600 rounded-md hover:bg-forest-50 focus:outline-none focus:ring-2 focus:ring-forest-500 transition-all duration-200 transform hover:scale-105"
+          className="w-full px-4 py-2.5 text-sm font-mono uppercase tracking-wider text-text-secondary border border-border-subtle rounded-lg hover:text-cyan-400 hover:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all duration-200 flex items-center justify-center gap-2"
         >
-          Clear All Filters
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5m-.582 0H9m11 11v-5m11 11v-5m0 0h2" />
+          </svg>
+          Clear All
         </button>
       </div>
 
 
       {/* Price Range Filter */}
       <div className="mb-6">
-        <h3 className="font-medium text-forest-900 mb-3">Price Range</h3>
-        
+        <h3 className="font-heading font-semibold text-sm text-text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
+          <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 3zm0 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 3zm0-8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 3z" />
+          </svg>
+          Price Range
+        </h3>
+
         {/* Clear Price Range Button */}
         <button
           onClick={() => handlePresetPriceRange('', '')}
-          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 mb-3 ${
+          className={`w-full text-left px-4 py-3 text-sm font-mono uppercase tracking-wider rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 border mb-3 ${
             isPriceRangeActive('', '')
-              ? 'bg-forest-200 text-forest-800 font-medium border border-forest-300'
-              : 'text-forest-700 hover:bg-forest-50 hover:text-forest-800 border border-forest-200'
+              ? 'bg-cyan-subtle text-cyan-400 border-cyan-400 shadow-glow-cyan'
+              : 'bg-bg-elevated text-text-secondary border-border-subtle hover:border-cyan-400 hover:text-cyan-400'
           }`}
         >
           Any Price
@@ -108,10 +122,10 @@ const FilterSidebar = ({
             <button
               key={index}
               onClick={() => handlePresetPriceRange(range.min, range.max)}
-              className={`w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-forest-500 ${
+              className={`w-full text-left px-4 py-3 text-sm font-mono uppercase tracking-wider rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 border ${
                 isPriceRangeActive(range.min, range.max)
-                  ? 'bg-forest-200 text-forest-800 font-medium border border-forest-300'
-                  : 'text-forest-700 hover:bg-forest-50 hover:text-forest-800 border border-forest-200'
+                  ? 'bg-cyan-subtle text-cyan-400 border-cyan-400 shadow-glow-cyan'
+                  : 'bg-bg-elevated text-text-secondary border-border-subtle hover:border-cyan-400 hover:text-cyan-400'
               }`}
             >
               {range.label}
@@ -120,36 +134,42 @@ const FilterSidebar = ({
         </div>
 
         {/* Custom Price Range Inputs */}
-        <div className="border-t border-forest-200 pt-4">
-          <p className="text-xs text-forest-600 mb-3">Or enter custom range:</p>
+        <div className="border-t border-border-subtle pt-4">
+          <p className="font-mono text-xs text-text-muted mb-3 uppercase tracking-wider">Custom range:</p>
           <div className="space-y-3">
             <div>
               <label htmlFor="min-price" className="sr-only">Minimum price</label>
-              <input
-                id="min-price"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Min price (£)"
-                value={localPriceRange.min}
-                onChange={(e) => handlePriceChange('min', e.target.value)}
-                aria-label="Minimum price"
-                className="w-full px-3 py-2 border border-forest-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-colors hover:border-forest-400 placeholder-forest-400"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 font-mono text-xs">£</span>
+                <input
+                  id="min-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Min"
+                  value={localPriceRange.min}
+                  onChange={(e) => handlePriceChange('min', e.target.value)}
+                  aria-label="Minimum price"
+                  className="form-input !pl-7"
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="max-price" className="sr-only">Maximum price</label>
-              <input
-                id="max-price"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Max price (£)"
-                value={localPriceRange.max}
-                onChange={(e) => handlePriceChange('max', e.target.value)}
-                aria-label="Maximum price"
-                className="w-full px-3 py-2 border border-forest-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-forest-600 transition-colors hover:border-forest-400 placeholder-forest-400"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 font-mono text-xs">£</span>
+                <input
+                  id="max-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Max"
+                  value={localPriceRange.max}
+                  onChange={(e) => handlePriceChange('max', e.target.value)}
+                  aria-label="Maximum price"
+                  className="form-input !pl-7"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -157,8 +177,13 @@ const FilterSidebar = ({
 
       {/* Condition Filter */}
       <div className="mb-4">
-        <h3 className="font-medium text-forest-900 mb-3">Condition</h3>
-        <div className="space-y-1">
+        <h3 className="font-heading font-semibold text-sm text-text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
+          <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M6.5 11c-.57 0-1.1.24-1.5.62L6.5 8c.4-.38.92-.38 1.32 0l1.5 1.5c.4.4 1.02.4 1.62 0 2.02L12 17c.55.55 1.45.55 2 0 2.5l-4 4c-.4.4-.92-.4-1.32 0-1.72l1.5-1.5c.4-.4.92-.4-1.32 0-1.72l4-4c.4-.4 1.02-.4 1.42 0l1.5 1.5c.4.4.92-.4 1.32 0 1.72L14 12z" />
+          </svg>
+          Condition
+        </h3>
+        <div className="space-y-2">
           <button
             onClick={() => onConditionChange('')}
             className={getConditionButtonClass('')}

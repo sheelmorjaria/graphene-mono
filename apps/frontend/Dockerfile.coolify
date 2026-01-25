@@ -1,14 +1,14 @@
 # Frontend Dockerfile for Coolify deployment
 # Must be built from monorepo root context
 
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Copy frontend package files
 COPY apps/frontend/package*.json ./apps/frontend/
 
-# Copy frontend source code
+# Copy frontend source code including config files
 COPY apps/frontend ./apps/frontend
 
 # Build frontend
@@ -19,12 +19,12 @@ WORKDIR /app/apps/frontend
 RUN npm install --legacy-peer-deps
 
 # Set build-time environment variables for Vite
-ARG VITE_API_BASE_URL
+ARG VITE_API_BASE_URL=https://api.graphene-security.com/api
 ARG VITE_APP_TITLE="GrapheneOS Store"
 ARG VITE_COMPANY_NAME="Graphene Security"
 ARG VITE_ENABLE_PAYPAL_PAYMENTS=true
 ARG VITE_ENABLE_BITCOIN_PAYMENTS=true
-ARG VITE_ENABLE_MONERO_PAYMENTS=true
+ARG VITE_ENABLE_MONERO_PAYMENTS=false
 
 # Export as environment variables for build
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
@@ -34,25 +34,30 @@ ENV VITE_ENABLE_PAYPAL_PAYMENTS=$VITE_ENABLE_PAYPAL_PAYMENTS
 ENV VITE_ENABLE_BITCOIN_PAYMENTS=$VITE_ENABLE_BITCOIN_PAYMENTS
 ENV VITE_ENABLE_MONERO_PAYMENTS=$VITE_ENABLE_MONERO_PAYMENTS
 
-# Ensure dist directory exists and build
-RUN mkdir -p dist && \
+# Build the React application with Vite
+RUN echo "🏗️ Starting Vite build..." && \
     npm run build && \
-    echo "Build completed successfully" && \
-    ls -la dist/ || (echo "Build failed, creating empty dist" && mkdir -p dist && echo "fallback" > dist/index.html)
+    echo "✅ Vite build completed" && \
+    ls -la dist/ && \
+    echo "📁 Build contents verified"
 
 # Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install serve to serve the static files
-RUN npm install -g serve
+# Copy custom server.js
+COPY apps/frontend/server.js .
 
 # Copy built files from builder stage
 COPY --from=builder /app/apps/frontend/dist ./dist
 
-# Verify copied files
-RUN echo "Verifying copied dist files..." && ls -la dist/ && echo "Frontend files ready for serving"
+# Verify copied files and server
+RUN echo "Verifying copied files..." && \
+    ls -la dist/ && \
+    echo "Verifying server.js..." && \
+    ls -la server.js && \
+    echo "Build and server files ready"
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
@@ -60,5 +65,5 @@ RUN apk add --no-cache curl
 # Expose port
 EXPOSE 3000
 
-# Serve the static files (defaults to 0.0.0.0:3000)
-CMD ["serve", "-s", "dist", "-p", "3000"]
+# Run the custom Node.js server for SPA routing
+CMD ["node", "server.js"]

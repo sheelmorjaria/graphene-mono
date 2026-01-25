@@ -72,6 +72,8 @@ const corsOptions = {
       'http://localhost:5173', // Vite dev server
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173',
+      'http://84.45.134.166:3000',
+      'http://84.45.134.166',
       'https://graphene-security.com',
       'https://www.graphene-security.com',
       'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',

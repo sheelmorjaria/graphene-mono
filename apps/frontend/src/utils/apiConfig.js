@@ -16,6 +16,11 @@ const getApiBaseUrl = () => {
   if (currentHost === 'graphene-security.com' || currentHost === 'www.graphene-security.com') {
     return 'https://api.graphene-security.com/api';
   }
+
+  // If accessing via IP, use backend on same IP
+  if (currentHost === '84.45.134.166') {
+    return 'http://84.45.134.166:5000/api';
+  }
   
   // Coolify frontend deployment
   if (currentHost === 'ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io') {

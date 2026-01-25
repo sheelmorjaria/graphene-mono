@@ -47,7 +47,6 @@ const AddToCartButton = ({
 
   // Generate quantity options
   const quantityOptions = [];
-  // Use maxQuantity without stock limitation since we don't show stock counts
   const maxOptions = isOutOfStock ? 0 : maxQuantity;
   for (let i = 1; i <= maxOptions; i++) {
     quantityOptions.push(i);
@@ -55,16 +54,18 @@ const AddToCartButton = ({
 
   // Get button classes based on state
   const getButtonClasses = () => {
+    const baseClasses = 'w-full sm:w-auto px-6 py-3 rounded-lg font-heading font-semibold text-sm uppercase tracking-wider transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center';
+
     if (error) {
-      return 'bg-red-600 hover:bg-red-700 text-white';
+      return `${baseClasses} bg-red-primary text-white hover:shadow-glow-pink hover:bg-red-primary focus:ring-red-primary`;
     }
     if (localShowSuccess) {
-      return 'bg-green-600 text-white';
+      return `${baseClasses} bg-matrix-primary text-text-on-accent shadow-glow-matrix`;
     }
     if (isOutOfStock || disabled || isLoading) {
-      return 'bg-gray-400 text-white cursor-not-allowed';
+      return `${baseClasses} bg-bg-elevated text-text-muted cursor-not-allowed border border-border-subtle`;
     }
-    return 'bg-blue-600 hover:bg-blue-700 text-white';
+    return `${baseClasses} btn-primary`;
   };
 
   // Get button text based on state
@@ -76,32 +77,32 @@ const AddToCartButton = ({
     return buttonText;
   };
 
-  // Get stock status text
-  const getStockStatusText = () => {
-    if (isOutOfStock) return 'Unavailable';
-    if (isLowStock) return 'Low Stock';
-    return 'In Stock';
+  // Get stock status text and color
+  const getStockStatus = () => {
+    if (isOutOfStock) return { text: 'Unavailable', className: 'text-red-400', dotClass: 'bg-red-400' };
+    if (isLowStock) return { text: 'Low Stock', className: 'text-amber-primary', dotClass: 'bg-amber-primary animate-pulse' };
+    return { text: 'In Stock', className: 'text-matrix-400', dotClass: 'bg-matrix-400 animate-pulse' };
   };
 
   // Get icon based on state
   const getIcon = () => {
     if (error) {
       return (
-        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-label="Error icon">
-          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Error icon">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       );
     }
     if (localShowSuccess) {
       return (
-        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-label="Success icon">
-          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Success icon">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       );
     }
     if (isLoading) {
       return (
-        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" aria-label="Loading icon">
+        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24" aria-label="Loading icon">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
@@ -109,39 +110,52 @@ const AddToCartButton = ({
     }
     if (isOutOfStock) {
       return (
-        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-label="Unavailable icon">
-          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Unavailable icon">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       );
     }
     return (
-      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-label="Cart icon">
-        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Cart icon">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.68 6.32a1 1 0 00.95 1.32h9.46a1 1 0 00.95-1.32L15 13M9 19v.01M20 19v.01" />
       </svg>
     );
   };
 
+  const stockStatus_ = getStockStatus();
   const stockDescriptionId = `stock-${productId}`;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Quantity Selector */}
       {showQuantitySelector && !isOutOfStock && (
-        <div className="flex items-center space-x-2">
-          <label htmlFor={`quantity-${productId}`} className="text-sm font-medium text-gray-700">
-            Quantity:
+        <div className="flex items-center gap-3">
+          <label htmlFor={`quantity-${productId}`} className="form-label !mb-0">
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+              </svg>
+              Quantity
+            </span>
           </label>
-          <select
-            id={`quantity-${productId}`}
-            value={selectedQuantity}
-            onChange={(e) => setSelectedQuantity(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            aria-label="Quantity"
-          >
-            {quantityOptions.map(qty => (
-              <option key={qty} value={qty}>{qty}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id={`quantity-${productId}`}
+              value={selectedQuantity}
+              onChange={(e) => setSelectedQuantity(parseInt(e.target.value))}
+              className="form-input !py-2 pr-10 appearance-none cursor-pointer font-mono text-sm"
+              aria-label="Quantity"
+            >
+              {quantityOptions.map(qty => (
+                <option key={qty} value={qty}>{qty}</option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
         </div>
       )}
 
@@ -151,33 +165,39 @@ const AddToCartButton = ({
         onKeyDown={handleKeyPress}
         disabled={isOutOfStock || disabled || isLoading}
         aria-describedby={stockDescriptionId}
-        className={`
-          w-full sm:w-auto px-6 py-3 rounded-lg font-medium text-sm
-          transition-colors duration-200 focus:outline-none focus:ring-2 
-          focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center
-          ${getButtonClasses()}
-        `}
+        className={getButtonClasses()}
       >
         {getIcon()}
-        {getButtonText()}
+        <span>{getButtonText()}</span>
       </button>
 
       {/* Stock Status */}
-      <div id={stockDescriptionId} className="text-sm text-gray-600">
-        {getStockStatusText()}
+      <div id={stockDescriptionId} className="flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full ${stockStatus_.dotClass}`}></span>
+        <span className={`font-mono text-xs uppercase tracking-wider ${stockStatus_.className}`}>
+          {stockStatus_.text}
+        </span>
       </div>
 
       {/* Low Stock Warning */}
       {isLowStock && (
-        <div className="text-sm text-amber-600 font-medium">
-          Limited stock available
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-subtle border border-amber-primary/30 rounded-lg">
+          <svg className="w-4 h-4 text-amber-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="font-mono text-xs text-amber-primary uppercase tracking-wider">
+            Limited stock available
+          </span>
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="text-sm text-red-600 font-medium">
-          {error}
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-subtle border border-red-primary/30 rounded-lg animate-fadeIn">
+          <svg className="w-4 h-4 text-red-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="font-mono text-xs text-red-primary">{error}</span>
         </div>
       )}
     </div>
