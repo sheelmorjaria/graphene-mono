@@ -44,12 +44,12 @@ const SearchBar = ({
       <form
         onSubmit={handleSubmit}
         role="search"
-        className="relative flex items-center w-full"
+        className="relative flex items-center w-full group"
       >
         {/* Search Icon */}
-        <div className="absolute left-3 pointer-events-none">
+        <div className="absolute left-3 pointer-events-none z-10">
           <svg
-            className="w-5 h-5 text-forest-600"
+            className="w-5 h-5 text-text-muted group-focus-within:text-cyan-400 transition-colors duration-200"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -73,8 +73,11 @@ const SearchBar = ({
           placeholder={placeholder}
           aria-label="Search products"
           data-testid="search-input"
-          className="w-full px-4 py-2 pl-10 pr-20 text-forest-800 placeholder:text-forest-500 bg-forest-50 border border-forest-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all duration-200 hover:border-forest-600"
+          className="w-full px-4 py-2.5 pl-10 pr-20 text-text-primary placeholder:text-text-dim bg-bg-elevated border border-border-default rounded-lg focus:outline-none focus:border-cyan-400 focus:shadow-glow-cyan transition-all duration-200 hover:border-border-strong font-mono text-sm"
         />
+
+        {/* Glow effect on focus */}
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-400 to-matrix-400 opacity-0 group-focus-within:opacity-10 pointer-events-none transition-opacity duration-200 blur-sm"></div>
 
         {/* Clear Button */}
         {query && (
@@ -82,7 +85,7 @@ const SearchBar = ({
             type="button"
             onClick={handleClear}
             aria-label="Clear search"
-            className="absolute right-12 p-1 text-forest-600 hover:text-forest-800 focus:outline-none focus:text-forest-800 transition-colors duration-200"
+            className="absolute right-12 p-1.5 text-text-muted hover:text-red-400 focus:outline-none transition-colors duration-200 z-10"
           >
             <svg
               className="w-4 h-4"
@@ -104,7 +107,7 @@ const SearchBar = ({
         <button
           type="submit"
           aria-label="Search"
-          className="absolute right-2 p-1.5 text-forest-600 hover:text-forest-800 focus:outline-none focus:text-forest-800 transition-colors duration-200"
+          className="absolute right-2 p-2 text-text-muted hover:text-cyan-400 focus:outline-none focus:text-cyan-400 transition-all duration-200 z-10 hover:bg-cyan-subtle rounded"
         >
           <svg
             className="w-5 h-5"

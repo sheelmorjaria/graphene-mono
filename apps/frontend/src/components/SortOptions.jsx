@@ -14,23 +14,33 @@ const SortOptions = ({ currentSort, onSortChange }) => {
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <label htmlFor="sort-select" className="text-sm font-medium text-gray-700">
-        Sort by:
+    <div className="flex items-center gap-3">
+      <label htmlFor="sort-select" className="flex items-center gap-2 text-sm font-heading font-semibold uppercase tracking-wider text-text-secondary">
+        <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0v6m4-6v6m0 0l6-6m-6 6v-6m6 6V9" />
+        </svg>
+        Sort
       </label>
-      <select
-        id="sort-select"
-        value={currentSort}
-        onChange={handleSortChange}
-        aria-label="Sort products"
-        className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-      >
-        {sortOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          id="sort-select"
+          value={currentSort}
+          onChange={handleSortChange}
+          aria-label="Sort products"
+          className="appearance-none bg-bg-elevated text-text-primary border border-border-subtle px-4 py-2 pr-10 font-mono text-sm rounded-lg focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-0 hover:border-border-strong transition-all duration-200 cursor-pointer"
+        >
+          {sortOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+          <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 };

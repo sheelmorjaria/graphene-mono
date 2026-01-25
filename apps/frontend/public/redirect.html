@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphene Security - Redirecting</title>
+    <script>
+        // Convert clean URLs to hash URLs for HashRouter
+        if (window.location.pathname !== '/' && !window.location.hash) {
+            const path = window.location.pathname;
+            const search = window.location.search;
+            window.location.replace('/#' + path + search);
+        } else {
+            // If we're already at root or have hash, redirect to main app
+            window.location.replace('/');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Windows Zone.Identifier files (created when downloading images from web)
+public/images/products/*:Zone.Identifier
+*:Zone.Identifier
+*.Identifier:*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,6 +27,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
 .env
-*.md
+.env.local
+.env.production.local
+.env.development.local
+
+# Deployment
 .vercel
+
+# Markdown files (as per original gitignore)
+*.md

@@ -4,10 +4,17 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import path from "path";
 import { fileURLToPath } from "url";
+import https from "https";
+import http from "http";
+import fs from "fs";
+import { createHash } from "crypto";
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Path to frontend public images directory
+const PRODUCTS_IMAGES_DIR = path.join(__dirname, '../../frontend/public/images/products');
 
 dotenv.config();
 
@@ -40,6 +47,279 @@ const loadModels = async () => {
     console.error("Current working directory:", process.cwd());
     throw error;
   }
+};
+
+// Ensure products images directory exists
+const ensureImagesDirectory = () => {
+  if (!fs.existsSync(PRODUCTS_IMAGES_DIR)) {
+    fs.mkdirSync(PRODUCTS_IMAGES_DIR, { recursive: true });
+    console.log(`✅ Created images directory: ${PRODUCTS_IMAGES_DIR}`);
+  }
+};
+
+// Download image from URL to local file
+const downloadImage = (url, basePath) => {
+  return new Promise((resolve, reject) => {
+    // Create a safe filename from URL or use a hash
+    const urlHash = createHash('md5').update(url).digest('hex');
+    // Determine extension from URL or default to png
+    let extension = '.png';
+    if (url.includes('.jpg') || url.includes('.jpeg')) {
+      extension = '.jpg';
+    } else if (url.includes('.webp')) {
+      extension = '.webp';
+    }
+
+    const filename = `${basePath}-${urlHash}${extension}`;
+    const filepath = path.join(PRODUCTS_IMAGES_DIR, filename);
+
+    // Check if file already exists
+    if (fs.existsSync(filepath)) {
+      console.log(`   📷 Image already exists: ${filename}`);
+      return resolve(`/images/products/${filename}`);
+    }
+
+    const protocol = url.startsWith('https') ? https : http;
+    const client = url.startsWith('https') ? https : http;
+
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    };
+
+    client.get(url, options, (response) => {
+      // Handle redirects
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        const redirectUrl = response.headers.location;
+        if (!redirectUrl) {
+          return reject(new Error('Redirect location not found'));
+        }
+        // Handle relative redirects
+        const absoluteRedirectUrl = redirectUrl.startsWith('http')
+          ? redirectUrl
+          : new URL(redirectUrl, url).href;
+        return downloadImage(absoluteRedirectUrl, basePath).then(resolve).catch(reject);
+      }
+
+      if (response.statusCode !== 200) {
+        return reject(new Error(`Failed to download image: ${response.statusCode}`));
+      }
+
+      const chunks = [];
+      response.on('data', (chunk) => chunks.push(chunk));
+      response.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+
+        // Verify it's actually an image by checking the buffer size
+        if (buffer.length < 1000) {
+          return reject(new Error('Downloaded file too small, possibly not an image'));
+        }
+
+        fs.writeFile(filepath, buffer, (err) => {
+          if (err) {
+            return reject(err);
+          }
+          console.log(`   📷 Downloaded image: ${filename}`);
+          resolve(`/images/products/${filename}`);
+        });
+      });
+    }).on('error', (err) => {
+      reject(err);
+    });
+  });
+};
+
+// Download product images from CEX URL
+const downloadProductImages = async (productName, productUrl) => {
+  try {
+    if (!productUrl) {
+      console.log(`   ⚠️  No URL provided for ${productName}`);
+      return null;
+    }
+
+    // Create base filename from product name
+    const safeBaseName = productName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 50);
+
+    console.log(`   🔍 Fetching image for: ${productName}`);
+
+    // Try to get the image page from CEX
+    // The product page typically has an image we can extract
+    const imageUrl = await extractImageUrlFromPage(productUrl);
+
+    if (imageUrl) {
+      const imagePath = await downloadImage(imageUrl, safeBaseName);
+      return imagePath;
+    } else {
+      console.log(`   ⚠️  Could not extract image URL for ${productName}`);
+      return null;
+    }
+  } catch (error) {
+    console.log(`   ⚠️  Failed to download image for ${productName}: ${error.message}`);
+    return null;
+  }
+};
+
+// Get Google official product image for Pixel phones
+// Uses publicly available press kit images
+const getGooglePixelImageUrl = (baseModel, color) => {
+  // Use a simple, reliable image hosting service or placeholder
+  // Since external scraping is unreliable, we'll use a placeholder service
+  // that returns device images based on model name
+
+  const modelSlug = baseModel
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+
+  // Use UI Avatars or similar as a temporary placeholder
+  // In production, these should be replaced with actual product photos
+  const baseUrl = 'https://ui-avatars.com/api';
+
+  // Create a colorful placeholder with model name
+  return `${baseUrl}/?name=${encodeURIComponent(baseModel)}&background=0D8ABC&color=fff&size=500&font-size=0.33`;
+};
+
+// Extract image URL from CEX product page
+const extractImageUrlFromPage = (productUrl) => {
+  return new Promise((resolve, reject) => {
+    const protocol = productUrl.startsWith('https') ? https : http;
+
+    protocol.get(productUrl, (response) => {
+      // Handle redirects
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        const redirectUrl = response.headers.location;
+        if (!redirectUrl) {
+          return reject(new Error('Redirect location not found'));
+        }
+        const absoluteRedirectUrl = redirectUrl.startsWith('http')
+          ? redirectUrl
+          : new URL(redirectUrl, productUrl).href;
+        return extractImageUrlFromPage(absoluteRedirectUrl).then(resolve).catch(reject);
+      }
+
+      if (response.statusCode !== 200) {
+        return reject(new Error(`Failed to fetch page: ${response.statusCode}`));
+      }
+
+      let html = '';
+      response.on('data', (chunk) => {
+        html += chunk;
+        // Limit response size to prevent memory issues
+        if (html.length > 500000) {
+          response.destroy();
+          resolve(null);
+        }
+      });
+
+      response.on('end', () => {
+        // Try to extract image URL from the HTML
+        // CEX typically stores images in a specific format
+        // Looking for patterns like: large_boxshots/PRODUCT_ID.jpg or similar
+
+        // Pattern 1: Look for og:image meta tag
+        const ogImageMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
+        if (ogImageMatch && ogImageMatch[1]) {
+          const imageUrl = ogImageMatch[1].startsWith('http')
+            ? ogImageMatch[1]
+            : `https://uk.webuy.com${ogImageMatch[1]}`;
+          console.log(`   🖼️  Found og:image: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 2: Look for product image in JSON-LD structured data
+        const jsonLdMatch = html.match(/"image":"([^"]+)"/);
+        if (jsonLdMatch && jsonLdMatch[1]) {
+          const imageUrl = jsonLdMatch[1].replace(/\\\//g, '/');
+          console.log(`   🖼️  Found JSON-LD image: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 3: Look for large_boxshots pattern
+        const boxshotMatch = html.match(/large_boxshots\/([^\s"']+\.(?:jpg|jpeg|png|webp))/i);
+        if (boxshotMatch && boxshotMatch[1]) {
+          const imageUrl = `https://uk.webuy.com/productImages/large_boxshots/${boxshotMatch[1]}`;
+          console.log(`   🖼️  Found boxshot image: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 4: Look for any product image URL
+        const imageMatch = html.match(/productImages\/large_boxshots\/([^\s"']+\.(?:jpg|jpeg|png|webp))/i);
+        if (imageMatch && imageMatch[0]) {
+          const imageUrl = imageMatch[0].startsWith('http')
+            ? imageMatch[0]
+            : `https://uk.webuy.com/${imageMatch[0]}`;
+          console.log(`   🖼️  Found product image: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 5: Look for img tag with product image class
+        const imgMatch = html.match(/<img[^>]+class="[^"]*product[^"]*"[^>]+src="([^"]+)"/i);
+        if (imgMatch && imgMatch[1]) {
+          const imageUrl = imgMatch[1].startsWith('http')
+            ? imgMatch[1]
+            : `https://uk.webuy.com${imgMatch[1]}`;
+          console.log(`   🖼️  Found product img: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 6: Look for Twitter card image
+        const twitterImageMatch = html.match(/<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"/i);
+        if (twitterImageMatch && twitterImageMatch[1]) {
+          const imageUrl = twitterImageMatch[1].startsWith('http')
+            ? twitterImageMatch[1]
+            : `https://uk.webuy.com${twitterImageMatch[1]}`;
+          console.log(`   🖼️  Found twitter:image: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 7: Look for any img tag with product/boxshot in src
+        const anyImgMatch = html.match(/<img[^>]+src="([^"]*(?:product|boxshot)[^"]*\.(?:jpg|jpeg|png|webp))"[^>]*>/i);
+        if (anyImgMatch && anyImgMatch[1]) {
+          const imageUrl = anyImgMatch[1].startsWith('http')
+            ? anyImgMatch[1]
+            : `https://uk.webuy.com${anyImgMatch[1]}`;
+          console.log(`   🖼️  Found product/boxshot img: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        // Pattern 8: Look for JSON structured data with image
+        const jsonScriptMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
+        if (jsonScriptMatch) {
+          try {
+            const jsonData = JSON.parse(jsonScriptMatch[1]);
+            if (jsonData.image) {
+              const imageUrl = Array.isArray(jsonData.image) ? jsonData.image[0] : jsonData.image;
+              const fullUrl = imageUrl.startsWith('http')
+                ? imageUrl
+                : `https://uk.webuy.com${imageUrl}`;
+              console.log(`   🖼️  Found JSON-LD structured image: ${fullUrl}`);
+              return resolve(fullUrl);
+            }
+          } catch (e) {
+            // JSON parse failed, continue to next pattern
+          }
+        }
+
+        // Pattern 9: Look for any CEX product image pattern with different path formats
+        const altPathMatch = html.match(/\/product\/images\/[^"']*?\.(?:jpg|jpeg|png|webp)/i);
+        if (altPathMatch && altPathMatch[0]) {
+          const imageUrl = `https://uk.webuy.com${altPathMatch[0]}`;
+          console.log(`   🖼️  Found alt path image: ${imageUrl}`);
+          return resolve(imageUrl);
+        }
+
+        console.log(`   ⚠️  No image pattern matched in HTML`);
+        resolve(null);
+      });
+    }).on('error', (err) => {
+      reject(err);
+    });
+  });
 };
 
 // Connect to MongoDB with retry logic
@@ -346,10 +626,15 @@ export const removeOldPixelProducts = async (dryRun = false) => {
 // Execute CLI command with multiple queries to capture all Pixel variants
 export const syncFromCLI = async () => {
   const queries = [
-    'Google Pixel',        // General Pixel query (captures most models)
-    'Google Pixel Fold',   // Specific Fold query (captures all Fold variants)
-    'Google Pixel 9 Pro',  // Specific Pixel 9 Pro query
-    'Google Pixel 9 Pro XL' // Specific Pixel 9 Pro XL query
+    'Google Pixel',            // General Pixel query (captures most models)
+    'Google Pixel Fold',       // Specific Fold query (captures all Fold variants)
+    'Google Pixel 9 Pro',      // Specific Pixel 9 Pro query
+    'Google Pixel 9 Pro XL',   // Specific Pixel 9 Pro XL query
+    'Google Pixel 9a',         // Specific Pixel 9a query
+    'Google Pixel 10',         // Pixel 10 base model
+    'Google Pixel 10 Pro',     // Pixel 10 Pro
+    'Google Pixel 10 Pro XL',  // Pixel 10 Pro XL
+    'Google Pixel 10 Pro Fold' // Pixel 10 Pro Fold
   ];
 
   console.log(`📡 Running ${queries.length} CLI queries to capture all Pixel variants...`);
@@ -564,10 +849,15 @@ const createBaseProductInfo = (baseModel) => {
 
 // Function to find or create the Smartphones category
 const findSmartphonesCategory = async () => {
+  // Try to find existing category first
   let category = await Category.findOne({ name: 'Smartphones' });
-  
-  if (!category) {
-    console.log("Smartphones category not found, creating it...");
+
+  if (category) {
+    return category;
+  }
+
+  // If not found, try to create it
+  try {
     category = new Category({
       name: 'Smartphones',
       slug: 'smartphones',
@@ -575,54 +865,72 @@ const findSmartphonesCategory = async () => {
     });
     await category.save();
     console.log("✅ Created Smartphones category");
+    return category;
+  } catch (error) {
+    // If duplicate key error, fetch and return the existing one
+    if (error.code === 11000 || error.message.includes('duplicate key')) {
+      console.log("⚠️  Category already exists, fetching existing...");
+      category = await Category.findOne({ slug: 'smartphones' });
+      if (category) return category;
+    }
+    throw error;
   }
-  
-  return category;
 };
 
 // Function to create or update a product with variations from CLI data
-export const createOrUpdateProductFromCLI = async (cliProductData) => {
+export const createOrUpdateProductFromCLI = async (cliProductData, categoryId) => {
   const { name, price, condition, url } = cliProductData;
-  
-  // Get the Smartphones category
-  const category = await findSmartphonesCategory();
-  
+
   // Extract storage and color from product name
-  const storageMatch = name.match(/(\d+GB)/);
-  const storage = storageMatch ? storageMatch[1] : "128GB";
-  
+  // Support both GB and TB storage sizes
+  const storageMatch = name.match(/(\d+(?:GB|TB))/i);
+  const storage = storageMatch ? storageMatch[1].toUpperCase() : "128GB";
+
   // Extract color from product name
   let color = "Unknown";
-  
-  // Try multiple patterns to extract color
-  const colorPatterns = [
-    // Standard pattern: after storage size
-    /\d+GB\s+([^,]+)/,
-    // Pro models with parentheses: (12GB+128GB) Color
-    /\([^)]+\)\s+(.+)/,
-    // Fallback: last word(s) in the name
-    /(\w+(?:\s+\w+)?)$/
-  ];
-  
-  for (const pattern of colorPatterns) {
-    const match = name.match(pattern);
-    if (match) {
-      color = match[1].trim();
-      break;
-    }
+
+  // Extract color from product name
+  // Format: "Google Pixel 9 Pro XL 1TB Obsidian, Unlocked B"
+  // Steps:
+  // 1. Extract the base model (e.g., "9 Pro XL")
+  // 2. Remove "Google Pixel " prefix
+  // 3. Remove storage (GB/TB)
+  // 4. Remove the base model from remaining string
+  // 5. Remove ", Unlocked [condition]" suffix
+  // 6. Extract the last word(s) as color
+
+  const baseModel = extractBaseModel(name);
+
+  // Remove prefix and storage, then remove base model
+  const withoutPrefixAndStorage = name
+    .replace(/Google Pixel\s+/i, '')
+    .replace(/\d+(?:GB|TB)\s+/i, '');
+
+  // Remove the base model from the remaining string
+  const withoutBaseModel = withoutPrefixAndStorage
+    .replace(new RegExp(`^${baseModel}\\s+`, 'i'), '')
+    .trim();
+
+  // Remove the ", Unlocked [condition]" suffix
+  const withoutUnlocked = withoutBaseModel.replace(/,\s*Unlocked\s*[ABC]$/, '').trim();
+
+  // Now extract the last word(s) as color
+  // This handles "Obsidian" and "Rose Quartz"
+  const colorMatch = withoutUnlocked.match(/(\S+)(?:\s+(\S+))?$/);
+  if (colorMatch) {
+    // If there's a second group, it's a two-word color like "Rose Quartz"
+    color = colorMatch[2] ? `${colorMatch[1]} ${colorMatch[2]}` : colorMatch[1];
   }
 
-  // Extract base model
-  const baseModel = extractBaseModel(name);
   const { cleanName, slug } = createBaseProductInfo(baseModel);
 
   // Map CLI condition to our schema
   const conditionMap = {
     'A': 'excellent',
-    'B': 'good', 
+    'B': 'good',
     'C': 'fair'
   };
-  
+
   const mappedCondition = conditionMap[condition] || 'good';
 
   // Add GrapheneOS service markup of £120 to the CEX price
@@ -631,7 +939,7 @@ export const createOrUpdateProductFromCLI = async (cliProductData) => {
   // Create variation data
   const stockQuantity = 1; // Since it's second-hand, usually just 1 in stock
   const stockStatus = 'in_stock';
-  
+
   const newVariation = {
     condition: mappedCondition,
     color: color,
@@ -645,40 +953,71 @@ export const createOrUpdateProductFromCLI = async (cliProductData) => {
   };
 
   // Check if a product with this base model already exists
-  const existingProduct = await Product.findOne({ 
+  const existingProduct = await Product.findOne({
     baseModel: baseModel,
     slug: { $regex: new RegExp(slug, 'i') }
   });
 
   if (existingProduct) {
+    // Store source URL if not already set and URL is provided
+    if (!existingProduct.sourceUrl && url) {
+      existingProduct.sourceUrl = url;
+    }
+
     // Check if this exact variation already exists
-    const existingVariation = existingProduct.variations.find(v => 
-      v.condition === mappedCondition && 
-      v.color === color && 
+    const existingVariation = existingProduct.variations.find(v =>
+      v.condition === mappedCondition &&
+      v.color === color &&
       v.storage === storage
     );
 
     if (existingVariation) {
       console.log(`⏭️  Variation already exists: ${cleanName} - ${storage} ${color} (${mappedCondition})`);
-      
+
+      // Track if we need to save (price changed or sourceUrl needs to be stored)
+      let needsSave = false;
+
+      // Store source URL if not already set (use direct MongoDB update to bypass schema cache)
+      if (url) {
+        // Check if sourceUrl exists in database directly
+        const productInDb = await Product.collection.findOne({ _id: existingProduct._id }, { projection: { sourceUrl: 1 } });
+        if (!productInDb.sourceUrl) {
+          console.log(`   🔗 Setting sourceUrl in DB: ${url}`);
+          await Product.collection.updateOne(
+            { _id: existingProduct._id },
+            { $set: { sourceUrl: url } }
+          );
+          needsSave = true;
+        } else {
+          console.log(`   ℹ️  sourceUrl already set in DB: ${productInDb.sourceUrl}`);
+        }
+      } else if (!url) {
+        console.log(`   ⚠️  No URL provided in CLI data`);
+      }
+
       // Update price if different
       if (existingVariation.price !== finalPrice) {
         existingVariation.price = finalPrice;
-        await existingProduct.save();
-        console.log(`   💰 Updated price to £${finalPrice}`);
+        needsSave = true;
       }
-      
+
+      // Save if sourceUrl was updated or price changed
+      if (needsSave) {
+        await existingProduct.save();
+        console.log(`   💰 Updated product data`);
+      }
+
       return existingProduct;
     } else {
       // Add new variation to existing product
       existingProduct.variations.push(newVariation);
-      
+
       // Update product price range if needed
       const prices = existingProduct.variations.map(v => v.price);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       existingProduct.price = minPrice; // Set base price to minimum
-      
+
       await existingProduct.save();
       console.log(`✅ Added variation: ${cleanName} - ${storage} ${color} (${mappedCondition}) - £${finalPrice}`);
       return existingProduct;
@@ -686,17 +1025,32 @@ export const createOrUpdateProductFromCLI = async (cliProductData) => {
   } else {
     // Create new product with first variation
     const sku = `PIXEL-${baseModel.replace(/\s/g, '')}-BASE`.toUpperCase();
-    
+
+    // Download product image
+    let productImagePath = "/images/placeholder.png";
+    if (url) {
+      try {
+        const downloadedPath = await downloadProductImages(cleanName, url);
+        if (downloadedPath) {
+          productImagePath = downloadedPath;
+          newVariation.images = [productImagePath];
+        }
+      } catch (imageError) {
+        console.log(`   ⚠️  Could not download image, using placeholder: ${imageError.message}`);
+      }
+    }
+
     const product = new Product({
       name: cleanName,
       slug: slug,
       sku: sku,
       baseModel: baseModel,
-      category: category._id,
+      sourceUrl: url,
+      category: categoryId,
       shortDescription: `${cleanName} with GrapheneOS Pre-installed - Privacy-Focused Android Alternative`,
       longDescription: `GrapheneOS Pixel ${baseModel} with GrapheneOS Pre-installed. This Privacy-Focused Android Alternative features hardware identical to Google Pixel ${baseModel}. Custom ROM - GrapheneOS provides enhanced privacy and security while maintaining full functionality.`,
       price: finalPrice, // Base price
-      images: ["/images/placeholder.png"],
+      images: [productImagePath],
       variations: [newVariation],
       attributes: [
         {
@@ -944,6 +1298,133 @@ const getConditionDescription = (condition) => {
   return descriptions[condition] || "Good condition";
 };
 
+// Function to update images for products that have placeholder images
+// This downloads actual product images from CEX
+export const updateProductImages = async (options = {}) => {
+  let connection = null;
+  try {
+    connection = await connectDB();
+
+    if (!Product) {
+      throw new Error("Product model not initialized");
+    }
+
+    // Ensure images directory exists
+    ensureImagesDirectory();
+
+    console.log("🔍 Finding products with placeholder images...");
+
+    // Find products that need image updates
+    const query = options.force
+      ? { name: { $regex: /pixel/i } }  // All Pixel products if force flag
+      : { images: "/images/placeholder.png", name: { $regex: /pixel/i } };  // Only placeholders
+
+    const products = await Product.find(query);
+    console.log(`📊 Found ${products.length} products to update images for`);
+
+    if (products.length === 0) {
+      console.log("✅ No products need image updates");
+      return { updatedCount: 0, skippedCount: 0 };
+    }
+
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    for (const product of products) {
+      try {
+        console.log(`\n📱 Processing: ${product.name}`);
+
+        // Get the base model and first variation's color
+        const baseModel = product.baseModel || extractBaseModel(product.name);
+        const firstVariation = product.variations && product.variations.length > 0 ? product.variations[0] : null;
+        const color = firstVariation?.color || 'obsidian';
+
+        // Try Google's official Pixel images first (most reliable)
+        const googleImageUrl = getGooglePixelImageUrl(baseModel, color);
+        console.log(`   🔍 Trying Google image URL: ${googleImageUrl}`);
+
+        // Download the product image
+        const safeBaseName = product.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .substring(0, 50);
+
+        let imagePath = await downloadImage(googleImageUrl, safeBaseName);
+
+        // If Google image fails, try CEX scraping as fallback
+        if (!imagePath && product.sourceUrl) {
+          console.log(`   ⚠️  Google image failed, trying CEX scraping...`);
+          const cexImageUrl = await extractImageUrlFromPage(product.sourceUrl);
+          if (cexImageUrl) {
+            imagePath = await downloadImage(cexImageUrl, safeBaseName);
+          }
+        }
+
+        if (!imagePath) {
+          console.log(`   ⚠️  Could not download image for ${product.name}`);
+          skippedCount++;
+          continue;
+        }
+
+        // Update product images
+        product.images = [imagePath];
+
+        // Also update all variations' images
+        if (product.variations && product.variations.length > 0) {
+          product.variations.forEach(v => {
+            v.images = [imagePath];
+          });
+        }
+
+        await product.save();
+        console.log(`   ✅ Updated image: ${imagePath}`);
+        updatedCount++;
+
+        // Add delay between requests to be respectful
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+      } catch (productError) {
+        console.error(`   ❌ Error updating ${product.name}: ${productError.message}`);
+        skippedCount++;
+      }
+    }
+
+    console.log(`\n🎉 Image update completed!`);
+    console.log(`   ✅ Updated: ${updatedCount} products`);
+    console.log(`   ⏭️  Skipped: ${skippedCount} products`);
+
+    return { updatedCount, skippedCount };
+
+  } catch (error) {
+    console.error("❌ Error updating product images:", error.message);
+    throw error;
+  } finally {
+    if (connection && mongoose.connection.readyState === 1) {
+      try {
+        await mongoose.connection.close();
+        console.log("MongoDB connection closed");
+      } catch (closeError) {
+        console.error("Error closing connection:", closeError);
+      }
+    }
+  }
+};
+
+// Helper function to generate CEX URL from base model
+const generateCexUrl = (baseModel) => {
+  if (!baseModel) return null;
+
+  // Clean up the base model
+  const cleanModel = baseModel.trim();
+
+  // Map base models to CEX search URLs
+  // Format: https://uk.webuy.com/product-search?query=MODEL+PHONE
+  const encodedQuery = encodeURIComponent(`${cleanModel} PHONE`);
+  return `https://uk.webuy.com/product-search?query=${encodedQuery}`;
+};
+
+// Legacy function - kept for backwards compatibility
 export const updateAllPixelImages = async () => {
   let connection = null;
   try {
@@ -999,6 +1480,9 @@ export const syncAndroidPhones = async (options = {}) => {
     if (!User || !Product) {
       throw new Error("Models not initialized properly");
     }
+
+    // Ensure images directory exists
+    ensureImagesDirectory();
 
     // Find or create admin user with timeout
     console.log("Looking for admin user...");
@@ -1088,6 +1572,12 @@ export const syncAndroidPhones = async (options = {}) => {
       return { syncedCount: 0, skippedCount: rawProducts.length };
     }
 
+    // Step 4.5: Get the Smartphones category once to avoid race conditions
+    console.log("\n📂 Ensuring Smartphones category exists...");
+    const category = await findSmartphonesCategory();
+    const categoryId = category._id;
+    console.log(`✅ Using category: ${category.name} (ID: ${categoryId})`);
+
     // Step 5: Process and save products
     console.log("\n💾 Creating products in database...");
     let syncedCount = 0;
@@ -1096,7 +1586,7 @@ export const syncAndroidPhones = async (options = {}) => {
     for (const productData of filteredProducts) {
       try {
         // Create or update product with grouped variations
-        const result = await createOrUpdateProductFromCLI(productData);
+        const result = await createOrUpdateProductFromCLI(productData, categoryId);
         
         if (result) {
           syncedCount++;
@@ -1224,6 +1714,17 @@ if (isMainModule()) {
       })
       .catch((error) => {
         console.error("\n❌ Removal failed:", error.message);
+        process.exit(1);
+      });
+  } else if (command === "update-images") {
+    const forceUpdate = process.argv.includes('--force');
+    updateProductImages({ force: forceUpdate })
+      .then((result) => {
+        console.log(`\n✅ Image update completed! Updated ${result.updatedCount} products, skipped ${result.skippedCount}.`);
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error("\n❌ Image update failed:", error.message);
         process.exit(1);
       });
   } else {

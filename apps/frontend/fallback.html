@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphene Security - Privacy-Focused Smartphones</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: #0F3A2C; color: white; padding: 20px; text-align: center; margin-bottom: 30px; border-radius: 8px; }
+        .product { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { background: #4ade80; color: #0F3A2C; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        .btn:hover { background: #22c55e; }
+        .price { font-size: 20px; font-weight: bold; color: #0F3A2C; margin: 10px 0; }
+        .hero { text-align: center; padding: 40px 0; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 8px; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 Graphene Security</h1>
+        <p>Privacy-Focused Smartphones with GrapheneOS</p>
+    </div>
+
+    <div class="hero">
+        <h2>Welcome to GrapheneOS Store</h2>
+        <p>Google Pixel phones pre-installed with GrapheneOS for maximum security and privacy</p>
+        <button class="btn" onclick="showProducts()">View Products</button>
+    </div>
+
+    <div id="products" style="display: none;">
+        <h2>Available Products</h2>
+
+        <div class="product">
+            <h3>Google Pixel 8 Pro</h3>
+            <p>Latest flagship with GrapheneOS pre-installed</p>
+            <div class="price">£999</div>
+            <button class="btn">Order Now</button>
+        </div>
+
+        <div class="product">
+            <h3>Google Pixel 8</h3>
+            <p>Premium features with enhanced privacy</p>
+            <div class="price">£799</div>
+            <button class="btn">Order Now</button>
+        </div>
+
+        <div class="product">
+            <h3>Google Pixel 7a</h3>
+            <p>Affordable security with GrapheneOS</p>
+            <div class="price">£599</div>
+            <button class="btn">Order Now</button>
+        </div>
+
+        <div class="product">
+            <h3>Privacy App Installation</h3>
+            <p>Professional privacy setup service</p>
+            <div class="price">£99</div>
+            <button class="btn">Add to Order</button>
+        </div>
+
+        <p style="text-align: center; margin-top: 30px;">
+            <button class="btn" onclick="hideProducts()">Back to Home</button>
+        </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h3>🛡️ Why Choose GrapheneOS?</h3>
+        <p>• Enhanced security with regular updates<br>
+        • Maximum privacy - no tracking or telemetry<br>
+        • Full app compatibility<br>
+        • Open source and transparent</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: #0F3A2C; color: white; border-radius: 8px;">
+        <h3>📧 Contact Us</h3>
+        <p>Email: support@graphene-security.com<br>
+        Hours: Monday-Friday, 9am-5pm GMT</p>
+    </div>
+
+    <script>
+        function showProducts() {
+            document.getElementById('products').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function hideProducts() {
+            document.getElementById('products').style.display = 'none';
+            window.scrollTo(0, 0);
+        }
+
+        // Test backend connection
+        console.log('🚀 GrapheneOS Store loaded');
+        fetch('https://api.graphene-security.com/api/health')
+            .then(response => response.json())
+            .then(data => console.log('✅ Backend connected:', data))
+            .catch(error => console.log('⚠️ Backend not available:', error.message));
+    </script>
+</body>
+</html>
