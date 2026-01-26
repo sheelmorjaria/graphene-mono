@@ -224,12 +224,17 @@ const ReturnRequestPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-bg-primary py-8">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="card card-glow p-6 animate-fadeIn">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Unable to Process Return</h1>
-              <p className="text-gray-600 mb-6">{error}</p>
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-subtle border border-red rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h1 className="font-display text-2xl font-bold text-cyan-400 uppercase tracking-wider mb-4">Unable to Process Return</h1>
+              <p className="text-text-secondary mb-6">{error}</p>
               <Link
                 to={`/my-account/orders/${orderId}`}
                 className="btn btn-primary"
@@ -244,51 +249,61 @@ const ReturnRequestPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-bg-primary py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-6">
-          <nav className="breadcrumb">
-            <Link to="/my-account/orders" className="breadcrumb-link">My Orders</Link>
-            <span className="breadcrumb-separator">›</span>
-            <Link to={`/my-account/orders/${orderId}`} className="breadcrumb-link">
+        <div className="text-center mb-8 animate-fadeIn">
+          <nav className="text-sm text-text-muted font-mono mb-4">
+            <Link to="/my-account/orders" className="text-cyan-400 hover:text-matrix-400 transition-colors">My Orders</Link>
+            <span className="mx-2 text-text-muted">/</span>
+            <Link to={`/my-account/orders/${orderId}`} className="text-cyan-400 hover:text-matrix-400 transition-colors">
               Order {order?.orderNumber}
             </Link>
-            <span className="breadcrumb-separator">›</span>
-            <span>Request Return</span>
+            <span className="mx-2 text-text-muted">/</span>
+            <span className="text-text-secondary">Request Return</span>
           </nav>
-          <h1 className="text-3xl font-bold text-gray-900 mt-4">Request Return</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-cyan-400 mb-2 uppercase tracking-wider">Request Return</h1>
+          <p className="text-text-secondary">
             Select the items you'd like to return from order {order?.orderNumber}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Order Information */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Information</h2>
+          <div className="card card-glow p-6 animate-fadeIn">
+            <h2 className="font-heading text-xl font-bold text-cyan-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Order Information
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="font-medium text-gray-700">Order Number:</span>
-                <p className="text-gray-900">{order?.orderNumber}</p>
+                <span className="font-medium text-text-secondary">Order Number:</span>
+                <p className="text-text-primary font-mono">{order?.orderNumber}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Order Date:</span>
-                <p className="text-gray-900">{new Date(order?.orderDate).toLocaleDateString()}</p>
+                <span className="font-medium text-text-secondary">Order Date:</span>
+                <p className="text-text-primary font-mono">{new Date(order?.orderDate).toLocaleDateString()}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Delivery Date:</span>
-                <p className="text-gray-900">{new Date(order?.deliveryDate).toLocaleDateString()}</p>
+                <span className="font-medium text-text-secondary">Delivery Date:</span>
+                <p className="text-text-primary font-mono">{new Date(order?.deliveryDate).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
 
           {/* Items Selection */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Select Items to Return</h2>
+          <div className="card card-glow p-6 animate-fadeIn">
+            <h2 className="font-heading text-xl font-bold text-cyan-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              Select Items to Return
+            </h2>
             
             {submitError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              <div className="mb-4 bg-red-subtle border border-red text-red px-4 py-3 rounded-lg font-mono text-sm">
                 {submitError}
               </div>
             )}
@@ -297,24 +312,24 @@ const ReturnRequestPage = () => {
               {eligibleItems.map((item) => {
                 const isSelected = selectedItems[item.productId] > 0;
                 const selectedQuantity = selectedItems[item.productId] || 1;
-                
+
                 return (
-                  <div key={item.productId} className="border border-gray-200 rounded-lg p-4">
+                  <div key={item.productId} className="border border-border-subtle rounded-lg p-4 bg-bg-elevated hover:border-cyan-400 transition-colors">
                     <div className="flex items-start gap-4">
                       <input
                         type="checkbox"
                         id={`item-${item.productId}`}
                         checked={isSelected}
                         onChange={(e) => handleItemSelection(item.productId, e.target.checked)}
-                        className="mt-1"
+                        className="mt-1 w-5 h-5 rounded border-border-subtle text-cyan-400 focus:ring-cyan-400 focus:ring-offset-bg-elevated"
                       />
-                      
+
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-medium text-gray-900">{item.productName}</h3>
-                            <p className="text-sm text-gray-600">£{item.unitPrice.toFixed(2)} each</p>
-                            <p className="text-sm text-gray-500">Originally ordered: {item.quantity}</p>
+                            <h3 className="font-medium text-text-primary">{item.productName}</h3>
+                            <p className="text-sm text-text-secondary font-mono">£{item.unitPrice.toFixed(2)} each</p>
+                            <p className="text-sm text-text-muted">Originally ordered: {item.quantity}</p>
                           </div>
                         </div>
 
@@ -322,13 +337,13 @@ const ReturnRequestPage = () => {
                           <div className="mt-4 space-y-4">
                             {/* Quantity Selection */}
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-text-secondary mb-1">
                                 Return Quantity
                               </label>
                               <select
                                 value={selectedQuantity}
                                 onChange={(e) => handleQuantityChange(item.productId, e.target.value)}
-                                className="form-input w-20"
+                                className="form-input w-20 bg-bg-elevated border border-border-subtle text-text-primary focus:border-cyan-400 focus:ring-cyan-400"
                               >
                                 {[...Array(item.quantity)].map((_, i) => (
                                   <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -338,13 +353,13 @@ const ReturnRequestPage = () => {
 
                             {/* Reason Selection */}
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Reason for Return *
+                              <label className="block text-sm font-medium text-text-secondary mb-1">
+                                Reason for Return <span className="text-cyan-400">*</span>
                               </label>
                               <select
                                 value={returnReasons[item.productId] || ''}
                                 onChange={(e) => handleReasonChange(item.productId, e.target.value)}
-                                className="form-input w-full"
+                                className="form-input w-full bg-bg-elevated border border-border-subtle text-text-primary focus:border-cyan-400 focus:ring-cyan-400"
                                 required
                               >
                                 <option value="">Select a reason...</option>
@@ -358,14 +373,14 @@ const ReturnRequestPage = () => {
 
                             {/* Additional Description */}
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-text-secondary mb-1">
                                 Additional Details (Optional)
                               </label>
                               <textarea
                                 value={reasonDescriptions[item.productId] || ''}
                                 onChange={(e) => handleReasonDescriptionChange(item.productId, e.target.value)}
                                 placeholder="Please provide any additional details about the return..."
-                                className="form-input w-full"
+                                className="form-input w-full bg-bg-elevated border border-border-subtle text-text-primary focus:border-cyan-400 focus:ring-cyan-400"
                                 rows={3}
                                 maxLength={500}
                               />
@@ -381,21 +396,26 @@ const ReturnRequestPage = () => {
           </div>
 
           {/* Image Upload */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Supporting Images (Optional)</h2>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="card card-glow p-6 animate-fadeIn">
+            <h2 className="font-heading text-xl font-bold text-cyan-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Supporting Images (Optional)
+            </h2>
+            <p className="text-sm text-text-secondary mb-4">
               Upload photos to support your return request (e.g., damage, wrong item received)
             </p>
-            
+
             <div className="space-y-4">
               <input
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={handleImageUpload}
-                className="form-input"
+                className="form-input w-full bg-bg-elevated border border-border-subtle text-text-primary focus:border-cyan-400 focus:ring-cyan-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-subtle file:text-cyan-400 hover:file:bg-cyan-subtle/50"
               />
-              
+
               {images.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {images.map((image, index) => (
@@ -403,12 +423,12 @@ const ReturnRequestPage = () => {
                       <img
                         src={URL.createObjectURL(image)}
                         alt={`Return evidence ${index + 1}`}
-                        className="w-full h-24 object-cover rounded"
+                        className="w-full h-24 object-cover rounded border border-border-subtle"
                       />
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        className="absolute top-1 right-1 bg-red text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700 transition-colors"
                       >
                         ×
                       </button>
@@ -421,16 +441,21 @@ const ReturnRequestPage = () => {
 
           {/* Summary */}
           {Object.keys(selectedItems).some(id => selectedItems[id] > 0) && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Return Summary</h2>
+            <div className="card card-glow p-6 animate-fadeIn">
+              <h2 className="font-heading text-xl font-bold text-cyan-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Return Summary
+              </h2>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Items to return:</span>
-                  <span>{Object.values(selectedItems).reduce((sum, qty) => sum + (qty || 0), 0)}</span>
+                  <span className="text-text-secondary">Items to return:</span>
+                  <span className="text-text-primary font-mono">{Object.values(selectedItems).reduce((sum, qty) => sum + (qty || 0), 0)}</span>
                 </div>
-                <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                  <span>Estimated refund:</span>
-                  <span>£{getTotalRefundAmount().toFixed(2)}</span>
+                <div className="flex justify-between font-semibold text-lg border-t border-border-subtle pt-2">
+                  <span className="text-text-primary">Estimated refund:</span>
+                  <span className="text-cyan-400 font-mono">£{getTotalRefundAmount().toFixed(2)}</span>
                 </div>
               </div>
             </div>
