@@ -39,6 +39,11 @@ import BitcoinPaymentPage from './pages/BitcoinPaymentPage';
 import MoneroPaymentPage from './pages/MoneroPaymentPage';
 import ContactUsPage from './pages/ContactUsPage';
 import CustomerPrivacyPage from './pages/CustomerPrivacyPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import RefundPolicyPage from './pages/RefundPolicyPage';
+import ShippingInformationPage from './pages/ShippingInformationPage';
+import FAQPage from './pages/FAQPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
@@ -471,7 +476,14 @@ export const AppRoutes = () => {
           
           {/* Contact Us page */}
           <Route path="/contact-us" element={<ContactUsPage />} />
-          
+
+          {/* Policy & Information pages */}
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/refunds" element={<RefundPolicyPage />} />
+          <Route path="/shipping" element={<ShippingInformationPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin" element={
