@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 2,
+  "dockerfilePath": "Dockerfile.coolify",
+  "containerHttpPort": 3000,
+  "envVars": [
+    {
+      "id": "VITE_API_BASE_URL",
+      "description": "Backend API URL (use backend CapRover URL or /api for same domain)",
+      "defaultValue": "/api",
+      "advanced": false
+    },
+    {
+      "id": "VITE_APP_TITLE",
+      "description": "Application title",
+      "defaultValue": "GrapheneOS Store",
+      "advanced": false
+    },
+    {
+      "id": "VITE_COMPANY_NAME",
+      "description": "Company name",
+      "defaultValue": "Graphene Security",
+      "advanced": false
+    },
+    {
+      "id": "VITE_SUPPORT_EMAIL",
+      "description": "Support email address",
+      "defaultValue": "support@graphene-security.com",
+      "advanced": false
+    },
+    {
+      "id": "VITE_ENABLE_PAYPAL_PAYMENTS",
+      "description": "Enable PayPal payment gateway",
+      "defaultValue": "true",
+      "advanced": true
+    },
+    {
+      "id": "VITE_ENABLE_BITCOIN_PAYMENTS",
+      "description": "Enable Bitcoin payments via Blockonomics",
+      "defaultValue": "true",
+      "advanced": true
+    },
+    {
+      "id": "VITE_ENABLE_MONERO_PAYMENTS",
+      "description": "Enable Monero payments via GloBee",
+      "defaultValue": "false",
+      "advanced": true
+    },
+    {
+      "id": "VITE_ENABLE_DEV_TOOLS",
+      "description": "Enable developer tools in production",
+      "defaultValue": "false",
+      "advanced": true
+    }
+  ],
+  "volumes": [],
+  "hasDefaultSubDomain": true
+}

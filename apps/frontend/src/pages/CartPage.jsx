@@ -10,7 +10,7 @@ const QuantitySelector = ({ item, onUpdateQuantity, isUpdating }) => {
     if (newQuantity < 1 || newQuantity > 99 || newQuantity === quantity) {
       return;
     }
-    
+
     setQuantity(newQuantity);
     await onUpdateQuantity(item.productId, newQuantity);
   };
@@ -37,12 +37,12 @@ const QuantitySelector = ({ item, onUpdateQuantity, isUpdating }) => {
       <button
         onClick={() => handleQuantityChange(quantity - 1)}
         disabled={quantity <= 1 || isUpdating}
-        className="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded"
+        className="w-8 h-8 flex items-center justify-center bg-bg-elevated border border-border-subtle hover:border-cyan-400 disabled:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-50 rounded text-text-primary hover:text-cyan-400 transition-colors"
         aria-label="Decrease quantity"
       >
         -
       </button>
-      
+
       <input
         type="number"
         min="1"
@@ -52,14 +52,14 @@ const QuantitySelector = ({ item, onUpdateQuantity, isUpdating }) => {
         onBlur={handleInputBlur}
         onKeyPress={handleKeyPress}
         disabled={isUpdating}
-        className="w-16 h-8 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+        className="w-16 h-8 text-center border border-border-subtle rounded bg-bg-elevated text-text-primary focus:outline-none focus:border-cyan-400 disabled:bg-bg-elevated disabled:opacity-50 font-mono"
         aria-label="Quantity"
       />
-      
+
       <button
         onClick={() => handleQuantityChange(quantity + 1)}
         disabled={quantity >= 99 || isUpdating}
-        className="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded"
+        className="w-8 h-8 flex items-center justify-center bg-bg-elevated border border-border-subtle hover:border-cyan-400 disabled:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-50 rounded text-text-primary hover:text-cyan-400 transition-colors"
         aria-label="Increase quantity"
       >
         +
@@ -83,18 +83,18 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
   };
 
   return (
-    <div className="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0">
+    <div className="flex items-center space-x-4 py-4 border-b border-border-subtle last:border-b-0">
       {/* Product Image */}
       <div className="flex-shrink-0">
         {item.productImage ? (
           <img
             src={item.productImage}
             alt={item.productName}
-            className="w-16 h-16 object-cover rounded"
+            className="w-16 h-16 object-cover rounded border border-border-subtle"
           />
         ) : (
-          <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-            <span className="text-gray-400 text-xs">No Image</span>
+          <div className="w-16 h-16 bg-bg-elevated border border-border-subtle rounded flex items-center justify-center">
+            <span className="text-text-muted text-xs font-mono">No Image</span>
           </div>
         )}
       </div>
@@ -103,15 +103,15 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
       <div className="flex-1">
         <Link
           to={`/products/${item.productSlug}`}
-          className="text-lg font-medium text-gray-900 hover:text-blue-600"
+          className="text-lg font-medium text-text-primary hover:text-cyan-400 transition-colors"
         >
           {item.productName}
         </Link>
-        <div className="text-sm text-gray-500 mt-1">
+        <div className="text-sm text-text-secondary mt-1 font-mono">
           {formatCurrency(item.unitPrice)} each
         </div>
         {item.leadTime && (
-          <div className="text-xs text-blue-600 mt-1 flex items-center">
+          <div className="text-xs text-cyan-400 mt-1 flex items-center">
             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -131,7 +131,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
 
       {/* Subtotal */}
       <div className="flex-shrink-0 w-24 text-right">
-        <div className="text-lg font-medium text-gray-900">
+        <div className="text-lg font-medium text-cyan-400 font-mono">
           {formatCurrency(item.subtotal)}
         </div>
       </div>
@@ -141,7 +141,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, isUpdating }) => {
         <button
           onClick={handleRemove}
           disabled={isRemoving || isUpdating}
-          className="text-red-600 hover:text-red-800 disabled:text-gray-400 disabled:cursor-not-allowed p-2"
+          className="text-red hover:text-red-700 disabled:text-text-muted disabled:cursor-not-allowed p-2 transition-colors"
           aria-label="Remove item"
         >
           {isRemoving ? (
@@ -200,11 +200,11 @@ const CartPage = () => {
 
   if (loading) {
     return (
-      <div className="cart-page">
+      <div className="cart-page min-h-screen">
         <div className="container mx-auto px-4 py-8">
           <div className="loading text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Loading your cart...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+            <p className="mt-4 text-text-muted font-mono">Loading your cart...</p>
           </div>
         </div>
       </div>
@@ -212,26 +212,32 @@ const CartPage = () => {
   }
 
   return (
-    <div className="cart-page">
+    <div className="cart-page min-h-screen">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Shopping Cart</h1>
-          <nav className="text-sm text-gray-500">
-            <Link to="/products" className="hover:text-blue-600">Products</Link>
+        <div className="text-center mb-8 animate-fadeIn">
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-cyan-400 mb-2 uppercase tracking-wider">Shopping Cart</h1>
+          <p className="text-text-secondary">Review your items before checkout</p>
+          <nav className="text-sm text-text-muted font-mono mt-4">
+            <Link to="/products" className="hover:text-cyan-400 transition-colors">Products</Link>
             <span className="mx-2">/</span>
-            <span>Cart</span>
+            <span className="text-cyan-400">Cart</span>
           </nav>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
+          <div className="bg-red-subtle border border-red text-red px-4 py-3 rounded-lg mb-6" role="alert">
             <div className="flex justify-between items-center">
-              <span>{error}</span>
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>{error}</span>
+              </div>
               <button
                 onClick={clearError}
-                className="text-red-700 hover:text-red-900"
+                className="text-red hover:text-red-700 font-mono text-xl"
               >
                 ×
               </button>
@@ -242,17 +248,24 @@ const CartPage = () => {
         {cart.items.length === 0 ? (
           /* Empty Cart */
           <div className="empty-cart text-center py-16">
-            <div className="max-w-md mx-auto">
-              <div className="text-6xl mb-4">🛒</div>
-              <h2 className="text-2xl font-semibold text-gray-700 mb-4">Your Cart is Empty</h2>
-              <p className="text-gray-600 mb-8">
+            <div className="card card-glow max-w-lg mx-auto p-8">
+              <div className="w-24 h-24 mx-auto mb-6 bg-cyan-subtle border border-cyan-400 rounded-full flex items-center justify-center">
+                <svg className="w-12 h-12 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h2 className="font-display text-2xl font-bold text-text-primary mb-4">Your Cart is Empty</h2>
+              <p className="text-text-secondary mb-8">
                 Looks like you haven't added any items to your cart yet. Start shopping to fill it up!
               </p>
               <Link
                 to="/products"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="btn btn-primary"
               >
                 Continue Shopping
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </Link>
             </div>
           </div>
@@ -261,16 +274,19 @@ const CartPage = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="card card-glow p-6 animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">
+                  <h2 className="font-heading text-xl font-bold text-text-primary flex items-center gap-2">
+                    <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
                     Cart Items ({cart.totalItems} item{cart.totalItems !== 1 ? 's' : ''})
                   </h2>
                   {cart.items.length > 1 && (
                     <button
                       onClick={handleClearCart}
                       disabled={isUpdating}
-                      className="text-red-600 hover:text-red-800 disabled:text-gray-400 disabled:cursor-not-allowed text-sm"
+                      className="text-red hover:text-red-700 disabled:text-text-muted disabled:cursor-not-allowed text-sm font-mono"
                     >
                       Clear Cart
                     </button>
@@ -278,7 +294,7 @@ const CartPage = () => {
                 </div>
 
                 {/* Desktop Table Header */}
-                <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:items-center md:py-3 md:border-b md:border-gray-200 md:text-sm md:font-medium md:text-gray-700">
+                <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:items-center md:py-3 md:border-b md:border-border-subtle md:text-sm md:font-medium md:text-text-muted">
                   <div className="col-span-5">Product</div>
                   <div className="col-span-2 text-center">Quantity</div>
                   <div className="col-span-2 text-right">Price</div>
@@ -302,7 +318,7 @@ const CartPage = () => {
                   {/* Desktop View */}
                   <div className="hidden md:block">
                     {cart.items.map((item) => (
-                      <div key={item._id} className="grid grid-cols-12 gap-4 items-center py-4 border-b border-gray-200 last:border-b-0">
+                      <div key={item._id} className="grid grid-cols-12 gap-4 items-center py-4 border-b border-border-subtle last:border-b-0">
                         {/* Product Info */}
                         <div className="col-span-5 flex items-center space-x-4">
                           <div className="flex-shrink-0">
@@ -310,22 +326,22 @@ const CartPage = () => {
                               <img
                                 src={item.productImage}
                                 alt={item.productName}
-                                className="w-16 h-16 object-cover rounded"
+                                className="w-16 h-16 object-cover rounded border border-border-subtle"
                               />
                             ) : (
-                              <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">No Image</span>
+                              <div className="w-16 h-16 bg-bg-elevated border border-border-subtle rounded flex items-center justify-center">
+                                <span className="text-text-muted text-xs font-mono">No Image</span>
                               </div>
                             )}
                           </div>
                           <div>
                             <Link
                               to={`/products/${item.productSlug}`}
-                              className="text-lg font-medium text-gray-900 hover:text-blue-600"
+                              className="text-lg font-medium text-text-primary hover:text-cyan-400 transition-colors"
                             >
                               {item.productName}
                             </Link>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-text-secondary font-mono">
                               {formatCurrency(item.unitPrice)} each
                             </div>
                           </div>
@@ -342,12 +358,12 @@ const CartPage = () => {
 
                         {/* Unit Price */}
                         <div className="col-span-2 text-right">
-                          <span className="text-gray-900">{formatCurrency(item.unitPrice)}</span>
+                          <span className="text-text-primary font-mono">{formatCurrency(item.unitPrice)}</span>
                         </div>
 
                         {/* Subtotal */}
                         <div className="col-span-2 text-right">
-                          <span className="text-lg font-medium text-gray-900">
+                          <span className="text-lg font-medium text-cyan-400 font-mono">
                             {formatCurrency(item.subtotal)}
                           </span>
                         </div>
@@ -357,7 +373,7 @@ const CartPage = () => {
                           <button
                             onClick={() => handleRemoveItem(item.productId, item.variationId)}
                             disabled={isUpdating}
-                            className="text-red-600 hover:text-red-800 disabled:text-gray-400 disabled:cursor-not-allowed p-2"
+                            className="text-red hover:text-red-700 disabled:text-text-muted disabled:cursor-not-allowed p-2 transition-colors"
                             aria-label="Remove item"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,25 +390,30 @@ const CartPage = () => {
 
             {/* Cart Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow p-6 sticky top-4">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
-                
+              <div className="card card-glow p-6 sticky top-4 animate-fadeIn">
+                <h2 className="font-heading text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  Order Summary
+                </h2>
+
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal ({cart.totalItems})</span>
-                    <span className="text-gray-900">{formatCurrency(cart.totalAmount)}</span>
+                    <span className="text-text-secondary">Subtotal ({cart.totalItems})</span>
+                    <span className="text-text-primary font-mono">{formatCurrency(cart.totalAmount)}</span>
                   </div>
-                  
-                  
+
+
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="text-gray-900">Calculated at checkout</span>
+                    <span className="text-text-secondary">Shipping</span>
+                    <span className="text-text-muted text-sm font-mono">Calculated at checkout</span>
                   </div>
-                  
-                  <div className="border-t pt-3">
+
+                  <div className="border-t border-border-subtle pt-3">
                     <div className="flex justify-between text-lg font-semibold">
-                      <span className="text-gray-900">Total</span>
-                      <span className="text-gray-900">
+                      <span className="text-text-primary">Total</span>
+                      <span className="text-cyan-400 font-mono">
                         {formatCurrency(cart.finalTotal || cart.totalAmount)}
                       </span>
                     </div>
@@ -403,14 +424,17 @@ const CartPage = () => {
                 <button
                   onClick={() => navigate('/checkout')}
                   disabled={isUpdating}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                  className="btn btn-primary w-full"
                 >
                   {isUpdating ? 'Updating...' : 'Proceed to Checkout'}
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
                 </button>
 
                 <Link
                   to="/products"
-                  className="block w-full text-center text-blue-600 hover:text-blue-800 py-3 mt-3"
+                  className="block w-full text-center text-cyan-400 hover:text-matrix-400 py-3 mt-3 font-mono text-sm transition-colors"
                 >
                   Continue Shopping
                 </Link>

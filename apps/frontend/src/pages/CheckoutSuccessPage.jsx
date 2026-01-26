@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { CheckCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { capturePayPalPayment, formatCurrency } from '../services/paymentService';
 
 const CheckoutSuccessPage = () => {
@@ -12,7 +11,7 @@ const CheckoutSuccessPage = () => {
 
   useEffect(() => {
     document.title = 'Payment Processing - GrapheneOS Store';
-    
+
     const processPayment = async () => {
       try {
         // Get payment information from URL parameters
@@ -40,7 +39,7 @@ const CheckoutSuccessPage = () => {
   const handlePayPalPayment = async (paypalOrderId, payerId) => {
     try {
       setStatus('processing');
-      
+
       // Capture the PayPal payment
       const response = await capturePayPalPayment({
         paypalOrderId,
@@ -50,10 +49,10 @@ const CheckoutSuccessPage = () => {
       if (response.success) {
         setOrderData(response.data);
         setStatus('success');
-        
+
         // Update document title
         document.title = 'Payment Successful - GrapheneOS Store';
-        
+
         // Redirect to order confirmation page after a short delay
         setTimeout(() => {
           if (response.data.orderId) {
@@ -80,17 +79,19 @@ const CheckoutSuccessPage = () => {
   // Processing state
   if (status === 'processing') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
-            <ArrowPathIcon className="h-8 w-8 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6 animate-fadeIn">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-subtle border border-cyan-400 rounded-full mb-6">
+            <svg className="h-8 w-8 text-cyan-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 mb-4">Processing Payment</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-display uppercase tracking-wider text-cyan-400 mb-4">Processing Payment</h1>
+          <p className="text-text-secondary mb-6">
             Please wait while we confirm your payment. This may take a few moments.
           </p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-yellow-800 text-sm">
+          <div className="card card-glow p-4">
+            <p className="text-text-muted text-sm font-mono">
               Please do not close this window or navigate away from this page.
             </p>
           </div>
@@ -102,42 +103,44 @@ const CheckoutSuccessPage = () => {
   // Success state
   if (status === 'success') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
-            <CheckCircleIcon className="h-8 w-8 text-green-600" />
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6 animate-fadeIn">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-matrix-subtle border border-matrix-400 rounded-full mb-6">
+            <svg className="h-8 w-8 text-matrix-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 mb-4">Payment Successful!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-display uppercase tracking-wider text-cyan-400 mb-4">Payment Successful!</h1>
+          <p className="text-text-secondary mb-6">
             Your payment has been processed successfully. You will be redirected to your order details shortly.
           </p>
-          
+
           {orderData && (
-            <div className="bg-white rounded-lg shadow p-6 mb-6 text-left">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Payment Summary</h2>
+            <div className="card card-glow p-6 mb-6 text-left">
+              <h2 className="text-lg font-heading text-text-primary mb-4">Payment Summary</h2>
               {orderData.orderNumber && (
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Order Number:</span>
-                  <span className="font-semibold">#{orderData.orderNumber}</span>
+                  <span className="text-text-secondary">Order Number:</span>
+                  <span className="font-semibold font-mono text-text-primary">#{orderData.orderNumber}</span>
                 </div>
               )}
               {orderData.amount && (
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Amount Paid:</span>
-                  <span className="font-semibold">{formatCurrency(orderData.amount)}</span>
+                  <span className="text-text-secondary">Amount Paid:</span>
+                  <span className="font-semibold font-mono text-text-primary">{formatCurrency(orderData.amount)}</span>
                 </div>
               )}
               {orderData.paymentMethod && (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Payment Method:</span>
-                  <span className="font-semibold capitalize">{orderData.paymentMethod}</span>
+                  <span className="text-text-secondary">Payment Method:</span>
+                  <span className="font-semibold capitalize text-text-primary">{orderData.paymentMethod}</span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-800 text-sm">
+          <div className="card card-glow p-4 mb-6">
+            <p className="text-text-muted text-sm font-mono">
               Redirecting to your order details in a few seconds...
             </p>
           </div>
@@ -145,13 +148,13 @@ const CheckoutSuccessPage = () => {
           <div className="space-y-3">
             <Link
               to="/orders"
-              className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="block btn btn-primary w-full px-6 py-3 rounded-lg text-center"
             >
               View My Orders
             </Link>
             <Link
               to="/products"
-              className="block w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="block btn btn-secondary w-full px-6 py-3 rounded-lg text-center"
             >
               Continue Shopping
             </Link>
@@ -164,18 +167,20 @@ const CheckoutSuccessPage = () => {
   // Error state
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-6">
-            <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6 animate-fadeIn">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-subtle border border-red rounded-full mb-6">
+            <svg className="h-8 w-8 text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 mb-4">Payment Failed</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-display uppercase tracking-wider text-cyan-400 mb-4">Payment Failed</h1>
+          <p className="text-text-secondary mb-6">
             {error || 'There was an issue processing your payment. Please try again.'}
           </p>
 
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800 text-sm">
+          <div className="bg-red-subtle border border-red rounded-lg p-4 mb-6 font-mono text-sm">
+            <p className="text-red">
               Your payment was not processed. No charges have been made to your account.
             </p>
           </div>
@@ -183,19 +188,19 @@ const CheckoutSuccessPage = () => {
           <div className="space-y-3">
             <button
               onClick={handleRetryPayment}
-              className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="block btn btn-primary w-full px-6 py-3 rounded-lg text-center"
             >
               Try Again
             </button>
             <Link
               to="/cart"
-              className="block w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="block btn btn-secondary w-full px-6 py-3 rounded-lg text-center"
             >
               Return to Cart
             </Link>
             <Link
               to="/support"
-              className="block w-full px-6 py-3 text-blue-600 hover:text-blue-700 transition-colors"
+              className="block w-full px-6 py-3 text-cyan-400 hover:text-matrix-400 text-center"
             >
               Contact Support
             </Link>

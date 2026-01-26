@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 2,
+  "dockerfilePath": "Dockerfile",
+  "containerHttpPort": 5000,
+  "healthCheckPath": "/health",
+  "healthCheckInterval": 30000,
+  "healthCheckTimeout": 3000,
+  "healthCheckStartDelay": 40000,
+  "healthCheckRetries": 3,
+  "volumes": [
+    {
+      "volumeName": "backend-uploads",
+      "containerPath": "/app/uploads"
+    },
+    {
+      "volumeName": "backend-logs",
+      "containerPath": "/app/logs"
+    }
+  ],
+  "envVars": [
+    {
+      "id": "MONGODB_URI",
+      "description": "MongoDB connection string (required)",
+      "defaultValue": "",
+      "advanced": false,
+      "required": true
+    },
+    {
+      "id": "JWT_SECRET",
+      "description": "JWT signing secret for authentication (required)",
+      "defaultValue": "",
+      "advanced": false,
+      "required": true
+    },
+    {
+      "id": "PORT",
+      "description": "Backend server port",
+      "defaultValue": "5000",
+      "advanced": true
+    },
+    {
+      "id": "NODE_ENV",
+      "description": "Node environment",
+      "defaultValue": "production",
+      "advanced": true
+    },
+    {
+      "id": "PAYPAL_CLIENT_ID",
+      "description": "PayPal client ID",
+      "defaultValue": "",
+      "advanced": false
+    },
+    {
+      "id": "PAYPAL_CLIENT_SECRET",
+      "description": "PayPal client secret",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
+      "id": "COIN_GECKO_API_KEY",
+      "description": "CoinGecko API key for crypto exchange rates",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
+      "id": "BLOCKONOMICS_CALLBACK_SECRET",
+      "description": "Blockonomics callback secret for Bitcoin payments",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
+      "id": "GLOBEE_API_KEY",
+      "description": "GloBee API key for Monero payments",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
+      "id": "GLOBEE_API_SECRET",
+      "description": "GloBee API secret for Monero payments",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
+      "id": "ADMIN_EMAIL",
+      "description": "Admin user email",
+      "defaultValue": "admin@grapheneosstore.com",
+      "advanced": false
+    },
+    {
+      "id": "SUPPORT_EMAIL",
+      "description": "Support email address",
+      "defaultValue": "support@graphene-security.com",
+      "advanced": false
+    },
+    {
+      "id": "FRONTEND_URL",
+      "description": "Frontend URL for CORS",
+      "defaultValue": "https://graphene-security.com",
+      "advanced": true
+    }
+  ]
+}
