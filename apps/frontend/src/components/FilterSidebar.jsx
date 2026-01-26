@@ -179,7 +179,7 @@ const FilterSidebar = ({
       <div className="mb-4">
         <h3 className="font-heading font-semibold text-sm text-text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
           <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M6.5 11c-.57 0-1.1.24-1.5.62L6.5 8c.4-.38.92-.38 1.32 0l1.5 1.5c.4.4 1.02.4 1.62 0 2.02L12 17c.55.55 1.45.55 2 0 2.5l-4 4c-.4.4-.92-.4-1.32 0-1.72l1.5-1.5c.4-.4.92-.4-1.32 0-1.72l4-4c.4-.4 1.02-.4 1.42 0l1.5 1.5c.4.4.92-.4 1.32 0 1.72L14 12z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Condition
         </h3>
