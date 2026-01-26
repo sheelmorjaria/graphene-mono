@@ -182,40 +182,40 @@ const ChangePasswordPage = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-text-secondary">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-bg-primary py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white shadow rounded-lg">
+        <div className="card card-glow">
           <div className="px-6 py-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-8">Change Password</h1>
-            
+            <h1 className="text-2xl font-bold text-cyan-400 mb-8 uppercase tracking-wider animate-fadeIn">Change Password</h1>
+
             <form role="form" className="space-y-6" onSubmit={handleSubmit}>
               {/* General Error Message */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <div className="text-sm text-red-600">{error}</div>
+                <div className="bg-red-900/30 border border-red-500/50 rounded-md p-4">
+                  <div className="text-sm text-red-400">{error}</div>
                 </div>
               )}
 
               {/* Success Message */}
               {successMessage && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                  <div className="text-sm text-green-600">{successMessage}</div>
+                <div className="bg-matrix-900/30 border border-matrix-400/50 rounded-md p-4">
+                  <div className="text-sm text-matrix-400">{successMessage}</div>
                 </div>
               )}
 
               {/* Current Password */}
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-text-primary">
                   Current Password *
                 </label>
                 <div className="mt-1">
@@ -230,12 +230,12 @@ const ChangePasswordPage = () => {
                     onChange={handleInputChange}
                     onBlur={handleFieldBlur}
                     aria-describedby={errors.currentPassword ? 'currentPassword-error' : undefined}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.currentPassword ? 'border-red-300' : 'border-gray-300'
-                    } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-text-muted focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm bg-bg-elevated text-text-primary ${
+                      errors.currentPassword ? 'border-red-400' : 'border-border-default'
+                    } ${isLoading ? 'bg-bg-muted cursor-not-allowed' : ''}`}
                   />
                   {errors.currentPassword && (
-                    <p id="currentPassword-error" className="mt-2 text-sm text-red-600">
+                    <p id="currentPassword-error" className="mt-2 text-sm text-red-400">
                       {errors.currentPassword}
                     </p>
                   )}
@@ -244,7 +244,7 @@ const ChangePasswordPage = () => {
 
               {/* New Password */}
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="newPassword" className="block text-sm font-medium text-text-primary">
                   New Password *
                 </label>
                 <div className="mt-1">
@@ -260,21 +260,21 @@ const ChangePasswordPage = () => {
                     onBlur={handleFieldBlur}
                     onFocus={() => setShowPasswordRequirements(true)}
                     aria-describedby={errors.newPassword ? 'newPassword-error' : 'newPassword-help'}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.newPassword ? 'border-red-300' : 'border-gray-300'
-                    } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-text-muted focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm bg-bg-elevated text-text-primary ${
+                      errors.newPassword ? 'border-red-400' : 'border-border-default'
+                    } ${isLoading ? 'bg-bg-muted cursor-not-allowed' : ''}`}
                   />
                   {errors.newPassword && (
-                    <p id="newPassword-error" className="mt-2 text-sm text-red-600">
+                    <p id="newPassword-error" className="mt-2 text-sm text-red-400">
                       {errors.newPassword}
                     </p>
                   )}
-                  
+
                   {/* Password Requirements */}
                   {showPasswordRequirements && (
                     <div id="newPassword-help" className="mt-2">
-                      <p className="text-sm text-gray-600 mb-2">Password must contain:</p>
-                      <ul className="text-xs text-gray-500 space-y-1">
+                      <p className="text-sm text-text-secondary mb-2">Password must contain:</p>
+                      <ul className="text-xs text-text-muted space-y-1">
                         <li>• At least 8 characters</li>
                         <li>• One uppercase letter</li>
                         <li>• One lowercase letter</li>
@@ -288,11 +288,11 @@ const ChangePasswordPage = () => {
                   {formData.newPassword && (
                     <div className="mt-2">
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">Strength:</span>
+                        <span className="text-xs text-text-muted">Strength:</span>
                         <span className={`text-xs font-medium ${
-                          getPasswordStrength()?.strength === 'weak' ? 'text-red-500' :
-                          getPasswordStrength()?.strength === 'medium' ? 'text-yellow-500' :
-                          'text-green-500'
+                          getPasswordStrength()?.strength === 'weak' ? 'text-red-400' :
+                          getPasswordStrength()?.strength === 'medium' ? 'text-yellow-400' :
+                          'text-matrix-400'
                         }`}>
                           {getPasswordStrength()?.strength}
                         </span>
@@ -304,7 +304,7 @@ const ChangePasswordPage = () => {
 
               {/* Confirm New Password */}
               <div>
-                <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-text-primary">
                   Confirm New Password *
                 </label>
                 <div className="mt-1">
@@ -319,12 +319,12 @@ const ChangePasswordPage = () => {
                     onChange={handleInputChange}
                     onBlur={handleFieldBlur}
                     aria-describedby={errors.confirmNewPassword ? 'confirmNewPassword-error' : undefined}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.confirmNewPassword ? 'border-red-300' : 'border-gray-300'
-                    } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-text-muted focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm bg-bg-elevated text-text-primary ${
+                      errors.confirmNewPassword ? 'border-red-400' : 'border-border-default'
+                    } ${isLoading ? 'bg-bg-muted cursor-not-allowed' : ''}`}
                   />
                   {errors.confirmNewPassword && (
-                    <p id="confirmNewPassword-error" className="mt-2 text-sm text-red-600">
+                    <p id="confirmNewPassword-error" className="mt-2 text-sm text-red-400">
                       {errors.confirmNewPassword}
                     </p>
                   )}
@@ -336,10 +336,10 @@ const ChangePasswordPage = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 ${
                     isLoading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                      ? 'bg-bg-muted cursor-not-allowed'
+                      : 'bg-cyan-500 hover:bg-cyan-600'
                   }`}
                 >
                   {isLoading ? 'Updating...' : 'Update Password'}
