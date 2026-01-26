@@ -47,22 +47,28 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="/privacy-policy" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
+                <Link to="/privacy" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/terms-of-service" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
+                <Link to="/terms" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/refund-policy" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
+                <Link to="/refunds" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
                   Refund Policy
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link to="/faq" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
+                  <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
+                  FAQ
+                </Link>
               </li>
             </ul>
           </div>
@@ -83,16 +89,10 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="/shipping-info" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
+                <Link to="/shipping" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
                   Shipping Information
-                </a>
-              </li>
-              <li>
-                <a href="/faq" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
-                  <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
-                  FAQ
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/orders" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
