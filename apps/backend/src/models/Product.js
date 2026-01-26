@@ -76,17 +76,6 @@ const productSchema = new mongoose.Schema({
       required: false,
       trim: true
     },
-    // USB drive specific fields
-    capacity: {
-      type: String,
-      required: false,
-      trim: true
-    },
-    interface: {
-      type: String,
-      enum: ['USB-A', 'USB-C', 'USB-A/USB-C'],
-      required: false
-    },
     // Generic variation fields
     variantName: {
       type: String,
@@ -269,38 +258,6 @@ productSchema.methods.getAvailableStorage = function() {
     });
   
   return Array.from(storageOptions);
-};
-
-// Instance method to get available USB capacities
-productSchema.methods.getAvailableCapacities = function() {
-  if (!this.variations || this.variations.length === 0) {
-    return [];
-  }
-  
-  const capacities = new Set();
-  this.variations
-    .filter(v => v.stockStatus !== 'out_of_stock')
-    .forEach(v => {
-      if (v.capacity) capacities.add(v.capacity);
-    });
-  
-  return Array.from(capacities);
-};
-
-// Instance method to get available USB interfaces
-productSchema.methods.getAvailableInterfaces = function() {
-  if (!this.variations || this.variations.length === 0) {
-    return [];
-  }
-  
-  const interfaces = new Set();
-  this.variations
-    .filter(v => v.stockStatus !== 'out_of_stock')
-    .forEach(v => {
-      if (v.interface) interfaces.add(v.interface);
-    });
-  
-  return Array.from(interfaces);
 };
 
 // Instance method to check if product is archived (soft deleted)

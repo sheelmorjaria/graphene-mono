@@ -3,52 +3,25 @@ import PropTypes from 'prop-types';
 
 const VariationManager = ({ variations = [], onVariationsChange }) => {
   const [localVariations, setLocalVariations] = useState(variations);
-  const [productType, setProductType] = useState('phone'); // phone or usb-drive
 
   useEffect(() => {
     setLocalVariations(variations);
-    // Detect product type from existing variations
-    if (variations.length > 0) {
-      const firstVariation = variations[0];
-      if (firstVariation.capacity && firstVariation.interface) {
-        setProductType('usb-drive');
-      } else {
-        setProductType('phone');
-      }
-    }
   }, [variations]);
 
   const addVariation = () => {
-    let newVariation;
-    
-    if (productType === 'usb-drive') {
-      newVariation = {
-        id: Date.now().toString(),
-        capacity: '',
-        interface: 'USB-A',
-        variantName: '',
-        price: '',
-        salePrice: '',
-        stockQuantity: 0,
-        stockStatus: 'in_stock',
-        sku: '',
-        images: []
-      };
-    } else {
-      newVariation = {
-        id: Date.now().toString(),
-        condition: 'new',
-        color: '',
-        storage: '',
-        price: '',
-        salePrice: '',
-        stockQuantity: 0,
-        stockStatus: 'in_stock',
-        sku: '',
-        images: []
-      };
-    }
-    
+    const newVariation = {
+      id: Date.now().toString(),
+      condition: 'new',
+      color: '',
+      storage: '',
+      price: '',
+      salePrice: '',
+      stockQuantity: 0,
+      stockStatus: 'in_stock',
+      sku: '',
+      images: []
+    };
+
     const updatedVariations = [...localVariations, newVariation];
     setLocalVariations(updatedVariations);
     onVariationsChange(updatedVariations);
@@ -59,7 +32,7 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
       alert('Product must have at least one variation');
       return;
     }
-    
+
     const updatedVariations = localVariations.filter((_, i) => i !== index);
     setLocalVariations(updatedVariations);
     onVariationsChange(updatedVariations);
@@ -71,7 +44,7 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
       ...updatedVariations[index],
       [field]: value
     };
-    
+
     setLocalVariations(updatedVariations);
     onVariationsChange(updatedVariations);
   };
@@ -79,17 +52,17 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
   const handleVariationImageUpload = (index, files) => {
     const updatedVariations = [...localVariations];
     const fileArray = Array.from(files);
-    
+
     // Create file URLs for preview
     const imageUrls = fileArray.map(file => URL.createObjectURL(file));
-    
+
     // Store both the files and preview URLs
     updatedVariations[index] = {
       ...updatedVariations[index],
       imageFiles: fileArray, // Store files for upload
       images: imageUrls // Store URLs for preview
     };
-    
+
     setLocalVariations(updatedVariations);
     onVariationsChange(updatedVariations);
   };
@@ -97,41 +70,18 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
   const removeVariationImage = (variationIndex, imageIndex) => {
     const updatedVariations = [...localVariations];
     const variation = updatedVariations[variationIndex];
-    
-    // Remove from both arrays
+
     if (variation.imageFiles) {
+      // Remove both the file and its URL
       variation.imageFiles.splice(imageIndex, 1);
     }
     if (variation.images) {
-      // Clean up blob URL if it's a preview
-      if (variation.images[imageIndex] && variation.images[imageIndex].startsWith('blob:')) {
-        URL.revokeObjectURL(variation.images[imageIndex]);
-      }
       variation.images.splice(imageIndex, 1);
     }
-    
+
     setLocalVariations(updatedVariations);
     onVariationsChange(updatedVariations);
   };
-
-  const getConditionOptions = () => [
-    { value: 'new', label: 'New' },
-    { value: 'excellent', label: 'Excellent' },
-    { value: 'good', label: 'Good' },
-    { value: 'fair', label: 'Fair' }
-  ];
-
-  const getStockStatusOptions = () => [
-    { value: 'in_stock', label: 'In Stock' },
-    { value: 'low_stock', label: 'Low Stock' },
-    { value: 'out_of_stock', label: 'Out of Stock' }
-  ];
-
-  const getInterfaceOptions = () => [
-    { value: 'USB-A', label: 'USB-A' },
-    { value: 'USB-C', label: 'USB-C' },
-    { value: 'USB-A/USB-C', label: 'USB-A/USB-C' }
-  ];
 
   const formatPrice = (price) => {
     if (!price) return '';
@@ -139,353 +89,232 @@ const VariationManager = ({ variations = [], onVariationsChange }) => {
   };
 
   const getVariationDisplayText = (variation) => {
-    if (productType === 'usb-drive') {
-      return `${variation.capacity || ''} - ${variation.interface || ''}`;
-    } else {
-      return `${variation.condition || ''} - ${variation.color || ''} - ${variation.storage || ''}`;
-    }
+    return `${variation.condition || ''} - ${variation.color || ''} - ${variation.storage || ''}`;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Add Variation Button */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Product Variations</h3>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Product Type:</label>
-            <select
-              value={productType}
-              onChange={(e) => setProductType(e.target.value)}
-              className="px-2 py-1 border border-gray-300 rounded text-sm"
-              disabled={localVariations.length > 0}
-            >
-              <option value="phone">Phone</option>
-              <option value="usb-drive">USB Drive</option>
-            </select>
-          </div>
-          <button
-            type="button"
-            onClick={addVariation}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Add Variation
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900">Variations ({localVariations.length})</h3>
+        <button
+          type="button"
+          onClick={addVariation}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Add Variation
+        </button>
       </div>
 
-      <div className="space-y-4">
-        {localVariations.map((variation, index) => (
-          <div
-            key={variation._id || variation.id || index}
-            className="border border-gray-200 rounded-lg p-4 bg-gray-50"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h4 className="font-medium text-gray-800">
-                Variation {index + 1}
-              </h4>
-              {localVariations.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeVariation(index)}
-                  className="text-red-600 hover:text-red-800 text-sm"
-                >
-                  Remove
-                </button>
-              )}
+      {/* Variations List */}
+      {localVariations.map((variation, index) => (
+        <div
+          key={variation.id || index}
+          className="bg-white border border-gray-200 rounded-lg p-4 space-y-4"
+        >
+          {/* Variation Header */}
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-500">Variation {index + 1}</span>
+              <p className="text-xs text-gray-400">{getVariationDisplayText(variation)}</p>
+            </div>
+            {localVariations.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeVariation(index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+
+          {/* Form Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Condition */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Condition *
+              </label>
+              <select
+                value={variation.condition}
+                onChange={(e) => updateVariation(index, 'condition', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select condition</option>
+                <option value="new">New</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+              </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {productType === 'phone' ? (
-                <>
-                  {/* Phone Fields */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Condition *
-                    </label>
-                    <select
-                      value={variation.condition || ''}
-                      onChange={(e) => updateVariation(index, 'condition', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Condition</option>
-                      {getConditionOptions().map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Color *
-                    </label>
-                    <input
-                      type="text"
-                      value={variation.color || ''}
-                      onChange={(e) => updateVariation(index, 'color', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Black, Blue, White"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Storage *
-                    </label>
-                    <input
-                      type="text"
-                      value={variation.storage || ''}
-                      onChange={(e) => updateVariation(index, 'storage', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., 128GB, 256GB, 512GB"
-                      required
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* USB Drive Fields */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Capacity *
-                    </label>
-                    <input
-                      type="text"
-                      value={variation.capacity || ''}
-                      onChange={(e) => updateVariation(index, 'capacity', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., 16GB, 32GB, 64GB"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Interface *
-                    </label>
-                    <select
-                      value={variation.interface || ''}
-                      onChange={(e) => updateVariation(index, 'interface', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Interface</option>
-                      {getInterfaceOptions().map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Variant Name
-                    </label>
-                    <input
-                      type="text"
-                      value={variation.variantName || ''}
-                      onChange={(e) => updateVariation(index, 'variantName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., 64GB USB-A"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Common Fields */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SKU *
-                </label>
-                <input
-                  type="text"
-                  value={variation.sku || ''}
-                  onChange={(e) => updateVariation(index, 'sku', e.target.value.toUpperCase())}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={productType === 'phone' ? 'e.g., PIX8-NEW-BLK' : 'e.g., USB-KIVP50-32A'}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price (£) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={variation.price || ''}
-                  onChange={(e) => updateVariation(index, 'price', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sale Price (£)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={variation.salePrice || ''}
-                  onChange={(e) => updateVariation(index, 'salePrice', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Stock Quantity
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={variation.stockQuantity || 0}
-                  onChange={(e) => updateVariation(index, 'stockQuantity', parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Stock Status
-                </label>
-                <select
-                  value={variation.stockStatus || 'in_stock'}
-                  onChange={(e) => updateVariation(index, 'stockStatus', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {getStockStatusOptions().map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Color *
+              </label>
+              <input
+                type="text"
+                value={variation.color}
+                onChange={(e) => updateVariation(index, 'color', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Obsidian, Porcelain"
+                required
+              />
             </div>
 
-            {/* Variation Images */}
-            <div className="mt-6">
-              <h5 className="text-sm font-medium text-gray-700 mb-3">Variation Images</h5>
-              
-              {/* Existing Images */}
+            {/* Storage */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Storage *
+              </label>
+              <input
+                type="text"
+                value={variation.storage}
+                onChange={(e) => updateVariation(index, 'storage', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., 128GB, 256GB"
+                required
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price (£) *
+              </label>
+              <input
+                type="number"
+                value={variation.price}
+                onChange={(e) => updateVariation(index, 'price', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+
+            {/* Sale Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sale Price (£)
+              </label>
+              <input
+                type="number"
+                value={variation.salePrice || ''}
+                onChange={(e) => updateVariation(index, 'salePrice', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            {/* Stock Quantity */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Stock Quantity *
+              </label>
+              <input
+                type="number"
+                value={variation.stockQuantity}
+                onChange={(e) => updateVariation(index, 'stockQuantity', parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min="0"
+                required
+              />
+            </div>
+
+            {/* Stock Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Stock Status *
+              </label>
+              <select
+                value={variation.stockStatus}
+                onChange={(e) => updateVariation(index, 'stockStatus', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="in_stock">In Stock</option>
+                <option value="low_stock">Low Stock</option>
+                <option value="out_of_stock">Out of Stock</option>
+              </select>
+            </div>
+
+            {/* SKU */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                SKU *
+              </label>
+              <input
+                type="text"
+                value={variation.sku}
+                onChange={(e) => updateVariation(index, 'sku', e.target.value.toUpperCase())}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., PIX8-NEW-BLK"
+                required
+              />
+            </div>
+
+            {/* Images */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Product Images
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleVariationImageUpload(index, e.target.files)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
               {variation.images && variation.images.length > 0 && (
-                <div className="mb-4">
-                  <div className="grid grid-cols-4 gap-2">
-                    {variation.images.map((image, imageIndex) => (
-                      <div key={imageIndex} className="relative group">
-                        <img
-                          src={image}
-                          alt={`Variation ${index + 1} image ${imageIndex + 1}`}
-                          className="w-full h-16 object-cover rounded border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeVariationImage(index, imageIndex)}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                <div className="mt-2 flex gap-2 flex-wrap">
+                  {variation.images.map((image, imgIndex) => (
+                    <div key={imgIndex} className="relative">
+                      <img
+                        src={image}
+                        alt={`Variation ${index + 1} - Image ${imgIndex + 1}`}
+                        className="w-16 h-16 object-cover rounded border border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeVariationImage(index, imgIndex)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
-              
-              {/* Upload New Images */}
-              <div>
-                <input
-                  type="file"
-                  id={`variation-images-${index}`}
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleVariationImageUpload(index, e.target.files)}
-                  className="hidden"
-                />
-                <label
-                  htmlFor={`variation-images-${index}`}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 text-sm"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Upload Images
-                </label>
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload images specific to this variation (JPEG, PNG, WebP)
-                </p>
-              </div>
-            </div>
-
-            {/* Price Display */}
-            <div className="mt-4 p-3 bg-blue-50 rounded-md">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">
-                  {getVariationDisplayText(variation)}
-                </span>
-                <div className="text-right">
-                  {variation.salePrice && parseFloat(variation.salePrice) > 0 ? (
-                    <div>
-                      <span className="line-through text-gray-500 mr-2">
-                        {formatPrice(variation.price)}
-                      </span>
-                      <span className="font-semibold text-green-600">
-                        {formatPrice(variation.salePrice)}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="font-semibold">
-                      {formatPrice(variation.price)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
-                <span>SKU: {variation.sku}</span>
-                <span>Stock: {variation.stockQuantity}</span>
-              </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      {localVariations.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          No variations added. Click "Add Variation" to create your first variation.
         </div>
-      )}
+      ))}
     </div>
   );
 };
 
 VariationManager.propTypes = {
-  variations: PropTypes.arrayOf(PropTypes.shape({
-    _id: PropTypes.string,
-    // Phone variation fields
-    condition: PropTypes.string,
-    color: PropTypes.string,
-    storage: PropTypes.string,
-    // USB drive variation fields
-    capacity: PropTypes.string,
-    interface: PropTypes.string,
-    variantName: PropTypes.string,
-    // Common fields
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    salePrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    stockQuantity: PropTypes.number,
-    stockStatus: PropTypes.string,
-    sku: PropTypes.string,
-    images: PropTypes.arrayOf(PropTypes.string)
-  })),
+  variations: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      condition: PropTypes.string,
+      color: PropTypes.string,
+      storage: PropTypes.string,
+      price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      salePrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      stockQuantity: PropTypes.number,
+      stockStatus: PropTypes.string,
+      sku: PropTypes.string,
+      images: PropTypes.arrayOf(PropTypes.string)
+    })
+  ),
   onVariationsChange: PropTypes.func.isRequired
 };
 
