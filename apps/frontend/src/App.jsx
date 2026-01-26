@@ -190,7 +190,7 @@ const Header = () => {
               to="/"
               className="flex items-center gap-3 group flex-shrink-0"
             >
-              <div className="hidden sm:block">
+              <div>
                 <h1 className="font-display font-bold text-lg text-text-primary tracking-wider">GRAPHENE</h1>
                 <p className="font-mono text-xs text-cyan-400 tracking-[0.2em] uppercase">Security</p>
               </div>
