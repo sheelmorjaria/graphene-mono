@@ -240,7 +240,7 @@ const TermsOfServicePage = () => {
               </p>
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li>Indirect, incidental, special, or consequential damages</li>
-                <liLoss of profits, data, or business opportunities</li>
+                <li>Loss of profits, data, or business opportunities</li>
                 <li>Damages exceeding the amount you paid for the product</li>
               </ul>
               <div className="mt-4 p-4 bg-amber-subtle border border-amber rounded-lg">
