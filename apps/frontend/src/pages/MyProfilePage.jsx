@@ -179,40 +179,40 @@ const MyProfilePage = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-text-secondary">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-bg-primary py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white shadow rounded-lg">
+        <div className="card card-glow">
           <div className="px-6 py-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-8">My Profile</h1>
-            
+            <h1 className="text-2xl font-bold text-cyan-400 mb-8 uppercase tracking-wider animate-fadeIn">My Profile</h1>
+
             <form role="form" className="space-y-6" onSubmit={handleSubmit}>
               {/* General Error Message */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <div className="text-sm text-red-600">{error}</div>
+                <div className="bg-red-900/30 border border-red-500/50 rounded-md p-4">
+                  <div className="text-sm text-red-400">{error}</div>
                 </div>
               )}
 
               {/* Success Message */}
               {successMessage && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                  <div className="text-sm text-green-600">{successMessage}</div>
+                <div className="bg-matrix-900/30 border border-matrix-400/50 rounded-md p-4">
+                  <div className="text-sm text-matrix-400">{successMessage}</div>
                 </div>
               )}
 
               {/* First Name */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="block text-sm font-medium text-text-primary">
                   First Name *
                 </label>
                 <div className="mt-1">
@@ -227,13 +227,13 @@ const MyProfilePage = () => {
                     onChange={handleInputChange}
                     onBlur={handleFieldBlur}
                     aria-describedby={errors.firstName ? 'firstName-error' : undefined}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.firstName ? 'border-red-300' : 'border-gray-300'
-                    } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-text-muted focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm bg-bg-elevated text-text-primary ${
+                      errors.firstName ? 'border-red-400' : 'border-border-default'
+                    } ${isLoading ? 'bg-bg-muted cursor-not-allowed' : ''}`}
                     placeholder="John"
                   />
                   {errors.firstName && (
-                    <p id="firstName-error" className="mt-2 text-sm text-red-600">
+                    <p id="firstName-error" className="mt-2 text-sm text-red-400">
                       {errors.firstName}
                     </p>
                   )}
@@ -242,7 +242,7 @@ const MyProfilePage = () => {
 
               {/* Last Name */}
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="block text-sm font-medium text-text-primary">
                   Last Name *
                 </label>
                 <div className="mt-1">
@@ -257,13 +257,13 @@ const MyProfilePage = () => {
                     onChange={handleInputChange}
                     onBlur={handleFieldBlur}
                     aria-describedby={errors.lastName ? 'lastName-error' : undefined}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.lastName ? 'border-red-300' : 'border-gray-300'
-                    } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-text-muted focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm bg-bg-elevated text-text-primary ${
+                      errors.lastName ? 'border-red-400' : 'border-border-default'
+                    } ${isLoading ? 'bg-bg-muted cursor-not-allowed' : ''}`}
                     placeholder="Doe"
                   />
                   {errors.lastName && (
-                    <p id="lastName-error" className="mt-2 text-sm text-red-600">
+                    <p id="lastName-error" className="mt-2 text-sm text-red-400">
                       {errors.lastName}
                     </p>
                   )}
@@ -272,7 +272,7 @@ const MyProfilePage = () => {
 
               {/* Email - Read only for now (changing email requires re-verification) */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="email" className="block text-sm font-medium text-text-primary">
                   Email Address *
                 </label>
                 <div className="mt-1">
@@ -284,9 +284,9 @@ const MyProfilePage = () => {
                     required
                     disabled={true} // Disable email changes for now
                     value={formData.email}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 bg-gray-100 cursor-not-allowed sm:text-sm"
+                    className="appearance-none block w-full px-3 py-2 border border-border-default rounded-md shadow-sm placeholder-text-muted bg-bg-muted cursor-not-allowed sm:text-sm text-text-primary"
                   />
-                  <p className="mt-2 text-sm text-gray-500">
+                  <p className="mt-2 text-sm text-text-muted">
                     Contact support to change your email address
                   </p>
                 </div>
@@ -294,7 +294,7 @@ const MyProfilePage = () => {
 
               {/* Phone (Optional) */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="phone" className="block text-sm font-medium text-text-primary">
                   Phone Number (Optional)
                 </label>
                 <div className="mt-1">
@@ -308,13 +308,13 @@ const MyProfilePage = () => {
                     onChange={handleInputChange}
                     onBlur={handleFieldBlur}
                     aria-describedby={errors.phone ? 'phone-error' : undefined}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.phone ? 'border-red-300' : 'border-gray-300'
-                    } ${isLoading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-text-muted focus:outline-none focus:ring-cyan-400 focus:border-cyan-400 sm:text-sm bg-bg-elevated text-text-primary ${
+                      errors.phone ? 'border-red-400' : 'border-border-default'
+                    } ${isLoading ? 'bg-bg-muted cursor-not-allowed' : ''}`}
                     placeholder="+44 7123 456789"
                   />
                   {errors.phone && (
-                    <p id="phone-error" className="mt-2 text-sm text-red-600">
+                    <p id="phone-error" className="mt-2 text-sm text-red-400">
                       {errors.phone}
                     </p>
                   )}
@@ -330,9 +330,9 @@ const MyProfilePage = () => {
                   disabled={isLoading}
                   checked={formData.marketingOptIn}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-cyan-400 focus:ring-cyan-400 border-border-default rounded"
                 />
-                <label htmlFor="marketingOptIn" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="marketingOptIn" className="ml-2 block text-sm text-text-primary">
                   I would like to receive marketing emails about new products and offers
                 </label>
               </div>
@@ -342,10 +342,10 @@ const MyProfilePage = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 ${
                     isLoading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                      ? 'bg-bg-muted cursor-not-allowed'
+                      : 'bg-cyan-500 hover:bg-cyan-600'
                   }`}
                 >
                   {isLoading ? 'Saving...' : 'Save Changes'}

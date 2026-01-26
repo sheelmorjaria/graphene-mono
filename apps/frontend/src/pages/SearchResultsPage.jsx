@@ -118,14 +118,14 @@ const SearchResultsPage = () => {
     return (
       <div data-testid="search-results-page" className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Search Products</h1>
-          
+          <h1 className="text-3xl font-bold text-cyan-400 mb-8 uppercase tracking-wider">Search Products</h1>
+
           <div className="mb-8">
             <SearchBar onSearch={handleSearch} className="max-w-2xl mx-auto" />
           </div>
 
           <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">
+            <div className="text-text-muted text-lg">
               Enter a search term to find products
             </div>
           </div>
@@ -137,12 +137,12 @@ const SearchResultsPage = () => {
   return (
     <div data-testid="search-results-page" className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Search Results</h1>
-        
+        <h1 className="text-3xl font-bold text-cyan-400 mb-8 uppercase tracking-wider">Search Results</h1>
+
         {/* Search Bar */}
         <div className="mb-8">
-          <SearchBar 
-            onSearch={handleSearch} 
+          <SearchBar
+            onSearch={handleSearch}
             className="max-w-2xl mx-auto"
             placeholder="Search products..."
           />
@@ -152,21 +152,21 @@ const SearchResultsPage = () => {
         {loading && (
           <div className="flex flex-col items-center justify-center py-12">
             <LoadingSpinner data-testid="loading-spinner" />
-            <p className="mt-4 text-gray-600">Searching products...</p>
+            <p className="mt-4 text-text-secondary">Searching products...</p>
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
           <div className="text-center py-12">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-              <h3 className="text-lg font-medium text-red-800 mb-2">
+            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-6 max-w-md mx-auto">
+              <h3 className="text-lg font-medium text-red-400 mb-2">
                 Error Searching Products
               </h3>
-              <p className="text-red-600 mb-4">{error}</p>
+              <p className="text-red-300 mb-4">{error}</p>
               <button
                 onClick={handleRetry}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
               >
                 Try Again
               </button>
@@ -180,7 +180,7 @@ const SearchResultsPage = () => {
             {/* Results Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
               <div className="mb-4 lg:mb-0">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-text-primary">
                   Found {searchResults?.totalProducts || 0} products for "{query}"
                 </h2>
               </div>
@@ -188,14 +188,14 @@ const SearchResultsPage = () => {
               {/* Sort and Filter Controls */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex items-center gap-2">
-                  <label htmlFor="sort-select" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="sort-select" className="text-sm font-medium text-text-primary">
                     Sort by:
                   </label>
                   <select
                     id="sort-select"
                     value={sortBy}
                     onChange={(e) => handleSortChange(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border border-border-default rounded-md px-3 py-1 text-sm bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   >
                     <option value="relevance">Relevance</option>
                     <option value="price-asc">Price: Low to High</option>
@@ -209,11 +209,11 @@ const SearchResultsPage = () => {
             </div>
 
             {/* Filters */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Filters</h3>
+            <div className="card card-glow p-4 mb-6">
+              <h3 className="text-lg font-medium text-cyan-400 mb-4 uppercase tracking-wider">Filters</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="condition-select" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="condition-select" className="block text-sm font-medium text-text-primary mb-1">
                     Condition
                   </label>
                   <select
@@ -223,7 +223,7 @@ const SearchResultsPage = () => {
                       setCondition(e.target.value);
                       handleFilterChange();
                     }}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   >
                     <option value="">All Conditions</option>
                     <option value="new">New</option>
@@ -234,7 +234,7 @@ const SearchResultsPage = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="min-price" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="min-price" className="block text-sm font-medium text-text-primary mb-1">
                     Min Price
                   </label>
                   <input
@@ -246,12 +246,12 @@ const SearchResultsPage = () => {
                       handleFilterChange();
                     }}
                     placeholder="£0"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="max-price" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="max-price" className="block text-sm font-medium text-text-primary mb-1">
                     Max Price
                   </label>
                   <input
@@ -263,7 +263,7 @@ const SearchResultsPage = () => {
                       handleFilterChange();
                     }}
                     placeholder="£1000"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-border-default rounded-md px-3 py-2 text-sm bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   />
                 </div>
               </div>
@@ -272,10 +272,10 @@ const SearchResultsPage = () => {
             {/* No Results */}
             {searchResults && searchResults.products && searchResults.products.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-gray-500 text-lg mb-2">
+                <div className="text-text-muted text-lg mb-2">
                   No products found for "{query}"
                 </div>
-                <p className="text-gray-400">
+                <p className="text-text-muted">
                   Try searching for different keywords or adjusting your filters
                 </p>
               </div>
@@ -297,12 +297,12 @@ const SearchResultsPage = () => {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                       aria-label="Previous page"
-                      className="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm font-medium text-text-primary bg-bg-elevated border border-border-default rounded-md hover:bg-bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
 
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-text-primary">
                       Page {currentPage} of {searchResults?.totalPages || 1}
                     </span>
 
@@ -310,7 +310,7 @@ const SearchResultsPage = () => {
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === (searchResults?.totalPages || 1)}
                       aria-label="Next page"
-                      className="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm font-medium text-text-primary bg-bg-elevated border border-border-default rounded-md hover:bg-bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>

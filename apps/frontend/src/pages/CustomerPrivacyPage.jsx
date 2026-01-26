@@ -80,8 +80,8 @@ const CustomerPrivacyPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+          <p className="mt-2 text-text-secondary">Loading...</p>
         </div>
       </div>
     );
@@ -93,58 +93,58 @@ const CustomerPrivacyPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Data & Privacy</h1>
-        
+      <div className="card card-glow p-6">
+        <h1 className="text-3xl font-bold text-cyan-400 mb-6 uppercase tracking-wider">Data & Privacy</h1>
+
         <div className="mb-8">
-          <p className="text-gray-600 mb-4">
-            Manage your personal data and privacy settings. You can export your data or request account deletion 
+          <p className="text-text-secondary mb-4">
+            Manage your personal data and privacy settings. You can export your data or request account deletion
             in compliance with privacy regulations such as GDPR and CCPA.
           </p>
         </div>
 
         {/* Success/Error Messages */}
         {successMessage && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="mb-6 bg-matrix-900/30 border border-matrix-400/50 rounded-lg p-4">
             <div className="flex">
-              <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-5 w-5 text-matrix-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <div className="ml-3">
-                <p className="text-sm text-green-800">{successMessage}</p>
+                <p className="text-sm text-matrix-400">{successMessage}</p>
               </div>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="mb-6 bg-red-900/30 border border-red-500/50 rounded-lg p-4">
             <div className="flex">
               <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
               <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Data Export Section */}
-        <div className="mb-8 border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Export My Data</h2>
-          <p className="text-gray-600 mb-4">
-            Download a copy of all your personal data including profile information, order history, 
+        <div className="mb-8 border border-border-default rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-cyan-400 mb-4 uppercase tracking-wider">Export My Data</h2>
+          <p className="text-text-secondary mb-4">
+            Download a copy of all your personal data including profile information, order history,
             addresses, and other account details in a machine-readable format.
           </p>
-          <ul className="text-sm text-gray-600 mb-4 list-disc list-inside">
+          <ul className="text-sm text-text-secondary mb-4 list-disc list-inside">
             <li>Profile information and account details</li>
             <li>Order history and transaction records</li>
             <li>Saved addresses and contact information</li>
             <li>Account preferences and settings</li>
           </ul>
-          <p className="text-sm text-gray-500 mb-4">
-            <strong>Note:</strong> An email will be sent with a download link when your data is ready. 
+          <p className="text-sm text-text-muted mb-4">
+            <strong>Note:</strong> An email will be sent with a download link when your data is ready.
             Download links expire after 48 hours for security.
           </p>
           <button
@@ -152,8 +152,8 @@ const CustomerPrivacyPage = () => {
             disabled={isExporting}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               isExporting
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-bg-muted text-text-muted cursor-not-allowed'
+                : 'bg-cyan-500 text-white hover:bg-cyan-600'
             }`}
           >
             {isExporting ? (
@@ -171,14 +171,14 @@ const CustomerPrivacyPage = () => {
         </div>
 
         {/* Account Deletion Section */}
-        <div className="border border-red-200 rounded-lg p-6 bg-red-50">
-          <h2 className="text-xl font-semibold text-red-800 mb-4">Delete My Account</h2>
+        <div className="border border-red-400/50 rounded-lg p-6 bg-red-900/20">
+          <h2 className="text-xl font-semibold text-red-400 mb-4 uppercase tracking-wider">Delete My Account</h2>
           <div className="mb-4">
-            <p className="text-red-700 mb-2">
+            <p className="text-red-300 mb-2">
               <strong>⚠️ Warning:</strong> Account deletion is permanent and cannot be undone.
             </p>
-            <p className="text-gray-700 mb-2">When you delete your account:</p>
-            <ul className="text-sm text-gray-700 mb-4 list-disc list-inside">
+            <p className="text-text-primary mb-2">When you delete your account:</p>
+            <ul className="text-sm text-text-primary mb-4 list-disc list-inside">
               <li>Your personal information will be permanently removed</li>
               <li>You will lose access to your order history and account</li>
               <li>Some data may be retained for legal/tax purposes (anonymized)</li>
@@ -187,7 +187,7 @@ const CustomerPrivacyPage = () => {
           </div>
           <button
             onClick={handleAccountDeletionRequest}
-            className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+            className="px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
           >
             Request Account Deletion
           </button>
@@ -197,14 +197,14 @@ const CustomerPrivacyPage = () => {
       {/* Account Deletion Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-red-800 mb-4">
+          <div className="card card-glow p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-red-400 mb-4 uppercase tracking-wider">
               Confirm Account Deletion
             </h3>
-            <p className="text-gray-700 mb-4">
+            <p className="text-text-primary mb-4">
               This action cannot be undone. All your personal data will be permanently deleted.
             </p>
-            <p className="text-gray-700 mb-4">
+            <p className="text-text-primary mb-4">
               Please enter your password to confirm:
             </p>
             <input
@@ -212,13 +212,13 @@ const CustomerPrivacyPage = () => {
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder="Enter your password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
+              className="w-full px-3 py-2 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent bg-bg-elevated text-text-primary mb-4"
             />
             <div className="flex space-x-3">
               <button
                 onClick={handleCloseModal}
                 disabled={isDeletingAccount}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                className="flex-1 px-4 py-2 bg-bg-muted text-text-primary rounded-lg hover:bg-bg-hover transition-colors"
               >
                 Cancel
               </button>
@@ -227,8 +227,8 @@ const CustomerPrivacyPage = () => {
                 disabled={isDeletingAccount}
                 className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                   isDeletingAccount
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-red-600 text-white hover:bg-red-700'
+                    ? 'bg-bg-muted text-text-muted cursor-not-allowed'
+                    : 'bg-red-500 text-white hover:bg-red-600'
                 }`}
               >
                 {isDeletingAccount ? 'Processing...' : 'Confirm Deletion'}
