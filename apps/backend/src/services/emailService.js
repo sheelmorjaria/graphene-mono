@@ -1264,6 +1264,71 @@ class EmailService {
     }
   }
 
+  // Send password reset email
+  async sendPasswordResetEmail(userEmail, resetToken, userData = {}) {
+    try {
+      const resetUrl = process.env.FRONTEND_URL ?
+        `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}` :
+        `https://graphene-security.com/reset-password?token=${resetToken}`;
+
+      const content = `
+        <p>We received a request to reset the password for your Graphene Security account.</p>
+
+        <div class="order-details">
+          <h3>Reset Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value">${userEmail}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Requested:</span>
+            <span class="detail-value">${new Date().toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div class="order-details">
+          <h3>Reset Your Password</h3>
+          <p>To reset your password, click the button below. This link will expire in 1 hour for your security.</p>
+          <a href="${resetUrl}" class="btn">Reset Password</a>
+          <p style="font-size: 14px; color: #666; margin-top: 15px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${resetUrl}" style="color: #667eea; word-break: break-all;">${resetUrl}</a>
+          </p>
+        </div>
+
+        <div class="important-notice">
+          <h3>Security Notice</h3>
+          <ul>
+            <li>This password reset link will expire in 1 hour for your security</li>
+            <li>If you didn't request this password reset, please ignore this email</li>
+            <li>Your password will remain unchanged until you use the link above</li>
+            <li>For your protection, never share your password with anyone</li>
+          </ul>
+        </div>
+
+        <p>If you have any concerns about your account security, please contact our support team at ${process.env.SUPPORT_EMAIL || 'support@graphene-security.com'}.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Reset Your Password',
+        content,
+        userData.firstName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: userEmail,
+        subject: 'Password Reset Request - Graphene Security',
+        htmlContent,
+        emailType: 'transactional.password_reset',
+        skipPreferenceCheck: true // Always send password reset emails
+      });
+
+    } catch (error) {
+      logError(error, { context: 'password_reset_email', userEmail });
+      return { success: false, error: error.message };
+    }
+  }
+
   // Send welcome/email verification email
   async sendWelcomeEmail(userEmail, emailVerificationToken, userData) {
     try {
@@ -1384,6 +1449,7 @@ export default emailService;
 
 // Export individual functions for convenience
 export const sendWelcomeEmail = emailService.sendWelcomeEmail.bind(emailService);
+export const sendPasswordResetEmail = emailService.sendPasswordResetEmail.bind(emailService);
 export const sendDataExportEmail = emailService.sendDataExportEmail.bind(emailService);
 export const sendAccountDeletionConfirmationEmail = emailService.sendAccountDeletionConfirmationEmail.bind(emailService);
 export const sendAccountDeletionCompletedEmail = emailService.sendAccountDeletionCompletedEmail.bind(emailService);
