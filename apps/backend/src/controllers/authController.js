@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
-import { sendWelcomeEmail } from '../services/emailService.js';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailService.js';
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -516,12 +516,21 @@ export const forgotPassword = async (req, res) => {
     const resetToken = user.generatePasswordResetToken();
     await user.save();
 
-    // TODO: Send password reset email
-    // await sendPasswordResetEmail(user.email, resetToken);
-    
-    // Log the reset request for debugging (remove in production)
-    console.log(`Password reset requested for user ${user.email} at ${new Date().toISOString()}`);
-    console.log(`Reset token generated: ${resetToken}`); // Remove in production
+    // Send password reset email
+    try {
+      const emailResult = await sendPasswordResetEmail(user.email, resetToken, {
+        firstName: user.firstName,
+        lastName: user.lastName
+      });
+
+      if (emailResult.success) {
+        console.log(`Password reset email sent successfully to: ${user.email}`, { messageId: emailResult.messageId });
+      } else {
+        console.error(`Failed to send password reset email to: ${user.email}`, { error: emailResult.error });
+      }
+    } catch (emailError) {
+      console.error(`Email service error for password reset: ${user.email}`, { error: emailError.message });
+    }
 
     res.json(standardResponse);
 
