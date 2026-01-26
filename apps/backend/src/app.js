@@ -76,9 +76,16 @@ const corsOptions = {
       'http://84.45.134.166',
       'https://graphene-security.com',
       'https://www.graphene-security.com',
+      'https://frontend.graphene-security.com',
+      'https://api.graphene-security.com',
       'http://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io',
       'https://ps848wcgo4skwkgk00w40w48.84.45.134.166.sslip.io'
     ];
+
+    // Add FRONTEND_URL from environment if set
+    if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+    }
 
     // Coolify deployment URLs (using regex to match any subdomain)
     if (origin.match(/.*\.coolify\.app$/) || origin.match(/.*\.coolify\.io$/)) {
