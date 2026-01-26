@@ -78,18 +78,6 @@ const ProductsDropdown = ({ onItemClick, isMobile = false }) => {
                 Smartphones
               </Link>
             </li>
-            <li>
-              <Link
-                to="/products?category=usb-drives"
-                className="flex items-center gap-3 px-4 py-2 text-text-muted hover:text-matrix-400 transition-all duration-200 font-mono text-sm uppercase tracking-wider rounded-lg"
-                onClick={handleItemClick}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                </svg>
-                USB Drives
-              </Link>
-            </li>
           </ul>
         )}
       </li>
@@ -150,24 +138,6 @@ const ProductsDropdown = ({ onItemClick, isMobile = false }) => {
               <div className="flex-1">
                 <div className="font-heading font-semibold text-text-primary group-hover:text-matrix-400 transition-colors duration-200">GrapheneOS Phones</div>
                 <div className="font-mono text-xs text-text-muted mt-1">Privacy-focused Pixel devices</div>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            to="/products?category=usb-drives"
-            className="block px-5 py-4 hover:bg-bg-elevated transition-all duration-200 group"
-            onClick={handleItemClick}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-bg-primary rounded-lg group-hover:bg-cyan-subtle transition-colors duration-200">
-                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <div className="font-heading font-semibold text-text-primary group-hover:text-cyan-400 transition-colors duration-200">Encrypted USB</div>
-                <div className="font-mono text-xs text-text-muted mt-1">Secure storage solutions</div>
               </div>
             </div>
           </Link>

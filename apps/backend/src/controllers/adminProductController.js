@@ -54,14 +54,13 @@ export const createProduct = async (req, res) => {
         });
       }
 
-      // Check for either phone fields (condition, color) or USB drive fields (capacity, interface)
+      // Check for required phone fields
       const hasPhoneFields = variation.condition && variation.color;
-      const hasUSBFields = variation.capacity && variation.interface;
-      
-      if (!hasPhoneFields && !hasUSBFields) {
+
+      if (!hasPhoneFields) {
         return res.status(400).json({
           success: false,
-          error: 'Each variation must have either (condition and color) for phones or (capacity and interface) for USB drives'
+          error: 'Each variation must have condition and color'
         });
       }
 
@@ -126,14 +125,11 @@ export const createProduct = async (req, res) => {
       tags: processedTags,
       images: images || [],
       variations: variations.map((v, index) => ({
-        // Phone fields (optional)
+        // Phone fields
         condition: v.condition,
         color: v.color,
-        
-        // USB drive fields (optional)
-        capacity: v.capacity,
-        interface: v.interface,
-        
+        storage: v.storage,
+
         // Common fields
         price: parseFloat(v.price),
         salePrice: v.salePrice ? parseFloat(v.salePrice) : undefined,
@@ -271,19 +267,16 @@ export const updateProduct = async (req, res) => {
         });
       }
 
-      // Check for either phone fields or USB drive fields
+      // Check for required phone fields
       const condition = variation.condition || existingVariation?.condition;
       const color = variation.color || existingVariation?.color;
-      const capacity = variation.capacity || existingVariation?.capacity;
-      const interfaceType = variation.interface || existingVariation?.interface;
-      
+
       const hasPhoneFields = condition && color;
-      const hasUSBFields = capacity && interfaceType;
-      
-      if (!hasPhoneFields && !hasUSBFields) {
+
+      if (!hasPhoneFields) {
         return res.status(400).json({
           success: false,
-          error: 'Each variation must have either (condition and color) for phones or (capacity and interface) for USB drives'
+          error: 'Each variation must have condition and color'
         });
       }
 
@@ -354,15 +347,12 @@ export const updateProduct = async (req, res) => {
       
       return {
         _id: v._id || existingVariation?._id,
-        
-        // Phone fields (optional)
+
+        // Phone fields
         condition: v.condition || existingVariation?.condition,
         color: v.color || existingVariation?.color,
-        
-        // USB drive fields (optional)
-        capacity: v.capacity || existingVariation?.capacity,
-        interface: v.interface || existingVariation?.interface,
-        
+        storage: v.storage || existingVariation?.storage,
+
         // Common fields
         price: parseFloat(v.price !== undefined ? v.price : existingVariation?.price),
         salePrice: v.salePrice !== undefined ? (v.salePrice ? parseFloat(v.salePrice) : undefined) : existingVariation?.salePrice,
@@ -667,8 +657,6 @@ export const exportProductsToCSV = async (req, res) => {
             condition: variation.condition || '',
             color: variation.color || '',
             storage: variation.storage || '',
-            capacity: variation.capacity || '',
-            interface: variation.interface || '',
             variantName: variation.variantName || '',
             price: variation.price,
             salePrice: variation.salePrice || '',
@@ -715,8 +703,6 @@ export const exportProductsToCSV = async (req, res) => {
           condition: '',
           color: '',
           storage: '',
-          capacity: '',
-          interface: '',
           variantName: '',
           price: 0,
           salePrice: '',
@@ -759,8 +745,6 @@ export const exportProductsToCSV = async (req, res) => {
         { id: 'condition', title: 'Condition' },
         { id: 'color', title: 'Color' },
         { id: 'storage', title: 'Storage' },
-        { id: 'capacity', title: 'Capacity' },
-        { id: 'interface', title: 'Interface' },
         { id: 'variantName', title: 'Variant Name' },
         { id: 'price', title: 'Price (GBP)' },
         { id: 'salePrice', title: 'Sale Price (GBP)' },

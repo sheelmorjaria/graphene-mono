@@ -22,8 +22,6 @@ export const getProductBySlug = async (req, res) => {
     const availableColors = product.getAvailableColors();
     const availableConditions = product.getAvailableConditions();
     const availableStorage = product.getAvailableStorage();
-    const availableCapacities = product.getAvailableCapacities();
-    const availableInterfaces = product.getAvailableInterfaces();
     const isInStock = product.isInStock();
     const totalStock = product.getTotalStock();
 
@@ -41,15 +39,10 @@ export const getProductBySlug = async (req, res) => {
         category: product.category,
         variations: product.variations.map(v => ({
           _id: v._id,
-          // Phone variation fields
           condition: v.condition,
           color: v.color,
           storage: v.storage,
-          // USB drive variation fields
-          capacity: v.capacity,
-          interface: v.interface,
           variantName: v.variantName,
-          // Common fields
           price: v.price,
           salePrice: v.salePrice,
           stockStatus: v.stockStatus,
@@ -60,8 +53,6 @@ export const getProductBySlug = async (req, res) => {
         availableColors,
         availableConditions,
         availableStorage,
-        availableCapacities,
-        availableInterfaces,
         isInStock,
         totalStock,
         attributes: product.attributes,
