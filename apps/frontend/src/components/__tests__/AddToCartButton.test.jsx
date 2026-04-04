@@ -133,7 +133,7 @@ describe('AddToCartButton', () => {
     
     const button = screen.getByRole('button');
     expect(button).toHaveTextContent(/added to cart/i);
-    expect(button).toHaveClass('bg-green-600');
+    expect(button).toHaveClass('text-green-400');
     expect(screen.getByLabelText(/success/i)).toBeInTheDocument();
   });
 

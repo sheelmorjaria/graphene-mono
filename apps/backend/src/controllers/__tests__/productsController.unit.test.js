@@ -92,9 +92,6 @@ describe('Products Controller Simple Unit Tests', () => {
             condition: 'new',
             color: 'black',
             storage: '128gb',
-            capacity: undefined,
-            interface: undefined,
-            variantName: undefined,
             price: 999,
             salePrice: null,
             stockStatus: 'in-stock',
@@ -106,8 +103,6 @@ describe('Products Controller Simple Unit Tests', () => {
           availableColors: ['black'],
           availableConditions: ['new'],
           availableStorage: ['128gb'],
-          availableCapacities: [],
-          availableInterfaces: [],
           isInStock: true,
           category: { name: 'Smartphones', slug: 'smartphones' },
           createdAt: new Date('2023-01-01')

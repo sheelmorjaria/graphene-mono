@@ -115,7 +115,7 @@ describe('Order Model', () => {
         }
       });
 
-      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be: paypal, bitcoin, monero');
+      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be: paypal, bitcoin');
     });
 
     it('should not allow negative amounts', async () => {

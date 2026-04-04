@@ -323,8 +323,8 @@ describe('Order Validators', () => {
       });
 
       it('should pass with valid payment methods', async () => {
-        const paymentMethods = ['paypal', 'bitcoin', 'monero'];
-        
+        const paymentMethods = ['paypal', 'bitcoin'];
+
         for (const paymentMethod of paymentMethods) {
           const req = createMockReq({
             ...validOrderData,

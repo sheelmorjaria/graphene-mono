@@ -51,7 +51,7 @@ describe('Session Handling Integration Tests', () => {
     },
     paymentMethod: {
       type: paymentMethodType,
-      name: paymentMethodType === 'paypal' ? 'PayPal' : paymentMethodType === 'bitcoin' ? 'Bitcoin' : 'Monero'
+      name: paymentMethodType === 'paypal' ? 'PayPal' : 'Bitcoin'
     },
     paymentStatus: 'pending',
     orderStatus: 'pending'
@@ -235,17 +235,17 @@ describe('Session Handling Integration Tests', () => {
       });
       await user.save();
 
-      const order = new Order(createValidOrderData(user, 'VAL-001', 'monero'));
+      const order = new Order(createValidOrderData(user, 'VAL-001', 'bitcoin'));
       await order.save();
 
       // Test payment validation
       const payment = new Payment({
-        paymentId: 'PAY-TEST-MONERO-001',
+        paymentId: 'PAY-TEST-BITCOIN-001',
         orderId: order._id,
         orderNumber: order.orderNumber,
         userId: user._id,
         customerEmail: user.email,
-        paymentMethod: 'monero',
+        paymentMethod: 'bitcoin',
         amount: 105.98,
         currency: 'GBP',
         status: 'pending'

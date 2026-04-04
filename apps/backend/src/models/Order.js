@@ -185,8 +185,8 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: [true, 'Payment method type is required'],
       enum: {
-        values: ['paypal', 'bitcoin', 'monero'],
-        message: 'Payment method type must be: paypal, bitcoin, monero'
+        values: ['paypal', 'bitcoin'],
+        message: 'Payment method type must be: paypal or bitcoin'
       }
     },
     name: {
@@ -257,71 +257,6 @@ const orderSchema = new mongoose.Schema({
       type: Number,
       min: 0,
       default: 0
-    },
-    // Monero payment details
-    moneroAddress: {
-      type: String,
-      trim: true,
-      maxlength: 100
-    },
-    xmrAmount: {
-      type: Number,
-      min: 0
-    },
-    exchangeRate: {
-      type: Number,
-      min: 0
-    },
-    exchangeRateValidUntil: {
-      type: Date
-    },
-    // Payment provider ID (previously globeePaymentId, now supports NowPayments)
-    paymentProviderId: {
-      type: String,
-      trim: true,
-      maxlength: 100
-    },
-    // Legacy field for backward compatibility
-    globeePaymentId: {
-      type: String,
-      trim: true,
-      maxlength: 100
-    },
-    paymentUrl: {
-      type: String,
-      trim: true,
-      maxlength: 500
-    },
-    expirationTime: {
-      type: Date
-    },
-    confirmations: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-    paidAmount: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-    transactionHash: {
-      type: String,
-      trim: true,
-      maxlength: 100
-    },
-    lastWebhookUpdate: {
-      type: Date
-    },
-    paymentWindow: {
-      type: Number,
-      min: 1,
-      default: 24
-    },
-    requiredConfirmations: {
-      type: Number,
-      min: 1,
-      default: 10
     },
     // Generic transaction ID for any payment method
     transactionId: {

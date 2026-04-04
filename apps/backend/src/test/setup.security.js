@@ -99,28 +99,6 @@ vi.mock('../services/bitcoinService.js', () => ({
   }
 }));
 
-vi.mock('../services/moneroService.js', () => ({
-  default: {
-    getExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.008,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    createPayment: vi.fn().mockResolvedValue({
-      address: '4AdUndXHHZ6cfufTMvppY6JwXNouMBzSkbLYfpAV5Usx3skxNgYeYTRJ5AmD5H3F',
-      amount: 1.234567890123,
-      paymentId: 'globee-payment-id'
-    }),
-    verifyWebhookSignature: vi.fn().mockImplementation((signature, payload, secret) => {
-      // Security test: validate webhook signature verification
-      return signature && payload && secret;
-    }),
-    validateAddress: vi.fn().mockImplementation((address) => {
-      // Security test: validate Monero address format
-      return /^4[0-9AB][0-9A-Za-z]{93}$/.test(address);
-    })
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockResolvedValue({

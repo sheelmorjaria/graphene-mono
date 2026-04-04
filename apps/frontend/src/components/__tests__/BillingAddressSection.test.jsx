@@ -171,7 +171,7 @@ describe('BillingAddressSection', () => {
       });
       
       const selectedCard = screen.getByText('Jane Smith').closest('div');
-      expect(selectedCard).toHaveClass('border-blue-500', 'bg-blue-50');
+      expect(selectedCard).toHaveClass('border-border-cyan', 'bg-cyan-400');
     });
 
     it('should show selected billing address summary', () => {

@@ -236,8 +236,11 @@ describe('User Order Controller - Unit Tests', () => {
         abortTransaction: vi.fn(),
         endSession: vi.fn()
       };
-      
+
       mongoose.startSession.mockResolvedValue(mockSession);
+
+      // Mock findOrCreateCart by mocking Cart.findByUserId
+      Cart.findByUserId = vi.fn().mockResolvedValue(mockCart);
 
       // Mock findOrCreateCart by mocking Cart.findByUserId
       Cart.findByUserId = vi.fn().mockResolvedValue(mockCart);
@@ -285,8 +288,18 @@ describe('User Order Controller - Unit Tests', () => {
       // Mock findByUserId since that's what the controller actually calls
       Cart.findByUserId = vi.fn().mockResolvedValue(null);
 
+      // Mock mongoose.startSession to return a valid session
+      const mockSession = {
+        startTransaction: vi.fn(),
+        commitTransaction: vi.fn(),
+        abortTransaction: vi.fn(),
+        endSession: vi.fn()
+      };
+      mongoose.startSession.mockResolvedValue(mockSession);
+
       await placeOrder(req, res);
 
+      // Controller returns 400 when cart is not found
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,

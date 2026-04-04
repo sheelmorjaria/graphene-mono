@@ -10,10 +10,7 @@ vi.mock('../../controllers/paymentController.js', () => ({
   handlePayPalWebhook: vi.fn(),
   initializeBitcoinPayment: vi.fn(),
   getBitcoinPaymentStatus: vi.fn(),
-  handleBlockonomicsWebhook: vi.fn(),
-  createMoneroPayment: vi.fn(),
-  checkMoneroPaymentStatus: vi.fn(),
-  handleMoneroWebhook: vi.fn()
+  handleBlockonomicsWebhook: vi.fn()
 }));
 
 // Mock auth middleware
@@ -46,8 +43,7 @@ describe('Payment Routes', () => {
     it('should get payment methods without authentication', async () => {
       const mockMethods = [
         { id: 'paypal', name: 'PayPal', enabled: true },
-        { id: 'bitcoin', name: 'Bitcoin', enabled: true },
-        { id: 'monero', name: 'Monero', enabled: true }
+        { id: 'bitcoin', name: 'Bitcoin', enabled: true }
       ];
 
       paymentController.getPaymentMethods.mockImplementation((req, res) => {
@@ -346,134 +342,6 @@ describe('Payment Routes', () => {
     });
   });
 
-  describe('Monero Routes', () => {
-    describe('POST /api/payment/monero/create', () => {
-      it('should create Monero payment with authentication', async () => {
-        const moneroData = {
-          orderId: 'ORDER-123',
-          amount: 2.5
-        };
-
-        const mockMoneroPayment = {
-          paymentId: 'MONERO-PAYMENT-456',
-          address: '48daf1rG3hE1Txapcsxh6WXNe9MLNKtu7W7tKTivtSoVLHErYzvdcpea2nSTgGkz66RdYECMCGzAhd5Pvq7YGNX8',
-          amount: 2.5,
-          integratedAddress: '4L6Gcy9TAHqPVPMnqa5cPtJK25tr7Mayu7NTKrGT8JXKPJEbBW6XwvTZ3oPvL2',
-          qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
-        };
-
-        paymentController.createMoneroPayment.mockImplementation((req, res) => {
-          expect(req.user.userId).toBe('test-user-123');
-          res.json({ success: true, payment: mockMoneroPayment });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/monero/create')
-          .send(moneroData)
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.payment).toEqual(mockMoneroPayment);
-        expect(optionalAuth).toHaveBeenCalled();
-        expect(paymentController.createMoneroPayment).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle Monero creation errors', async () => {
-        paymentController.createMoneroPayment.mockImplementation((req, res) => {
-          res.status(500).json({ success: false, error: 'Monero service unavailable' });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/monero/create')
-          .send({ orderId: 'ORDER-123' })
-          .expect(500);
-
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Monero service unavailable');
-      });
-    });
-
-    describe('GET /api/payment/monero/status/:orderId', () => {
-      it('should check Monero payment status with authentication', async () => {
-        const orderId = 'ORDER-123';
-        const mockStatus = {
-          orderId,
-          paymentId: 'MONERO-PAYMENT-456',
-          status: 'confirmed',
-          confirmations: 15,
-          requiredConfirmations: 10
-        };
-
-        paymentController.checkMoneroPaymentStatus.mockImplementation((req, res) => {
-          expect(req.user.userId).toBe('test-user-123');
-          expect(req.params.orderId).toBe(orderId);
-          res.json({ success: true, status: mockStatus });
-        });
-
-        const response = await request(app)
-          .get(`/api/payment/monero/status/${orderId}`)
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.status).toEqual(mockStatus);
-        expect(optionalAuth).toHaveBeenCalled();
-        expect(paymentController.checkMoneroPaymentStatus).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle Monero status check errors', async () => {
-        paymentController.checkMoneroPaymentStatus.mockImplementation((req, res) => {
-          res.status(404).json({ success: false, error: 'Payment not found' });
-        });
-
-        const response = await request(app)
-          .get('/api/payment/monero/status/INVALID-ORDER')
-          .expect(404);
-
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Payment not found');
-      });
-    });
-
-    describe('POST /api/payment/monero/webhook', () => {
-      it('should handle GloBee webhook without authentication', async () => {
-        const webhookData = {
-          id: 'GLOBEE-EVENT-123',
-          payment_id: 'MONERO-PAYMENT-456',
-          status: 'confirmed',
-          confirmations: 12
-        };
-
-        paymentController.handleMoneroWebhook.mockImplementation((req, res) => {
-          res.json({ success: true, processed: true });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/monero/webhook')
-          .send(webhookData)
-          .set('X-GloBee-Signature', 'test-signature')
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.processed).toBe(true);
-        expect(paymentController.handleMoneroWebhook).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle invalid Monero webhook', async () => {
-        paymentController.handleMoneroWebhook.mockImplementation((req, res) => {
-          res.status(400).json({ success: false, error: 'Invalid webhook signature' });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/monero/webhook')
-          .send({ invalid: 'data' })
-          .expect(400);
-
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Invalid webhook signature');
-      });
-    });
-  });
-
   describe('Route Middleware Integration', () => {
     it('should apply optionalAuth middleware to protected routes', async () => {
       // Mock controller responses to prevent timeouts
@@ -481,8 +349,6 @@ describe('Payment Routes', () => {
       paymentController.capturePayPalPayment.mockImplementation((req, res) => res.json({ success: true }));
       paymentController.initializeBitcoinPayment.mockImplementation((req, res) => res.json({ success: true }));
       paymentController.getBitcoinPaymentStatus.mockImplementation((req, res) => res.json({ success: true }));
-      paymentController.createMoneroPayment.mockImplementation((req, res) => res.json({ success: true }));
-      paymentController.checkMoneroPaymentStatus.mockImplementation((req, res) => res.json({ success: true }));
 
       await request(app)
         .post('/api/payment/paypal/create-order')
@@ -499,15 +365,8 @@ describe('Payment Routes', () => {
       await request(app)
         .get('/api/payment/bitcoin/status/test');
 
-      await request(app)
-        .post('/api/payment/monero/create')
-        .send({ orderId: 'test' });
-
-      await request(app)
-        .get('/api/payment/monero/status/test');
-
-      // Should have been called 6 times for protected routes
-      expect(optionalAuth).toHaveBeenCalledTimes(6);
+      // Should have been called 4 times for protected routes
+      expect(optionalAuth).toHaveBeenCalledTimes(4);
     });
 
     it('should not apply auth middleware to public routes', async () => {
@@ -517,7 +376,6 @@ describe('Payment Routes', () => {
       paymentController.getPaymentMethods.mockImplementation((req, res) => res.json({ success: true }));
       paymentController.handlePayPalWebhook.mockImplementation((req, res) => res.json({ success: true }));
       paymentController.handleBlockonomicsWebhook.mockImplementation((req, res) => res.json({ success: true }));
-      paymentController.handleMoneroWebhook.mockImplementation((req, res) => res.json({ success: true }));
 
       await request(app)
         .get('/api/payment/methods');
@@ -530,10 +388,6 @@ describe('Payment Routes', () => {
         .post('/api/payment/bitcoin/webhook')
         .send({});
 
-      await request(app)
-        .post('/api/payment/monero/webhook')
-        .send({});
-
       // Should not have been called for public routes
       expect(optionalAuth).not.toHaveBeenCalled();
     });
@@ -542,7 +396,7 @@ describe('Payment Routes', () => {
   describe('Route Parameter Handling', () => {
     it('should handle URL parameters correctly for Bitcoin status', async () => {
       const orderId = 'ORDER-WITH-SPECIAL-CHARS-123';
-      
+
       paymentController.getBitcoinPaymentStatus.mockImplementation((req, res) => {
         expect(req.params.orderId).toBe(orderId);
         res.json({ success: true });
@@ -553,21 +407,6 @@ describe('Payment Routes', () => {
         .expect(200);
 
       expect(paymentController.getBitcoinPaymentStatus).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle URL parameters correctly for Monero status', async () => {
-      const orderId = 'ORDER-MONERO-456';
-      
-      paymentController.checkMoneroPaymentStatus.mockImplementation((req, res) => {
-        expect(req.params.orderId).toBe(orderId);
-        res.json({ success: true });
-      });
-
-      await request(app)
-        .get(`/api/payment/monero/status/${orderId}`)
-        .expect(200);
-
-      expect(paymentController.checkMoneroPaymentStatus).toHaveBeenCalledTimes(1);
     });
   });
 });

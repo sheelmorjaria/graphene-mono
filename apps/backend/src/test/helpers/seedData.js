@@ -147,15 +147,6 @@ export const seedPaymentGateways = async () => {
       settings: {
         confirmations: 2
       }
-    },
-    {
-      name: 'Monero',
-      identifier: 'monero',
-      description: 'Pay with Monero',
-      isActive: true,
-      settings: {
-        confirmations: 10
-      }
     }
   ];
 

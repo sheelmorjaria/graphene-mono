@@ -16,7 +16,6 @@ export class PaymentController {
     
     this.services = {
       bitcoinService: dependencies.bitcoinService,
-      moneroService: dependencies.moneroService,
       paypalService: dependencies.paypalService,
       emailService: dependencies.emailService,
       ...dependencies.services
@@ -81,11 +80,6 @@ export class PaymentController {
           available: true,
           name: 'Bitcoin',
           description: 'Pay with Bitcoin cryptocurrency'
-        },
-        monero: {
-          available: true,
-          name: 'Monero',
-          description: 'Pay with Monero for enhanced privacy'
         }
       };
 
@@ -248,97 +242,6 @@ export class PaymentController {
         success: false,
         error: error.message || 'Failed to initialize Bitcoin payment'
       });
-    }
-  }
-
-  /**
-   * Create Monero payment
-   */
-  async createMoneroPayment(req, res) {
-    const session = await this.database.startSession();
-    
-    try {
-      const { orderId, shippingAddress, billingAddress, shippingMethodId } = req.body;
-
-      if (!orderId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Order ID is required'
-        });
-      }
-
-      const result = await session.withTransaction(async () => {
-        let order;
-        
-        if (orderId === 'new') {
-          // Create order from cart
-          const cart = await this._getUserCart(req.user.userId, session);
-          if (!cart || cart.items.length === 0) {
-            throw new Error('Cart is empty');
-          }
-
-          order = await this._createOrderFromCart(cart, {
-            shippingAddress,
-            billingAddress,
-            shippingMethodId,
-            userId: req.user.userId
-          }, session);
-        } else {
-          // Use existing order
-          order = await this.models.Order.findById(orderId).session(session);
-          if (!order) {
-            throw new Error('Order not found');
-          }
-
-          if (order.userId.toString() !== req.user.userId) {
-            throw new Error('Unauthorized access to order');
-          }
-        }
-
-        // Get Monero exchange rate and create payment
-        const [exchangeRate, paymentInfo] = await Promise.all([
-          this.services.moneroService.getExchangeRate(),
-          this.services.moneroService.createPayment({
-            amount: order.totalAmount,
-            orderId: order._id.toString()
-          })
-        ]);
-
-        return { order, exchangeRate, paymentInfo };
-      });
-
-      this.logPaymentEvent('monero_payment_created', {
-        orderId: result.order._id,
-        amount: result.paymentInfo.amount,
-        address: result.paymentInfo.address
-      });
-
-      res.status(200).json({
-        success: true,
-        data: {
-          orderId: result.order._id,
-          moneroAddress: result.paymentInfo.address,
-          xmrAmount: result.paymentInfo.amount,
-          exchangeRate: result.exchangeRate.rate,
-          validUntil: result.exchangeRate.validUntil,
-          expirationTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          requiredConfirmations: 10,
-          paymentWindowHours: 24,
-          orderTotal: result.order.totalAmount
-        }
-      });
-
-    } catch (error) {
-      await session.abortTransaction();
-      this.logError(error, { context: 'create_monero_payment', userId: req.user?.userId });
-      
-      const statusCode = this._getErrorStatusCode(error);
-      res.status(statusCode).json({
-        success: false,
-        error: error.message || 'Failed to create Monero payment'
-      });
-    } finally {
-      await session.endSession();
     }
   }
 

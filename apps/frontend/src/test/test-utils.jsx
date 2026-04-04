@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { vi } from 'vitest'
 import { AuthProvider, AuthStateContext, AuthDispatchContext } from '../contexts/AuthContext'
 import { CartProvider, CartContext } from '../contexts/CartContext'
+import { CheckoutProvider, CheckoutContext } from '../contexts/CheckoutContext'
 
 // Mock auth service to prevent real API calls
 vi.mock('../services/authService', () => ({
@@ -82,7 +83,7 @@ const TestAuthProvider = ({ children }) => {
   )
 }
 
-// Test-specific CartProvider that doesn't make async calls  
+// Test-specific CartProvider that doesn't make async calls
 const TestCartProvider = ({ children }) => {
   const [cart] = React.useState({
     items: [],
@@ -118,6 +119,98 @@ const TestCartProvider = ({ children }) => {
   )
 }
 
+// Test-specific CheckoutProvider that doesn't make async calls
+const TestCheckoutProvider = ({ children }) => {
+  const [checkoutState] = React.useState({
+    step: 'payment',
+    deliveryAddress: null,
+    shippingAddress: null,
+    billingAddress: null,
+    useSameAsShipping: true,
+    shippingMethod: null,
+    shippingCost: 0,
+    paymentMethod: null,
+    orderNotes: ''
+  })
+
+  const [paymentState] = React.useState({
+    isProcessing: false,
+    error: null,
+    paymentData: null
+  })
+
+  const [addresses] = React.useState([])
+  const [addressesLoading] = React.useState(false)
+  const [addressesError] = React.useState('')
+  const [shippingRates] = React.useState([])
+  const [shippingRatesLoading] = React.useState(false)
+  const [shippingRatesError] = React.useState('')
+
+  const contextValue = {
+    // State
+    checkoutState,
+    paymentState,
+    addresses,
+    addressesLoading,
+    addressesError,
+    shippingRates,
+    shippingRatesLoading,
+    shippingRatesError,
+
+    // Actions
+    setDeliveryAddress: vi.fn(),
+    setShippingAddress: vi.fn(),
+    setBillingAddress: vi.fn(),
+    setUseSameAsShipping: vi.fn(),
+    setShippingMethod: vi.fn(),
+    setPaymentMethod: vi.fn(),
+    setPaymentState: vi.fn(),
+    setOrderNotes: vi.fn(),
+    goToStep: vi.fn(),
+    nextStep: vi.fn(),
+    prevStep: vi.fn(),
+    resetCheckout: vi.fn(),
+    refreshAddresses: vi.fn(),
+    refreshShippingRates: vi.fn(),
+
+    // Computed values
+    canProceedToReview: false,
+    isPaymentStep: true,
+    isReviewStep: false,
+
+    // Order totals and summary
+    subtotal: 0,
+    shippingCost: 0,
+    orderTotal: 0,
+    orderSummary: {
+      cartTotal: 0,
+      shippingCost: 0,
+      orderTotal: 0,
+      currency: 'GBP',
+      items: [],
+      shippingMethod: null,
+      shippingAddress: null,
+      billingAddress: null,
+      deliveryAddress: null
+    },
+
+    // Convenience accessors
+    deliveryAddress: null,
+    shippingAddress: null,
+    billingAddress: null,
+    useSameAsShipping: true,
+    shippingMethod: null,
+    paymentMethod: null,
+    orderNotes: ''
+  }
+
+  return (
+    <CheckoutContext.Provider value={contextValue}>
+      {children}
+    </CheckoutContext.Provider>
+  )
+}
+
 // Custom render function that includes necessary providers
 function render(
   ui,
@@ -134,7 +227,9 @@ function render(
         <MemoryRouter initialEntries={initialEntries} initialIndex={initialIndex}>
           <TestAuthProvider>
             <TestCartProvider>
-              {children}
+              <TestCheckoutProvider>
+                {children}
+              </TestCheckoutProvider>
             </TestCartProvider>
           </TestAuthProvider>
         </MemoryRouter>

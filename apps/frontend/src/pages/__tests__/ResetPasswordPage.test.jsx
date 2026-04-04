@@ -67,9 +67,9 @@ describe('ResetPasswordPage', () => {
           const token = searchParams.get('token'); // Will be null
           
           return (
-            <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-bg-elevated flex flex-col justify-center py-12 sm:px-6 lg:px-8">
               {!token && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <div className="text-red-50 border border-red-200 rounded-md p-4">
                   <div className="text-sm text-red-600">Invalid or missing reset token. Please request a new password reset.</div>
                 </div>
               )}

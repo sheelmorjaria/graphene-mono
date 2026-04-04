@@ -406,7 +406,7 @@ export const updatePaymentGateway = async (req, res) => {
     
     // Don't allow updating sensitive config fields directly through this endpoint
     if (updates.config) {
-      const sensitiveFields = ['stripeSecretKey', 'paypalSecret', 'bitcoinWebhookSecret', 'moneroWebhookSecret'];
+      const sensitiveFields = ['stripeSecretKey', 'paypalSecret', 'bitcoinWebhookSecret'];
       for (const field of sensitiveFields) {
         if (updates.config[field]) {
           delete updates.config[field];

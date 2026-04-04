@@ -69,18 +69,6 @@
       "advanced": true
     },
     {
-      "id": "GLOBEE_API_KEY",
-      "description": "GloBee API key for Monero payments",
-      "defaultValue": "",
-      "advanced": true
-    },
-    {
-      "id": "GLOBEE_API_SECRET",
-      "description": "GloBee API secret for Monero payments",
-      "defaultValue": "",
-      "advanced": true
-    },
-    {
       "id": "ADMIN_EMAIL",
       "description": "Admin user email",
       "defaultValue": "admin@grapheneosstore.com",

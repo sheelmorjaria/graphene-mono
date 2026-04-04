@@ -155,7 +155,7 @@ describe('FilterSidebar', () => {
     const { container } = render(<FilterSidebar {...defaultProps} />);
     
     const sidebar = container.firstChild;
-    expect(sidebar).toHaveClass('bg-white', 'p-6', 'rounded-lg', 'border');
+    expect(sidebar).toHaveClass('bg-bg-card', 'p-6', 'rounded-lg', 'border');
   });
 
   it('should validate price inputs are numeric', async () => {

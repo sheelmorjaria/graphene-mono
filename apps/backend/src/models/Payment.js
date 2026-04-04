@@ -41,7 +41,7 @@ const paymentSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: [true, 'Payment method is required'],
-    enum: ['paypal', 'bitcoin', 'monero'],
+    enum: ['paypal', 'bitcoin'],
     lowercase: true
   },
   
@@ -56,7 +56,7 @@ const paymentSchema = new mongoose.Schema({
     required: [true, 'Currency is required'],
     uppercase: true,
     default: 'GBP',
-    enum: ['GBP', 'USD', 'EUR', 'BTC', 'XMR']
+    enum: ['GBP', 'USD', 'EUR', 'BTC']
   },
   
   // Payment status
@@ -142,63 +142,14 @@ const paymentSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
-  
-  // Monero specific fields
-  moneroAddress: {
-    type: String,
-    trim: true,
-    maxlength: 100
-  },
-  
-  xmrAmount: {
-    type: Number,
-    min: 0
-  },
-  
-  moneroExchangeRate: {
-    type: Number,
-    min: 0
-  },
-  
-  exchangeRateValidUntil: {
-    type: Date
-  },
-  
-  globeePaymentId: {
-    type: String,
-    trim: true,
-    maxlength: 100
-  },
-  
-  paymentUrl: {
-    type: String,
-    trim: true,
-    maxlength: 500
-  },
-  
-  expirationTime: {
-    type: Date
-  },
-  
-  confirmations: {
-    type: Number,
-    min: 0,
-    default: 0
-  },
-  
-  paidAmount: {
-    type: Number,
-    min: 0,
-    default: 0
-  },
-  
+
   // Transaction metadata
   transactionHash: {
     type: String,
     trim: true,
     maxlength: 200
   },
-  
+
   transactionFee: {
     type: Number,
     min: 0,
@@ -424,15 +375,7 @@ paymentSchema.pre('save', function(next) {
       return next(new Error('Bitcoin amount does not match GBP amount at current exchange rate'));
     }
   }
-  
-  if (this.paymentMethod === 'monero' && this.xmrAmount && this.moneroExchangeRate) {
-    // Ensure Monero amount matches the GBP amount at the exchange rate
-    const expectedGbpAmount = this.xmrAmount * this.moneroExchangeRate;
-    if (Math.abs(expectedGbpAmount - this.amount) > 0.01) {
-      return next(new Error('Monero amount does not match GBP amount at current exchange rate'));
-    }
-  }
-  
+
   next();
 });
 

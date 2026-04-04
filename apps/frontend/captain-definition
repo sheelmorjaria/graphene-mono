@@ -40,12 +40,6 @@
       "advanced": true
     },
     {
-      "id": "VITE_ENABLE_MONERO_PAYMENTS",
-      "description": "Enable Monero payments via GloBee",
-      "defaultValue": "false",
-      "advanced": true
-    },
-    {
       "id": "VITE_ENABLE_DEV_TOOLS",
       "description": "Enable developer tools in production",
       "defaultValue": "false",

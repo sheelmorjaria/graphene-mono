@@ -85,8 +85,6 @@ const AdminOrderDetailsPage = () => {
       return 'PayPal';
     } else if (paymentMethod.type === 'bitcoin') {
       return 'Bitcoin';
-    } else if (paymentMethod.type === 'monero') {
-      return 'Monero';
     }
     
     return paymentMethod.type || 'Unknown';

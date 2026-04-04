@@ -135,56 +135,6 @@ vi.mock('../services/bitcoinService.js', () => ({
   }
 }));
 
-vi.mock('../services/moneroService.js', () => ({
-  default: {
-    getExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.008,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    convertGbpToXmr: vi.fn().mockResolvedValue({
-      xmrAmount: 1.234567890123,
-      exchangeRate: 0.008,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    createPaymentRequest: vi.fn().mockResolvedValue({
-      paymentId: 'nowpayments-payment-id-12345',
-      address: '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H',
-      amount: 1.234567890123,
-      currency: 'XMR',
-      expirationTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      paymentUrl: 'https://nowpayments.io/payment/nowpayments-payment-id-12345',
-      status: 'pending'
-    }),
-    getPaymentStatus: vi.fn().mockResolvedValue({
-      id: 'nowpayments-payment-id-12345',
-      status: 'confirmed',
-      confirmations: 15,
-      paid_amount: 1.234567890123,
-      transaction_hash: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890',
-      payment_address: '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H',
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    }),
-    verifyWebhookSignature: vi.fn().mockReturnValue(true),
-    processWebhookNotification: vi.fn().mockReturnValue({
-      paymentId: 'nowpayments-payment-id-12345',
-      orderId: 'test-order-id',
-      status: 'confirmed',
-      confirmations: 15,
-      paidAmount: 1.234567890123,
-      totalAmount: 1.234567890123,
-      transactionHash: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890',
-      isFullyConfirmed: true,
-      requiresAction: false
-    }),
-    isPaymentExpired: vi.fn().mockReturnValue(false),
-    getPaymentExpirationTime: vi.fn().mockReturnValue(new Date(Date.now() + 24 * 60 * 60 * 1000)),
-    getRequiredConfirmations: vi.fn().mockReturnValue(10),
-    getPaymentWindowHours: vi.fn().mockReturnValue(24),
-    formatXmrAmount: vi.fn().mockImplementation((amount) => parseFloat(amount).toFixed(12).replace(/\.?0+$/, ''))
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockResolvedValue({
