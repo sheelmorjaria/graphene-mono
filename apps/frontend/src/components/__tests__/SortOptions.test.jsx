@@ -67,7 +67,7 @@ describe('SortOptions', () => {
     expect(wrapper).toHaveClass('flex', 'items-center', 'space-x-2');
     
     const select = screen.getByRole('combobox');
-    expect(select).toHaveClass('border-gray-300', 'rounded-md', 'text-sm');
+    expect(select).toHaveClass('border-border-subtle/2', 'rounded-md', 'text-sm');
   });
 
   it('should handle focus and keyboard navigation', async () => {
@@ -84,6 +84,6 @@ describe('SortOptions', () => {
     render(<SortOptions {...defaultProps} />);
     
     const select = screen.getByRole('combobox');
-    expect(select).toHaveClass('focus:ring-2', 'focus:ring-blue-500', 'focus:border-blue-500');
+    expect(select).toHaveClass('focus:ring-2', 'focus:ring-blue-500', 'focus:border-border-cyan');
   });
 });

@@ -113,53 +113,6 @@ vi.mock('../services/bitcoinService.js', () => ({
   }
 }));
 
-vi.mock('../services/moneroService.js', () => ({
-  default: {
-    getExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.008,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    convertGbpToXmr: vi.fn().mockResolvedValue({
-      xmrAmount: 1.234567890123,
-      exchangeRate: 0.008,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    createPayment: vi.fn().mockResolvedValue({
-      address: '4AdUndXHHZ6cfufTMvppY6JwXNouMBzSkbLYfpAV5Usx3skxNgYeYTRJ5AmD5H3F',
-      amount: 1.234567890123,
-      paymentId: 'globee-payment-id'
-    }),
-    createPaymentRequest: vi.fn().mockResolvedValue({
-      paymentId: 'globee-payment-id',
-      address: '4AdUndXHHZ6cfufTMvppY6JwXNouMBzSkbLYfpAV5Usx3skxNgYeYTRJ5AmD5H3F',
-      paymentUrl: 'https://globee.com/payment/mock-payment-id',
-      expirationTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      requiredConfirmations: 10,
-      paymentWindow: 24
-    }),
-    verifyWebhookSignature: vi.fn().mockReturnValue(true),
-    getPaymentStatus: vi.fn().mockResolvedValue({
-      status: 'pending',
-      confirmations: 0,
-      paid_amount: 0,
-      transaction_hash: null
-    }),
-    isPaymentExpired: vi.fn().mockImplementation((createdAt) => {
-      // Check if payment is older than 24 hours (default expiration)
-      const expirationTime = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
-      return new Date() > expirationTime;
-    }),
-    getRequiredConfirmations: vi.fn().mockReturnValue(10),
-    processWebhookNotification: vi.fn().mockImplementation((payload) => ({
-      orderId: payload.order_id || 'test-order-id',
-      status: payload.status === 'paid' ? 'confirmed' : payload.status,
-      confirmations: payload.confirmations || 0,
-      paidAmount: payload.paid_amount || 0,
-      transactionHash: payload.transaction_hash || null
-    }))
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockResolvedValue({

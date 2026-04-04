@@ -114,26 +114,6 @@ vi.mock('../services/bitcoinService.js', () => ({
   }
 }));
 
-vi.mock('../services/moneroService.js', () => ({
-  default: {
-    getExchangeRate: vi.fn().mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
-      return {
-        rate: 0.008,
-        validUntil: new Date(Date.now() + 300000)
-      };
-    }),
-    createPayment: vi.fn().mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 200));
-      return {
-        address: '4AdUndXHHZ6cfufTMvppY6JwXNouMBzSkbLYfpAV5Usx3skxNgYeYTRJ5AmD5H3F',
-        amount: 1.234567890123,
-        paymentId: 'globee-payment-id'
-      };
-    })
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockImplementation(async () => {
@@ -274,8 +254,8 @@ export const createTestOrders = (count = 25, userIds = [], productIds = []) => {
         cost: 9.99
       },
       paymentMethod: {
-        type: ['paypal', 'bitcoin', 'monero'][i % 3],
-        name: ['PayPal', 'Bitcoin', 'Monero'][i % 3]
+        type: ['paypal', 'bitcoin'][i % 2],
+        name: ['PayPal', 'Bitcoin'][i % 2]
       }
     });
   }

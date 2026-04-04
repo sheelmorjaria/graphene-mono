@@ -63,8 +63,8 @@ describe('AdminDashboardPage', () => {
     );
 
     // Check header
-    expect(screen.getByText('GrapheneOS Store')).toBeInTheDocument();
-    expect(screen.getByText('Welcome, Admin')).toBeInTheDocument();
+    expect(screen.getByText('Graphene Security')).toBeInTheDocument();
+    expect(screen.getByText(/admin/i)).toBeInTheDocument();
 
     // Wait for metrics to load
     await waitFor(() => {

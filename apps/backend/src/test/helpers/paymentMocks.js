@@ -181,81 +181,19 @@ export const createBitcoinServiceMock = () => {
   return bitcoinMock;
 };
 
-// Monero Service Mock
-export const createMoneroServiceMock = () => {
-  const moneroMock = {
-    apiKey: 'test-globee-api-key',
-    baseURL: 'https://globee.com/payment-api/v1',
-
-    createPaymentRequest: vi.fn().mockImplementation(async (orderData) => {
-      if (!orderData.amount) {
-        throw new Error('Amount is required');
-      }
-      return {
-        id: `globee-${Date.now()}`,
-        address: `4${Math.random().toString(36).substr(2, 94)}`, // Mock Monero address
-        amount: orderData.amount,
-        currency: 'XMR',
-        expirationTime: new Date(Date.now() + 3600000),
-        paymentUrl: `https://globee.com/invoice/globee-${Date.now()}`,
-        status: 'unpaid'
-      };
-    }),
-
-    getPaymentStatus: vi.fn().mockImplementation(async (paymentId) => {
-      return {
-        id: paymentId,
-        status: 'paid',
-        amount: 0.15, // XMR
-        confirmations: 10,
-        txHash: `monero-tx-${Date.now()}`
-      };
-    }),
-
-    verifyPayment: vi.fn().mockImplementation(async (paymentId) => {
-      return {
-        verified: true,
-        amount: 0.15,
-        confirmations: 10,
-        status: 'confirmed'
-      };
-    }),
-
-    // Exchange rate methods
-    getXMRToFiatRate: vi.fn().mockResolvedValue(150), // $150 per XMR
-    convertFiatToXMR: vi.fn().mockImplementation((fiatAmount, currency = 'GBP') => {
-      const rate = currency === 'GBP' ? 120 : 150;
-      return fiatAmount / rate;
-    }),
-
-    reset: () => {
-      Object.values(moneroMock).forEach(mock => {
-        if (vi.isMockFunction(mock)) {
-          mock.mockClear();
-        }
-      });
-    }
-  };
-
-  return moneroMock;
-};
-
 // Unified Payment Service Mock Factory
 export const createPaymentServiceMocks = () => {
   const paypalMock = createPayPalServiceMock();
   const bitcoinMock = createBitcoinServiceMock();
-  const moneroMock = createMoneroServiceMock();
 
   return {
     paypal: paypalMock,
     bitcoin: bitcoinMock,
-    monero: moneroMock,
 
     // Utility methods
     resetAll: () => {
       paypalMock.reset();
       bitcoinMock.reset();
-      moneroMock.reset();
     },
 
     // Simulate various payment scenarios
@@ -272,8 +210,6 @@ export const createPaymentServiceMocks = () => {
         paypalMock.simulateError('createOrder', error);
       } else if (service === 'bitcoin') {
         bitcoinMock.verifyPayment.mockRejectedValueOnce(error);
-      } else if (service === 'monero') {
-        moneroMock.createPaymentRequest.mockRejectedValueOnce(error);
       }
     }
   };
@@ -290,10 +226,6 @@ export const setupPaymentMocks = () => {
 
   vi.mock('../../services/bitcoinService.js', () => ({
     default: mocks.bitcoin
-  }));
-
-  vi.mock('../../services/moneroService.js', () => ({
-    default: mocks.monero
   }));
 
   // Mock external HTTP libraries

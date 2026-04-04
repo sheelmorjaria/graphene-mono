@@ -24,7 +24,7 @@ const paymentGatewaySchema = new mongoose.Schema({
   provider: {
     type: String,
     required: true,
-    enum: ['stripe', 'paypal', 'square', 'adyen', 'bitcoin', 'monero', 'other'],
+    enum: ['stripe', 'paypal', 'square', 'adyen', 'bitcoin', 'other'],
     default: 'other'
   },
   isEnabled: {
@@ -105,17 +105,6 @@ const paymentGatewaySchema = new mongoose.Schema({
       default: ''
     },
     bitcoinWebhookSecret: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    // For Monero
-    moneroApiKey: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    moneroWebhookSecret: {
       type: String,
       trim: true,
       default: ''
@@ -291,8 +280,6 @@ paymentGatewaySchema.methods.getRequiredConfigFields = function() {
     return ['paypalClientId'];
   case 'bitcoin':
     return ['bitcoinApiKey'];
-  case 'monero':
-    return ['moneroApiKey'];
   default:
     return [];
   }

@@ -84,7 +84,7 @@ const RefundPolicyPage = () => {
           <ul className="list-disc list-inside space-y-1 ml-4">
             <li>Credit/Debit Cards: 5-10 business days</li>
             <li>PayPal: 3-5 business days</li>
-            <li>Bitcoin/Monero: Requires valid wallet address, processed within 48 hours</li>
+            <li>Bitcoin: Requires valid wallet address, processed within 48 hours</li>
           </ul>
         </div>
       )

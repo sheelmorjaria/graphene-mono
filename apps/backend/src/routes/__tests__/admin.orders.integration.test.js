@@ -185,8 +185,8 @@ describe('Admin Orders API Integration Tests', () => {
         cost: 0
       },
       paymentMethod: {
-        type: 'monero',
-        name: 'Monero'
+        type: 'bitcoin',
+        name: 'Bitcoin'
       },
       createdAt: new Date('2024-02-01')
     });

@@ -281,7 +281,7 @@ describe('VariationSelector', () => {
     );
     
     expect(blackButton).toHaveClass('cursor-not-allowed');
-    expect(blackButton).toHaveClass('bg-gray-50');
+    expect(blackButton).toHaveClass('bg-bg-elevated');
   });
 
   it('should format prices correctly', async () => {

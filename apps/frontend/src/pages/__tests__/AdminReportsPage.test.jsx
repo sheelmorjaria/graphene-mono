@@ -97,7 +97,7 @@ describe('AdminReportsPage', () => {
       expect(screen.getByText('45')).toBeInTheDocument();
       
       // Check for inventory counts more specifically
-      const inventorySection = screen.getByText('Inventory Summary').closest('.bg-white');
+      const inventorySection = screen.getByText('Inventory Summary').closest('.bg-bg-card');
       expect(inventorySection).toHaveTextContent('45');
       expect(inventorySection).toHaveTextContent('5');
       expect(inventorySection).toHaveTextContent('8');

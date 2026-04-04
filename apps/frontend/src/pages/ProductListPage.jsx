@@ -162,9 +162,9 @@ const ProductListPage = () => {
     <>
       <SEOWrapper
         title="GrapheneOS Smartphones - Privacy-Focused Phones"
-        description="Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private smartphones with Bitcoin, Monero, and PayPal payment options. Free UK shipping available."
+        description="Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private smartphones with Bitcoin and PayPal payment options. Free UK shipping available."
         additionalMeta={[
-          { name: 'keywords', content: 'GrapheneOS phones, privacy smartphones, secure phones, Google Pixel GrapheneOS, Bitcoin payment, Monero payment' },
+          { name: 'keywords', content: 'GrapheneOS phones, privacy smartphones, secure phones, Google Pixel GrapheneOS, Bitcoin payment' },
           { property: 'og:type', content: 'website' }
         ]}
       />

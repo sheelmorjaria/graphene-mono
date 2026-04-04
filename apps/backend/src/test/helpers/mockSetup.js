@@ -19,8 +19,6 @@ export const setupMocks = () => {
   process.env.PAYPAL_CLIENT_ID = 'test-paypal-client-id';
   process.env.PAYPAL_CLIENT_SECRET = 'test-paypal-client-secret';
   process.env.BITCOIN_API_KEY = 'test-bitcoin-api-key';
-  process.env.GLOBEE_API_KEY = 'test-globee-api-key';
-  process.env.GLOBEE_WEBHOOK_SECRET = 'test-globee-webhook-secret';
   process.env.EMAIL_SERVICE = 'mock';
 };
 
@@ -31,14 +29,6 @@ export const mockApiResponses = {
     bitcoin: {
       success: {
         bitcoin: { gbp: 0.00003247 }
-      },
-      error: {
-        error: 'coin not found'
-      }
-    },
-    monero: {
-      success: {
-        monero: { gbp: 0.005432 }
       },
       error: {
         error: 'coin not found'
@@ -108,36 +98,6 @@ export const mockApiResponses = {
         error: 'Address not found'
       }
     }
-  },
-
-  // Monero API (GloBee)
-  monero: {
-    payment: {
-      success: {
-        data: {
-          id: 'mock-payment-id',
-          payment_url: 'https://globee.com/payment/mock-payment-id',
-          total: '0.01',
-          currency: 'XMR',
-          status: 'unpaid'
-        }
-      },
-      error: {
-        error: 'Invalid API key'
-      }
-    },
-    status: {
-      success: {
-        data: {
-          id: 'mock-payment-id',
-          status: 'confirmed',
-          confirmations: 10
-        }
-      },
-      error: {
-        error: 'Payment not found'
-      }
-    }
   }
 };
 
@@ -149,13 +109,6 @@ export const setupCommonMocks = () => {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockApiResponses.coinGecko.bitcoin.success)
-      });
-    }
-    
-    if (url.includes('coingecko.com') && url.includes('monero')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponses.coinGecko.monero.success)
       });
     }
 
@@ -177,13 +130,6 @@ export const setupCommonMocks = () => {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockApiResponses.bitcoin.address.success)
-      });
-    }
-
-    if (url.includes('globee.com')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponses.monero.payment.success)
       });
     }
 

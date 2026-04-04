@@ -247,8 +247,8 @@ vi.mock('mongoose', async () => {
               if (this.status && !['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'].includes(this.status)) {
                 throw new Error('Status must be one of: pending, processing, shipped, delivered, cancelled, refunded');
               }
-              if (this.paymentMethod && this.paymentMethod.type && !['paypal', 'bitcoin', 'monero'].includes(this.paymentMethod.type)) {
-                throw new Error('Payment method type must be: paypal, bitcoin, monero');
+              if (this.paymentMethod && this.paymentMethod.type && !['paypal', 'bitcoin'].includes(this.paymentMethod.type)) {
+                throw new Error('Payment method type must be: paypal, bitcoin');
               }
               if (!this.shippingAddress || !this.shippingAddress.fullName) {
                 throw new Error('Shipping address is required');

@@ -21,7 +21,6 @@
     "VITE_APP_TITLE": "GrapheneOS Store",
     "VITE_COMPANY_NAME": "GrapheneOS Store",
     "VITE_ENABLE_BITCOIN_PAYMENTS": "true",
-    "VITE_ENABLE_MONERO_PAYMENTS": "true",
     "VITE_ENABLE_PAYPAL_PAYMENTS": "true"
   },
   "buildCommand": "npm run build",

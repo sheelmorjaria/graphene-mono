@@ -87,7 +87,6 @@ const PaymentSettings = ({ onMessage }) => {
     { value: 'square', label: 'Square' },
     { value: 'adyen', label: 'Adyen' },
     { value: 'bitcoin', label: 'Bitcoin' },
-    { value: 'monero', label: 'Monero' },
     { value: 'other', label: 'Other' }
   ];
 
@@ -97,8 +96,7 @@ const PaymentSettings = ({ onMessage }) => {
     { code: 'EUR', name: 'Euro (€)' },
     { code: 'CAD', name: 'Canadian Dollar (C$)' },
     { code: 'AUD', name: 'Australian Dollar (A$)' },
-    { code: 'BTC', name: 'Bitcoin (₿)' },
-    { code: 'XMR', name: 'Monero (ɱ)' }
+    { code: 'BTC', name: 'Bitcoin (₿)' }
   ];
 
   const countries = [
@@ -410,8 +408,6 @@ const PaymentSettings = ({ onMessage }) => {
         return ['paypalClientId'];
       case 'bitcoin':
         return ['bitcoinApiKey'];
-      case 'monero':
-        return ['moneroApiKey'];
       default:
         return [];
     }

@@ -17,13 +17,7 @@ export const defaultHandlers = [
         bitcoin: { gbp: 25000 }
       });
     }
-    
-    if (ids === 'monero' && vsCurrencies === 'gbp') {
-      return HttpResponse.json({
-        monero: { gbp: 161.23 }
-      });
-    }
-    
+
     return HttpResponse.json({}, { status: 404 });
   }),
 
@@ -58,32 +52,6 @@ export const defaultHandlers = [
       fee: 1000,
       size: 250,
       out: []
-    });
-  }),
-
-  // GloBee API mocks
-  http.post('https://api.globee.com/v1/payment-request', () => {
-    return HttpResponse.json({
-      id: 'globee-payment-123',
-      payment_address: '4AdUndXHHZ9pfQj27iMAjAr4xTDXXjLWRh4P4Ym3X3KxG7PvNGdJgxsUc8nq4JJMvCmdMWTJT8kUH7G8K2s9i1vR5CJQo4q',
-      total: 1.9999,
-      currency: 'XMR',
-      expiration_time: '2024-01-01T12:00:00Z',
-      payment_url: 'https://globee.com/payment/123',
-      status: 'pending'
-    });
-  }),
-
-  http.get('https://api.globee.com/v1/payment-request/:paymentId', ({ params }) => {
-    return HttpResponse.json({
-      id: params.paymentId,
-      status: 'paid',
-      confirmations: 12,
-      paid_amount: 1.5,
-      transaction_hash: 'abc123',
-      payment_address: '4AdUndXHHZ...',
-      created_at: '2024-01-01T10:00:00Z',
-      expires_at: '2024-01-02T10:00:00Z'
     });
   })
 ];

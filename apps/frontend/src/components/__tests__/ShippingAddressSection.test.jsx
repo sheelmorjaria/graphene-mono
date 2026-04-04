@@ -122,7 +122,7 @@ describe('ShippingAddressSection', () => {
       });
       
       const selectedCard = screen.getByText('John Doe').closest('div');
-      expect(selectedCard).toHaveClass('border-blue-500', 'bg-blue-50');
+      expect(selectedCard).toHaveClass('border-border-cyan', 'bg-cyan-50');
     });
 
     it('should call setShippingAddress when address is selected', async () => {

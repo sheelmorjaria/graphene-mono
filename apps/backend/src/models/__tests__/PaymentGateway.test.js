@@ -156,33 +156,6 @@ describe('PaymentGateway Model', () => {
       expect(savedGateway.fees.fixedFee).toBe(0.0001);
     });
 
-    it('should create a valid Monero payment gateway', async () => {
-      const moneroGateway = new PaymentGateway({
-        name: 'Monero',
-        code: 'MONERO',
-        type: 'cryptocurrency',
-        provider: 'monero',
-        isEnabled: true,
-        supportedCurrencies: ['XMR'],
-        supportedCountries: ['GB', 'US'],
-        config: {
-          moneroApiKey: 'globee-api-key',
-          moneroWebhookSecret: 'webhook-secret'
-        },
-        fees: {
-          percentageFee: 1.0
-        }
-      });
-
-      const savedGateway = await moneroGateway.save();
-      
-      expect(savedGateway.name).toBe('Monero');
-      expect(savedGateway.code).toBe('MONERO');
-      expect(savedGateway.type).toBe('cryptocurrency');
-      expect(savedGateway.provider).toBe('monero');
-      expect(savedGateway.config.moneroApiKey).toBe('globee-api-key');
-    });
-
     it('should require name field', async () => {
       const gateway = new PaymentGateway({
         code: 'TEST',
@@ -480,11 +453,11 @@ describe('PaymentGateway Model', () => {
         },
         {
           name: 'Disabled Gateway',
-          code: 'MONERO',
-          type: 'cryptocurrency',
-          provider: 'monero',
+          code: 'DISABLED',
+          type: 'digital_wallet',
+          provider: 'paypal',
           isEnabled: false,
-          supportedCurrencies: ['XMR'],
+          supportedCurrencies: ['GBP'],
           supportedCountries: ['GB']
         }
       ]);
