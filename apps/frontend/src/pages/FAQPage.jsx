@@ -336,11 +336,7 @@ const FAQPage = () => {
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Credit/Debit Cards (Visa, Mastercard, Maestro)</li>
                 <li>PayPal</li>
-                <li>Bitcoin (BTC)</li>
               </ul>
-              <p className="text-text-muted">
-                Cryptocurrency payments are processed securely through third-party providers (Blockonomics for Bitcoin).
-              </p>
             </div>
           )
         },

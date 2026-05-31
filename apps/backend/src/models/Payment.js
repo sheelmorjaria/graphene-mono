@@ -41,7 +41,7 @@ const paymentSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: [true, 'Payment method is required'],
-    enum: ['paypal', 'bitcoin'],
+    enum: ['paypal'],
     lowercase: true
   },
   
@@ -56,7 +56,7 @@ const paymentSchema = new mongoose.Schema({
     required: [true, 'Currency is required'],
     uppercase: true,
     default: 'GBP',
-    enum: ['GBP', 'USD', 'EUR', 'BTC']
+    enum: ['GBP', 'USD', 'EUR']
   },
   
   // Payment status
@@ -98,49 +98,6 @@ const paymentSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
     maxlength: 255
-  },
-  
-  // Bitcoin specific fields
-  bitcoinAddress: {
-    type: String,
-    trim: true,
-    maxlength: 100
-  },
-  
-  bitcoinAmount: {
-    type: Number,
-    min: 0
-  },
-  
-  bitcoinExchangeRate: {
-    type: Number,
-    min: 0
-  },
-  
-  bitcoinExchangeRateTimestamp: {
-    type: Date
-  },
-  
-  bitcoinTransactionHash: {
-    type: String,
-    trim: true,
-    maxlength: 100
-  },
-  
-  bitcoinConfirmations: {
-    type: Number,
-    min: 0,
-    default: 0
-  },
-  
-  bitcoinPaymentExpiry: {
-    type: Date
-  },
-  
-  bitcoinAmountReceived: {
-    type: Number,
-    min: 0,
-    default: 0
   },
 
   // Transaction metadata
@@ -365,15 +322,6 @@ paymentSchema.pre('save', function(next) {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 5);
     this.paymentId = `PAY-${timestamp}-${random}`.toUpperCase();
-  }
-  
-  // Validate payment method specific fields
-  if (this.paymentMethod === 'bitcoin' && this.bitcoinAmount && this.bitcoinExchangeRate) {
-    // Ensure bitcoin amount matches the GBP amount at the exchange rate
-    const expectedGbpAmount = this.bitcoinAmount * this.bitcoinExchangeRate;
-    if (Math.abs(expectedGbpAmount - this.amount) > 0.01) {
-      return next(new Error('Bitcoin amount does not match GBP amount at current exchange rate'));
-    }
   }
 
   next();

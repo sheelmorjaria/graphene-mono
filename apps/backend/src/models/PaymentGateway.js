@@ -24,7 +24,7 @@ const paymentGatewaySchema = new mongoose.Schema({
   provider: {
     type: String,
     required: true,
-    enum: ['stripe', 'paypal', 'square', 'adyen', 'bitcoin', 'other'],
+    enum: ['paypal', 'square', 'adyen', 'other'],
     default: 'other'
   },
   isEnabled: {
@@ -76,17 +76,6 @@ const paymentGatewaySchema = new mongoose.Schema({
   },
   // Configuration specific to each gateway
   config: {
-    // For Stripe
-    stripePublishableKey: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    stripeWebhookSecret: {
-      type: String,
-      trim: true,
-      default: ''
-    },
     // For PayPal
     paypalClientId: {
       type: String,
@@ -94,17 +83,6 @@ const paymentGatewaySchema = new mongoose.Schema({
       default: ''
     },
     paypalWebhookId: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    // For Bitcoin
-    bitcoinApiKey: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    bitcoinWebhookSecret: {
       type: String,
       trim: true,
       default: ''
@@ -274,12 +252,8 @@ paymentGatewaySchema.virtual('configurationStatus').get(function() {
 // Instance method to get required configuration fields
 paymentGatewaySchema.methods.getRequiredConfigFields = function() {
   switch (this.provider) {
-  case 'stripe':
-    return ['stripePublishableKey'];
   case 'paypal':
     return ['paypalClientId'];
-  case 'bitcoin':
-    return ['bitcoinApiKey'];
   default:
     return [];
   }

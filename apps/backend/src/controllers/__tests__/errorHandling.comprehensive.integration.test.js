@@ -9,7 +9,6 @@ import { connectTestDatabase, disconnectTestDatabase, clearTestDatabase } from '
 
 // Mock external services to test error scenarios
 vi.mock('../../services/paypalService.js');
-vi.mock('../../services/bitcoinService.js');
 vi.mock('../../services/emailService.js');
 
 describe('Comprehensive Error Handling Tests', () => {
@@ -343,34 +342,6 @@ describe('Comprehensive Error Handling Tests', () => {
       // Order should still be created successfully
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-    });
-
-    it('should handle Bitcoin network delays', async () => {
-      const bitcoinService = require('../../services/bitcoinService.js');
-      bitcoinService.generatePaymentAddress.mockImplementation(() => 
-        new Promise((resolve, reject) => 
-          setTimeout(() => reject(new Error('Network timeout')), 100)
-        )
-      );
-
-      const order = new Order({
-        userId: testUser._id,
-        orderNumber: 'TEST-002',
-        items: [{ productId: new mongoose.Types.ObjectId(), quantity: 1, unitPrice: 100 }],
-        totalAmount: 100,
-        status: 'pending'
-      });
-      await order.save();
-
-      const response = await request(app)
-        .post('/api/payments/bitcoin/create')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          orderId: order._id.toString()
-        });
-
-      expect(response.status).toBe(504);
-      expect(response.body.error).toMatch(/timeout|network/i);
     });
   });
 

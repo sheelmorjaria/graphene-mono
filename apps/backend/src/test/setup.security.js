@@ -77,28 +77,6 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// Mock external services for security tests with validation focus
-vi.mock('../services/bitcoinService.js', () => ({
-  default: {
-    generateAddress: vi.fn().mockResolvedValue({
-      address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      qrCode: 'data:image/png;base64,mock-qr-code'
-    }),
-    getExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.000025,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    verifyWebhookSignature: vi.fn().mockImplementation((signature, payload, secret) => {
-      // Security test: validate webhook signature verification
-      return signature && payload && secret;
-    }),
-    validateAddress: vi.fn().mockImplementation((address) => {
-      // Security test: validate Bitcoin address format
-      return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address);
-    })
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockResolvedValue({

@@ -96,23 +96,6 @@ afterEach(() => {
 });
 
 // Mock external services for integration tests
-vi.mock('../services/bitcoinService.js', () => ({
-  default: {
-    generateAddress: vi.fn().mockResolvedValue({
-      address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      qrCode: 'data:image/png;base64,mock-qr-code'
-    }),
-    getExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.000025,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    getAddressInfo: vi.fn().mockResolvedValue({
-      balance: 0,
-      transactions: []
-    })
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockResolvedValue({

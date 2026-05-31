@@ -108,92 +108,16 @@ export const createPayPalServiceMock = () => {
   return paypalMock;
 };
 
-// Bitcoin Service Mock
-export const createBitcoinServiceMock = () => {
-  const bitcoinMock = {
-    apiKey: 'test-bitcoin-api-key',
-    baseURL: 'https://www.blockonomics.co/api',
-
-    generateAddress: vi.fn().mockImplementation(async (orderId) => {
-      return {
-        address: `bc1qtest${orderId.slice(-8)}`,
-        orderId,
-        createdAt: new Date(),
-        used: false
-      };
-    }),
-
-    getAddressBalance: vi.fn().mockImplementation(async (address) => {
-      return {
-        address,
-        confirmed: 0.001,
-        unconfirmed: 0,
-        txs: []
-      };
-    }),
-
-    getTransactionDetails: vi.fn().mockImplementation(async (txHash) => {
-      return {
-        txid: txHash,
-        confirmations: 6,
-        value: 100000, // satoshis
-        time: Date.now(),
-        status: 'confirmed'
-      };
-    }),
-
-    createPaymentRequest: vi.fn().mockImplementation(async (orderData) => {
-      return {
-        address: `bc1qtest${orderData.orderId.slice(-8)}`,
-        amount: orderData.amount,
-        currency: 'BTC',
-        orderId: orderData.orderId,
-        expirationTime: new Date(Date.now() + 3600000),
-        qrCode: `bitcoin:bc1qtest${orderData.orderId.slice(-8)}?amount=${orderData.amount}`
-      };
-    }),
-
-    verifyPayment: vi.fn().mockImplementation(async (address, expectedAmount) => {
-      return {
-        verified: true,
-        amount: expectedAmount,
-        confirmations: 6,
-        txHash: `tx${Date.now()}`
-      };
-    }),
-
-    // Exchange rate methods
-    getBTCToFiatRate: vi.fn().mockResolvedValue(50000), // $50k per BTC
-    convertFiatToBTC: vi.fn().mockImplementation((fiatAmount, currency = 'GBP') => {
-      const rate = currency === 'GBP' ? 40000 : 50000;
-      return fiatAmount / rate;
-    }),
-
-    reset: () => {
-      Object.values(bitcoinMock).forEach(mock => {
-        if (vi.isMockFunction(mock)) {
-          mock.mockClear();
-        }
-      });
-    }
-  };
-
-  return bitcoinMock;
-};
-
 // Unified Payment Service Mock Factory
 export const createPaymentServiceMocks = () => {
   const paypalMock = createPayPalServiceMock();
-  const bitcoinMock = createBitcoinServiceMock();
 
   return {
     paypal: paypalMock,
-    bitcoin: bitcoinMock,
 
     // Utility methods
     resetAll: () => {
       paypalMock.reset();
-      bitcoinMock.reset();
     },
 
     // Simulate various payment scenarios
@@ -202,14 +126,12 @@ export const createPaymentServiceMocks = () => {
     },
 
     simulateFailedPayment: (service, errorType = 'network') => {
-      const error = errorType === 'network' 
+      const error = errorType === 'network'
         ? new Error('Network connection failed')
         : new Error('Payment declined');
-      
+
       if (service === 'paypal') {
         paypalMock.simulateError('createOrder', error);
-      } else if (service === 'bitcoin') {
-        bitcoinMock.verifyPayment.mockRejectedValueOnce(error);
       }
     }
   };
@@ -222,10 +144,6 @@ export const setupPaymentMocks = () => {
   // Mock the actual service modules
   vi.mock('../../services/paypalService.js', () => ({
     default: mocks.paypal
-  }));
-
-  vi.mock('../../services/bitcoinService.js', () => ({
-    default: mocks.bitcoin
   }));
 
   // Mock external HTTP libraries

@@ -7,10 +7,7 @@ vi.mock('../../controllers/paymentController.js', () => ({
   getPaymentMethods: vi.fn(),
   createPayPalOrder: vi.fn(),
   capturePayPalPayment: vi.fn(),
-  handlePayPalWebhook: vi.fn(),
-  initializeBitcoinPayment: vi.fn(),
-  getBitcoinPaymentStatus: vi.fn(),
-  handleBlockonomicsWebhook: vi.fn()
+  handlePayPalWebhook: vi.fn()
 }));
 
 // Mock auth middleware
@@ -42,8 +39,7 @@ describe('Payment Routes', () => {
   describe('GET /api/payment/methods', () => {
     it('should get payment methods without authentication', async () => {
       const mockMethods = [
-        { id: 'paypal', name: 'PayPal', enabled: true },
-        { id: 'bitcoin', name: 'Bitcoin', enabled: true }
+        { id: 'paypal', name: 'PayPal', enabled: true }
       ];
 
       paymentController.getPaymentMethods.mockImplementation((req, res) => {
@@ -217,138 +213,11 @@ describe('Payment Routes', () => {
     });
   });
 
-  describe('Bitcoin Routes', () => {
-    describe('POST /api/payment/bitcoin/initialize', () => {
-      it('should initialize Bitcoin payment with authentication', async () => {
-        const bitcoinData = {
-          orderId: 'ORDER-123',
-          amount: 0.01234567
-        };
-
-        const mockBitcoinPayment = {
-          address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-          amount: 0.01234567,
-          confirmationsRequired: 2,
-          qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
-        };
-
-        paymentController.initializeBitcoinPayment.mockImplementation((req, res) => {
-          expect(req.user.userId).toBe('test-user-123');
-          res.json({ success: true, payment: mockBitcoinPayment });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/bitcoin/initialize')
-          .send(bitcoinData)
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.payment).toEqual(mockBitcoinPayment);
-        expect(optionalAuth).toHaveBeenCalled();
-        expect(paymentController.initializeBitcoinPayment).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle Bitcoin initialization errors', async () => {
-        paymentController.initializeBitcoinPayment.mockImplementation((req, res) => {
-          res.status(500).json({ success: false, error: 'Bitcoin service unavailable' });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/bitcoin/initialize')
-          .send({ orderId: 'ORDER-123' })
-          .expect(500);
-
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Bitcoin service unavailable');
-      });
-    });
-
-    describe('GET /api/payment/bitcoin/status/:orderId', () => {
-      it('should get Bitcoin payment status with authentication', async () => {
-        const orderId = 'ORDER-123';
-        const mockStatus = {
-          orderId,
-          address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-          status: 'confirmed',
-          confirmations: 3,
-          requiredConfirmations: 2
-        };
-
-        paymentController.getBitcoinPaymentStatus.mockImplementation((req, res) => {
-          expect(req.user.userId).toBe('test-user-123');
-          expect(req.params.orderId).toBe(orderId);
-          res.json({ success: true, status: mockStatus });
-        });
-
-        const response = await request(app)
-          .get(`/api/payment/bitcoin/status/${orderId}`)
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.status).toEqual(mockStatus);
-        expect(optionalAuth).toHaveBeenCalled();
-        expect(paymentController.getBitcoinPaymentStatus).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle Bitcoin status check errors', async () => {
-        paymentController.getBitcoinPaymentStatus.mockImplementation((req, res) => {
-          res.status(404).json({ success: false, error: 'Payment not found' });
-        });
-
-        const response = await request(app)
-          .get('/api/payment/bitcoin/status/INVALID-ORDER')
-          .expect(404);
-
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Payment not found');
-      });
-    });
-
-    describe('POST /api/payment/bitcoin/webhook', () => {
-      it('should handle Blockonomics webhook without authentication', async () => {
-        const webhookData = {
-          txid: '1234567890abcdef',
-          confirmations: 3,
-          addr: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
-        };
-
-        paymentController.handleBlockonomicsWebhook.mockImplementation((req, res) => {
-          res.json({ success: true, processed: true });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/bitcoin/webhook')
-          .send(webhookData)
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.processed).toBe(true);
-        expect(paymentController.handleBlockonomicsWebhook).toHaveBeenCalledTimes(1);
-      });
-
-      it('should handle invalid Bitcoin webhook', async () => {
-        paymentController.handleBlockonomicsWebhook.mockImplementation((req, res) => {
-          res.status(400).json({ success: false, error: 'Invalid webhook data' });
-        });
-
-        const response = await request(app)
-          .post('/api/payment/bitcoin/webhook')
-          .send({ invalid: 'data' })
-          .expect(400);
-
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toBe('Invalid webhook data');
-      });
-    });
-  });
-
   describe('Route Middleware Integration', () => {
     it('should apply optionalAuth middleware to protected routes', async () => {
       // Mock controller responses to prevent timeouts
       paymentController.createPayPalOrder.mockImplementation((req, res) => res.json({ success: true }));
       paymentController.capturePayPalPayment.mockImplementation((req, res) => res.json({ success: true }));
-      paymentController.initializeBitcoinPayment.mockImplementation((req, res) => res.json({ success: true }));
-      paymentController.getBitcoinPaymentStatus.mockImplementation((req, res) => res.json({ success: true }));
 
       await request(app)
         .post('/api/payment/paypal/create-order')
@@ -358,15 +227,8 @@ describe('Payment Routes', () => {
         .post('/api/payment/paypal/capture')
         .send({ paypalOrderId: 'test' });
 
-      await request(app)
-        .post('/api/payment/bitcoin/initialize')
-        .send({ orderId: 'test' });
-
-      await request(app)
-        .get('/api/payment/bitcoin/status/test');
-
-      // Should have been called 4 times for protected routes
-      expect(optionalAuth).toHaveBeenCalledTimes(4);
+      // Should have been called 2 times for protected routes
+      expect(optionalAuth).toHaveBeenCalledTimes(2);
     });
 
     it('should not apply auth middleware to public routes', async () => {
@@ -375,7 +237,6 @@ describe('Payment Routes', () => {
       // Mock controller responses to prevent timeouts
       paymentController.getPaymentMethods.mockImplementation((req, res) => res.json({ success: true }));
       paymentController.handlePayPalWebhook.mockImplementation((req, res) => res.json({ success: true }));
-      paymentController.handleBlockonomicsWebhook.mockImplementation((req, res) => res.json({ success: true }));
 
       await request(app)
         .get('/api/payment/methods');
@@ -384,29 +245,26 @@ describe('Payment Routes', () => {
         .post('/api/payment/paypal/webhook')
         .send({});
 
-      await request(app)
-        .post('/api/payment/bitcoin/webhook')
-        .send({});
-
       // Should not have been called for public routes
       expect(optionalAuth).not.toHaveBeenCalled();
     });
   });
 
   describe('Route Parameter Handling', () => {
-    it('should handle URL parameters correctly for Bitcoin status', async () => {
+    it('should handle URL parameters correctly for PayPal order', async () => {
       const orderId = 'ORDER-WITH-SPECIAL-CHARS-123';
 
-      paymentController.getBitcoinPaymentStatus.mockImplementation((req, res) => {
-        expect(req.params.orderId).toBe(orderId);
+      paymentController.createPayPalOrder.mockImplementation((req, res) => {
+        expect(req.body.orderId).toBe(orderId);
         res.json({ success: true });
       });
 
       await request(app)
-        .get(`/api/payment/bitcoin/status/${orderId}`)
+        .post('/api/payment/paypal/create-order')
+        .send({ orderId })
         .expect(200);
 
-      expect(paymentController.getBitcoinPaymentStatus).toHaveBeenCalledTimes(1);
+      expect(paymentController.createPayPalOrder).toHaveBeenCalledTimes(1);
     });
   });
 });

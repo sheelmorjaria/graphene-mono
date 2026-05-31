@@ -1,13 +1,18 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { vi } from 'vitest';
 import BillingAddressSection from '../checkout/BillingAddressSection';
-import { CheckoutProvider } from '../../contexts/CheckoutContext';
-import { AuthProvider } from '../../contexts/AuthContext';
+
+// Mock checkout context hook
+const mockSetBillingAddress = vi.fn();
+const mockSetUseSameAsShipping = vi.fn();
+const mockRefreshAddresses = vi.fn();
+
+vi.mock('../../contexts/CheckoutContext', () => ({
+  useCheckout: () => mockCheckoutContext
+}));
 
 // Mock services
-import { vi } from 'vitest';
-
 vi.mock('../../services/addressService', () => ({
   addUserAddress: vi.fn(),
   updateUserAddress: vi.fn()
@@ -54,7 +59,7 @@ const mockShippingAddress = {
   phoneNumber: '555-9999'
 };
 
-const mockCheckoutContext = {
+let mockCheckoutContext = {
   checkoutState: {
     step: 'payment',
     shippingAddress: mockShippingAddress,
@@ -66,32 +71,41 @@ const mockCheckoutContext = {
   addresses: mockAddresses,
   addressesLoading: false,
   addressesError: '',
-  setBillingAddress: vi.fn(),
-  setUseSameAsShipping: vi.fn(),
-  refreshAddresses: vi.fn()
+  setBillingAddress: mockSetBillingAddress,
+  setUseSameAsShipping: mockSetUseSameAsShipping,
+  refreshAddresses: mockRefreshAddresses
 };
 
 const renderWithProviders = (contextOverrides = {}) => {
-  const contextValue = { ...mockCheckoutContext, ...contextOverrides };
-  
-  return render(
-    <AuthProvider value={{ isAuthenticated: true, user: { _id: '1' } }}>
-      <CheckoutProvider value={contextValue}>
-        <BillingAddressSection />
-      </CheckoutProvider>
-    </AuthProvider>
-  );
+  mockCheckoutContext = { ...mockCheckoutContext, ...contextOverrides };
+  return render(<BillingAddressSection />);
 };
 
 describe('BillingAddressSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCheckoutContext = {
+      checkoutState: {
+        step: 'payment',
+        shippingAddress: mockShippingAddress,
+        billingAddress: null,
+        useSameAsShipping: true,
+        paymentMethod: null,
+        orderNotes: ''
+      },
+      addresses: mockAddresses,
+      addressesLoading: false,
+      addressesError: '',
+      setBillingAddress: mockSetBillingAddress,
+      setUseSameAsShipping: mockSetUseSameAsShipping,
+      refreshAddresses: mockRefreshAddresses
+    };
   });
 
   describe('Same as Shipping Option', () => {
     it('should render billing address section with same as shipping checkbox', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('Billing Address')).toBeInTheDocument();
       expect(screen.getByText('Use shipping address as billing address')).toBeInTheDocument();
       expect(screen.getByRole('checkbox')).toBeChecked();
@@ -99,25 +113,24 @@ describe('BillingAddressSection', () => {
 
     it('should show shipping address when using same as shipping', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('Billing Address (Same as Shipping):')).toBeInTheDocument();
       expect(screen.getByText('Shipping User')).toBeInTheDocument();
       expect(screen.getByText('789 Ship St')).toBeInTheDocument();
     });
 
     it('should call setUseSameAsShipping when checkbox is toggled', async () => {
-      const setUseSameAsShipping = vi.fn();
-      renderWithProviders({ setUseSameAsShipping });
-        
+      renderWithProviders();
+
       const checkbox = screen.getByRole('checkbox');
       await userEvent.click(checkbox);
-      
-      expect(setUseSameAsShipping).toHaveBeenCalledWith(false);
+
+      expect(mockSetUseSameAsShipping).toHaveBeenCalledWith(false);
     });
 
     it('should hide address selection when using same as shipping', () => {
       renderWithProviders();
-      
+
       expect(screen.queryByText('Choose a billing address:')).not.toBeInTheDocument();
       expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
     });
@@ -125,16 +138,25 @@ describe('BillingAddressSection', () => {
 
   describe('Separate Billing Address', () => {
     const separateBillingContext = {
-      ...mockCheckoutContext,
       checkoutState: {
-        ...mockCheckoutContext.checkoutState,
-        useSameAsShipping: false
-      }
+        step: 'payment',
+        shippingAddress: mockShippingAddress,
+        billingAddress: null,
+        useSameAsShipping: false,
+        paymentMethod: null,
+        orderNotes: ''
+      },
+      addresses: mockAddresses,
+      addressesLoading: false,
+      addressesError: '',
+      setBillingAddress: mockSetBillingAddress,
+      setUseSameAsShipping: mockSetUseSameAsShipping,
+      refreshAddresses: mockRefreshAddresses
     };
 
     it('should show address selection when not using same as shipping', () => {
       renderWithProviders(separateBillingContext);
-      
+
       expect(screen.getByText('Choose a billing address:')).toBeInTheDocument();
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('Jane Smith')).toBeInTheDocument();
@@ -142,23 +164,19 @@ describe('BillingAddressSection', () => {
 
     it('should display available addresses', () => {
       renderWithProviders(separateBillingContext);
-      
+
       expect(screen.getByText('123 Main St')).toBeInTheDocument();
       expect(screen.getByText('456 Oak Ave')).toBeInTheDocument();
       expect(screen.getByText('Default')).toBeInTheDocument();
     });
 
     it('should call setBillingAddress when address is selected', async () => {
-      const setBillingAddress = vi.fn();
-      renderWithProviders({ 
-        ...separateBillingContext, 
-        setBillingAddress 
-      });
-        
+      renderWithProviders(separateBillingContext);
+
       const addressCard = screen.getByText('Jane Smith').closest('div');
       await userEvent.click(addressCard);
-      
-      expect(setBillingAddress).toHaveBeenCalledWith(mockAddresses[1]);
+
+      expect(mockSetBillingAddress).toHaveBeenCalledWith(mockAddresses[1]);
     });
 
     it('should highlight selected billing address', () => {
@@ -169,7 +187,7 @@ describe('BillingAddressSection', () => {
           billingAddress: mockAddresses[1]
         }
       });
-      
+
       const selectedCard = screen.getByText('Jane Smith').closest('div');
       expect(selectedCard).toHaveClass('border-border-cyan', 'bg-cyan-400');
     });
@@ -182,14 +200,14 @@ describe('BillingAddressSection', () => {
           billingAddress: mockAddresses[1]
         }
       });
-      
+
       expect(screen.getByText('Selected Billing Address:')).toBeInTheDocument();
       expect(screen.getAllByText('Jane Smith')[1]).toBeInTheDocument(); // Second instance in summary
     });
 
     it('should show add new address button', () => {
       renderWithProviders(separateBillingContext);
-      
+
       expect(screen.getByText('+ Add New Billing Address')).toBeInTheDocument();
     });
 
@@ -198,7 +216,7 @@ describe('BillingAddressSection', () => {
         ...separateBillingContext,
         addresses: []
       });
-      
+
       expect(screen.getByText('No Addresses Found')).toBeInTheDocument();
       expect(screen.getByText("You haven't added any addresses yet.")).toBeInTheDocument();
     });
@@ -206,19 +224,28 @@ describe('BillingAddressSection', () => {
 
   describe('Add New Address', () => {
     const separateBillingContext = {
-      ...mockCheckoutContext,
       checkoutState: {
-        ...mockCheckoutContext.checkoutState,
-        useSameAsShipping: false
-      }
+        step: 'payment',
+        shippingAddress: mockShippingAddress,
+        billingAddress: null,
+        useSameAsShipping: false,
+        paymentMethod: null,
+        orderNotes: ''
+      },
+      addresses: mockAddresses,
+      addressesLoading: false,
+      addressesError: '',
+      setBillingAddress: mockSetBillingAddress,
+      setUseSameAsShipping: mockSetUseSameAsShipping,
+      refreshAddresses: mockRefreshAddresses
     };
 
     it('should show add address form when button is clicked', async () => {
       renderWithProviders(separateBillingContext);
-        
+
       const addButton = screen.getByText('+ Add New Billing Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
         expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
@@ -239,25 +266,19 @@ describe('BillingAddressSection', () => {
           }
         }
       };
-      
+
       addUserAddress.mockResolvedValue(mockResponse);
-      const setBillingAddress = vi.fn();
-      const refreshAddresses = vi.fn();
-      
-      renderWithProviders({ 
-        ...separateBillingContext, 
-        setBillingAddress, 
-        refreshAddresses 
-      });
-        
+
+      renderWithProviders(separateBillingContext);
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
-      
+
       // Fill form
       await userEvent.type(screen.getByLabelText(/full name/i), 'New Billing User');
       await userEvent.type(screen.getByLabelText(/address line 1/i), '999 Bill St');
@@ -265,33 +286,33 @@ describe('BillingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/state/i), 'FL');
       await userEvent.type(screen.getByLabelText(/postal code/i), '99999');
       await userEvent.type(screen.getByLabelText(/country/i), 'USA');
-      
+
       // Submit form
       const saveButton = screen.getByText('Save Address');
       await userEvent.click(saveButton);
-      
+
       await waitFor(() => {
         expect(addUserAddress).toHaveBeenCalled();
-        expect(refreshAddresses).toHaveBeenCalled();
-        expect(setBillingAddress).toHaveBeenCalledWith(mockResponse.data.address);
+        expect(mockRefreshAddresses).toHaveBeenCalled();
+        expect(mockSetBillingAddress).toHaveBeenCalledWith(mockResponse.data.address);
       });
     });
 
     it('should handle form cancellation', async () => {
       renderWithProviders(separateBillingContext);
-        
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
-      
+
       // Cancel form
       const cancelButton = screen.getByText('Cancel');
       await userEvent.click(cancelButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Choose a billing address:')).toBeInTheDocument();
       });
@@ -300,19 +321,28 @@ describe('BillingAddressSection', () => {
 
   describe('Edit Address', () => {
     const separateBillingContext = {
-      ...mockCheckoutContext,
       checkoutState: {
-        ...mockCheckoutContext.checkoutState,
-        useSameAsShipping: false
-      }
+        step: 'payment',
+        shippingAddress: mockShippingAddress,
+        billingAddress: null,
+        useSameAsShipping: false,
+        paymentMethod: null,
+        orderNotes: ''
+      },
+      addresses: mockAddresses,
+      addressesLoading: false,
+      addressesError: '',
+      setBillingAddress: mockSetBillingAddress,
+      setUseSameAsShipping: mockSetUseSameAsShipping,
+      refreshAddresses: mockRefreshAddresses
     };
 
     it('should show edit form when edit button is clicked', async () => {
       renderWithProviders(separateBillingContext);
-        
+
       const editButtons = screen.getAllByText('Edit');
       await userEvent.click(editButtons[0]);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Edit Billing Address')).toBeInTheDocument();
         expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument();
@@ -328,51 +358,54 @@ describe('BillingAddressSection', () => {
           }
         }
       };
-      
+
       updateUserAddress.mockResolvedValue(mockResponse);
-      const setBillingAddress = vi.fn();
-      const refreshAddresses = vi.fn();
-      
-      renderWithProviders({ 
-        ...separateBillingContext, 
-        setBillingAddress, 
-        refreshAddresses 
-      });
-        
+
+      renderWithProviders(separateBillingContext);
+
       // Click edit
       const editButtons = screen.getAllByText('Edit');
       await userEvent.click(editButtons[0]);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Edit Billing Address')).toBeInTheDocument();
       });
-      
+
       // Update name
       const nameInput = screen.getByDisplayValue('John Doe');
       await userEvent.clear(nameInput);
       await userEvent.type(nameInput, 'John Updated');
-      
+
       // Submit form
       const updateButton = screen.getByText('Update Address');
       await userEvent.click(updateButton);
-      
+
       await waitFor(() => {
         expect(updateUserAddress).toHaveBeenCalledWith('1', expect.objectContaining({
           fullName: 'John Updated'
         }));
-        expect(refreshAddresses).toHaveBeenCalled();
-        expect(setBillingAddress).toHaveBeenCalledWith(mockResponse.data.address);
+        expect(mockRefreshAddresses).toHaveBeenCalled();
+        expect(mockSetBillingAddress).toHaveBeenCalledWith(mockResponse.data.address);
       });
     });
   });
 
   describe('Loading and Error States', () => {
     const separateBillingContext = {
-      ...mockCheckoutContext,
       checkoutState: {
-        ...mockCheckoutContext.checkoutState,
-        useSameAsShipping: false
-      }
+        step: 'payment',
+        shippingAddress: mockShippingAddress,
+        billingAddress: null,
+        useSameAsShipping: false,
+        paymentMethod: null,
+        orderNotes: ''
+      },
+      addresses: mockAddresses,
+      addressesLoading: false,
+      addressesError: '',
+      setBillingAddress: mockSetBillingAddress,
+      setUseSameAsShipping: mockSetUseSameAsShipping,
+      refreshAddresses: mockRefreshAddresses
     };
 
     it('should show loading spinner when addresses are loading', () => {
@@ -380,7 +413,7 @@ describe('BillingAddressSection', () => {
         ...separateBillingContext,
         addressesLoading: true
       });
-      
+
       expect(screen.getByText('Loading addresses...')).toBeInTheDocument();
     });
 
@@ -389,37 +422,35 @@ describe('BillingAddressSection', () => {
         ...separateBillingContext,
         addressesError: 'Failed to load addresses'
       });
-      
+
       expect(screen.getByText('Failed to load addresses')).toBeInTheDocument();
       expect(screen.getByText('Retry')).toBeInTheDocument();
     });
 
     it('should handle retry when address loading fails', async () => {
-      const refreshAddresses = vi.fn();
       renderWithProviders({
         ...separateBillingContext,
-        addressesError: 'Failed to load addresses',
-        refreshAddresses
+        addressesError: 'Failed to load addresses'
       });
-        
+
       const retryButton = screen.getByText('Retry');
       await userEvent.click(retryButton);
-      
-      expect(refreshAddresses).toHaveBeenCalled();
+
+      expect(mockRefreshAddresses).toHaveBeenCalled();
     });
 
     it('should show error when form submission fails', async () => {
       addUserAddress.mockRejectedValue(new Error('Server error'));
       renderWithProviders(separateBillingContext);
-        
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
-      
+
       // Fill form
       await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
       await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test St');
@@ -427,11 +458,11 @@ describe('BillingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/state/i), 'TS');
       await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
       await userEvent.type(screen.getByLabelText(/country/i), 'USA');
-      
+
       // Submit form
       const saveButton = screen.getByText('Save Address');
       await userEvent.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Server error')).toBeInTheDocument();
       });
@@ -440,15 +471,15 @@ describe('BillingAddressSection', () => {
     it('should show loading state during form submission', async () => {
       addUserAddress.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 1000)));
       renderWithProviders(separateBillingContext);
-        
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Billing Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
-      
+
       // Fill minimal required fields
       await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
       await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test St');
@@ -456,43 +487,40 @@ describe('BillingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/state/i), 'TS');
       await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
       await userEvent.type(screen.getByLabelText(/country/i), 'USA');
-      
+
       // Submit form
       const saveButton = screen.getByText('Save Address');
       await userEvent.click(saveButton);
-      
+
       expect(screen.getByText('Saving...')).toBeInTheDocument();
     });
   });
 
   describe('Context Integration', () => {
     it('should clear form state when switching to same as shipping', async () => {
-      const setUseSameAsShipping = vi.fn();
       renderWithProviders({
         checkoutState: {
           ...mockCheckoutContext.checkoutState,
           useSameAsShipping: false
-        },
-        setUseSameAsShipping
+        }
       });
-        
+
       // Start adding new address
       const addButton = screen.getByText('+ Add New Billing Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Billing Address')).toBeInTheDocument();
       });
-      
+
       // Switch to same as shipping (this would be done by parent component)
       renderWithProviders({
         checkoutState: {
           ...mockCheckoutContext.checkoutState,
           useSameAsShipping: true
-        },
-        setUseSameAsShipping
+        }
       });
-      
+
       // Form should be hidden
       expect(screen.queryByText('Add New Billing Address')).not.toBeInTheDocument();
       expect(screen.getByText('Billing Address (Same as Shipping):')).toBeInTheDocument();

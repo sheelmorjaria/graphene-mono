@@ -283,7 +283,7 @@ describe('Error Handler Comprehensive Tests', () => {
         error.statusCode = 402;
         error.code = 'PAYMENT_FAILED';
         error.details = {
-          paymentMethod: 'stripe',
+          paymentMethod: 'paypal',
           amount: 100,
           currency: 'GBP'
         };

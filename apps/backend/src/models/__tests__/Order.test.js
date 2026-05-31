@@ -115,7 +115,7 @@ describe('Order Model', () => {
         }
       });
 
-      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be: paypal, bitcoin');
+      await expect(invalidOrder.save()).rejects.toThrow('Payment method type must be: paypal');
     });
 
     it('should not allow negative amounts', async () => {
@@ -241,14 +241,7 @@ describe('Order Model', () => {
     it('should format payment method display correctly', () => {
       // Test basic payment method
       expect(savedOrder.getPaymentMethodDisplay()).toBe('PayPal');
-      
-      // Test with different payment method name
-      savedOrder.paymentMethod = {
-        type: 'bitcoin',
-        name: 'Bitcoin'
-      };
-      expect(savedOrder.getPaymentMethodDisplay()).toBe('Bitcoin');
-      
+
       // Test PayPal
       savedOrder.paymentMethod = {
         type: 'paypal',

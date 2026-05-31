@@ -51,7 +51,7 @@ describe('Session Handling Integration Tests', () => {
     },
     paymentMethod: {
       type: paymentMethodType,
-      name: paymentMethodType === 'paypal' ? 'PayPal' : 'Bitcoin'
+      name: 'PayPal'
     },
     paymentStatus: 'pending',
     orderStatus: 'pending'
@@ -111,29 +111,26 @@ describe('Session Handling Integration Tests', () => {
       });
       await user.save();
 
-      const order = new Order(createValidOrderData(user, 'PAYMENT-001', 'bitcoin'));
+      const order = new Order(createValidOrderData(user, 'PAYMENT-001', 'paypal'));
       await order.save();
 
       // Create payment
       const payment = new Payment({
-        paymentId: 'PAY-TEST-BITCOIN-001',
+        paymentId: 'PAY-TEST-PAYPAL-001',
         orderId: order._id,
         orderNumber: order.orderNumber,
         userId: user._id,
         customerEmail: user.email,
-        paymentMethod: 'bitcoin',
+        paymentMethod: 'paypal',
         amount: 105.98,
         currency: 'GBP',
-        status: 'pending',
-        bitcoinAddress: 'test-bitcoin-address',
-        bitcoinAmount: 0.00235511,
-        bitcoinExchangeRate: 45000
+        status: 'pending'
       });
 
       await payment.save();
       expect(payment._id).toBeDefined();
       expect(payment.paymentId).toBeDefined();
-      expect(payment.paymentMethod).toBe('bitcoin');
+      expect(payment.paymentMethod).toBe('paypal');
     });
 
     it('should handle updates without session errors', async () => {
@@ -235,24 +232,24 @@ describe('Session Handling Integration Tests', () => {
       });
       await user.save();
 
-      const order = new Order(createValidOrderData(user, 'VAL-001', 'bitcoin'));
+      const order = new Order(createValidOrderData(user, 'VAL-001', 'paypal'));
       await order.save();
 
       // Test payment validation
       const payment = new Payment({
-        paymentId: 'PAY-TEST-BITCOIN-001',
+        paymentId: 'PAY-TEST-PAYPAL-VAL-001',
         orderId: order._id,
         orderNumber: order.orderNumber,
         userId: user._id,
         customerEmail: user.email,
-        paymentMethod: 'bitcoin',
+        paymentMethod: 'paypal',
         amount: 105.98,
         currency: 'GBP',
         status: 'pending'
       });
 
       await payment.save();
-      
+
       // Test payment methods
       expect(payment.isPending()).toBe(true);
       expect(payment.isCompleted()).toBe(false);

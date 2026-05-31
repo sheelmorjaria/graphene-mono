@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import LoginPage from '../LoginPage';
@@ -20,7 +21,13 @@ vi.mock('../../services/authService', () => ({
 // Mock auth context
 const mockLogin = vi.fn();
 vi.mock('../../contexts/AuthContext', () => ({
-  useLogin: () => mockLogin
+  useLogin: () => mockLogin,
+  useAuth: () => ({ user: null, isAuthenticated: false, isLoading: false }),
+  useAuthState: () => ({ user: null, isAuthenticated: false, isLoading: false }),
+  useAuthDispatch: () => vi.fn(),
+  AuthProvider: ({ children }) => children,
+  AuthStateContext: React.createContext(),
+  AuthDispatchContext: React.createContext()
 }));
 
 import { loginUser } from '../../services/authService';

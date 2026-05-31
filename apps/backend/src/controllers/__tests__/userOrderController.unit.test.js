@@ -185,6 +185,7 @@ describe('User Order Controller - Unit Tests', () => {
   describe('placeOrder', () => {
     it('should place order successfully', async () => {
       req.body = {
+        paymentMethod: { type: 'paypal' },
         shippingAddress: {
           firstName: 'John',
           lastName: 'Doe',
@@ -262,17 +263,22 @@ describe('User Order Controller - Unit Tests', () => {
       await placeOrder(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: expect.objectContaining({
-          orderId: '111111111111111111111111',
-          orderNumber: 'ORD001'
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            order: expect.objectContaining({
+              _id: '111111111111111111111111',
+              orderNumber: 'ORD001'
+            })
+          })
         })
-      });
+      );
     });
 
     it('should handle empty cart', async () => {
       req.body = {
+        paymentMethod: { type: 'paypal' },
         shippingAddress: {
           firstName: 'John',
           lastName: 'Doe',

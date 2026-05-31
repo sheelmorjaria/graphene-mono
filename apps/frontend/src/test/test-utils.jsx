@@ -3,9 +3,12 @@ import { render as rtlRender, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { vi } from 'vitest'
-import { AuthProvider, AuthStateContext, AuthDispatchContext } from '../contexts/AuthContext'
-import { CartProvider, CartContext } from '../contexts/CartContext'
-import { CheckoutProvider, CheckoutContext } from '../contexts/CheckoutContext'
+
+// Create mock contexts to avoid import issues when tests mock the actual modules
+const AuthStateContext = React.createContext()
+const AuthDispatchContext = React.createContext()
+const CartContext = React.createContext()
+const CheckoutContext = React.createContext()
 
 // Mock auth service to prevent real API calls
 vi.mock('../services/authService', () => ({

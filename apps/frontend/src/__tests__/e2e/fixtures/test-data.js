@@ -165,8 +165,8 @@ export const testOrders = [
         productImage: '/images/pixel8pro-front.webp'
       }
     ],
-    paymentMethod: { type: 'bitcoin' },
-    paymentMethodDisplay: 'Bitcoin',
+    paymentMethod: { type: 'paypal' },
+    paymentMethodDisplay: 'PayPal',
     shippingAddress: {
       fullName: 'E2E Tester',
       firstName: 'E2E',

@@ -22,11 +22,11 @@ const testFrontendConfig = async () => {
     console.log('1️⃣ Testing server connectivity...');
     const healthResponse = await fetch('http://localhost:5000/health');
     console.log(`   📡 Health check status: ${healthResponse.status}`);
-    
+
     if (!healthResponse.ok) {
       throw new Error('Server not responding');
     }
-    
+
     const healthData = await healthResponse.json();
     console.log(`   ✅ Server is running (${healthData.status})`);
 
@@ -34,52 +34,27 @@ const testFrontendConfig = async () => {
     console.log('\n2️⃣ Testing payment methods endpoint...');
     const methodsResponse = await fetch('http://localhost:5000/api/payment/methods');
     console.log(`   📡 Payment methods status: ${methodsResponse.status}`);
-    
+
     if (methodsResponse.ok) {
       const methodsData = await methodsResponse.json();
-      console.log(`   ✅ Found ${methodsData.data.paymentMethods.length} payment methods`);
-      
-      const bitcoinEnabled = methodsData.data.paymentMethods.find(m => m.type === 'bitcoin');
-      console.log(`   ₿ Bitcoin enabled: ${bitcoinEnabled ? 'Yes' : 'No'}`);
+      console.log(`   ✅ Found ${methodsData.data.paymentMethods?.length || 0} payment methods`);
     }
 
     // Test 3: Get a real order from database
     console.log('\n3️⃣ Testing with real order...');
-    const order = await Order.findOne({ 
-      'paymentMethod.type': 'bitcoin',
+    const order = await Order.findOne({
+      'paymentMethod.type': 'paypal',
       'paymentStatus': 'pending'
     }).sort({ createdAt: -1 });
-    
+
     if (!order) {
-      console.log('   ⚠️  No Bitcoin orders found in database');
+      console.log('   ⚠️  No PayPal orders found in database');
       return;
     }
-    
+
     console.log(`   📦 Found order: ${order._id}`);
     console.log(`   💷 Total: £${order.totalAmount}`);
     console.log(`   📧 Email: ${order.customerEmail}`);
-
-    // Test 4: Test Bitcoin initialization (without auth - should work with optionalAuth)
-    console.log('\n4️⃣ Testing Bitcoin initialization without auth...');
-    const initResponse = await fetch('http://localhost:5000/api/payment/bitcoin/initialize', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ orderId: order._id.toString() })
-    });
-
-    console.log(`   📡 Bitcoin init status: ${initResponse.status}`);
-    const initData = await initResponse.json();
-    
-    if (initResponse.ok) {
-      console.log('   ✅ Bitcoin initialization successful!');
-      console.log(`   ₿ Address: ${initData.data.bitcoinAddress}`);
-      console.log(`   💰 Amount: ${initData.data.bitcoinAmount} BTC`);
-    } else {
-      console.log('   ❌ Bitcoin initialization failed:');
-      console.log(`   📝 Error: ${initData.error || 'Unknown error'}`);
-    }
 
     console.log('\n🎉 Frontend configuration test completed!');
 

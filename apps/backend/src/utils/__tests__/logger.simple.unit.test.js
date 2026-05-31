@@ -150,9 +150,8 @@ describe('Logger Utility - Simple Coverage Tests', () => {
           total: 199.98
         },
         payment: {
-          method: 'bitcoin',
-          address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-          confirmations: 3
+          method: 'paypal',
+          transactionId: 'PAY-1234567890'
         },
         user: {
           id: 'user123',

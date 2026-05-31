@@ -124,15 +124,6 @@ const Footer = () => {
                 <span className="text-sm text-text-secondary">PayPal</span>
                 <span className="text-xs text-text-muted font-mono">Fast & Secure</span>
               </li>
-              <li className="flex items-center gap-3">
-                <div className="p-2 bg-bg-elevated rounded-lg border border-border-subtle">
-                  <svg className="w-5 h-5 text-matrix-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.638 14.904c-1.602 6.43-8.113 9.281-14.532 9.281C6.266 24.185 0 20.526 0 14.904c0-5.693 6.422-9.281 9.292-9.281h.062c7.395 0 12.197 2.935 14.532 9.281h-.25Zm-7.22-6.418c-1.465-2.197-3.728-3.395-6.443-3.395h-.062c-3.617 0-6.663 1.953-8.192 4.886a9.58 9.58 0 0 0-1.197 4.428c0 4.443 3.851 7.83 8.525 7.83 3.395 0 6.313-1.463 7.923-4.065a10.035 10.035 0 0 0 1.376-3.683 9.37 9.37 0 0 0 .07-1.21c0-1.66-.453-3.185-1.4-4.79Z" />
-                  </svg>
-                </div>
-                <span className="text-sm text-text-secondary">Bitcoin</span>
-                <span className="text-xs text-text-muted font-mono">Private</span>
-              </li>
             </ul>
             <div className="pt-4">
               <div className="flex items-center gap-2 px-4 py-3 bg-bg-elevated rounded-lg border border-border-subtle">

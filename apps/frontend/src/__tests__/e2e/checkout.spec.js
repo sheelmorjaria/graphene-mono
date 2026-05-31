@@ -113,17 +113,6 @@ test.describe('Checkout Flow', () => {
       const paypalOption = page.getByTestId('payment-method-paypal').or(page.getByText(/paypal/i));
       await expect(paypalOption.first()).toBeVisible({ timeout: 5000 });
     });
-
-    test('should show Bitcoin option', async ({ page }) => {
-      await mockApiRoutes(page);
-      await setAuthTokens(page);
-      await page.goto('/#/checkout');
-
-      await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
-
-      const bitcoinOption = page.getByTestId('payment-method-bitcoin').or(page.getByText(/bitcoin/i));
-      await expect(bitcoinOption.first()).toBeVisible({ timeout: 5000 });
-    });
   });
 
   test.describe('Place Order', () => {
@@ -138,17 +127,6 @@ test.describe('Checkout Flow', () => {
       if (await checkoutButton.isVisible().catch(() => false)) {
         await expect(checkoutButton).toBeVisible();
       }
-    });
-  });
-
-  test.describe('Bitcoin Payment Page', () => {
-    test('should display Bitcoin payment details', async ({ page }) => {
-      await mockApiRoutes(page);
-      await setAuthTokens(page);
-
-      await page.goto('/#/payment/bitcoin/order-new-001');
-
-      await expect(page.getByText(/bc1q|bitcoin address|bitcoin/i)).toBeVisible({ timeout: 5000 });
     });
   });
 

@@ -1,10 +1,16 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { vi } from 'vitest';
 import ShippingAddressSection from '../checkout/ShippingAddressSection';
-import { CheckoutProvider } from '../../contexts/CheckoutContext';
-import { AuthProvider } from '../../contexts/AuthContext';
+
+// Mock checkout context hook
+const mockSetShippingAddress = vi.fn();
+const mockNextStep = vi.fn();
+const mockRefreshAddresses = vi.fn();
+
+vi.mock('../../contexts/CheckoutContext', () => ({
+  useCheckout: () => mockCheckoutContext
+}));
 
 // Mock services
 vi.mock('../../services/addressService', () => ({
@@ -42,7 +48,7 @@ const mockAddresses = [
   }
 ];
 
-const mockCheckoutContext = {
+let mockCheckoutContext = {
   checkoutState: {
     step: 'shipping',
     shippingAddress: null,
@@ -52,40 +58,48 @@ const mockCheckoutContext = {
   addresses: mockAddresses,
   addressesLoading: false,
   addressesError: '',
-  setShippingAddress: jest.fn(),
-  nextStep: jest.fn(),
+  setShippingAddress: mockSetShippingAddress,
+  nextStep: mockNextStep,
   canProceedToPayment: false,
-  refreshAddresses: jest.fn()
+  refreshAddresses: mockRefreshAddresses
 };
 
 const renderWithProviders = (contextOverrides = {}) => {
-  const contextValue = { ...mockCheckoutContext, ...contextOverrides };
-  
-  return render(
-    <AuthProvider value={{ isAuthenticated: true, user: { _id: '1' } }}>
-      <CheckoutProvider value={contextValue}>
-        <ShippingAddressSection />
-      </CheckoutProvider>
-    </AuthProvider>
-  );
+  mockCheckoutContext = { ...mockCheckoutContext, ...contextOverrides };
+  return render(<ShippingAddressSection />);
 };
 
 describe('ShippingAddressSection', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
+    mockCheckoutContext = {
+      checkoutState: {
+        step: 'shipping',
+        shippingAddress: null,
+        paymentMethod: null,
+        orderNotes: ''
+      },
+      addresses: mockAddresses,
+      addressesLoading: false,
+      addressesError: '',
+      setShippingAddress: mockSetShippingAddress,
+      nextStep: mockNextStep,
+      canProceedToPayment: false,
+      refreshAddresses: mockRefreshAddresses
+    };
   });
 
   describe('Address Display', () => {
     it('should render shipping address section', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('Shipping Address')).toBeInTheDocument();
       expect(screen.getByText('Choose a shipping address:')).toBeInTheDocument();
     });
 
     it('should display available addresses', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('123 Main St')).toBeInTheDocument();
       expect(screen.getByText('Jane Smith')).toBeInTheDocument();
@@ -94,20 +108,20 @@ describe('ShippingAddressSection', () => {
 
     it('should show default badge for default address', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('Default')).toBeInTheDocument();
     });
 
     it('should show phone numbers when available', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('Phone: 555-1234')).toBeInTheDocument();
       expect(screen.getByText('Phone: 555-5678')).toBeInTheDocument();
     });
 
     it('should show no addresses message when list is empty', () => {
       renderWithProviders({ addresses: [] });
-      
+
       expect(screen.getByText('No Addresses Found')).toBeInTheDocument();
       expect(screen.getByText("You haven't added any shipping addresses yet.")).toBeInTheDocument();
     });
@@ -120,19 +134,18 @@ describe('ShippingAddressSection', () => {
         checkoutState: { ...mockCheckoutContext.checkoutState, shippingAddress: selectedAddress },
         canProceedToPayment: true
       });
-      
+
       const selectedCard = screen.getByText('John Doe').closest('div');
       expect(selectedCard).toHaveClass('border-border-cyan', 'bg-cyan-50');
     });
 
     it('should call setShippingAddress when address is selected', async () => {
-      const setShippingAddress = jest.fn();
-      renderWithProviders({ setShippingAddress });
-      
+      renderWithProviders();
+
       const addressCard = screen.getByText('Jane Smith').closest('div');
       await userEvent.click(addressCard);
-      
-      expect(setShippingAddress).toHaveBeenCalledWith(mockAddresses[1]);
+
+      expect(mockSetShippingAddress).toHaveBeenCalledWith(mockAddresses[1]);
     });
 
     it('should show selected address summary', () => {
@@ -140,7 +153,7 @@ describe('ShippingAddressSection', () => {
       renderWithProviders({
         checkoutState: { ...mockCheckoutContext.checkoutState, shippingAddress: selectedAddress }
       });
-      
+
       expect(screen.getByText('Selected Shipping Address:')).toBeInTheDocument();
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
@@ -149,16 +162,16 @@ describe('ShippingAddressSection', () => {
   describe('Add New Address', () => {
     it('should show add new address button', () => {
       renderWithProviders();
-      
+
       expect(screen.getByText('+ Add New Address')).toBeInTheDocument();
     });
 
     it('should show add address form when button is clicked', async () => {
       renderWithProviders();
-      
+
       const addButton = screen.getByText('+ Add New Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Address')).toBeInTheDocument();
         expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
@@ -180,21 +193,19 @@ describe('ShippingAddressSection', () => {
           }
         }
       };
-      
+
       addUserAddress.mockResolvedValue(mockResponse);
-      const setShippingAddress = jest.fn();
-      const refreshAddresses = jest.fn();
-      
-      renderWithProviders({ setShippingAddress, refreshAddresses });
-      
+
+      renderWithProviders();
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Address')).toBeInTheDocument();
       });
-      
+
       // Fill form
       await userEvent.type(screen.getByLabelText(/full name/i), 'New User');
       await userEvent.type(screen.getByLabelText(/address line 1/i), '789 New St');
@@ -202,11 +213,11 @@ describe('ShippingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/state/i), 'TX');
       await userEvent.type(screen.getByLabelText(/postal code/i), '54321');
       await userEvent.type(screen.getByLabelText(/country/i), 'USA');
-      
+
       // Submit form
       const saveButton = screen.getByText('Save Address');
       await userEvent.click(saveButton);
-      
+
       await waitFor(() => {
         expect(addUserAddress).toHaveBeenCalledWith({
           fullName: 'New User',
@@ -218,26 +229,26 @@ describe('ShippingAddressSection', () => {
           country: 'USA',
           phoneNumber: ''
         });
-        expect(refreshAddresses).toHaveBeenCalled();
-        expect(setShippingAddress).toHaveBeenCalledWith(mockResponse.data.address);
+        expect(mockRefreshAddresses).toHaveBeenCalled();
+        expect(mockSetShippingAddress).toHaveBeenCalledWith(mockResponse.data.address);
       });
     });
 
     it('should handle form cancellation', async () => {
       renderWithProviders();
-      
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Address')).toBeInTheDocument();
       });
-      
+
       // Cancel form
       const cancelButton = screen.getByText('Cancel');
       await userEvent.click(cancelButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Choose a shipping address:')).toBeInTheDocument();
       });
@@ -247,10 +258,10 @@ describe('ShippingAddressSection', () => {
   describe('Edit Address', () => {
     it('should show edit address form when edit button is clicked', async () => {
       renderWithProviders();
-      
+
       const editButtons = screen.getAllByText('Edit');
       await userEvent.click(editButtons[0]);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Edit Address')).toBeInTheDocument();
         expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument();
@@ -267,36 +278,34 @@ describe('ShippingAddressSection', () => {
           }
         }
       };
-      
+
       updateUserAddress.mockResolvedValue(mockResponse);
-      const setShippingAddress = jest.fn();
-      const refreshAddresses = jest.fn();
-      
-      renderWithProviders({ setShippingAddress, refreshAddresses });
-      
+
+      renderWithProviders();
+
       // Click edit
       const editButtons = screen.getAllByText('Edit');
       await userEvent.click(editButtons[0]);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Edit Address')).toBeInTheDocument();
       });
-      
+
       // Update name
       const nameInput = screen.getByDisplayValue('John Doe');
       await userEvent.clear(nameInput);
       await userEvent.type(nameInput, 'John Updated');
-      
+
       // Submit form
       const updateButton = screen.getByText('Update Address');
       await userEvent.click(updateButton);
-      
+
       await waitFor(() => {
         expect(updateUserAddress).toHaveBeenCalledWith('1', expect.objectContaining({
           fullName: 'John Updated'
         }));
-        expect(refreshAddresses).toHaveBeenCalled();
-        expect(setShippingAddress).toHaveBeenCalledWith(mockResponse.data.address);
+        expect(mockRefreshAddresses).toHaveBeenCalled();
+        expect(mockSetShippingAddress).toHaveBeenCalledWith(mockResponse.data.address);
       });
     });
   });
@@ -304,22 +313,22 @@ describe('ShippingAddressSection', () => {
   describe('Loading States', () => {
     it('should show loading spinner when addresses are loading', () => {
       renderWithProviders({ addressesLoading: true });
-      
+
       expect(screen.getByText('Loading addresses...')).toBeInTheDocument();
     });
 
     it('should show loading state during form submission', async () => {
       addUserAddress.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 1000)));
       renderWithProviders();
-      
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Address')).toBeInTheDocument();
       });
-      
+
       // Fill minimal required fields
       await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
       await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test St');
@@ -327,11 +336,11 @@ describe('ShippingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/state/i), 'TS');
       await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
       await userEvent.type(screen.getByLabelText(/country/i), 'USA');
-      
+
       // Submit form
       const saveButton = screen.getByText('Save Address');
       await userEvent.click(saveButton);
-      
+
       expect(screen.getByText('Saving...')).toBeInTheDocument();
     });
   });
@@ -341,36 +350,34 @@ describe('ShippingAddressSection', () => {
       renderWithProviders({
         addressesError: 'Failed to load addresses'
       });
-      
+
       expect(screen.getByText('Failed to load addresses')).toBeInTheDocument();
       expect(screen.getByText('Retry')).toBeInTheDocument();
     });
 
     it('should handle retry when address loading fails', async () => {
-      const refreshAddresses = jest.fn();
       renderWithProviders({
-        addressesError: 'Failed to load addresses',
-        refreshAddresses
+        addressesError: 'Failed to load addresses'
       });
-      
+
       const retryButton = screen.getByText('Retry');
       await userEvent.click(retryButton);
-      
-      expect(refreshAddresses).toHaveBeenCalled();
+
+      expect(mockRefreshAddresses).toHaveBeenCalled();
     });
 
     it('should show error when form submission fails', async () => {
       addUserAddress.mockRejectedValue(new Error('Server error'));
       renderWithProviders();
-      
+
       // Click add new address
       const addButton = screen.getByText('+ Add New Address');
       await userEvent.click(addButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Add New Address')).toBeInTheDocument();
       });
-      
+
       // Fill form
       await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
       await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test St');
@@ -378,11 +385,11 @@ describe('ShippingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/state/i), 'TS');
       await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
       await userEvent.type(screen.getByLabelText(/country/i), 'USA');
-      
+
       // Submit form
       const saveButton = screen.getByText('Save Address');
       await userEvent.click(saveButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Server error')).toBeInTheDocument();
       });
@@ -392,7 +399,7 @@ describe('ShippingAddressSection', () => {
   describe('Continue Button', () => {
     it('should disable continue button when no address is selected', () => {
       renderWithProviders();
-      
+
       const continueButton = screen.getByText('Continue to Payment');
       expect(continueButton).toBeDisabled();
     });
@@ -405,26 +412,24 @@ describe('ShippingAddressSection', () => {
           shippingAddress: mockAddresses[0]
         }
       });
-      
+
       const continueButton = screen.getByText('Continue to Payment');
       expect(continueButton).not.toBeDisabled();
     });
 
     it('should call nextStep when continue button is clicked', async () => {
-      const nextStep = jest.fn();
       renderWithProviders({
         canProceedToPayment: true,
         checkoutState: {
           ...mockCheckoutContext.checkoutState,
           shippingAddress: mockAddresses[0]
-        },
-        nextStep
+        }
       });
-      
+
       const continueButton = screen.getByText('Continue to Payment');
       await userEvent.click(continueButton);
-      
-      expect(nextStep).toHaveBeenCalled();
+
+      expect(mockNextStep).toHaveBeenCalled();
     });
   });
 });

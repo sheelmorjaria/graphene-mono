@@ -16,67 +16,32 @@ const testObjectIdValidation = async () => {
 
   for (const testCase of testCases) {
     console.log(`🔍 Testing: ${testCase.name}`);
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/payment/bitcoin/initialize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ orderId: testCase.orderId })
-      });
 
-      const data = await response.json();
-      
-      console.log(`   📡 Status: ${response.status} (expected: ${testCase.expectedStatus})`);
-      console.log(`   📝 Message: ${data.error}`);
-      
-      if (response.status === testCase.expectedStatus) {
-        console.log('   ✅ Test passed');
-      } else {
-        console.log('   ❌ Test failed - unexpected status');
-      }
-      
-    } catch (error) {
-      console.log(`   💥 Request failed: ${error.message}`);
-    }
-    
-    console.log('');
-  }
-  
-  // Test the status endpoint too
-  console.log('🔍 Testing getBitcoinPaymentStatus validation...\n');
-  
-  const statusTestCases = [
-    { name: 'Invalid ObjectId in URL', orderId: 'invalid-id', expectedStatus: 400 }
-  ];
-  
-  for (const testCase of statusTestCases) {
-    console.log(`🔍 Testing: ${testCase.name}`);
-    
     try {
-      const response = await fetch(`${API_BASE_URL}/payment/bitcoin/status/${testCase.orderId}`);
+      const response = await fetch(`${API_BASE_URL}/payment/paypal/orders/${testCase.orderId}`);
       const data = await response.json();
-      
+
       console.log(`   📡 Status: ${response.status} (expected: ${testCase.expectedStatus})`);
       console.log(`   📝 Message: ${data.error}`);
-      
+
       if (response.status === testCase.expectedStatus) {
         console.log('   ✅ Test passed');
       } else {
         console.log('   ❌ Test failed - unexpected status');
       }
-      
+
     } catch (error) {
       console.log(`   💥 Request failed: ${error.message}`);
     }
+
+    console.log('');
   }
 };
 
 const main = async () => {
   console.log('🚀 ObjectId Validation Test Suite');
   console.log('==================================\n');
-  
+
   // Check if server is running
   try {
     const healthResponse = await fetch('http://localhost:5000/health');
@@ -91,9 +56,9 @@ const main = async () => {
     console.log('   Please start the server with: npm start');
     return;
   }
-  
+
   await testObjectIdValidation();
-  
+
   console.log('\n📋 Summary:');
   console.log('✅ Added ObjectId validation to prevent 500 errors');
   console.log('✅ Invalid ObjectIds now return 400 "Invalid Order ID format"');

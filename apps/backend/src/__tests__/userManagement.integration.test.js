@@ -2,23 +2,22 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
-// Mock email service
-const mockSendAccountDisabledEmail = vi.fn();
-const mockSendAccountReEnabledEmail = vi.fn();
-
-const mockEmailService = {
-  sendAccountDisabledEmail: mockSendAccountDisabledEmail,
-  sendAccountReEnabledEmail: mockSendAccountReEnabledEmail
-};
-
-// Set up mocks before imports
+// Set up mocks before imports - use factory function to avoid hoisting issues
 vi.mock('../services/emailService.js', () => ({
-  default: mockEmailService
+  default: {
+    sendAccountDisabledEmail: vi.fn(),
+    sendAccountReEnabledEmail: vi.fn()
+  }
 }));
 
 // Dynamic imports after mocking
-import '../../server.js';
-import '../models/User.js';
+import app from '../../server.js';
+import User from '../models/User.js';
+import emailService from '../services/emailService.js';
+
+// Get references to the mocked functions
+const mockSendAccountDisabledEmail = emailService.sendAccountDisabledEmail;
+const mockSendAccountReEnabledEmail = emailService.sendAccountReEnabledEmail;
 
 describe('User Management Integration Tests', () => {
   let adminUser;
