@@ -87,33 +87,6 @@ afterEach(() => {
 });
 
 // Mock external services with realistic delays for performance testing
-vi.mock('../services/bitcoinService.js', () => ({
-  default: {
-    generateAddress: vi.fn().mockImplementation(async () => {
-      // Simulate realistic API delay
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
-      return {
-        address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-        qrCode: 'data:image/png;base64,mock-qr-code'
-      };
-    }),
-    getExchangeRate: vi.fn().mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
-      return {
-        rate: 0.000025,
-        validUntil: new Date(Date.now() + 300000)
-      };
-    }),
-    getAddressInfo: vi.fn().mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 150 + 75));
-      return {
-        balance: 0,
-        transactions: []
-      };
-    })
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockImplementation(async () => {
@@ -254,8 +227,8 @@ export const createTestOrders = (count = 25, userIds = [], productIds = []) => {
         cost: 9.99
       },
       paymentMethod: {
-        type: ['paypal', 'bitcoin'][i % 2],
-        name: ['PayPal', 'Bitcoin'][i % 2]
+        type: 'paypal',
+        name: 'PayPal'
       }
     });
   }

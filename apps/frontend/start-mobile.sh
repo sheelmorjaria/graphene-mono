@@ -21,9 +21,6 @@ echo ""
 cat > .env.temp << EOF
 # API Configuration for Mobile Testing
 VITE_API_BASE_URL=http://$IP:5000/api
-
-# Stripe Configuration (frontend)
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
 EOF
 
 # Backup existing .env if it exists

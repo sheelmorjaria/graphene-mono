@@ -18,24 +18,11 @@ export const setupMocks = () => {
   process.env.JWT_SECRET = 'test-jwt-secret-key';
   process.env.PAYPAL_CLIENT_ID = 'test-paypal-client-id';
   process.env.PAYPAL_CLIENT_SECRET = 'test-paypal-client-secret';
-  process.env.BITCOIN_API_KEY = 'test-bitcoin-api-key';
   process.env.EMAIL_SERVICE = 'mock';
 };
 
 // Mock external API responses
 export const mockApiResponses = {
-  // CoinGecko API for exchange rates
-  coinGecko: {
-    bitcoin: {
-      success: {
-        bitcoin: { gbp: 0.00003247 }
-      },
-      error: {
-        error: 'coin not found'
-      }
-    }
-  },
-
   // PayPal API
   paypal: {
     auth: {
@@ -77,41 +64,13 @@ export const mockApiResponses = {
         error_description: 'The payment could not be processed'
       }
     }
-  },
-
-  // Bitcoin API (Blockonomics)
-  bitcoin: {
-    address: {
-      success: {
-        address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'
-      },
-      error: {
-        error: 'API key not found'
-      }
-    },
-    balance: {
-      success: {
-        confirmed: 100000000,
-        unconfirmed: 0
-      },
-      error: {
-        error: 'Address not found'
-      }
-    }
   }
 };
 
 // Setup mock responses for common API calls
 export const setupCommonMocks = () => {
-  // Mock successful CoinGecko calls by default
+  // Mock successful API calls by default
   global.fetch.mockImplementation((url) => {
-    if (url.includes('coingecko.com') && url.includes('bitcoin')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponses.coinGecko.bitcoin.success)
-      });
-    }
-
     if (url.includes('paypal.com') && url.includes('token')) {
       return Promise.resolve({
         ok: true,
@@ -123,13 +82,6 @@ export const setupCommonMocks = () => {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockApiResponses.paypal.order.success)
-      });
-    }
-
-    if (url.includes('blockonomics.co')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockApiResponses.bitcoin.address.success)
       });
     }
 

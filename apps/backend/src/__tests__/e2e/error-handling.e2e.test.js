@@ -331,7 +331,7 @@ describe('Comprehensive Error Handling E2E Tests', () => {
               postalCode: '54321',
               country: 'GB'
             },
-            paymentMethod: 'bitcoin'
+            paymentMethod: 'paypal'
           })
       ];
 
@@ -489,13 +489,10 @@ describe('Comprehensive Error Handling E2E Tests', () => {
   });
 
   describe('Cascading Error Scenarios', () => {
-    it('should handle cascading payment failures', async () => {
-      // Mock multiple service failures
+    it('should handle payment gateway failures', async () => {
+      // Mock service failure
       vi.mock('../../services/paypalService.js', () => ({
         createOrder: vi.fn().mockRejectedValue(new Error('PayPal unavailable'))
-      }));
-      vi.mock('../../services/bitcoinService.js', () => ({
-        createPaymentAddress: vi.fn().mockRejectedValue(new Error('Bitcoin network error'))
       }));
 
       // Add to cart
@@ -528,20 +525,6 @@ describe('Comprehensive Error Handling E2E Tests', () => {
         .send({ orderId });
 
       expect(paypalRes.status).toBe(500);
-
-      // Update to Bitcoin
-      await request(app)
-        .put(`/api/user/orders/${orderId}/payment-method`)
-        .set('Authorization', `Bearer ${customerToken}`)
-        .send({ paymentMethod: 'bitcoin' });
-
-      // Try Bitcoin - should also fail
-      const btcRes = await request(app)
-        .post('/api/payments/bitcoin/initialize')
-        .set('Authorization', `Bearer ${customerToken}`)
-        .send({ orderId });
-
-      expect(btcRes.status).toBe(500);
 
       // Order should be in failed state
       const order = await Order.findOne({ orderId });

@@ -128,34 +128,6 @@ describe('PaymentGateway Model', () => {
       expect(savedGateway.fees.percentageFee).toBe(2.9);
     });
 
-    it('should create a valid Bitcoin payment gateway', async () => {
-      const bitcoinGateway = new PaymentGateway({
-        name: 'Bitcoin',
-        code: 'BITCOIN',
-        type: 'cryptocurrency',
-        provider: 'bitcoin',
-        isEnabled: true,
-        supportedCurrencies: ['BTC'],
-        supportedCountries: ['GB', 'US'],
-        config: {
-          bitcoinApiKey: 'blockonomics-api-key',
-          bitcoinWebhookSecret: 'webhook-secret'
-        },
-        fees: {
-          fixedFee: 0.0001
-        }
-      });
-
-      const savedGateway = await bitcoinGateway.save();
-      
-      expect(savedGateway.name).toBe('Bitcoin');
-      expect(savedGateway.code).toBe('BITCOIN');
-      expect(savedGateway.type).toBe('cryptocurrency');
-      expect(savedGateway.provider).toBe('bitcoin');
-      expect(savedGateway.config.bitcoinApiKey).toBe('blockonomics-api-key');
-      expect(savedGateway.fees.fixedFee).toBe(0.0001);
-    });
-
     it('should require name field', async () => {
       const gateway = new PaymentGateway({
         code: 'TEST',
@@ -242,45 +214,6 @@ describe('PaymentGateway Model', () => {
       const savedGateway = await gateway.save();
       expect(savedGateway.isProperlyConfigured()).toBe(false);
     });
-
-    it('should validate Bitcoin config fields', async () => {
-      const gateway = new PaymentGateway({
-        name: 'Bitcoin',
-        code: 'BITCOIN',
-        type: 'cryptocurrency',
-        provider: 'bitcoin',
-        supportedCurrencies: ['BTC'],
-        supportedCountries: ['GB'],
-        isEnabled: true,
-        config: {
-          bitcoinApiKey: 'test-key'
-          // Missing bitcoinWebhookSecret
-        }
-      });
-
-      const savedGateway = await gateway.save();
-      expect(savedGateway.isProperlyConfigured()).toBe(true); // Only apiKey is required
-    });
-
-    it('should validate confirmation requirements', async () => {
-      const gateway = new PaymentGateway({
-        name: 'Bitcoin',
-        code: 'BITCOIN',
-        type: 'cryptocurrency',
-        provider: 'bitcoin',
-        supportedCurrencies: ['BTC'],
-        supportedCountries: ['GB'],
-        isEnabled: true,
-        config: {
-          bitcoinApiKey: 'test-key',
-          bitcoinWebhookSecret: 'test-secret'
-          // Note: confirmationsRequired is not in the schema
-        }
-      });
-
-      const savedGateway = await gateway.save();
-      expect(savedGateway.config.bitcoinApiKey).toBe('test-key');
-    });
   });
 
   describe('Fee Structure Validation', () => {
@@ -300,30 +233,6 @@ describe('PaymentGateway Model', () => {
       });
 
       await expect(gateway.save()).rejects.toThrow('Percentage fee cannot exceed 50%');
-    });
-
-    it('should validate fixed fee values', async () => {
-      const gateway = new PaymentGateway({
-        name: 'Bitcoin',
-        code: 'BITCOIN',
-        type: 'cryptocurrency',
-        provider: 'bitcoin',
-        supportedCurrencies: ['BTC'],
-        supportedCountries: ['GB'],
-        isEnabled: true,
-        config: { bitcoinApiKey: 'test-key', bitcoinWebhookSecret: 'test-secret' },
-        fees: {
-          fixedFee: -1 // Invalid: negative value
-        }
-      });
-
-      await expect(gateway.save()).rejects.toMatchObject({
-        errors: expect.objectContaining({
-          'fees.fixedFee': expect.objectContaining({
-            message: expect.stringContaining('minimum')
-          })
-        })
-      });
     });
 
     it('should allow valid fee structures', async () => {
@@ -380,26 +289,6 @@ describe('PaymentGateway Model', () => {
       expect(calculatedFee).toBe(3.2);
     });
 
-    it('should calculate fixed fees correctly', async () => {
-      const bitcoinGateway = await PaymentGateway.create({
-        name: 'Bitcoin',
-        code: 'BITCOIN',
-        type: 'cryptocurrency',
-        provider: 'bitcoin',
-        supportedCurrencies: ['BTC'],
-        supportedCountries: ['GB'],
-        isEnabled: true,
-        config: { bitcoinApiKey: 'test-key', bitcoinWebhookSecret: 'test-secret' },
-        fees: {
-          fixedFee: 0.0001,
-          percentageFee: 0
-        }
-      });
-
-      const calculatedFee = bitcoinGateway.calculateFee(1000);
-      expect(calculatedFee).toBe(0.0001);
-    });
-
     it('should check if gateway supports currency', () => {
       expect(paypalGateway.supportsCurrency('GBP')).toBe(true);
       expect(paypalGateway.supportsCurrency('USD')).toBe(true);
@@ -443,15 +332,6 @@ describe('PaymentGateway Model', () => {
           supportedCountries: ['GB']
         },
         {
-          name: 'Bitcoin',
-          code: 'BITCOIN',
-          type: 'cryptocurrency',
-          provider: 'bitcoin',
-          isEnabled: true,
-          supportedCurrencies: ['BTC'],
-          supportedCountries: ['GB']
-        },
-        {
           name: 'Disabled Gateway',
           code: 'DISABLED',
           type: 'digital_wallet',
@@ -465,8 +345,8 @@ describe('PaymentGateway Model', () => {
 
     it('should find enabled gateways', async () => {
       const enabledGateways = await PaymentGateway.findEnabled();
-      
-      expect(enabledGateways).toHaveLength(2);
+
+      expect(enabledGateways).toHaveLength(1);
       expect(enabledGateways.every(gateway => gateway.isEnabled)).toBe(true);
     });
 

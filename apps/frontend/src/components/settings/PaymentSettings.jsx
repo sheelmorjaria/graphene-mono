@@ -82,11 +82,9 @@ const PaymentSettings = ({ onMessage }) => {
   ];
 
   const providers = [
-    { value: 'stripe', label: 'Stripe' },
     { value: 'paypal', label: 'PayPal' },
     { value: 'square', label: 'Square' },
     { value: 'adyen', label: 'Adyen' },
-    { value: 'bitcoin', label: 'Bitcoin' },
     { value: 'other', label: 'Other' }
   ];
 
@@ -95,8 +93,7 @@ const PaymentSettings = ({ onMessage }) => {
     { code: 'USD', name: 'US Dollar ($)' },
     { code: 'EUR', name: 'Euro (€)' },
     { code: 'CAD', name: 'Canadian Dollar (C$)' },
-    { code: 'AUD', name: 'Australian Dollar (A$)' },
-    { code: 'BTC', name: 'Bitcoin (₿)' }
+    { code: 'AUD', name: 'Australian Dollar (A$)' }
   ];
 
   const countries = [
@@ -402,14 +399,10 @@ const PaymentSettings = ({ onMessage }) => {
 
   const getConfigFields = (provider) => {
     switch (provider) {
-      case 'stripe':
-        return ['stripePublishableKey'];
-      case 'paypal':
-        return ['paypalClientId'];
-      case 'bitcoin':
-        return ['bitcoinApiKey'];
-      default:
-        return [];
+    case 'paypal':
+      return ['paypalClientId'];
+    default:
+      return [];
     }
   };
 

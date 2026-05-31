@@ -88,53 +88,6 @@ afterEach(() => {
 });
 
 // Mock external services for E2E tests
-vi.mock('../services/bitcoinService.js', () => ({
-  default: {
-    generateAddress: vi.fn().mockResolvedValue({
-      address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      qrCode: 'data:image/png;base64,mock-qr-code'
-    }),
-    generateBitcoinAddress: vi.fn().mockResolvedValue('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'),
-    getExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.000025,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    getBtcExchangeRate: vi.fn().mockResolvedValue({
-      rate: 0.000025,
-      validUntil: new Date(Date.now() + 300000)
-    }),
-    getAddressInfo: vi.fn().mockResolvedValue({
-      balance: 0,
-      transactions: []
-    }),
-    getBitcoinAddressInfo: vi.fn().mockResolvedValue({
-      balance: 0,
-      transactions: [],
-      status: 'confirmed',
-      confirmations: 3,
-      txHash: 'mock-tx-hash-123'
-    }),
-    convertGbpToBtc: vi.fn().mockResolvedValue({
-      btcAmount: 0.015,
-      exchangeRate: 40000,
-      exchangeRateTimestamp: new Date()
-    }),
-    createBitcoinPayment: vi.fn().mockResolvedValue({
-      bitcoinAddress: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      bitcoinAmount: 0.015,
-      bitcoinExchangeRate: 40000,
-      bitcoinExchangeRateTimestamp: new Date(),
-      bitcoinPaymentExpiry: new Date(Date.now() + 3600000)
-    }),
-    verifyWebhookSignature: vi.fn().mockReturnValue(true),
-    isPaymentConfirmed: vi.fn().mockReturnValue(true),
-    isPaymentExpired: vi.fn().mockReturnValue(false),
-    isPaymentSufficient: vi.fn().mockReturnValue(true),
-    satoshisToBtc: vi.fn().mockImplementation((satoshis) => satoshis / 100000000),
-    btcToSatoshis: vi.fn().mockImplementation((btc) => Math.round(btc * 100000000))
-  }
-}));
-
 vi.mock('../services/paypalService.js', () => ({
   default: {
     createOrder: vi.fn().mockResolvedValue({

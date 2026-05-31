@@ -78,15 +78,13 @@ const AdminOrderDetailsPage = () => {
 
   const formatPaymentMethod = (paymentMethod) => {
     if (!paymentMethod) return 'Not specified';
-    
+
     if (paymentMethod.type === 'card') {
       return `Card ending in ${paymentMethod.last4 || '****'}`;
     } else if (paymentMethod.type === 'paypal') {
       return 'PayPal';
-    } else if (paymentMethod.type === 'bitcoin') {
-      return 'Bitcoin';
     }
-    
+
     return paymentMethod.type || 'Unknown';
   };
 

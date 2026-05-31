@@ -138,15 +138,6 @@ export const seedPaymentGateways = async () => {
         environment: 'sandbox',
         clientId: 'test-client-id'
       }
-    },
-    {
-      name: 'Bitcoin',
-      identifier: 'bitcoin',
-      description: 'Pay with Bitcoin',
-      isActive: true,
-      settings: {
-        confirmations: 2
-      }
     }
   ];
 

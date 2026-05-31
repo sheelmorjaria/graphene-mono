@@ -35,7 +35,6 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
-import BitcoinPaymentPage from './pages/BitcoinPaymentPage';
 import ContactUsPage from './pages/ContactUsPage';
 import CustomerPrivacyPage from './pages/CustomerPrivacyPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -400,7 +399,7 @@ export const AppRoutes = () => {
       <SEOWrapper
         structuredData={homePageStructuredData}
         additionalMeta={[
-          { name: 'keywords', content: 'Graphene Security, privacy phone, secure smartphone, Google Pixel, Bitcoin payment' },
+          { name: 'keywords', content: 'Graphene Security, privacy phone, secure smartphone, Google Pixel' },
           { property: 'og:locale', content: 'en_GB' },
           { name: 'twitter:site', content: '@grapheneos' }
         ]}
@@ -468,9 +467,6 @@ export const AppRoutes = () => {
           
           {/* Order confirmation page */}
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
-          
-          {/* Payment pages */}
-          <Route path="/payment/bitcoin/:orderId" element={<BitcoinPaymentPage />} />
 
           {/* Contact Us page */}
           <Route path="/contact-us" element={<ContactUsPage />} />

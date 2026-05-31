@@ -308,7 +308,7 @@ describe('Order Validators', () => {
       it('should fail with invalid payment method', async () => {
         const req = createMockReq({
           ...validOrderData,
-          paymentMethod: 'stripe'
+          paymentMethod: 'monero'
         });
         const result = await runValidation(createOrderValidation, req);
         
@@ -322,18 +322,14 @@ describe('Order Validators', () => {
         );
       });
 
-      it('should pass with valid payment methods', async () => {
-        const paymentMethods = ['paypal', 'bitcoin'];
+      it('should pass with valid payment method', async () => {
+        const req = createMockReq({
+          ...validOrderData,
+          paymentMethod: 'paypal'
+        });
+        const result = await runValidation(createOrderValidation, req);
 
-        for (const paymentMethod of paymentMethods) {
-          const req = createMockReq({
-            ...validOrderData,
-            paymentMethod
-          });
-          const result = await runValidation(createOrderValidation, req);
-          
-          expect(result.isEmpty()).toBe(true);
-        }
+        expect(result.isEmpty()).toBe(true);
       });
     });
 

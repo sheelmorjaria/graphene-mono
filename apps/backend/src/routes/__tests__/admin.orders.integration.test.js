@@ -140,8 +140,8 @@ describe('Admin Orders API Integration Tests', () => {
         cost: 0
       },
       paymentMethod: {
-        type: 'bitcoin',
-        name: 'Bitcoin'
+        type: 'paypal',
+        name: 'PayPal'
       },
       createdAt: new Date('2024-01-20')
     });
@@ -185,8 +185,8 @@ describe('Admin Orders API Integration Tests', () => {
         cost: 0
       },
       paymentMethod: {
-        type: 'bitcoin',
-        name: 'Bitcoin'
+        type: 'paypal',
+        name: 'PayPal'
       },
       createdAt: new Date('2024-02-01')
     });

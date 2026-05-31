@@ -102,8 +102,7 @@ const TermsOfServicePage = () => {
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li>Prices are confirmed at the time of order placement</li>
                 <li>Payment is due at the time of purchase</li>
-                <li>We accept credit/debit cards, PayPal, and Bitcoin</li>
-                <li>Cryptocurrency payments are processed securely through third-party providers</li>
+                <li>We accept credit/debit cards and PayPal</li>
               </ul>
               <p>
                 While we strive for accuracy, we do not warrant that product descriptions are entirely error-free.

@@ -219,36 +219,6 @@ const ReviewSection = () => {
         return;
       }
 
-      if (paymentMethod.type === 'bitcoin') {
-        // For Bitcoin, create the order first, then redirect to Bitcoin payment page
-        const orderData = {
-          shippingAddress: shippingAddress,
-          billingAddress: billingAddress,
-          shippingMethod,
-          paymentMethod,
-          items: cart.items
-        };
-
-        // Validate order data
-        const validation = validateOrderData(orderData);
-        if (!validation.isValid) {
-          throw new Error(validation.errors.join(', '));
-        }
-
-        // Create the order
-        const orderResponse = await placeOrder(orderData);
-
-        if (orderResponse.success) {
-          // Clear cart and redirect to Bitcoin payment page
-          clearCart();
-          resetCheckout();
-          navigate(`/payment/bitcoin/${orderResponse.data.order._id}`);
-        } else {
-          throw new Error(orderResponse.error || 'Failed to create order');
-        }
-        return;
-      }
-
       // If we add other payment methods in the future, handle them here
       throw new Error('Selected payment method is not supported.');
 

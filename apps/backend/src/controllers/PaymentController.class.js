@@ -15,7 +15,6 @@ export class PaymentController {
     };
     
     this.services = {
-      bitcoinService: dependencies.bitcoinService,
       paypalService: dependencies.paypalService,
       emailService: dependencies.emailService,
       ...dependencies.services
@@ -75,11 +74,6 @@ export class PaymentController {
           available: !!this.paypalClient,
           name: 'PayPal',
           description: 'Pay securely with PayPal'
-        },
-        bitcoin: {
-          available: true,
-          name: 'Bitcoin',
-          description: 'Pay with Bitcoin cryptocurrency'
         }
       };
 
@@ -173,75 +167,6 @@ export class PaymentController {
       });
     } finally {
       await session.endSession();
-    }
-  }
-
-  /**
-   * Initialize Bitcoin payment
-   */
-  async initializeBitcoinPayment(req, res) {
-    try {
-      const { orderId } = req.body;
-
-      if (!orderId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Order ID is required'
-        });
-      }
-
-      // Find the order
-      const order = await this.models.Order.findById(orderId);
-      if (!order) {
-        return res.status(404).json({
-          success: false,
-          error: 'Order not found'
-        });
-      }
-
-      // Verify user owns this order
-      if (order.userId.toString() !== req.user.userId) {
-        return res.status(403).json({
-          success: false,
-          error: 'Unauthorized access to order'
-        });
-      }
-
-      // Generate Bitcoin address and get exchange rate
-      const [addressInfo, exchangeRate] = await Promise.all([
-        this.services.bitcoinService.generateAddress(),
-        this.services.bitcoinService.getExchangeRate()
-      ]);
-
-      const btcAmount = (order.totalAmount * exchangeRate.rate).toFixed(8);
-
-      this.logPaymentEvent('bitcoin_payment_initialized', {
-        orderId: order._id,
-        address: addressInfo.address,
-        amount: btcAmount
-      });
-
-      res.status(200).json({
-        success: true,
-        data: {
-          orderId: order._id,
-          bitcoinAddress: addressInfo.address,
-          btcAmount: parseFloat(btcAmount),
-          exchangeRate: exchangeRate.rate,
-          validUntil: exchangeRate.validUntil,
-          qrCode: addressInfo.qrCode,
-          orderTotal: order.totalAmount
-        }
-      });
-
-    } catch (error) {
-      this.logError(error, { context: 'initialize_bitcoin_payment', userId: req.user?.userId });
-      
-      const statusCode = this._getErrorStatusCode(error);
-      res.status(statusCode).json({
-        success: false,
-        error: error.message || 'Failed to initialize Bitcoin payment'
-      });
     }
   }
 

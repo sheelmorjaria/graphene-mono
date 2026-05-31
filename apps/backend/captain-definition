@@ -57,18 +57,6 @@
       "advanced": true
     },
     {
-      "id": "COIN_GECKO_API_KEY",
-      "description": "CoinGecko API key for crypto exchange rates",
-      "defaultValue": "",
-      "advanced": true
-    },
-    {
-      "id": "BLOCKONOMICS_CALLBACK_SECRET",
-      "description": "Blockonomics callback secret for Bitcoin payments",
-      "defaultValue": "",
-      "advanced": true
-    },
-    {
       "id": "ADMIN_EMAIL",
       "description": "Admin user email",
       "defaultValue": "admin@grapheneosstore.com",

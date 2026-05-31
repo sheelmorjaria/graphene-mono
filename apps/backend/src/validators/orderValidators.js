@@ -90,7 +90,7 @@ export const createOrderValidation = [
   body('paymentMethod')
     .trim()
     .notEmpty().withMessage('Payment method is required')
-    .isIn(['paypal', 'bitcoin']).withMessage('Invalid payment method')
+    .isIn(['paypal']).withMessage('Invalid payment method')
 ];
 
 export const updateOrderStatusValidation = [

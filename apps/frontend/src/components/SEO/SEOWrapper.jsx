@@ -17,7 +17,7 @@ const SEOWrapper = ({
   const currentUrl = `${siteUrl}${location.pathname}`;
   
   const defaultTitle = 'GrapheneOS Store - Privacy-Focused Smartphones';
-  const defaultDescription = 'Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private, and anonymous shopping with Bitcoin and PayPal payment options.';
+  const defaultDescription = 'Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private, and anonymous shopping with PayPal payment options.';
   const defaultImage = `${siteUrl}/og-image.jpg`;
   
   const fullTitle = title ? `${title} - GrapheneOS Store` : defaultTitle;

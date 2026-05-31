@@ -255,7 +255,6 @@ export function mockApiRoutes(page) {
         success: true,
         methods: [
           { id: 'paypal', name: 'PayPal', enabled: true },
-          { id: 'bitcoin', name: 'Bitcoin', enabled: true },
         ],
       }),
     })
@@ -275,25 +274,6 @@ export function mockApiRoutes(page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ success: true, data: { captureID: 'paypal-capture-e2e-001' } }),
-    })
-  );
-
-  // Bitcoin
-  page.route('**/api/payments/bitcoin/initialize', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          payment: {
-            bitcoinAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-            bitcoinAmount: 0.00875,
-            exchangeRate: 80000,
-            expirationTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-          },
-        },
-      }),
     })
   );
 

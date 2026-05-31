@@ -256,14 +256,6 @@ export const placeOrder = async (req, res) => {
           error: 'Invalid PayPal order'
         });
       }
-    } else if (paymentMethod.type === 'bitcoin') {
-      // For cryptocurrency payments, create pending payment intent
-      // Payment will be initialized separately via payment controller
-      paymentIntent = {
-        amount: 0, // Will be set based on calculated total
-        status: 'pending',
-        id: null // Will be set when crypto payment is initialized
-      };
     } else {
       await session.abortTransaction();
       return res.status(400).json({
@@ -391,10 +383,6 @@ export const placeOrder = async (req, res) => {
       paymentDetails = { paypalOrderId: paypalOrderId };
       paymentStatus = 'completed';
       orderStatus = 'processing';
-    } else if (paymentMethod.type === 'bitcoin') {
-      paymentDetails = { bitcoinAddress: null, bitcoinAmount: null }; // Will be set when initialized
-      paymentStatus = 'pending';
-      orderStatus = 'pending';
     }
 
     // Create the order

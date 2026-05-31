@@ -10,12 +10,20 @@ vi.mock('../../services/addressService', () => ({
 }));
 
 vi.mock('../AuthContext', () => ({
-  useAuth: vi.fn()
+  useAuth: vi.fn(),
+  useLogin: vi.fn(),
+  useAuthState: vi.fn(() => ({ user: null, isAuthenticated: false, isLoading: false })),
+  useAuthDispatch: vi.fn(() => vi.fn()),
+  AuthProvider: ({ children }) => children,
+  AuthStateContext: React.createContext(),
+  AuthDispatchContext: React.createContext()
 }));
 
 vi.mock('../CartContext', () => ({
   useCart: vi.fn().mockReturnValue({
-    cart: { items: [], totalAmount: 0 }
+    cart: { items: [], totalAmount: 0, totalItems: 0 },
+    loading: false,
+    error: ''
   })
 }));
 

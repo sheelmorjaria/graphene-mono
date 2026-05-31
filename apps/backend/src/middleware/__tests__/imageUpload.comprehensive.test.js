@@ -22,7 +22,8 @@ vi.mock('multer', () => {
   const mockMulter = vi.fn((config) => {
     mockMulter.lastConfig = config;
     return {
-      array: vi.fn(() => vi.fn())
+      array: vi.fn(() => vi.fn()),
+      any: vi.fn(() => vi.fn())
     };
   });
 
@@ -49,9 +50,16 @@ describe('Image Upload Middleware - Comprehensive Tests', () => {
   let mockSharpInstance;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
     req = {
       files: [],
-      body: {}
+      body: {},
+      protocol: 'http',
+      get: vi.fn((header) => {
+        if (header === 'host') return 'localhost:3000';
+        return null;
+      })
     };
 
     res = {
@@ -68,12 +76,10 @@ describe('Image Upload Middleware - Comprehensive Tests', () => {
       toFile: vi.fn().mockResolvedValue({ size: 12345 })
     };
 
-    sharp.mockReturnValue(mockSharpInstance);
+    sharp.mockImplementation(() => mockSharpInstance);
     fs.access = vi.fn().mockResolvedValue();
     fs.mkdir = vi.fn().mockResolvedValue();
     fs.unlink = vi.fn().mockResolvedValue();
-
-    vi.clearAllMocks();
   });
 
   describe('File Filter Function', () => {

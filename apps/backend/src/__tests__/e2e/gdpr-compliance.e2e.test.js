@@ -115,8 +115,7 @@ describe('GDPR Compliance - End-to-End Tests', () => {
         phoneNumber: '+44123456789'
       },
       paymentMethod: {
-        type: 'bitcoin',
-        bitcoinAddress: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+        type: 'paypal'
       },
       createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
     });

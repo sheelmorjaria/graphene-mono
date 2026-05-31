@@ -133,8 +133,8 @@ describe('Email Service - Comprehensive Tests', () => {
         country: 'United Kingdom'
       },
       paymentMethod: {
-        type: 'bitcoin',
-        name: 'Bitcoin'
+        type: 'paypal',
+        name: 'PayPal'
       },
       trackingNumber: 'TRK123456789',
       carrier: 'Royal Mail'
