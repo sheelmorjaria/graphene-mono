@@ -231,6 +231,28 @@ const orderSchema = new mongoose.Schema({
       index: true
     }
   },
+  // Fraud detection metadata
+  fraudDetection: {
+    riskLevel: {
+      type: String,
+      enum: ['low', 'medium', 'high'],
+      default: 'low'
+    },
+    indicators: [{
+      type: String,
+      trim: true
+    }],
+    deviceFingerprint: {
+      type: String,
+      trim: true,
+      maxlength: 32
+    },
+    ipAddress: {
+      type: String,
+      trim: true,
+      maxlength: 45 // IPv6 can be up to 45 chars
+    }
+  },
   paymentStatus: {
     type: String,
     required: [true, 'Payment status is required'],

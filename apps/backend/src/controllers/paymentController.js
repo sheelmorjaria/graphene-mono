@@ -5,6 +5,7 @@ import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import PaymentGateway from '../models/PaymentGateway.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
+import { validateFraudDetectionCookie, assessOrderFraudRisk } from '../services/fraudDetectionService.js';
 
 // Helper function to get PayPal client dynamically (for better testability)
 const getPayPalClient = () => {
@@ -356,6 +357,34 @@ export const capturePayPalPayment = async (req, res) => {
       });
     }
 
+    // Fraud detection check
+    const fraudData = validateFraudDetectionCookie(req);
+    const orderAmount = parseFloat(purchaseUnit.amount.value);
+    const shippingAddress = {
+      addressLine1: purchaseUnit?.shipping?.address?.address_line_1,
+      city: purchaseUnit?.shipping?.address?.admin_area_2,
+      postalCode: purchaseUnit?.shipping?.address?.postal_code
+    };
+
+    const fraudAssessment = assessOrderFraudRisk(fraudData, {
+      totalPrice: orderAmount,
+      shippingAddress
+    });
+
+    // Block high-risk orders
+    if (fraudAssessment.riskLevel === 'high') {
+      logPaymentEvent('fraud_detection_blocked', {
+        paypalOrderId,
+        riskLevel: fraudAssessment.riskLevel,
+        indicators: fraudAssessment.indicators,
+        ip: fraudData.ip
+      });
+      return res.status(403).json({
+        success: false,
+        error: fraudAssessment.recommendation.message || 'Order could not be processed due to security concerns'
+      });
+    }
+
     await session.withTransaction(async () => {
       // Get user's cart to create order
       let cart;
@@ -427,6 +456,13 @@ export const capturePayPalPayment = async (req, res) => {
           id: new mongoose.Types.ObjectId(), // Default shipping method
           name: 'Standard Shipping',
           cost: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0)
+        },
+        // Fraud detection metadata
+        fraudDetection: {
+          riskLevel: fraudAssessment.riskLevel,
+          indicators: fraudAssessment.indicators || [],
+          deviceFingerprint: fraudData.deviceFingerprint?.substring(0, 16),
+          ipAddress: fraudData.ip
         }
       };
 
