@@ -58,7 +58,7 @@ const RefundPolicyPage = () => {
         <div className="space-y-4 text-text-secondary">
           <p>To initiate a return, follow these steps:</p>
           <ol className="list-decimal list-inside space-y-2 ml-4">
-            <li>Contact us at <a href="mailto:support@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">support@graphene-security.com</a></li>
+            <li>Contact us at <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">contact@graphene-security.com</a></li>
             <li>Provide your order number and reason for return</li>
             <li>Wait for return authorization (RMA number)</li>
             <li>Pack the item securely in original packaging</li>
@@ -113,7 +113,7 @@ const RefundPolicyPage = () => {
             <li><strong className="text-cyan-400">Storage Capacity:</strong> Subject to price difference</li>
             <li><strong className="text-cyan-400">Condition:</strong> Subject to price difference</li>
           </ul>
-          <p>To request an exchange, please contact us at <a href="mailto:support@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">support@graphene-security.com</a>.</p>
+          <p>To request an exchange, please contact us at <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">contact@graphene-security.com</a>.</p>
         </div>
       )
     },
@@ -225,8 +225,8 @@ const RefundPolicyPage = () => {
           <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4 font-mono text-sm">
             <p className="mb-2">
               <span className="text-text-muted">Email:</span>{' '}
-              <a href="mailto:support@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                support@graphene-security.com
+              <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                contact@graphene-security.com
               </a>
             </p>
             <p className="mb-2">

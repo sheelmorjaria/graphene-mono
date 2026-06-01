@@ -111,6 +111,28 @@ export const createValidCategoryData = (overrides = {}) => ({
   ...overrides
 });
 
+// Valid Flash Order data factory
+export const createValidFlashOrderData = (overrides = {}) => {
+  const timestamp = Date.now();
+  return {
+    customerEmail: `flash-${timestamp}@example.com`,
+    pixelModel: 'Pixel 8 Pro',
+    returnAddress: {
+      fullName: 'Test User',
+      addressLine1: '123 Test Street',
+      city: 'London',
+      stateProvince: 'England',
+      postalCode: 'E1 6AN',
+      country: 'GB',
+      phoneNumber: '+44 20 7946 0958'
+    },
+    factoryResetConfirmed: true,
+    basePrice: 119.99,
+    returnShipping: 19.99,
+    ...overrides
+  };
+};
+
 // Export all factories
 export default {
   generateSKU,
@@ -118,5 +140,6 @@ export default {
   createValidUserData,
   createValidOrderData,
   createValidCartData,
-  createValidCategoryData
+  createValidCategoryData,
+  createValidFlashOrderData
 };
