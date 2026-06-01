@@ -17,8 +17,15 @@ const flashOrderSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Pixel model is required'],
     enum: {
-      values: ['Pixel 6', 'Pixel 6 Pro', 'Pixel 6a', 'Pixel 7', 'Pixel 7 Pro', 'Pixel 7a', 'Pixel 8', 'Pixel 8 Pro', 'Pixel 8a'],
-      message: 'Invalid Pixel model. Only Pixel 6, 7, 8 series supported.'
+      values: [
+        'Pixel 6', 'Pixel 6 Pro', 'Pixel 6a',
+        'Pixel 7', 'Pixel 7 Pro', 'Pixel 7a',
+        'Pixel 8', 'Pixel 8 Pro', 'Pixel 8a',
+        'Pixel Fold',
+        'Pixel 9', 'Pixel 9 Pro XL', 'Pixel 9a',
+        'Pixel 10', 'Pixel 10a', 'Pixel 10 Pro', 'Pixel 10 Pro XL', 'Pixel 10 Pro Fold'
+      ],
+      message: 'Invalid Pixel model. Only supported Pixel models are accepted.'
     }
   },
   returnAddress: {

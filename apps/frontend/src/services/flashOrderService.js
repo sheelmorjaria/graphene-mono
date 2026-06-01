@@ -74,7 +74,16 @@ export const SUPPORTED_PIXEL_MODELS = [
   { value: 'Pixel 7a', label: 'Pixel 7a' },
   { value: 'Pixel 8', label: 'Pixel 8' },
   { value: 'Pixel 8 Pro', label: 'Pixel 8 Pro' },
-  { value: 'Pixel 8a', label: 'Pixel 8a' }
+  { value: 'Pixel 8a', label: 'Pixel 8a' },
+  { value: 'Pixel Fold', label: 'Pixel Fold' },
+  { value: 'Pixel 9', label: 'Pixel 9' },
+  { value: 'Pixel 9 Pro XL', label: 'Pixel 9 Pro XL' },
+  { value: 'Pixel 9a', label: 'Pixel 9a' },
+  { value: 'Pixel 10', label: 'Pixel 10' },
+  { value: 'Pixel 10a', label: 'Pixel 10a' },
+  { value: 'Pixel 10 Pro', label: 'Pixel 10 Pro' },
+  { value: 'Pixel 10 Pro XL', label: 'Pixel 10 Pro XL' },
+  { value: 'Pixel 10 Pro Fold', label: 'Pixel 10 Pro Fold' }
 ];
 
 /**
