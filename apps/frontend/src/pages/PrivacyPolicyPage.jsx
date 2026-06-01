@@ -179,7 +179,6 @@ const PrivacyPolicyPage = () => {
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li><strong>Essential Cookies:</strong> Required for site functionality (shopping cart, authentication)</li>
                 <li><strong>Security Cookies:</strong> For fraud detection and prevention. We use device fingerprinting (IP address, browser characteristics) to identify suspicious activity patterns. These cookies are HTTP-only, valid for 30 days, and used solely for security purposes.</li>
-                <li><strong>Preference Cookies:</strong> To remember your settings</li>
               </ul>
               <p className="text-text-muted">
                 We do NOT use tracking pixels, fingerprinting, or third-party analytics for advertising purposes.
