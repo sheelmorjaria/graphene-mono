@@ -352,7 +352,7 @@ const ContactUsPage = () => {
                   </svg>
                 </div>
                 <p className="font-mono text-sm text-text-secondary">Email Support</p>
-                <p className="text-xs text-text-muted mt-1">support@graphene-security.com</p>
+                <p className="text-xs text-text-muted mt-1">contact@graphene-security.com</p>
               </div>
               <div className="p-4">
                 <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-matrix-subtle flex items-center justify-center">
