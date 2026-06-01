@@ -231,8 +231,8 @@ const RefundPolicyPage = () => {
             </p>
             <p className="mb-2">
               <span className="text-text-muted">Returns Department:</span>{' '}
-              <a href="mailto:returns@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                returns@graphene-security.com
+              <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                contact@graphene-security.com
               </a>
             </p>
             <p>
