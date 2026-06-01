@@ -44,10 +44,11 @@ import ShippingInformationPage from './pages/ShippingInformationPage';
 import FAQPage from './pages/FAQPage';
 import FlashServicePage from './pages/FlashServicePage';
 import FlashOrderSuccessPage from './pages/FlashOrderSuccessPage';
+import AdminFlashOrdersListPage from './pages/AdminFlashOrdersListPage';
+import AdminFlashOrderDetailsPage from './pages/AdminFlashOrderDetailsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
-import ProductsDropdown from './components/ProductsDropdown';
 import SEOWrapper from './components/SEO/SEOWrapper';
 import Footer from './components/Footer';
 import { AuthProvider, useAuth, useLogout } from './contexts/AuthContext';
@@ -226,7 +227,14 @@ const Header = () => {
           {/* Desktop Navigation - always visible on large screens */}
           <nav className="hidden lg:block flex-shrink-0">
             <ul className="flex items-center gap-6">
-              <ProductsDropdown />
+              <li>
+                <Link
+                  to="/flash-service"
+                  className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                >
+                  Flashing Service
+                </Link>
+              </li>
 
               <li>
                 <Link
@@ -274,10 +282,18 @@ const Header = () => {
           {isMobileMenuOpen && (
             <nav className="lg:hidden border-t border-border-subtle pt-4 animate-fadeIn">
               <ul className="flex flex-col gap-2">
-                <ProductsDropdown
-                  isMobile={true}
-                  onItemClick={() => setIsMobileMenuOpen(false)}
-                />
+                <li>
+                  <Link
+                    to="/flash-service"
+                    className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Flashing Service
+                  </Link>
+                </li>
 
                 <li>
                   <Link
@@ -514,6 +530,16 @@ export const AppRoutes = () => {
           <Route path="/admin/returns/:returnRequestId" element={
             <AdminRoute>
               <AdminReturnDetailsPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/flash-orders" element={
+            <AdminRoute>
+              <AdminFlashOrdersListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/flash-orders/:id" element={
+            <AdminRoute>
+              <AdminFlashOrderDetailsPage />
             </AdminRoute>
           } />
           <Route path="/admin/products" element={

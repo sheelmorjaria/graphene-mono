@@ -234,7 +234,8 @@ vi.mock('mongoose', async () => {
             }
             
             // Order validation (detect by presence of customerEmail or orderNumber)
-            if (this.customerEmail !== undefined || this.orderNumber !== undefined || this.subtotal !== undefined) {
+            // Exclude FlashOrder which has pixelModel field
+            if ((this.customerEmail !== undefined || this.orderNumber !== undefined || this.subtotal !== undefined) && !this.pixelModel) {
               if (!this.userId) {
                 throw new Error('User ID is required');
               }

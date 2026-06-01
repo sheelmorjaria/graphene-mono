@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { formatCurrency } from '../../services/paymentService';
 
-const PayPalPayment = ({ orderSummary, onPaymentSuccess, onPaymentError, onPaymentCancel }) => {
+const PayPalPayment = ({ orderSummary, onPaymentSuccess, onPaymentError, onPaymentCancel, flashOrderId }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,7 +33,7 @@ const PayPalPayment = ({ orderSummary, onPaymentSuccess, onPaymentError, onPayme
             value: orderSummary.orderTotal.toFixed(2)
           },
           description: `Order from GrapheneOS Store - ${orderSummary.items?.length || 0} item(s)`,
-          custom_id: `order_${Date.now()}`,
+          custom_id: flashOrderId || `order_${Date.now()}`,
           invoice_id: `inv_${Date.now()}`
         }],
         application_context: {

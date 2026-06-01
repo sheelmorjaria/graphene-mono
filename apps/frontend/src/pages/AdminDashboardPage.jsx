@@ -380,6 +380,24 @@ const AdminDashboardPage = () => {
                 </Link>
 
                 <Link
+                  to="/admin/flash-orders"
+                  className="group relative bg-bg-card p-6 rounded-lg border border-border-subtle hover:border-purple-400/50 hover:shadow-glow-purple transition-all duration-300 block"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    <div className="flex items-center mb-4">
+                      <div className="p-3 bg-purple-subtle text-purple-400 rounded-lg border border-purple-400/30">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <h3 className="ml-4 text-lg font-heading font-semibold text-text-primary uppercase tracking-wider">Flash Orders</h3>
+                    </div>
+                    <p className="text-text-secondary text-sm font-mono">Manage GrapheneOS flashing service orders</p>
+                  </div>
+                </Link>
+
+                <Link
                   to="/admin/returns"
                   className="group relative bg-bg-card p-6 rounded-lg border border-border-subtle hover:border-amber-primary/50 transition-all duration-300 block"
                 >
