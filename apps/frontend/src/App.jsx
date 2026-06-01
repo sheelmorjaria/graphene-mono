@@ -229,6 +229,15 @@ const Header = () => {
             <ul className="flex items-center gap-6">
               <li>
                 <Link
+                  to="/products"
+                  className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                >
+                  Products
+                </Link>
+              </li>
+
+              <li>
+                <Link
                   to="/flash-service"
                   className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
                 >
@@ -282,6 +291,19 @@ const Header = () => {
           {isMobileMenuOpen && (
             <nav className="lg:hidden border-t border-border-subtle pt-4 animate-fadeIn">
               <ul className="flex flex-col gap-2">
+                <li>
+                  <Link
+                    to="/products"
+                    className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Products
+                  </Link>
+                </li>
+
                 <li>
                   <Link
                     to="/flash-service"
