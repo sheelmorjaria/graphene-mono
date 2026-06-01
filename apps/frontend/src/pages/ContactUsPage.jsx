@@ -25,6 +25,7 @@ const ContactUsPage = () => {
 
   useEffect(() => {
     document.title = "Contact Us - Graphene Security";
+    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
