@@ -115,6 +115,7 @@ export const createValidCategoryData = (overrides = {}) => ({
 export const createValidFlashOrderData = (overrides = {}) => {
   const timestamp = Date.now();
   return {
+    userId: mongoose.Types.ObjectId('test-user-id'),
     customerEmail: `flash-${timestamp}@example.com`,
     pixelModel: 'Pixel 8 Pro',
     returnAddress: {

@@ -147,6 +147,7 @@ const FlashServicePage = () => {
             </div>
 
             <PayPalPayment
+              flashOrderId={orderData.orderId}
               orderSummary={{
                 orderTotal: orderData.totalPrice || 139.98,
                 cartTotal: orderData.basePrice || 119.99,

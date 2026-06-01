@@ -776,6 +776,171 @@ export const updateUserStatus = async (userId, statusData) => {
   }
 };
 
+// Flash Order Admin Functions
+
+// Get all Flash Orders (admin only)
+export const getAllFlashOrders = async (filters = {}) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerQuery,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = filters;
+
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+
+    if (status && status !== 'all') {
+      params.append('status', status);
+    }
+
+    if (customerQuery) {
+      params.append('customerQuery', customerQuery);
+    }
+
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/flash-orders?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch flash orders');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get all flash orders error:', error);
+    throw error;
+  }
+};
+
+// Get Flash Order by ID (admin only)
+export const getFlashOrderById = async (orderId) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/flash-orders/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch flash order');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get flash order by ID error:', error);
+    throw error;
+  }
+};
+
+// Update Flash Order status (admin only)
+export const updateFlashOrderStatus = async (orderId, statusData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/flash-orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(statusData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to update flash order status');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update flash order status error:', error);
+    throw error;
+  }
+};
+
+// Get Flash Order statistics (admin only)
+export const getFlashOrderStats = async () => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/flash-orders/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch flash order statistics');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get flash order stats error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -800,7 +965,11 @@ export default {
   deleteProduct,
   getAllUsers,
   getUserById,
-  updateUserStatus
+  updateUserStatus,
+  getAllFlashOrders,
+  getFlashOrderById,
+  updateFlashOrderStatus,
+  getFlashOrderStats
 };
 
 // Sales Report
