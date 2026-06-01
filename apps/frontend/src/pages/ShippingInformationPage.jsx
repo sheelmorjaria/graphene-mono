@@ -32,32 +32,19 @@ const ShippingInformationPage = () => {
               </div>
               <div>
                 <h2 className="font-heading text-2xl font-bold text-text-primary">United Kingdom</h2>
-                <p className="text-text-muted text-sm">Standard and Express delivery available</p>
+                <p className="text-text-muted text-sm">Royal Mail Special Delivery</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-heading font-semibold text-cyan-400">Standard Delivery</h3>
-                  <span className="font-mono text-matrix-400 font-bold">FREE</span>
-                </div>
-                <p className="text-text-secondary text-sm mb-2">5-7 working days</p>
-                <p className="text-text-muted text-xs">
-                  Free standard shipping on all orders within the UK. Most orders arrive within 5-7 working days.
-                </p>
+            <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-heading font-semibold text-cyan-400">Royal Mail Special Delivery</h3>
+                <span className="font-mono text-matrix-400 font-bold">£20.45</span>
               </div>
-
-              <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-heading font-semibold text-cyan-400">Express Delivery</h3>
-                  <span className="font-mono text-matrix-400 font-bold">£9.99</span>
-                </div>
-                <p className="text-text-secondary text-sm mb-2">2-3 working days</p>
-                <p className="text-text-muted text-xs">
-                  Faster delivery for urgent orders. Orders placed before 2 PM are shipped the same day.
-                </p>
-              </div>
+              <p className="text-text-secondary text-sm mb-2">Next Day in the U.K.</p>
+              <p className="text-text-muted text-xs">
+                Fully insured delivery guaranteed next working day. Orders placed before 2 PM are shipped the same day.
+              </p>
             </div>
           </div>
 
@@ -69,58 +56,19 @@ const ShippingInformationPage = () => {
               </div>
               <div>
                 <h2 className="font-heading text-2xl font-bold text-text-primary">International Shipping</h2>
-                <p className="text-text-muted text-sm">Available worldwide</p>
+                <p className="text-text-muted text-sm">Royal International Tracked</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                <div className="grid grid-cols-3 gap-4 items-center">
-                  <div>
-                    <h3 className="font-heading font-semibold text-matrix-400">Europe (EU)</h3>
-                    <p className="text-text-secondary text-sm">7-14 working days</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-mono text-cyan-400">£14.99</p>
-                    <p className="text-text-muted text-xs">Free over £500</p>
-                  </div>
-                  <div className="text-right text-text-muted text-xs">
-                    Tracked • Insured
-                  </div>
-                </div>
+            <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-heading font-semibold text-matrix-400">Royal International Tracked</h3>
+                <span className="font-mono text-cyan-400 font-bold">£13.95</span>
               </div>
-
-              <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                <div className="grid grid-cols-3 gap-4 items-center">
-                  <div>
-                    <h3 className="font-heading font-semibold text-matrix-400">USA & Canada</h3>
-                    <p className="text-text-secondary text-sm">10-15 working days</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-mono text-cyan-400">£19.99</p>
-                    <p className="text-text-muted text-xs">Free over £600</p>
-                  </div>
-                  <div className="text-right text-text-muted text-xs">
-                    Tracked • Insured
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                <div className="grid grid-cols-3 gap-4 items-center">
-                  <div>
-                    <h3 className="font-heading font-semibold text-matrix-400">Rest of World</h3>
-                    <p className="text-text-secondary text-sm">14-21 working days</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-mono text-cyan-400">£24.99</p>
-                    <p className="text-text-muted text-xs">Free over £750</p>
-                  </div>
-                  <div className="text-right text-text-muted text-xs">
-                    Tracked • Insured
-                  </div>
-                </div>
-              </div>
+              <p className="text-text-secondary text-sm mb-2">3-5 Days within Europe or 6-7 Days to Rest of World</p>
+              <p className="text-text-muted text-xs">
+                Fully tracked international delivery. Delivery times vary by destination.
+              </p>
             </div>
 
             <div className="mt-4 p-4 bg-amber-subtle border border-amber rounded-lg">
@@ -335,8 +283,8 @@ const ShippingInformationPage = () => {
             <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4 font-mono text-sm">
               <p className="mb-2">
                 <span className="text-text-muted">Email:</span>{' '}
-                <a href="mailto:support@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                  support@graphene-security.com
+                <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  contact@graphene-security.com
                 </a>
               </p>
               <p>
