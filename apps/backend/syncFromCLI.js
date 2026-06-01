@@ -632,6 +632,7 @@ export const syncFromCLI = async () => {
     'Google Pixel 9 Pro XL',   // Specific Pixel 9 Pro XL query
     'Google Pixel 9a',         // Specific Pixel 9a query
     'Google Pixel 10',         // Pixel 10 base model
+    'Google Pixel 10a',        // Pixel 10a
     'Google Pixel 10 Pro',     // Pixel 10 Pro
     'Google Pixel 10 Pro XL',  // Pixel 10 Pro XL
     'Google Pixel 10 Pro Fold' // Pixel 10 Pro Fold

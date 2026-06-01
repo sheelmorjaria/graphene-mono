@@ -330,8 +330,8 @@ const TermsOfServicePage = () => {
               <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4 font-mono text-sm">
                 <p className="mb-2">
                   <span className="text-text-muted">Email:</span>{' '}
-                  <a href="mailto:legal@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                    legal@graphene-security.com
+                  <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                    contact@graphene-security.com
                   </a>
                 </p>
                 <p className="mb-2">
@@ -339,9 +339,6 @@ const TermsOfServicePage = () => {
                   <a href="https://graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
                     https://graphene-security.com
                   </a>
-                </p>
-                <p>
-                  <span className="text-text-muted">Address:</span> United Kingdom
                 </p>
               </div>
             </div>

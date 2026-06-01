@@ -155,8 +155,8 @@ const PrivacyPolicyPage = () => {
               </ul>
               <p className="mt-4">
                 To exercise these rights, please contact us at{' '}
-                <a href="mailto:privacy@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                  privacy@graphene-security.com
+                <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  contact@graphene-security.com
                 </a>
                 {' '}or visit your{' '}
                 <Link to="/account/privacy" className="text-cyan-400 hover:text-matrix-400 transition-colors">
@@ -245,8 +245,8 @@ const PrivacyPolicyPage = () => {
               <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4 font-mono text-sm">
                 <p className="mb-2">
                   <span className="text-text-muted">Email:</span>{' '}
-                  <a href="mailto:privacy@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                    privacy@graphene-security.com
+                  <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                    contact@graphene-security.com
                   </a>
                 </p>
                 <p className="mb-2">
@@ -254,9 +254,6 @@ const PrivacyPolicyPage = () => {
                   <a href="https://graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
                     https://graphene-security.com
                   </a>
-                </p>
-                <p>
-                  <span className="text-text-muted">Address:</span> United Kingdom
                 </p>
               </div>
             </div>

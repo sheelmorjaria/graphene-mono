@@ -42,6 +42,8 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import ShippingInformationPage from './pages/ShippingInformationPage';
 import FAQPage from './pages/FAQPage';
+import FlashServicePage from './pages/FlashServicePage';
+import FlashOrderSuccessPage from './pages/FlashOrderSuccessPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchBar from './components/SearchBar';
 import CartIcon from './components/CartIcon';
@@ -477,6 +479,10 @@ export const AppRoutes = () => {
           <Route path="/refunds" element={<RefundPolicyPage />} />
           <Route path="/shipping" element={<ShippingInformationPage />} />
           <Route path="/faq" element={<FAQPage />} />
+
+          {/* Flash Service routes */}
+          <Route path="/flash-service" element={<FlashServicePage />} />
+          <Route path="/flash-order/success" element={<FlashOrderSuccessPage />} />
 
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
