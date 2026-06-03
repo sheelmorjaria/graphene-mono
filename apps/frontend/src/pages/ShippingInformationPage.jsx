@@ -122,14 +122,22 @@ const ShippingInformationPage = () => {
 
             <div className="space-y-4 text-text-secondary">
               <p>
-                All orders include tracking at no additional cost. You will receive:
+                All orders include tracking at no additional cost. You will receive email notifications at each stage:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>Order confirmation email with order details</li>
-                <li>Shipping confirmation email with tracking number</li>
-                <li>Real-time tracking updates via email</li>
+                <li>Order confirmation email with order details (sent automatically after payment)</li>
+                <li>Shipping confirmation email with tracking number (sent when your order ships)</li>
                 <li>Delivery confirmation upon successful delivery</li>
               </ul>
+
+              <div className="bg-amber-subtle border border-amber rounded-lg p-4">
+                <p className="text-amber font-mono text-sm flex items-center gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  Tracking is provided by Royal Mail. For detailed tracking updates, please use your tracking number on the Royal Mail website.
+                </p>
+              </div>
 
               <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4 font-mono text-sm">
                 <p className="text-text-muted">
