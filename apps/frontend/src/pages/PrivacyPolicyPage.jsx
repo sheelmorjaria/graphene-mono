@@ -60,7 +60,7 @@ const PrivacyPolicyPage = () => {
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li>Product selections and customization options</li>
                 <li>Order history and transaction records</li>
-                <li>Shipping tracking information</li>
+                <li>Order confirmation with payment details</li>
                 <li>Customer service communications</li>
               </ul>
 
