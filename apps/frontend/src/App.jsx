@@ -184,9 +184,6 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-sticky bg-bg-primary/95 backdrop-blur-lg border-b border-border-subtle" role="banner">
-      {/* Top accent line with gradient animation */}
-      <div className="h-[2px] bg-gradient-to-r from-cyan-400 via-matrix-400 to-cyan-400 bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite]"></div>
-
       <div className="container mx-auto px-4 lg:px-6 py-4">
         {/* Mobile layout - Stack vertically */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
