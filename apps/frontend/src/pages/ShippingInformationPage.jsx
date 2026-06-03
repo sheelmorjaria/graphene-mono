@@ -81,43 +81,6 @@ const ShippingInformationPage = () => {
             </div>
           </div>
 
-          {/* Order Processing */}
-          <div className="card card-glow p-6 md:p-8 animate-fadeIn">
-            <h2 className="font-heading text-2xl font-bold text-text-primary mb-6 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-lg bg-cyan-subtle border border-cyan flex items-center justify-center text-cyan-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </span>
-              Order Processing Times
-            </h2>
-
-            <div className="space-y-4 text-text-secondary">
-              <p>
-                We operate on a Just-In-Time (JIT) model, which means we flash and prepare devices after orders
-                are placed. This ensures you receive the latest GrapheneOS version.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                  <h3 className="font-heading font-semibold text-cyan-400 mb-2">Standard Orders</h3>
-                  <p className="text-sm">Processed within 1-2 business days</p>
-                  <p className="text-text-muted text-xs mt-2">Most orders ship within 24-48 hours of payment confirmation.</p>
-                </div>
-
-                <div className="bg-bg-elevated border border-border-subtle rounded-lg p-4">
-                  <h3 className="font-heading font-semibold text-cyan-400 mb-2">Custom Orders</h3>
-                  <p className="text-sm">Processed within 3-5 business days</p>
-                  <p className="text-text-muted text-xs mt-2">Orders with privacy app installation may take additional time.</p>
-                </div>
-              </div>
-
-              <p className="text-text-muted text-sm">
-                Orders placed on weekends or holidays will be processed on the next business day.
-              </p>
-            </div>
-          </div>
-
           {/* Tracking */}
           <div className="card card-glow p-6 md:p-8 animate-fadeIn">
             <h2 className="font-heading text-2xl font-bold text-text-primary mb-6 flex items-center gap-3">
