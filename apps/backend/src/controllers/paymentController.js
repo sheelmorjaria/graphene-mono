@@ -6,6 +6,7 @@ import Order from '../models/Order.js';
 import PaymentGateway from '../models/PaymentGateway.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
 import { validateFraudDetectionCookie, assessOrderFraudRisk } from '../services/fraudDetectionService.js';
+import emailService from '../services/emailService.js';
 
 // Helper function to get PayPal client dynamically (for better testability)
 const getPayPalClient = () => {
@@ -475,6 +476,14 @@ export const capturePayPalPayment = async (req, res) => {
       
       await order.save({ session });
 
+      // Send order confirmation email
+      try {
+        await emailService.sendOrderConfirmationEmail(order);
+        logPaymentEvent('order_confirmation_email_sent', { orderId: order._id, orderNumber: order.orderNumber });
+      } catch (emailError) {
+        // Log email error but don't fail the order
+        logError(emailError, { context: 'order_confirmation_email', orderId: order._id });
+      }
 
       // Clear the cart after successful order creation
       await cart.clearCart({ session });
