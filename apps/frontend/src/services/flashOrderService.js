@@ -91,8 +91,8 @@ export const SUPPORTED_PIXEL_MODELS = [
  */
 export const FLASH_ORDER_PRICING = {
   basePrice: 119.99,
-  returnShipping: 19.99,
-  totalPrice: 139.98
+  returnShipping: 20.45,
+  totalPrice: 140.44
 };
 
 /**

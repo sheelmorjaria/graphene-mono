@@ -19,8 +19,8 @@ vi.mock('../../../services/flashOrderService', () => ({
   ],
   FLASH_ORDER_PRICING: {
     basePrice: 119.99,
-    returnShipping: 19.99,
-    totalPrice: 139.98
+    returnShipping: 20.45,
+    totalPrice: 140.44
   },
   formatFlashOrderCurrency: (amount) => `£${amount.toFixed(2)}`
 }));
@@ -65,8 +65,8 @@ describe('FlashServiceForm Component', () => {
       render(<FlashServiceForm onSuccess={mockOnSuccess} onError={mockOnError} />);
 
       expect(screen.getByText(/£119.99/)).toBeInTheDocument();
-      expect(screen.getByText(/£19.99/)).toBeInTheDocument();
-      expect(screen.getByText(/£139.98/i)).toBeInTheDocument();
+      expect(screen.getByText(/£20.45/)).toBeInTheDocument();
+      expect(screen.getByText(/£140.44/i)).toBeInTheDocument();
     });
 
     it('should render service description', () => {
@@ -192,7 +192,7 @@ describe('FlashServiceForm Component', () => {
         orderNumber: 'FLO-1234567890-001',
         customerEmail: 'test@example.com',
         pixelModel: 'Pixel 8 Pro',
-        totalPrice: 139.98
+        totalPrice: 140.44
       };
 
       createFlashOrder.mockResolvedValue(mockResponse);

@@ -129,7 +129,7 @@ export const createValidFlashOrderData = (overrides = {}) => {
     },
     factoryResetConfirmed: true,
     basePrice: 119.99,
-    returnShipping: 19.99,
+    returnShipping: 20.45,
     ...overrides
   };
 };

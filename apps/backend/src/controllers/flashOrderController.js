@@ -13,7 +13,7 @@ const SUPPORTED_PIXEL_MODELS = [
 
 // Default pricing
 const BASE_PRICE = 119.99;
-const RETURN_SHIPPING = 19.99;
+const RETURN_SHIPPING = 20.45;
 
 // PO Box address (revealed only after payment)
 const PO_BOX_ADDRESS = {

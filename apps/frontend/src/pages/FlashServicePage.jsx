@@ -136,11 +136,11 @@ const FlashServicePage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-secondary">Return Shipping:</span>
-                    <span className="text-text-primary font-mono">{formatFlashOrderCurrency(orderData.returnShipping || 19.99)}</span>
+                    <span className="text-text-primary font-mono">{formatFlashOrderCurrency(orderData.returnShipping || 20.45)}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-border-subtle font-semibold">
                     <span className="text-text-primary">Total:</span>
-                    <span className="text-cyan-400 font-mono font-bold">{formatFlashOrderCurrency(orderData.totalPrice || 139.98)}</span>
+                    <span className="text-cyan-400 font-mono font-bold">{formatFlashOrderCurrency(orderData.totalPrice || 140.44)}</span>
                   </div>
                 </div>
               </div>
@@ -149,9 +149,9 @@ const FlashServicePage = () => {
             <PayPalPayment
               flashOrderId={orderData.orderId}
               orderSummary={{
-                orderTotal: orderData.totalPrice || 139.98,
+                orderTotal: orderData.totalPrice || 140.44,
                 cartTotal: orderData.basePrice || 119.99,
-                shippingCost: orderData.returnShipping || 19.99,
+                shippingCost: orderData.returnShipping || 20.45,
                 items: [{
                   name: `GrapheneOS Flashing - ${orderData.pixelModel}`,
                   quantity: 1,

@@ -43,7 +43,7 @@ const ShippingInformationPage = () => {
               </div>
               <p className="text-text-secondary text-sm mb-2">Next Day in the U.K.</p>
               <p className="text-text-muted text-xs">
-                Fully insured delivery guaranteed next working day. Orders placed before 2 PM are shipped the same day.
+                Fully insured delivery guaranteed next working day.
               </p>
             </div>
           </div>
