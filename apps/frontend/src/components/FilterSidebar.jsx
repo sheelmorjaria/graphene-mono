@@ -28,7 +28,6 @@ const FilterSidebar = ({
   }, [localPriceRange, priceRange, onPriceRangeChange]);
 
   const conditions = [
-    { value: 'new', label: 'New' },
     { value: 'excellent', label: 'Excellent' },
     { value: 'good', label: 'Good' },
     { value: 'fair', label: 'Fair' }
