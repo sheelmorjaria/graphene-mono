@@ -102,7 +102,7 @@ const TermsOfServicePage = () => {
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li>Prices are confirmed at the time of order placement</li>
                 <li>Payment is due at the time of purchase</li>
-                <li>We accept credit/debit cards and PayPal</li>
+                <li>We accept PayPal</li>
               </ul>
               <p>
                 While we strive for accuracy, we do not warrant that product descriptions are entirely error-free.
@@ -146,7 +146,7 @@ const TermsOfServicePage = () => {
                 and external factors beyond our control.
               </p>
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
-                <li>UK delivery: Typically 5-7 working days</li>
+                <li>UK delivery: Typically 4-5 days</li>
                 <li>International delivery: Times vary by destination</li>
                 <li>Risk of loss transfers to you upon delivery</li>
                 <li>Signature may be required for delivery</li>
