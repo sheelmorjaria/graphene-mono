@@ -277,7 +277,7 @@ describe('Flash Order Security Tests', () => {
             email_address: 'payer@example.com'
           },
           amount: {
-            value: '139.98'
+            value: '140.44'
           }
         }
       };

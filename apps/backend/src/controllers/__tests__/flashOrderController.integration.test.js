@@ -77,9 +77,9 @@ describe('FlashOrder API Endpoints', () => {
         .send(validOrderData);
 
       expect(response.status).toBe(201);
-      expect(response.body.data.totalPrice).toBe(139.98); // 119.99 + 19.99
+      expect(response.body.data.totalPrice).toBe(140.44); // 119.99 + 20.45
       expect(response.body.data.basePrice).toBe(119.99);
-      expect(response.body.data.returnShipping).toBe(19.99);
+      expect(response.body.data.returnShipping).toBe(20.45);
     });
 
     it('should return 400 if factoryResetConfirmed is false', async () => {
@@ -110,7 +110,7 @@ describe('FlashOrder API Endpoints', () => {
         event_type: 'PAYMENT.CAPTURE.COMPLETED',
         resource: {
           id: 'CAPTURE123',
-          amount: { value: '139.98', currency_code: 'GBP' },
+          amount: { value: '140.44', currency_code: 'GBP' },
           custom_id: orderId.toString(),
           supplementary_data: {
             related_ids: { order_id: 'PAYPAL-123' }
