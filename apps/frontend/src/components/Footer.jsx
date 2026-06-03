@@ -169,9 +169,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-
-      {/* Bottom gradient line */}
-      <div className="h-[2px] bg-gradient-to-r from-cyan-400 via-matrix-400 to-cyan-400 bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite]"></div>
     </footer>
   );
 };
