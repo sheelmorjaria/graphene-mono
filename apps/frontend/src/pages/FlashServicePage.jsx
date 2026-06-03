@@ -61,7 +61,7 @@ const FlashServicePage = () => {
           <h1 className="text-4xl font-display font-bold text-text-primary mb-4">
             GrapheneOS Flashing Service
           </h1>
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto text-center">
             Professional GrapheneOS installation for your Pixel device. We'll flash your phone
             with the latest version of GrapheneOS and return it securely.
           </p>
