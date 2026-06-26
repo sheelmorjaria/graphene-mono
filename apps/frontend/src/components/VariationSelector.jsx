@@ -56,7 +56,6 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
 
   // Update selection based on phone variations
   useEffect(() => {
-    console.log('VariationSelector state:', { selectedCondition, selectedColor, selectedStorage });
     let variation = null;
 
     // Find variation matching all selected options
@@ -85,7 +84,6 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
       });
     }
 
-    console.log('VariationSelector: Found variation:', variation);
     setSelectedVariation(variation);
     onVariationSelect(variation);
   }, [selectedCondition, selectedColor, selectedStorage, variations, onVariationSelect, storages.length]);

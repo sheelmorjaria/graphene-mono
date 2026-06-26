@@ -16,11 +16,11 @@ const SEOWrapper = ({
   const siteUrl = import.meta.env.VITE_SITE_URL || 'https://grapheneos-store.com';
   const currentUrl = `${siteUrl}${location.pathname}`;
   
-  const defaultTitle = 'GrapheneOS Store - Privacy-Focused Smartphones';
+  const defaultTitle = 'Graphene Security - Privacy-Focused Smartphones';
   const defaultDescription = 'Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private, and anonymous shopping with PayPal payment options.';
   const defaultImage = `${siteUrl}/og-image.jpg`;
   
-  const fullTitle = title ? `${title} - GrapheneOS Store` : defaultTitle;
+  const fullTitle = title ? `${title} - Graphene Security` : defaultTitle;
   const metaDescription = description || defaultDescription;
   const metaImage = image ? `${siteUrl}${image}` : defaultImage;
   const canonicalUrl = canonical || currentUrl;
@@ -39,7 +39,7 @@ const SEOWrapper = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={metaDescription} />
       <meta property="og:image" content={metaImage} />
-      <meta property="og:site_name" content="GrapheneOS Store" />
+      <meta property="og:site_name" content="Graphene Security" />
       
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

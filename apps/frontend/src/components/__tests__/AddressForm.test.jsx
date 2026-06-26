@@ -1,7 +1,19 @@
 import React from 'react';
-import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { render, screen, waitFor, userEvent, fireEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AddressForm from '../AddressForm';
+
+// The AddressForm labels now expose clean accessible names (field name +
+// visually-hidden "required" word). Inputs are located by accessible label
+// via getByLabelText; the country field is the only <select> (combobox).
+const fullNameInput = () => screen.getByLabelText(/full name/i);
+const addressLine1Input = () => screen.getByLabelText(/address line 1/i);
+const addressLine2Input = () => screen.getByLabelText(/address line 2/i);
+const cityInput = () => screen.getByLabelText(/^city/i);
+const stateInput = () => screen.getByLabelText(/state\/province/i);
+const postalInput = () => screen.getByLabelText(/postal code/i);
+const phoneInput = () => screen.getByLabelText(/phone number/i);
+const countrySelect = () => screen.getByRole('combobox');
 
 describe('AddressForm', () => {
   const mockOnSubmit = vi.fn();
@@ -21,15 +33,15 @@ describe('AddressForm', () => {
     it('should render form with all required fields', () => {
       render(<AddressForm {...defaultProps} />);
 
-      expect(screen.getByLabelText('Full Name *')).toBeInTheDocument();
-      expect(screen.getByLabelText('Address Line 1 *')).toBeInTheDocument();
-      expect(screen.getByLabelText('Address Line 2')).toBeInTheDocument();
-      expect(screen.getByLabelText('City *')).toBeInTheDocument();
-      expect(screen.getByLabelText('State/Province *')).toBeInTheDocument();
-      expect(screen.getByLabelText('Postal Code *')).toBeInTheDocument();
-      expect(screen.getByLabelText('Country *')).toBeInTheDocument();
-      expect(screen.getByLabelText('Phone Number')).toBeInTheDocument();
-      
+      expect(fullNameInput()).toBeInTheDocument();
+      expect(addressLine1Input()).toBeInTheDocument();
+      expect(addressLine2Input()).toBeInTheDocument();
+      expect(cityInput()).toBeInTheDocument();
+      expect(stateInput()).toBeInTheDocument();
+      expect(postalInput()).toBeInTheDocument();
+      expect(countrySelect()).toBeInTheDocument();
+      expect(phoneInput()).toBeInTheDocument();
+
       expect(screen.getByRole('button', { name: /save address/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
     });
@@ -67,17 +79,19 @@ describe('AddressForm', () => {
     it('should disable form when loading', () => {
       render(<AddressForm {...defaultProps} isLoading={true} />);
 
-      expect(screen.getByLabelText('Full Name *')).toBeDisabled();
+      expect(fullNameInput()).toBeDisabled();
       expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
     });
   });
 
   describe('Form Validation', () => {
     it('should validate required fields on submit', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      const submitButton = screen.getByRole('button', { name: /save address/i });
-      await userEvent.click(submitButton);
+      // fireEvent.submit on the form (rather than userEvent.click on the
+      // submit button) reliably triggers onSubmit in the jsdom + React 19
+      // test environment.
+      fireEvent.submit(screen.getByRole('form'));
 
       await waitFor(() => {
         expect(screen.getByText('Full name is required')).toBeInTheDocument();
@@ -85,17 +99,16 @@ describe('AddressForm', () => {
         expect(screen.getByText('City is required')).toBeInTheDocument();
         expect(screen.getByText('State/Province is required')).toBeInTheDocument();
         expect(screen.getByText('Postal code is required')).toBeInTheDocument();
-        expect(screen.getByText('Country is required')).toBeInTheDocument();
+        // Country defaults to 'GB' so it has no required error
       });
 
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
     it('should validate phone number format on blur', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      const phoneInput = screen.getByLabelText('Phone Number');
-      await userEvent.type(phoneInput, 'invalid-phone');
+      await userEvent.type(phoneInput(), 'invalid-phone');
       await userEvent.tab();
 
       await waitFor(() => {
@@ -104,10 +117,10 @@ describe('AddressForm', () => {
     });
 
     it('should accept valid phone number formats', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      const phoneInput = screen.getByLabelText('Phone Number');
-      
+      const input = phoneInput();
+
       // Test various valid formats
       const validNumbers = [
         '+1 (555) 123-4567',
@@ -117,29 +130,27 @@ describe('AddressForm', () => {
       ];
 
       for (const number of validNumbers) {
-        await userEvent.clear(phoneInput);
-        await userEvent.type(phoneInput, number);
+        await userEvent.clear(input);
+        await userEvent.type(input, number);
         await userEvent.tab();
-        
+
         // Should not show error
         expect(screen.queryByText('Please enter a valid phone number')).not.toBeInTheDocument();
       }
     });
 
     it('should clear field errors when user starts typing', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      // Trigger validation errors
-      const submitButton = screen.getByRole('button', { name: /save address/i });
-      await userEvent.click(submitButton);
+      // Trigger validation errors via form submit
+      fireEvent.submit(screen.getByRole('form'));
 
       await waitFor(() => {
         expect(screen.getByText('Full name is required')).toBeInTheDocument();
       });
 
       // Start typing in the field
-      const fullNameInput = screen.getByLabelText('Full Name *');
-      await userEvent.type(fullNameInput, 'John');
+      await userEvent.type(fullNameInput(), 'John');
 
       await waitFor(() => {
         expect(screen.queryByText('Full name is required')).not.toBeInTheDocument();
@@ -149,17 +160,16 @@ describe('AddressForm', () => {
 
   describe('Form Submission', () => {
     it('should submit form with valid data', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      // Fill out all required fields
-      await userEvent.type(screen.getByLabelText('Full Name *'), 'John Doe');
-      await userEvent.type(screen.getByLabelText('Address Line 1 *'), '123 Main St');
-      await userEvent.type(screen.getByLabelText('Address Line 2'), 'Apt 4B');
-      await userEvent.type(screen.getByLabelText('City *'), 'New York');
-      await userEvent.type(screen.getByLabelText('State/Province *'), 'NY');
-      await userEvent.type(screen.getByLabelText('Postal Code *'), '10001');
-      await userEvent.selectOptions(screen.getByLabelText('Country *'), 'US');
-      await userEvent.type(screen.getByLabelText('Phone Number'), '+1 (555) 123-4567');
+      await userEvent.type(fullNameInput(), 'John Doe');
+      await userEvent.type(addressLine1Input(), '123 Main St');
+      await userEvent.type(addressLine2Input(), 'Apt 4B');
+      await userEvent.type(cityInput(), 'New York');
+      await userEvent.type(stateInput(), 'NY');
+      await userEvent.type(postalInput(), '10001');
+      await userEvent.selectOptions(countrySelect(), 'US');
+      await userEvent.type(phoneInput(), '+1 (555) 123-4567');
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
       await userEvent.click(submitButton);
@@ -179,15 +189,14 @@ describe('AddressForm', () => {
     });
 
     it('should submit form without optional fields', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      // Fill out only required fields
-      await userEvent.type(screen.getByLabelText('Full Name *'), 'Jane Smith');
-      await userEvent.type(screen.getByLabelText('Address Line 1 *'), '456 Oak Ave');
-      await userEvent.type(screen.getByLabelText('City *'), 'Los Angeles');
-      await userEvent.type(screen.getByLabelText('State/Province *'), 'CA');
-      await userEvent.type(screen.getByLabelText('Postal Code *'), '90210');
-      await userEvent.selectOptions(screen.getByLabelText('Country *'), 'US');
+      await userEvent.type(fullNameInput(), 'Jane Smith');
+      await userEvent.type(addressLine1Input(), '456 Oak Ave');
+      await userEvent.type(cityInput(), 'Los Angeles');
+      await userEvent.type(stateInput(), 'CA');
+      await userEvent.type(postalInput(), '90210');
+      await userEvent.selectOptions(countrySelect(), 'US');
 
       const submitButton = screen.getByRole('button', { name: /save address/i });
       await userEvent.click(submitButton);
@@ -207,7 +216,7 @@ describe('AddressForm', () => {
     });
 
     it('should handle cancel button click', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
       await userEvent.click(cancelButton);
@@ -216,7 +225,7 @@ describe('AddressForm', () => {
     });
 
     it('should prevent submission when loading', async () => {
-        render(<AddressForm {...defaultProps} isLoading={true} />);
+      render(<AddressForm {...defaultProps} isLoading={true} />);
 
       const submitButton = screen.getByRole('button', { name: /saving/i });
       expect(submitButton).toBeDisabled();
@@ -232,39 +241,31 @@ describe('AddressForm', () => {
       render(<AddressForm {...defaultProps} />);
 
       expect(screen.getByRole('form')).toBeInTheDocument();
-      
-      // Check that all inputs have proper labels
-      const requiredFields = [
-        'Full Name *',
-        'Address Line 1 *', 
-        'City *',
-        'State/Province *',
-        'Postal Code *',
-        'Country *'
-      ];
 
-      requiredFields.forEach(label => {
-        const input = screen.getByLabelText(label);
-        expect(input).toHaveAttribute('required');
-      });
+      // Required fields should have the required attribute
+      expect(fullNameInput()).toHaveAttribute('required');
+      expect(addressLine1Input()).toHaveAttribute('required');
+      expect(cityInput()).toHaveAttribute('required');
+      expect(stateInput()).toHaveAttribute('required');
+      expect(postalInput()).toHaveAttribute('required');
+      expect(countrySelect()).toHaveAttribute('required');
 
       // Optional fields should not have required attribute
-      expect(screen.getByLabelText('Address Line 2')).not.toHaveAttribute('required');
-      expect(screen.getByLabelText('Phone Number')).not.toHaveAttribute('required');
+      expect(addressLine2Input()).not.toHaveAttribute('required');
+      expect(phoneInput()).not.toHaveAttribute('required');
     });
 
     it('should associate error messages with form fields', async () => {
-        render(<AddressForm {...defaultProps} />);
+      render(<AddressForm {...defaultProps} />);
 
-      const submitButton = screen.getByRole('button', { name: /save address/i });
-      await userEvent.click(submitButton);
+      fireEvent.submit(screen.getByRole('form'));
 
       await waitFor(() => {
-        const fullNameInput = screen.getByLabelText('Full Name *');
+        const input = fullNameInput();
         const errorElement = screen.getByText('Full name is required');
-        
+
         expect(errorElement).toBeInTheDocument();
-        expect(fullNameInput).toHaveAttribute('aria-describedby');
+        expect(input).toHaveAttribute('aria-describedby');
       });
     });
   });

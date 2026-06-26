@@ -42,8 +42,7 @@ describe('Auth Controller', () => {
     it('should register user with optional fields', async () => {
       const userDataWithOptionals = {
         ...validUserData,
-        phone: '+447123456789',
-        marketingOptIn: true
+        phone: '+447123456789'
       };
 
       const response = await request(app)
@@ -52,7 +51,6 @@ describe('Auth Controller', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.data.user.phone).toBe(userDataWithOptionals.phone);
-      expect(response.body.data.user.marketingOptIn).toBe(true);
     });
 
     it('should fail with missing required fields', async () => {
@@ -374,8 +372,7 @@ describe('Auth Controller', () => {
       const updateData = {
         firstName: 'Updated',
         lastName: 'Name',
-        phone: '+447123456789',
-        marketingOptIn: true
+        phone: '+447123456789'
       };
 
       const response = await request(app)
@@ -388,7 +385,6 @@ describe('Auth Controller', () => {
       expect(response.body.data.user.firstName).toBe('Updated');
       expect(response.body.data.user.lastName).toBe('Name');
       expect(response.body.data.user.phone).toBe(updateData.phone);
-      expect(response.body.data.user.marketingOptIn).toBe(true);
 
       // Verify in database
       const updatedUser = await User.findById(testUser._id);

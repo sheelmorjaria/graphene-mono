@@ -15,15 +15,6 @@ const ProductDetailsPage = () => {
   const [selectedVariation, setSelectedVariation] = useState(null);
   const [currentImages, setCurrentImages] = useState([]);
 
-  // Set page title when product loads
-  useEffect(() => {
-    if (product) {
-      document.title = `${product.name} - Graphene Security`;
-    } else {
-      document.title = 'Product Details - Graphene Security';
-    }
-  }, [product]);
-
   // Update images when product or selected variation changes
   useEffect(() => {
     console.log('ProductDetailsPage: selectedVariation changed:', selectedVariation);

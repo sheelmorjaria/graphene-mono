@@ -175,8 +175,8 @@ describe('AdminProductsListPage - Delete Product Functionality', () => {
       fireEvent.click(firstDeleteButton);
 
       // Assert
-      expect(screen.getByText('Archive Product')).toBeInTheDocument();
-      expect(screen.getByText(`Are you sure you want to archive "${mockProducts[0].name}"?`)).toBeInTheDocument();
+      expect(screen.getAllByText('Archive Product').length).toBeGreaterThan(0);
+      expect(screen.getAllByText((_, node) => !!node?.textContent?.includes(`Are you sure you want to archive "${mockProducts[0].name}"?`)).length).toBeGreaterThan(0);
     });
 
     test('should display correct product name in confirmation modal', async () => {
@@ -262,9 +262,11 @@ describe('AdminProductsListPage - Delete Product Functionality', () => {
       fireEvent.click(deleteButton);
 
       // Assert
-      const modal = screen.getByText('Archive Product').closest('.fixed');
+      const modal = screen.getAllByText('Archive Product')
+        .map(el => el.closest('.fixed'))
+        .find(Boolean);
       expect(modal).toBeInTheDocument();
-      
+
       // Check for warning icon (SVG with specific path)
       const warningIcon = modal.querySelector('svg');
       expect(warningIcon).toBeInTheDocument();
@@ -660,12 +662,14 @@ describe('AdminProductsListPage - Delete Product Functionality', () => {
       fireEvent.click(deleteButton);
 
       // Assert
-      const modal = screen.getByText('Archive Product').closest('.fixed');
+      const modal = screen.getAllByText('Archive Product')
+        .map(el => el.closest('.fixed'))
+        .find(Boolean);
       expect(modal).toBeInTheDocument();
-      
+
       const cancelButton = screen.getByRole('button', { name: 'Cancel' });
       const confirmButton = screen.getByRole('button', { name: 'Archive Product' });
-      
+
       expect(cancelButton).toBeInTheDocument();
       expect(confirmButton).toBeInTheDocument();
     });

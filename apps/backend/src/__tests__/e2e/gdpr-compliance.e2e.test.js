@@ -41,7 +41,6 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       email: 'gdpr.test@example.com',
       password: 'GDPRTest123!', // Raw password - will be hashed by User model
       phone: '+44123456789',
-      marketingOptIn: true,
       addresses: [
         {
           fullName: 'Jane Smith',

@@ -1,4 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// The service resolves API_BASE_URL at module load via utils/apiConfig.
+// Mock that module so each test can control the base URL deterministically.
+vi.mock('../../utils/apiConfig', () => ({
+  get API_BASE_URL() {
+    return apiBaseUrlValue;
+  }
+}));
+
+let apiBaseUrlValue = 'http://localhost:3000/api';
 import productsService from '../productsService';
 
 // Mock fetch globally
@@ -8,10 +18,8 @@ global.fetch = mockFetch;
 describe('productsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Setup default environment
-    import.meta.env = {
-      VITE_API_BASE_URL: 'http://localhost:3000'
-    };
+    // Default base URL for most tests
+    apiBaseUrlValue = 'http://localhost:3000/api';
   });
 
   afterEach(() => {
@@ -152,10 +160,10 @@ describe('productsService', () => {
     });
 
     it('should use environment variable for API base URL', async () => {
-      import.meta.env.VITE_API_BASE_URL = 'https://api.example.com';
-      
+      apiBaseUrlValue = 'https://api.example.com/api';
+
       const mockResponse = { success: true, data: [], pagination: {} };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse)
@@ -170,10 +178,10 @@ describe('productsService', () => {
     });
 
     it('should fall back to default URL when env var is not set', async () => {
-      delete import.meta.env.VITE_API_BASE_URL;
-      
+      apiBaseUrlValue = 'http://localhost:3000/api';
+
       const mockResponse = { success: true, data: [], pagination: {} };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse)

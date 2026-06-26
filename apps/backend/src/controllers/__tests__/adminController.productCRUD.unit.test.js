@@ -3,10 +3,12 @@ import { vi, describe, test, beforeEach, expect } from 'vitest';
 // Mock the models
 vi.mock('../../models/Product.js', () => ({
   default: Object.assign(
-    vi.fn().mockImplementation(() => ({
-      save: vi.fn(),
-      populate: vi.fn()
-    })),
+    vi.fn().mockImplementation(function () {
+      return {
+        save: vi.fn(),
+        populate: vi.fn()
+      };
+    }),
     {
       findById: vi.fn(),
       findOne: vi.fn(),
@@ -160,7 +162,7 @@ describe('Admin Controller - Product CRUD Unit Tests', () => {
         })
       };
       
-      Product.mockReturnValue(mockProductInstance);
+      Product.mockImplementation(function () { return mockProductInstance; });
 
       await createProduct(req, res);
 

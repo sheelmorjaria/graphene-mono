@@ -14,10 +14,6 @@ const FlashServicePage = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    document.title = 'GrapheneOS Flashing Service - Graphene Security';
-  }, []);
-
-  useEffect(() => {
     if (isAuthenticated && user) {
       setOrderData(prev => ({
         ...prev,
@@ -50,7 +46,7 @@ const FlashServicePage = () => {
   return (
     <div className="min-h-screen bg-bg-primary py-12">
       <SEOWrapper
-        title="GrapheneOS Flashing Service - Graphene Security"
+        title="GrapheneOS Flashing Service"
         description="Send us your Pixel device and we'll flash it with GrapheneOS, the privacy-focused mobile OS. Professional flashing service with secure shipping."
         keywords={['GrapheneOS flashing', 'Pixel flashing', 'privacy phone', 'GrapheneOS installation']}
       />

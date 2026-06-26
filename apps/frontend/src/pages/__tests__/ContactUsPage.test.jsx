@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ContactUsPage from '../ContactUsPage';
-import { AuthProvider } from '../../contexts/AuthContext';
+import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
 import * as supportService from '../../services/supportService';
 
 // Mock the support service
@@ -9,35 +9,38 @@ vi.mock('../../services/supportService', () => ({
   submitContactForm: vi.fn()
 }));
 
-// Mock useAuth hook
+// Mock user for pre-fill tests
 const mockUser = {
   firstName: 'John',
   lastName: 'Doe',
   email: 'john.doe@example.com'
 };
 
-const MockAuthProvider = ({ children, isAuthenticated = false, user = null }) => {
-  const mockContext = {
-    user,
-    isAuthenticated,
-    login: vi.fn(),
-    logout: vi.fn(),
-    register: vi.fn(),
-    isLoading: false
-  };
+// Build a real AuthContext value matching the reducer state shape so the
+// component's useAuth() call resolves correctly. AuthProvider ignores any
+// `value` prop, so we provide the context objects directly.
+const noopDispatch = () => {};
 
-  return (
-    <AuthProvider value={mockContext}>
+const AuthStateWrapper = ({ children, isAuthenticated = false, user = null }) => (
+  <AuthStateContext.Provider
+    value={{
+      user,
+      isAuthenticated,
+      isLoading: false,
+      error: null
+    }}
+  >
+    <AuthDispatchContext.Provider value={noopDispatch}>
       {children}
-    </AuthProvider>
-  );
-};
+    </AuthDispatchContext.Provider>
+  </AuthStateContext.Provider>
+);
 
 const renderContactUsPage = (authProps = {}) => {
   return render(
-    <MockAuthProvider {...authProps}>
+    <AuthStateWrapper {...authProps}>
       <ContactUsPage />
-    </MockAuthProvider>
+    </AuthStateWrapper>
   );
 };
 
@@ -62,29 +65,32 @@ describe('ContactUsPage', () => {
 
     it('sets page title correctly', () => {
       renderContactUsPage();
-      expect(document.title).toBe('Contact Us - GrapheneOS Store');
+      expect(document.title).toBe('Contact Us - Graphene Security');
     });
 
     it('displays subject dropdown options', () => {
       renderContactUsPage();
-      
+
       const subjectSelect = screen.getByLabelText(/subject/i);
       expect(subjectSelect).toBeInTheDocument();
-      
+
       // Check if default option is present
       expect(screen.getByText('Select a subject')).toBeInTheDocument();
     });
   });
 
   describe('Pre-filled form for authenticated users', () => {
-    it('pre-fills name and email for logged-in users', () => {
+    it('pre-fills name and email for logged-in users', async () => {
       renderContactUsPage({ isAuthenticated: true, user: mockUser });
 
+      // Pre-fill happens in a useEffect after mount
       const nameInput = screen.getByLabelText(/full name/i);
       const emailInput = screen.getByLabelText(/email address/i);
 
-      expect(nameInput.value).toBe('John Doe');
-      expect(emailInput.value).toBe('john.doe@example.com');
+      await waitFor(() => {
+        expect(nameInput.value).toBe('John Doe');
+        expect(emailInput.value).toBe('john.doe@example.com');
+      });
     });
 
     it('does not pre-fill fields for non-authenticated users', () => {
@@ -103,10 +109,11 @@ describe('ContactUsPage', () => {
       renderContactUsPage();
 
       const nameInput = screen.getByLabelText(/full name/i);
-      
-      // Focus and blur to trigger validation
-      fireEvent.focus(nameInput);
-      fireEvent.blur(nameInput);
+
+      // The component validates on change; type then clear to trigger the
+      // required-error (focus/blur alone do not run validation).
+      fireEvent.change(nameInput, { target: { value: 'a' } });
+      fireEvent.change(nameInput, { target: { value: '' } });
 
       await waitFor(() => {
         expect(screen.getByText('Full name is required')).toBeInTheDocument();
@@ -117,9 +124,8 @@ describe('ContactUsPage', () => {
       renderContactUsPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      
+
       fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-      fireEvent.blur(emailInput);
 
       await waitFor(() => {
         expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
@@ -130,9 +136,9 @@ describe('ContactUsPage', () => {
       renderContactUsPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      
-      fireEvent.focus(emailInput);
-      fireEvent.blur(emailInput);
+
+      fireEvent.change(emailInput, { target: { value: 'a' } });
+      fireEvent.change(emailInput, { target: { value: '' } });
 
       await waitFor(() => {
         expect(screen.getByText('Email is required')).toBeInTheDocument();
@@ -143,9 +149,10 @@ describe('ContactUsPage', () => {
       renderContactUsPage();
 
       const subjectSelect = screen.getByLabelText(/subject/i);
-      
-      fireEvent.focus(subjectSelect);
-      fireEvent.blur(subjectSelect);
+
+      // Select a value then reset to the empty default option
+      fireEvent.change(subjectSelect, { target: { value: 'order-inquiry' } });
+      fireEvent.change(subjectSelect, { target: { value: '' } });
 
       await waitFor(() => {
         expect(screen.getByText('Please select a subject')).toBeInTheDocument();
@@ -156,9 +163,9 @@ describe('ContactUsPage', () => {
       renderContactUsPage();
 
       const messageTextarea = screen.getByLabelText(/message/i);
-      
-      fireEvent.focus(messageTextarea);
-      fireEvent.blur(messageTextarea);
+
+      fireEvent.change(messageTextarea, { target: { value: 'a' } });
+      fireEvent.change(messageTextarea, { target: { value: '' } });
 
       await waitFor(() => {
         expect(screen.getByText('Message is required')).toBeInTheDocument();
@@ -169,17 +176,17 @@ describe('ContactUsPage', () => {
       renderContactUsPage();
 
       const emailInput = screen.getByLabelText(/email address/i);
-      
+
       // Type invalid email
       fireEvent.change(emailInput, { target: { value: 'test@' } });
-      
+
       await waitFor(() => {
         expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
       });
 
       // Type valid email
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      
+
       await waitFor(() => {
         expect(screen.queryByText('Please enter a valid email address')).not.toBeInTheDocument();
       });
@@ -342,7 +349,7 @@ describe('ContactUsPage', () => {
 
       renderContactUsPage();
       fillValidForm();
-      
+
       fireEvent.change(screen.getByLabelText(/order number/i), {
         target: { value: 'ORD-12345' }
       });

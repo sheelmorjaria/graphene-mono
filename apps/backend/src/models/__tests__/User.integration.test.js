@@ -71,10 +71,6 @@ const realUserSchema = new mongoose.default.Schema({
     type: Boolean,
     default: false
   },
-  marketingOptIn: {
-    type: Boolean,
-    default: false
-  },
   role: {
     type: String,
     enum: ['customer', 'admin'],
@@ -314,7 +310,6 @@ describe('User Model Integration Tests', () => {
     this.email = this.email.toLowerCase();
     this.isActive = this.isActive !== undefined ? this.isActive : true;
     this.emailVerified = this.emailVerified !== undefined ? this.emailVerified : false;
-    this.marketingOptIn = this.marketingOptIn !== undefined ? this.marketingOptIn : false;
     this.role = this.role || 'customer';
     this.accountStatus = this.accountStatus || 'active';
     this.shippingAddresses = this.shippingAddresses || [];
@@ -385,7 +380,6 @@ describe('User Model Integration Tests', () => {
       expect(savedUser.password).not.toBe(userData.password); // Should be hashed
       expect(savedUser.isActive).toBe(true);
       expect(savedUser.emailVerified).toBe(false);
-      expect(savedUser.marketingOptIn).toBe(false);
       expect(savedUser.role).toBe('customer');
       expect(savedUser.createdAt).toBeDefined();
       expect(savedUser.updatedAt).toBeDefined();
@@ -397,8 +391,7 @@ describe('User Model Integration Tests', () => {
         password: 'SecurePass456!',
         firstName: 'Jane',
         lastName: 'Smith',
-        phone: '+447123456789',
-        marketingOptIn: true
+        phone: '+447123456789'
       };
 
       const user = {
@@ -410,7 +403,6 @@ describe('User Model Integration Tests', () => {
       const savedUser = await user.save();
 
       expect(savedUser.phone).toBe(userData.phone);
-      expect(savedUser.marketingOptIn).toBe(true);
     });
 
     it('should fail validation without required fields', async () => {

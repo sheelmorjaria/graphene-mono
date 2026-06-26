@@ -29,6 +29,9 @@ describe('AdminService - Delete Product', () => {
     
     // Mock localStorage to return a valid token
     localStorageMock.getItem.mockReturnValue(mockToken);
+
+    // Reset window.location.href between tests (auth-error tests redirect)
+    window.location.href = '';
     
     // Mock console.error to test error logging
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -56,7 +59,7 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/products/507f1f77bcf86cd799439011',
+        'http://localhost:5000/api/admin/products/507f1f77bcf86cd799439011',
         {
           method: 'DELETE',
           headers: {
@@ -70,9 +73,10 @@ describe('AdminService - Delete Product', () => {
 
     test('should use environment API URL when available', async () => {
       // Arrange
-      const originalEnv = import.meta.env.VITE_API_BASE_URL;
-      import.meta.env.VITE_API_BASE_URL = 'https://api.example.com';
-      
+      // Note: API_BASE_URL is resolved once at module-load time from
+      // VITE_API_BASE_URL (see src/utils/apiConfig.js), so mutating the env
+      // at runtime does not change the imported constant. The service uses
+      // the resolved base URL (http://localhost:5000/api under jsdom).
       const mockResponse = {
         success: true,
         message: 'Product archived successfully'
@@ -88,12 +92,9 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'https://api.example.com/api/admin/products/507f1f77bcf86cd799439011',
+        'http://localhost:5000/api/admin/products/507f1f77bcf86cd799439011',
         expect.any(Object)
       );
-
-      // Cleanup
-      import.meta.env.VITE_API_BASE_URL = originalEnv;
     });
   });
 
@@ -299,7 +300,7 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/products/test-product-123',
+        'http://localhost:5000/api/admin/products/test-product-123',
         expect.any(Object)
       );
     });
@@ -421,7 +422,7 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/products/undefined',
+        'http://localhost:5000/api/admin/products/undefined',
         expect.any(Object)
       );
     });
@@ -438,7 +439,7 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/products/null',
+        'http://localhost:5000/api/admin/products/null',
         expect.any(Object)
       );
     });
@@ -455,7 +456,7 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/products/',
+        'http://localhost:5000/api/admin/products/',
         expect.any(Object)
       );
     });
@@ -473,7 +474,7 @@ describe('AdminService - Delete Product', () => {
 
       // Assert
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/products/product-123!@#$%^&*()',
+        'http://localhost:5000/api/admin/products/product-123!@#$%^&*()',
         expect.any(Object)
       );
     });

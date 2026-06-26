@@ -45,7 +45,7 @@ describe('productDetailsService', () => {
       const result = await productDetailsService.getProductBySlug('grapheneos-pixel-9-pro');
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/products/grapheneos-pixel-9-pro',
+        'http://localhost:5000/api/products/grapheneos-pixel-9-pro',
         {
           method: 'GET',
           headers: {
@@ -116,7 +116,7 @@ describe('productDetailsService', () => {
       await productDetailsService.getProductBySlug('test-slug');
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/products/test-slug',
+        'http://localhost:5000/api/products/test-slug',
         expect.anything()
       );
 
@@ -169,7 +169,7 @@ describe('productDetailsService', () => {
       await productDetailsService.getProductBySlug('product-with-special-chars!@#');
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/products/product-with-special-chars!@#',
+        'http://localhost:5000/api/products/product-with-special-chars!@#',
         expect.anything()
       );
     });
@@ -179,7 +179,7 @@ describe('productDetailsService', () => {
 
       expect(result).toEqual({
         success: false,
-        error: 'Slug parameter is required'
+        error: 'Slug parameter is required and cannot be undefined'
       });
 
       expect(fetch).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe('productDetailsService', () => {
 
       expect(result).toEqual({
         success: false,
-        error: 'Slug parameter is required'
+        error: 'Slug parameter is required and cannot be undefined'
       });
 
       expect(fetch).not.toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('productDetailsService', () => {
 
       expect(result).toEqual({
         success: false,
-        error: 'Slug parameter is required'
+        error: 'Slug parameter is required and cannot be undefined'
       });
 
       expect(fetch).not.toHaveBeenCalled();

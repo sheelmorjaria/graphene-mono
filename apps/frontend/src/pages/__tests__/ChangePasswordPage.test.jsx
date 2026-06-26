@@ -69,7 +69,7 @@ describe('ChangePasswordPage', () => {
 
     it('should set correct page title', () => {
       renderChangePasswordPage();
-      expect(document.title).toBe('Change Password - GrapheneOS Store');
+      expect(document.title).toBe('Change Password - Graphene Security');
     });
 
     it('should show loading state initially', () => {

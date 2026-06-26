@@ -8,7 +8,8 @@ const mockSetShippingAddress = vi.fn();
 const mockNextStep = vi.fn();
 const mockRefreshAddresses = vi.fn();
 
-vi.mock('../../contexts/CheckoutContext', () => ({
+vi.mock('../../contexts/CheckoutContext', async () => ({
+  ...(await vi.importActual('../../contexts/CheckoutContext')),
   useCheckout: () => mockCheckoutContext
 }));
 
@@ -30,7 +31,7 @@ const mockAddresses = [
     city: 'Anytown',
     stateProvince: 'CA',
     postalCode: '12345',
-    country: 'USA',
+    country: 'US',
     phoneNumber: '555-1234',
     isDefault: true
   },
@@ -42,7 +43,7 @@ const mockAddresses = [
     city: 'Somewhere',
     stateProvince: 'NY',
     postalCode: '67890',
-    country: 'USA',
+    country: 'US',
     phoneNumber: '555-5678',
     isDefault: false
   }
@@ -52,16 +53,22 @@ let mockCheckoutContext = {
   checkoutState: {
     step: 'shipping',
     shippingAddress: null,
+    shippingMethod: null,
     paymentMethod: null,
     orderNotes: ''
   },
   addresses: mockAddresses,
   addressesLoading: false,
   addressesError: '',
+  shippingRates: [],
+  shippingRatesLoading: false,
+  shippingRatesError: '',
   setShippingAddress: mockSetShippingAddress,
+  setShippingMethod: vi.fn(),
   nextStep: mockNextStep,
   canProceedToPayment: false,
-  refreshAddresses: mockRefreshAddresses
+  refreshAddresses: mockRefreshAddresses,
+  refreshShippingRates: vi.fn()
 };
 
 const renderWithProviders = (contextOverrides = {}) => {
@@ -76,16 +83,22 @@ describe('ShippingAddressSection', () => {
       checkoutState: {
         step: 'shipping',
         shippingAddress: null,
+        shippingMethod: null,
         paymentMethod: null,
         orderNotes: ''
       },
       addresses: mockAddresses,
       addressesLoading: false,
       addressesError: '',
+      shippingRates: [],
+      shippingRatesLoading: false,
+      shippingRatesError: '',
       setShippingAddress: mockSetShippingAddress,
+      setShippingMethod: vi.fn(),
       nextStep: mockNextStep,
       canProceedToPayment: false,
-      refreshAddresses: mockRefreshAddresses
+      refreshAddresses: mockRefreshAddresses,
+      refreshShippingRates: vi.fn()
     };
   });
 
@@ -135,8 +148,10 @@ describe('ShippingAddressSection', () => {
         canProceedToPayment: true
       });
 
-      const selectedCard = screen.getByText('John Doe').closest('div');
-      expect(selectedCard).toHaveClass('border-border-cyan', 'bg-cyan-50');
+      // "John Doe" appears in both the address card and the selected-address summary;
+      // climb from the text to the AddressCard root (the div carrying the border classes)
+      const selectedCard = screen.getAllByText('John Doe')[0].closest('.border-2');
+      expect(selectedCard).toHaveClass('border-cyan-400', 'bg-cyan-subtle');
     });
 
     it('should call setShippingAddress when address is selected', async () => {
@@ -155,7 +170,8 @@ describe('ShippingAddressSection', () => {
       });
 
       expect(screen.getByText('Selected Shipping Address:')).toBeInTheDocument();
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      // "John Doe" appears in both the address card and the selected-address summary
+      expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
     });
   });
 
@@ -173,7 +189,8 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Add New Address')).toBeInTheDocument();
+        // Section heading + AddressForm heading both render this text
+        expect(screen.getAllByText('Add New Address').length).toBeGreaterThan(0);
         expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/address line 1/i)).toBeInTheDocument();
       });
@@ -203,7 +220,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Add New Address')).toBeInTheDocument();
+        expect(screen.getAllByText('Add New Address').length).toBeGreaterThan(0);
       });
 
       // Fill form
@@ -212,7 +229,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/city/i), 'Newtown');
       await userEvent.type(screen.getByLabelText(/state/i), 'TX');
       await userEvent.type(screen.getByLabelText(/postal code/i), '54321');
-      await userEvent.type(screen.getByLabelText(/country/i), 'USA');
+      await userEvent.selectOptions(screen.getByLabelText(/country/i), 'United States');
 
       // Submit form
       const saveButton = screen.getByText('Save Address');
@@ -226,7 +243,7 @@ describe('ShippingAddressSection', () => {
           city: 'Newtown',
           stateProvince: 'TX',
           postalCode: '54321',
-          country: 'USA',
+          country: 'US',
           phoneNumber: ''
         });
         expect(mockRefreshAddresses).toHaveBeenCalled();
@@ -242,7 +259,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Add New Address')).toBeInTheDocument();
+        expect(screen.getAllByText('Add New Address').length).toBeGreaterThan(0);
       });
 
       // Cancel form
@@ -263,7 +280,8 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(editButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Address')).toBeInTheDocument();
+        // Section heading + AddressForm heading both render this text
+        expect(screen.getAllByText('Edit Address').length).toBeGreaterThan(0);
         expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument();
         expect(screen.getByDisplayValue('123 Main St')).toBeInTheDocument();
       });
@@ -288,7 +306,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(editButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Address')).toBeInTheDocument();
+        expect(screen.getAllByText('Edit Address').length).toBeGreaterThan(0);
       });
 
       // Update name
@@ -326,7 +344,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Add New Address')).toBeInTheDocument();
+        expect(screen.getAllByText('Add New Address').length).toBeGreaterThan(0);
       });
 
       // Fill minimal required fields
@@ -335,7 +353,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/city/i), 'Test City');
       await userEvent.type(screen.getByLabelText(/state/i), 'TS');
       await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
-      await userEvent.type(screen.getByLabelText(/country/i), 'USA');
+      await userEvent.selectOptions(screen.getByLabelText(/country/i), 'United States');
 
       // Submit form
       const saveButton = screen.getByText('Save Address');
@@ -375,7 +393,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Add New Address')).toBeInTheDocument();
+        expect(screen.getAllByText('Add New Address').length).toBeGreaterThan(0);
       });
 
       // Fill form
@@ -384,7 +402,7 @@ describe('ShippingAddressSection', () => {
       await userEvent.type(screen.getByLabelText(/city/i), 'Test City');
       await userEvent.type(screen.getByLabelText(/state/i), 'TS');
       await userEvent.type(screen.getByLabelText(/postal code/i), '12345');
-      await userEvent.type(screen.getByLabelText(/country/i), 'USA');
+      await userEvent.selectOptions(screen.getByLabelText(/country/i), 'United States');
 
       // Submit form
       const saveButton = screen.getByText('Save Address');
@@ -409,7 +427,8 @@ describe('ShippingAddressSection', () => {
         canProceedToPayment: true,
         checkoutState: {
           ...mockCheckoutContext.checkoutState,
-          shippingAddress: mockAddresses[0]
+          shippingAddress: mockAddresses[0],
+          shippingMethod: { id: 'standard', name: 'Standard', cost: 5 }
         }
       });
 
@@ -422,7 +441,8 @@ describe('ShippingAddressSection', () => {
         canProceedToPayment: true,
         checkoutState: {
           ...mockCheckoutContext.checkoutState,
-          shippingAddress: mockAddresses[0]
+          shippingAddress: mockAddresses[0],
+          shippingMethod: { id: 'standard', name: 'Standard', cost: 5 }
         }
       });
 

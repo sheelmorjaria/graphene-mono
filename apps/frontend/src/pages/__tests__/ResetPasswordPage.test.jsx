@@ -53,7 +53,7 @@ describe('ResetPasswordPage', () => {
 
     it('should set correct page title', () => {
       renderResetPasswordPage();
-      expect(document.title).toBe('Reset Password - GrapheneOS Store');
+      expect(document.title).toBe('Reset Password - Graphene Security');
     });
 
     it('should show error for missing token', () => {

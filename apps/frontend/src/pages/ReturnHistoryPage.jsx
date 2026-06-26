@@ -13,7 +13,7 @@ const ReturnHistoryPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
-    document.title = 'My Returns - GrapheneOS Store';
+    document.title = 'My Returns - Graphene Security';
   }, []);
 
   useEffect(() => {

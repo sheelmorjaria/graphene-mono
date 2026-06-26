@@ -21,7 +21,7 @@ describe('AddToCartButton', () => {
     const button = screen.getByRole('button', { name: /add to cart/i });
     expect(button).toBeInTheDocument();
     expect(button).not.toBeDisabled();
-    expect(button).toHaveClass('bg-blue-600', 'hover:bg-blue-700');
+    expect(button).toHaveClass('btn-primary');
   });
 
   it('should show Out of Stock button when stockStatus is out_of_stock', () => {
@@ -36,7 +36,7 @@ describe('AddToCartButton', () => {
     const button = screen.getByRole('button', { name: /out of stock/i });
     expect(button).toBeInTheDocument();
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('bg-gray-400', 'cursor-not-allowed');
+    expect(button).toHaveClass('bg-bg-elevated', 'cursor-not-allowed');
   });
 
   it('should show Low Stock warning for low_stock status', () => {
@@ -133,7 +133,7 @@ describe('AddToCartButton', () => {
     
     const button = screen.getByRole('button');
     expect(button).toHaveTextContent(/added to cart/i);
-    expect(button).toHaveClass('text-green-400');
+    expect(button).toHaveClass('bg-matrix-primary');
     expect(screen.getByLabelText(/success/i)).toBeInTheDocument();
   });
 
@@ -212,7 +212,7 @@ describe('AddToCartButton', () => {
     render(<AddToCartButton {...defaultProps} error="Failed to add to cart" />);
     
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-red-600');
+    expect(button).toHaveClass('bg-red-primary');
     expect(button).toHaveTextContent(/try again/i);
     
     // Should show error message

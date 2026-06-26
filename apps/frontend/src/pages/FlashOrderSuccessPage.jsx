@@ -13,10 +13,6 @@ const FlashOrderSuccessPage = () => {
   const orderId = searchParams.get('orderId');
 
   useEffect(() => {
-    document.title = 'Order Confirmed - Graphene Security';
-  }, []);
-
-  useEffect(() => {
     if (!orderId) {
       setError('No order ID provided');
       setLoading(false);
@@ -60,7 +56,7 @@ const FlashOrderSuccessPage = () => {
     return (
       <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <SEOWrapper
-          title="Order Pending - Graphene Security"
+          title="Order Pending"
           description="Complete your payment to receive shipping instructions for your GrapheneOS flashing service order."
         />
         <div className="max-w-lg w-full mx-4">
@@ -91,7 +87,7 @@ const FlashOrderSuccessPage = () => {
   return (
     <div className="min-h-screen bg-bg-primary py-12">
       <SEOWrapper
-        title="Order Confirmed - Graphene Security"
+        title="Order Confirmed"
         description="Your GrapheneOS flashing service order has been confirmed. Find shipping instructions and PO Box address here."
       />
 

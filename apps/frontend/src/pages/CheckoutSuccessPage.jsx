@@ -10,7 +10,7 @@ const CheckoutSuccessPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = 'Payment Processing - GrapheneOS Store';
+    document.title = 'Payment Processing - Graphene Security';
 
     const processPayment = async () => {
       try {
@@ -51,7 +51,7 @@ const CheckoutSuccessPage = () => {
         setStatus('success');
 
         // Update document title
-        document.title = 'Payment Successful - GrapheneOS Store';
+        document.title = 'Payment Successful - Graphene Security';
 
         // Redirect to order confirmation page after a short delay
         setTimeout(() => {

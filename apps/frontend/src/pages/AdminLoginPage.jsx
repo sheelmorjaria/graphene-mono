@@ -15,7 +15,7 @@ const AdminLoginPage = () => {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = 'Admin Login - GrapheneOS Store';
+    document.title = 'Admin Login - Graphene Security';
     
     // Redirect if already authenticated
     if (isAdminAuthenticated()) {

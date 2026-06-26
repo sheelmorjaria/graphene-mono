@@ -48,10 +48,6 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  marketingOptIn: {
-    type: Boolean,
-    default: false
-  },
   role: {
     type: String,
     enum: ['customer', 'admin'],

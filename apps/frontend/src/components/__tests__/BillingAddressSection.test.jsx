@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { render, screen, waitFor, userEvent, cleanup } from '../../test/test-utils';
 import { vi } from 'vitest';
 import BillingAddressSection from '../checkout/BillingAddressSection';
 
@@ -8,7 +8,8 @@ const mockSetBillingAddress = vi.fn();
 const mockSetUseSameAsShipping = vi.fn();
 const mockRefreshAddresses = vi.fn();
 
-vi.mock('../../contexts/CheckoutContext', () => ({
+vi.mock('../../contexts/CheckoutContext', async () => ({
+  ...(await vi.importActual('../../contexts/CheckoutContext')),
   useCheckout: () => mockCheckoutContext
 }));
 
@@ -29,7 +30,7 @@ const mockAddresses = [
     city: 'Anytown',
     stateProvince: 'CA',
     postalCode: '12345',
-    country: 'USA',
+    country: 'US',
     phoneNumber: '555-1234',
     isDefault: true
   },
@@ -41,7 +42,7 @@ const mockAddresses = [
     city: 'Somewhere',
     stateProvince: 'NY',
     postalCode: '67890',
-    country: 'USA',
+    country: 'US',
     phoneNumber: '555-5678',
     isDefault: false
   }
@@ -188,8 +189,10 @@ describe('BillingAddressSection', () => {
         }
       });
 
-      const selectedCard = screen.getByText('Jane Smith').closest('div');
-      expect(selectedCard).toHaveClass('border-border-cyan', 'bg-cyan-400');
+      // "Jane Smith" appears in both the address card and the selected-address summary;
+      // climb to the AddressCard root carrying the border classes
+      const selectedCard = screen.getAllByText('Jane Smith')[0].closest('.border-2');
+      expect(selectedCard).toHaveClass('border-cyan-400', 'bg-cyan-subtle');
     });
 
     it('should show selected billing address summary', () => {
@@ -514,6 +517,7 @@ describe('BillingAddressSection', () => {
       });
 
       // Switch to same as shipping (this would be done by parent component)
+      cleanup();
       renderWithProviders({
         checkoutState: {
           ...mockCheckoutContext.checkoutState,

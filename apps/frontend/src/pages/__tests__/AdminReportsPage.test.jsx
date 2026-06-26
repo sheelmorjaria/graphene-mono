@@ -97,7 +97,8 @@ describe('AdminReportsPage', () => {
       expect(screen.getByText('45')).toBeInTheDocument();
       
       // Check for inventory counts more specifically
-      const inventorySection = screen.getByText('Inventory Summary').closest('.bg-bg-card');
+      // The inventory card wrapper uses bg-white (CSS migrated from bg-bg-card)
+      const inventorySection = screen.getByText('Inventory Summary').parentElement;
       expect(inventorySection).toHaveTextContent('45');
       expect(inventorySection).toHaveTextContent('5');
       expect(inventorySection).toHaveTextContent('8');

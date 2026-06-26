@@ -15,11 +15,7 @@ export default defineConfig({
     
     // Better isolation and performance
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true
-      }
-    },
+    singleFork: true,
     
     // Test file patterns
     include: [
@@ -41,7 +37,10 @@ export default defineConfig({
     // Coverage configuration
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      // Generate the coverage report even when tests fail (default is false).
+      // Without this, any failing test suppresses coverage-summary.json.
+      reportOnFailure: true,
+      reporter: ['text', 'json', 'json-summary', 'html'],
       exclude: [
         'node_modules/',
         'src/test/',

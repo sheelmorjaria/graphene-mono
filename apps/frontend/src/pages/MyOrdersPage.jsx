@@ -16,7 +16,7 @@ const MyOrdersPage = () => {
   }, [currentPage, sortBy, sortOrder]);
 
   useEffect(() => {
-    document.title = 'My Orders - GrapheneOS Store';
+    document.title = 'My Orders - Graphene Security';
   }, []);
 
   const loadOrders = async () => {

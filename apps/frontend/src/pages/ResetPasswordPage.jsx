@@ -19,7 +19,7 @@ const ResetPasswordPage = () => {
 
   // Set page title
   useEffect(() => {
-    document.title = 'Reset Password - GrapheneOS Store';
+    document.title = 'Reset Password - Graphene Security';
   }, []);
 
   // Check for token

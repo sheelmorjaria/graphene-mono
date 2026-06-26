@@ -51,7 +51,7 @@ describe('adminService - issueRefund', () => {
     const result = await issueRefund(orderId, refundData);
 
     expect(fetch).toHaveBeenCalledWith(
-      `http://localhost:3000/api/admin/orders/${orderId}/refund`,
+      `http://localhost:5000/api/admin/orders/${orderId}/refund`,
       {
         method: 'POST',
         headers: {

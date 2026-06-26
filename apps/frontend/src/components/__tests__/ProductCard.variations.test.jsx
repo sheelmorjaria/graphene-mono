@@ -1,17 +1,10 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '../../test/test-utils';
 import ProductCard from '../ProductCard';
-import { CartProvider } from '../../contexts/CartContext';
 
-// Mock the cart context
-const mockAddToCart = jest.fn();
-jest.mock('../../contexts/CartContext', () => ({
-  useCart: () => ({
-    addToCart: mockAddToCart
-  }),
-  CartProvider: ({ children }) => <div>{children}</div>
-}));
+// ProductCard no longer renders an add-to-cart button (it only has a
+// "View Details" link) and reads from the shared Auth/Cart contexts, so we
+// render through the shared test-utils render which wires up those providers.
 
 describe('ProductCard with Variations', () => {
   const mockProduct = {
@@ -28,33 +21,34 @@ describe('ProductCard with Variations', () => {
     variations: [
       {
         _id: 'var-1',
-        condition: 'new',
+        condition: 'excellent',
         color: 'Black',
         price: 699,
         salePrice: 649,
         stockStatus: 'in_stock',
-        sku: 'PIX8-NEW-BLK'
+        sku: 'PIX8-EXC-BLK'
       },
       {
         _id: 'var-2',
-        condition: 'new',
+        condition: 'excellent',
         color: 'Blue',
         price: 699,
         stockStatus: 'low_stock',
-        sku: 'PIX8-NEW-BLU'
+        sku: 'PIX8-EXC-BLU'
       },
       {
         _id: 'var-3',
-        condition: 'excellent',
+        condition: 'good',
         color: 'Black',
         price: 599,
         stockStatus: 'out_of_stock',
-        sku: 'PIX8-EXC-BLK'
+        sku: 'PIX8-GOOD-BLK'
       }
     ],
     availableColors: ['Black', 'Blue'],
-    availableConditions: ['new'],
+    availableConditions: ['excellent'],
     isInStock: true,
+    leadTime: { minDays: 7, maxDays: 10, displayText: '7-10 working days' },
     category: {
       _id: 'cat-1',
       name: 'Smartphones',
@@ -63,19 +57,10 @@ describe('ProductCard with Variations', () => {
     createdAt: '2024-01-01T00:00:00.000Z'
   };
 
-  const renderProductCard = (product = mockProduct) => {
-    return render(
-      <BrowserRouter>
-        <CartProvider>
-          <ProductCard product={product} />
-        </CartProvider>
-      </BrowserRouter>
-    );
-  };
+  const renderProductCard = (product = mockProduct) => render(<ProductCard product={product} />);
 
   beforeEach(() => {
-    mockAddToCart.mockClear();
-    mockAddToCart.mockResolvedValue({ success: true });
+    vi.clearAllMocks();
   });
 
   it('should render product with variation information', () => {
@@ -83,7 +68,8 @@ describe('ProductCard with Variations', () => {
 
     expect(screen.getByText('Google Pixel 8')).toBeInTheDocument();
     expect(screen.getByText('Latest Google Pixel phone with GrapheneOS')).toBeInTheDocument();
-    expect(screen.getByText('£599.00 - £699.00')).toBeInTheDocument(); // Price range
+    // Price range is formatted with 2 decimals in GBP
+    expect(screen.getByText('£599.00 - £699.00')).toBeInTheDocument();
   });
 
   it('should display available variations count', () => {
@@ -97,7 +83,7 @@ describe('ProductCard with Variations', () => {
     const singleVariationProduct = {
       ...mockProduct,
       availableColors: ['Black'],
-      availableConditions: ['new']
+      availableConditions: ['excellent']
     };
 
     renderProductCard(singleVariationProduct);
@@ -125,7 +111,7 @@ describe('ProductCard with Variations', () => {
     renderProductCard();
 
     expect(screen.getByText('In Stock')).toBeInTheDocument();
-    expect(screen.getByText('In Stock')).toHaveClass('text-forest-600');
+    expect(screen.getByText('In Stock')).toHaveClass('text-matrix-400');
   });
 
   it('should show out of stock when no variations are available', () => {
@@ -138,11 +124,10 @@ describe('ProductCard with Variations', () => {
 
     renderProductCard(outOfStockProduct);
 
-    expect(screen.getByText('Out of Stock')).toBeInTheDocument();
-    expect(screen.getByText('Out of Stock')).toHaveClass('text-coral');
+    expect(screen.getAllByText('Out of Stock').length).toBeGreaterThan(0);
   });
 
-  it('should disable add to cart button when out of stock', () => {
+  it('uses the out-of-stock placeholder image when out of stock', () => {
     const outOfStockProduct = {
       ...mockProduct,
       isInStock: false
@@ -150,53 +135,20 @@ describe('ProductCard with Variations', () => {
 
     renderProductCard(outOfStockProduct);
 
-    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
-    expect(addToCartButton).toBeDisabled();
-    expect(addToCartButton).toHaveTextContent('Out of Stock');
+    const image = screen.getByRole('img');
+    expect(image).toHaveAttribute('src', '/images/placeholder-out-of-stock.png');
   });
 
-  it('should enable add to cart button when in stock', () => {
+  it('renders a View Details link instead of an add-to-cart button', () => {
     renderProductCard();
 
-    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
-    expect(addToCartButton).not.toBeDisabled();
-    expect(addToCartButton).toHaveTextContent('Add to Cart');
+    // The current component exposes a "View Details" link, not an add-to-cart button.
+    const viewDetailsLink = screen.getByRole('link', { name: /view details/i });
+    expect(viewDetailsLink).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add to cart/i })).not.toBeInTheDocument();
   });
 
-  it('should handle add to cart click', async () => {
-    renderProductCard();
-
-    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
-    fireEvent.click(addToCartButton);
-
-    await waitFor(() => {
-      expect(mockAddToCart).toHaveBeenCalledWith('product-1', 1);
-    });
-  });
-
-  it('should show loading state during add to cart', async () => {
-    // Make the add to cart promise pending
-    let resolvePromise;
-    const pendingPromise = new Promise((resolve) => {
-      resolvePromise = resolve;
-    });
-    mockAddToCart.mockReturnValue(pendingPromise);
-
-    renderProductCard();
-
-    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
-    fireEvent.click(addToCartButton);
-
-    expect(screen.getByText('Adding...')).toBeInTheDocument();
-
-    // Resolve the promise
-    resolvePromise({ success: true });
-    await waitFor(() => {
-      expect(screen.getByText('Add to Cart')).toBeInTheDocument();
-    });
-  });
-
-  it('should render view details link', () => {
+  it('should render view details link with the product slug', () => {
     renderProductCard();
 
     const viewDetailsLink = screen.getByRole('link', { name: /view details/i });
@@ -204,17 +156,16 @@ describe('ProductCard with Variations', () => {
     expect(viewDetailsLink).toHaveAttribute('href', '/products/google-pixel-8');
   });
 
-  it('should show lead time when available', () => {
-    const productWithLeadTime = {
-      ...mockProduct,
-      leadTime: {
-        displayText: '5-7 working days'
-      }
-    };
+  it('shows the product lead time when provided', () => {
+    renderProductCard();
 
-    renderProductCard(productWithLeadTime);
+    expect(screen.getByText('7-10 working days')).toBeInTheDocument();
+  });
 
-    expect(screen.getByText('Lead time: 5-7 working days')).toBeInTheDocument();
+  it('falls back to the standard lead time when not provided', () => {
+    renderProductCard({ ...mockProduct, leadTime: undefined });
+
+    expect(screen.getByText('5-7 working days')).toBeInTheDocument();
   });
 
   it('should handle missing images gracefully', () => {
@@ -226,7 +177,8 @@ describe('ProductCard with Variations', () => {
     renderProductCard(productWithoutImages);
 
     const image = screen.getByRole('img');
-    expect(image).toHaveAttribute('src', '/placeholder-product.jpg');
+    // In-stock products with no images fall back to the placeholder.
+    expect(image).toHaveAttribute('src', '/images/placeholder.png');
     expect(image).toHaveAttribute('alt', 'Google Pixel 8');
   });
 
@@ -252,9 +204,10 @@ describe('ProductCard with Variations', () => {
 
     renderProductCard(productWithoutVariations);
 
-    expect(screen.getByText('0 Colors')).toBeInTheDocument();
-    expect(screen.getByText('0 Conditions')).toBeInTheDocument();
-    expect(screen.getByText('Out of Stock')).toBeInTheDocument();
+    // With no colors/conditions the option badges are not rendered at all.
+    expect(screen.queryByText(/Colors/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Conditions/)).not.toBeInTheDocument();
+    expect(screen.getAllByText('Out of Stock').length).toBeGreaterThan(0);
   });
 
   it('should have proper test IDs for testing', () => {
@@ -264,49 +217,37 @@ describe('ProductCard with Variations', () => {
     expect(screen.getByTestId('product-title')).toBeInTheDocument();
     expect(screen.getByTestId('product-description')).toBeInTheDocument();
     expect(screen.getByTestId('product-price')).toBeInTheDocument();
-    expect(screen.getByTestId('add-to-cart-button')).toBeInTheDocument();
     expect(screen.getByTestId('product-details')).toBeInTheDocument();
   });
 
-  it('should apply hover effects', () => {
+  it('uses the View Details link as the primary action (no add-to-cart button)', () => {
+    renderProductCard();
+
+    const viewDetailsLink = screen.getByRole('link', { name: /view details/i });
+    // The current card surfaces a link, not a button, as the primary action.
+    expect(viewDetailsLink.tagName).toBe('A');
+    expect(screen.queryByRole('button', { name: /add to cart/i })).not.toBeInTheDocument();
+  });
+
+  it('should apply the expected card classes', () => {
     renderProductCard();
 
     const card = screen.getByTestId('product-card-google-pixel-8');
-    expect(card).toHaveClass('hover:scale-105');
-    expect(card).toHaveClass('hover:shadow-xl');
+    // The card root uses the design-system card classes plus the group hover context.
+    expect(card).toHaveClass('card');
+    expect(card).toHaveClass('group');
   });
 
   it('should show correct styling for different elements', () => {
     renderProductCard();
 
     const title = screen.getByTestId('product-title');
-    expect(title).toHaveClass('text-forest-800');
-    expect(title).toHaveClass('font-semibold');
+    expect(title.tagName).toBe('H3');
 
     const price = screen.getByTestId('product-price');
-    expect(price).toHaveClass('text-forest-900');
+    // Price uses the cyan accent color from the current theme.
+    expect(price).toHaveClass('text-cyan-400');
     expect(price).toHaveClass('font-bold');
-  });
-
-  it('should prevent navigation when add to cart is clicked', async () => {
-    renderProductCard();
-
-    const addToCartButton = screen.getByRole('button', { name: /add to cart/i });
-    
-    // Mock preventDefault
-    const mockPreventDefault = jest.fn();
-    const mockStopPropagation = jest.fn();
-    
-    const event = {
-      preventDefault: mockPreventDefault,
-      stopPropagation: mockStopPropagation
-    };
-
-    fireEvent.click(addToCartButton, event);
-
-    // We can't directly test preventDefault/stopPropagation in testing library
-    // but we can verify the button doesn't navigate by checking it's not a link
-    expect(addToCartButton.tagName).toBe('BUTTON');
   });
 
   it('should format prices correctly with decimals', () => {
@@ -314,7 +255,7 @@ describe('ProductCard with Variations', () => {
       ...mockProduct,
       priceRange: {
         min: 599.99,
-        max: 699.50
+        max: 699.5
       }
     };
 

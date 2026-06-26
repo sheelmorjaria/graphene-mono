@@ -7,8 +7,8 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
   return (
     <div 
       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50' 
+        isSelected
+          ? 'border-cyan-400 bg-cyan-subtle'
           : 'border-gray-200 hover:border-gray-300 bg-white'
       }`}
       onClick={() => onSelect(address)}
@@ -19,7 +19,7 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
             type="radio"
             checked={isSelected}
             onChange={() => onSelect(address)}
-            className="mt-1 text-blue-600 focus:ring-blue-500"
+            className="mt-1 text-cyan-400 focus:ring-cyan-400"
           />
           <div className="flex-1">
             <div className="flex items-center space-x-2">
@@ -48,7 +48,7 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
             e.stopPropagation();
             onEdit(address);
           }}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          className="text-cyan-400 hover:text-cyan-600 text-sm font-medium"
         >
           Edit
         </button>
@@ -181,7 +181,7 @@ const BillingAddressSection = () => {
             type="checkbox"
             checked={checkoutState.useSameAsShipping}
             onChange={handleUseSameAsShippingChange}
-            className="mt-1 text-blue-600 focus:ring-blue-500"
+            className="mt-1 text-cyan-400 focus:ring-cyan-400"
           />
           <div>
             <span className="text-gray-900 font-medium">Use shipping address as billing address</span>
@@ -193,9 +193,9 @@ const BillingAddressSection = () => {
 
         {/* Show shipping address when using same as shipping */}
         {checkoutState.useSameAsShipping && checkoutState.shippingAddress && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">Billing Address (Same as Shipping):</h4>
-            <div className="text-sm text-blue-700">
+          <div className="mt-4 bg-cyan-subtle border border-cyan-400 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-cyan-400 mb-2">Billing Address (Same as Shipping):</h4>
+            <div className="text-sm text-cyan-400">
               <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
               <div>{checkoutState.shippingAddress.addressLine1}</div>
               {checkoutState.shippingAddress.addressLine2 && (
@@ -231,7 +231,7 @@ const BillingAddressSection = () => {
           {/* Loading state */}
           {addressesLoading ? (
             <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-400"></div>
               <p className="mt-2 text-gray-600">Loading addresses...</p>
             </div>
           ) : (
@@ -264,7 +264,7 @@ const BillingAddressSection = () => {
               <div className="border-t pt-6">
                 <button
                   onClick={handleAddNewAddress}
-                  className="w-full py-3 px-4 border-2 border-dashed border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors rounded-lg font-medium"
+                  className="w-full py-3 px-4 border-2 border-dashed border-gray-300 text-gray-600 hover:border-cyan-400 hover:text-cyan-400 transition-colors rounded-lg font-medium"
                 >
                   + Add New Billing Address
                 </button>
@@ -272,9 +272,9 @@ const BillingAddressSection = () => {
 
               {/* Selected billing address summary */}
               {checkoutState.billingAddress && (
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Selected Billing Address:</h4>
-                  <div className="text-sm text-blue-700">
+                <div className="mt-6 bg-cyan-subtle border border-cyan-400 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-cyan-400 mb-2">Selected Billing Address:</h4>
+                  <div className="text-sm text-cyan-400">
                     <div className="font-medium">{checkoutState.billingAddress.fullName}</div>
                     <div>{checkoutState.billingAddress.addressLine1}</div>
                     {checkoutState.billingAddress.addressLine2 && (

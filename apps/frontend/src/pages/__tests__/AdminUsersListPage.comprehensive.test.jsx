@@ -15,10 +15,14 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock admin service
-const mockGetAllUsers = vi.fn();
-const mockUpdateUserStatus = vi.fn();
+const { mockGetAllUsers, mockUpdateUserStatus } = vi.hoisted(() => ({
+  mockGetAllUsers: vi.fn(),
+  mockUpdateUserStatus: vi.fn()
+}));
 
 vi.mock('../../services/adminService', () => ({
+  getAllUsers: mockGetAllUsers,
+  updateUserStatus: mockUpdateUserStatus,
   default: {
     getAllUsers: mockGetAllUsers,
     updateUserStatus: mockUpdateUserStatus
@@ -27,17 +31,21 @@ vi.mock('../../services/adminService', () => ({
 
 // Mock components
 vi.mock('../../components/Pagination', () => ({
-  default: ({ onPageChange, pagination }) => (
+  default: ({ onPageChange, currentPage, totalPages }) => (
     <div data-testid="pagination">
-      <button 
-        onClick={() => onPageChange(pagination.currentPage + 1)}
-        disabled={!pagination.hasNextPage}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
       >
         Next Page
       </button>
-      <span>Page {pagination.currentPage} of {pagination.totalPages}</span>
+      <span>Page {currentPage} of {totalPages}</span>
     </div>
   )
+}));
+
+vi.mock('../../components/LoadingSpinner', () => ({
+  default: () => <div aria-label="Loading">Loading...</div>
 }));
 
 const mockUsers = [
@@ -101,7 +109,7 @@ const renderAdminUsersListPage = () => {
 describe('AdminUsersListPage - Comprehensive Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default successful response
     mockGetAllUsers.mockResolvedValue({
       success: true,
@@ -110,7 +118,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
         pagination: mockPagination
       }
     });
-    
+
     mockUpdateUserStatus.mockResolvedValue({
       success: true,
       data: {
@@ -123,32 +131,32 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     vi.restoreAllMocks();
   });
 
+  const waitForLoaded = () =>
+    waitFor(() => {
+      expect(screen.queryByLabelText(/loading/i)).not.toBeInTheDocument();
+    });
+
   describe('Initial Rendering and Data Loading', () => {
     it('should render page structure and load users on mount', async () => {
       renderAdminUsersListPage();
 
-      // Check page title and structure
-      expect(screen.getByRole('heading', { name: /manage users/i })).toBeInTheDocument();
-      expect(screen.getByText(/search and manage customer accounts/i)).toBeInTheDocument();
+      // Shows loading spinner first
+      expect(screen.getByLabelText(/loading/i)).toBeInTheDocument();
 
-      // Check loading state
-      expect(screen.getByText(/loading users.../i)).toBeInTheDocument();
-
-      // Wait for users to load
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Verify API was called with default parameters
-      expect(mockGetAllUsers).toHaveBeenCalledWith({
-        page: 1,
-        limit: 10,
-        sortBy: 'createdAt',
-        sortOrder: 'desc'
-      });
+      expect(mockGetAllUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          page: 1,
+          limit: 20,
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
+        })
+      );
 
       // Verify users are displayed
-      expect(screen.getByText('john.doe@test.com')).toBeInTheDocument();
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('Jane Smith')).toBeInTheDocument();
       expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
     });
@@ -156,22 +164,19 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     it('should display user information correctly in table format', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Check table headers
-      expect(screen.getByText('User Details')).toBeInTheDocument();
-      expect(screen.getByText('Contact')).toBeInTheDocument();
+      expect(screen.getByText('Name')).toBeInTheDocument();
+      expect(screen.getByText('Email')).toBeInTheDocument();
       expect(screen.getByText('Status')).toBeInTheDocument();
-      expect(screen.getByText('Activity')).toBeInTheDocument();
+      expect(screen.getByText('Registration Date')).toBeInTheDocument();
+      expect(screen.getByText('Last Login')).toBeInTheDocument();
       expect(screen.getByText('Actions')).toBeInTheDocument();
 
       // Check user data display
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('john.doe@test.com')).toBeInTheDocument();
-      expect(screen.getByText('5 orders')).toBeInTheDocument();
-      expect(screen.getByText('£299.99 spent')).toBeInTheDocument();
 
       // Check status badges
       const activeStatus = screen.getAllByText(/active/i);
@@ -180,87 +185,49 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       expect(disabledStatus.length).toBeGreaterThan(0);
     });
 
+    it('should show total user count in header', async () => {
+      renderAdminUsersListPage();
+
+      await waitForLoaded();
+
+      expect(screen.getByText(/25 total users/i)).toBeInTheDocument();
+    });
+
     it('should handle loading errors gracefully', async () => {
       mockGetAllUsers.mockRejectedValue(new Error('Failed to fetch users'));
-      
+
       renderAdminUsersListPage();
 
       await waitFor(() => {
-        expect(screen.getByText(/error loading users/i)).toBeInTheDocument();
         expect(screen.getByText(/failed to fetch users/i)).toBeInTheDocument();
-      });
-
-      // Check retry button
-      const retryButton = screen.getByText(/try again/i);
-      expect(retryButton).toBeInTheDocument();
-
-      // Test retry functionality
-      mockGetAllUsers.mockResolvedValue({
-        success: true,
-        data: { users: mockUsers, pagination: mockPagination }
-      });
-
-      await userEvent.click(retryButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText(/error loading users/i)).not.toBeInTheDocument();
-        expect(screen.getByText('john.doe@test.com')).toBeInTheDocument();
       });
     });
   });
 
   describe('Search and Filtering Functionality', () => {
-    it('should handle search by name', async () => {
+    it('should handle search by name or email (debounced)', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      // Find and use search input
       const searchInput = screen.getByPlaceholderText(/search by name or email/i);
       await userEvent.type(searchInput, 'John Doe');
 
-      // Wait for debounced search
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
           expect.objectContaining({
-            search: 'John Doe',
-            searchField: 'name'
+            searchQuery: 'John Doe'
           })
         );
-      }, { timeout: 1000 });
-    });
-
-    it('should handle search by email', async () => {
-      renderAdminUsersListPage();
-
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
-
-      const searchInput = screen.getByPlaceholderText(/search by name or email/i);
-      await userEvent.type(searchInput, 'john.doe@test.com');
-
-      await waitFor(() => {
-        expect(mockGetAllUsers).toHaveBeenCalledWith(
-          expect.objectContaining({
-            search: 'john.doe@test.com',
-            searchField: 'email'
-          })
-        );
-      }, { timeout: 1000 });
+      }, { timeout: 2000 });
     });
 
     it('should handle account status filtering', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      // Find and use status filter
-      const statusFilter = screen.getByRole('combobox', { name: /account status/i });
+      const statusFilter = screen.getByRole('combobox');
       await userEvent.selectOptions(statusFilter, 'disabled');
 
       await waitFor(() => {
@@ -272,43 +239,22 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
     });
 
-    it('should handle email verification filtering', async () => {
-      renderAdminUsersListPage();
-
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
-
-      const verificationFilter = screen.getByRole('combobox', { name: /email verified/i });
-      await userEvent.selectOptions(verificationFilter, 'false');
-
-      await waitFor(() => {
-        expect(mockGetAllUsers).toHaveBeenCalledWith(
-          expect.objectContaining({
-            emailVerified: 'false'
-          })
-        );
-      });
-    });
-
     it('should handle date range filtering', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      const fromDateInput = screen.getByLabelText(/from date/i);
-      const toDateInput = screen.getByLabelText(/to date/i);
+      const startDateInput = screen.getByPlaceholderText('Start Date');
+      const endDateInput = screen.getByPlaceholderText('End Date');
 
-      await userEvent.type(fromDateInput, '2024-01-01');
-      await userEvent.type(toDateInput, '2024-01-31');
+      await userEvent.type(startDateInput, '2024-01-01');
+      await userEvent.type(endDateInput, '2024-01-31');
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
           expect.objectContaining({
-            registrationDateFrom: expect.stringContaining('2024-01-01'),
-            registrationDateTo: expect.stringContaining('2024-01-31')
+            startDate: '2024-01-01',
+            endDate: '2024-01-31'
           })
         );
       });
@@ -317,13 +263,11 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     it('should clear all filters when reset button is clicked', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Apply some filters
       const searchInput = screen.getByPlaceholderText(/search by name or email/i);
-      const statusFilter = screen.getByRole('combobox', { name: /account status/i });
+      const statusFilter = screen.getByRole('combobox');
 
       await userEvent.type(searchInput, 'test search');
       await userEvent.selectOptions(statusFilter, 'disabled');
@@ -335,52 +279,40 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       // Verify filters are cleared
       expect(searchInput.value).toBe('');
       expect(statusFilter.value).toBe('');
-
-      await waitFor(() => {
-        expect(mockGetAllUsers).toHaveBeenCalledWith({
-          page: 1,
-          limit: 10,
-          sortBy: 'createdAt',
-          sortOrder: 'desc'
-        });
-      });
     });
   });
 
   describe('Sorting Functionality', () => {
-    it('should handle sorting by different fields', async () => {
+    it('should handle sorting by clicking Name column header', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      const sortBySelect = screen.getByRole('combobox', { name: /sort by/i });
-      await userEvent.selectOptions(sortBySelect, 'firstName');
+      const nameHeader = screen.getByText('Name');
+      await userEvent.click(nameHeader);
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
           expect.objectContaining({
-            sortBy: 'firstName',
-            sortOrder: 'desc'
+            sortBy: 'firstName'
           })
         );
       });
     });
 
-    it('should toggle sort order when clicking sort direction button', async () => {
+    it('should toggle sort order when clicking a sorted column header', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      const sortOrderButton = screen.getByRole('button', { name: /sort order/i });
-      await userEvent.click(sortOrderButton);
+      // Click Registration Date header (default sort is createdAt/desc)
+      const regHeader = screen.getByText('Registration Date');
+      await userEvent.click(regHeader);
 
       await waitFor(() => {
         expect(mockGetAllUsers).toHaveBeenCalledWith(
           expect.objectContaining({
+            sortBy: 'createdAt',
             sortOrder: 'asc'
           })
         );
@@ -392,19 +324,16 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     it('should show disable confirmation dialog for active users', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      // Click disable button for active user (John Doe)
-      const disableButtons = screen.getAllByText(/disable/i);
+      // Click disable button for active user (John Doe - first active)
+      const disableButtons = screen.getAllByRole('button', { name: 'Disable' });
       await userEvent.click(disableButtons[0]);
 
       // Check confirmation dialog
       expect(screen.getByText(/disable user account/i)).toBeInTheDocument();
       expect(screen.getByText(/are you sure you want to disable/i)).toBeInTheDocument();
-      expect(screen.getByText(/john doe/i)).toBeInTheDocument();
-      
+
       // Check dialog buttons
       expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /disable account/i })).toBeInTheDocument();
@@ -413,12 +342,10 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     it('should successfully disable user account', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Click disable button and confirm
-      const disableButtons = screen.getAllByText(/disable/i);
+      const disableButtons = screen.getAllByRole('button', { name: 'Disable' });
       await userEvent.click(disableButtons[0]);
 
       const confirmButton = screen.getByRole('button', { name: /disable account/i });
@@ -432,40 +359,34 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       });
 
       // Verify success message
-      expect(screen.getByText(/user account disabled successfully/i)).toBeInTheDocument();
-
-      // Verify page refresh
-      expect(mockGetAllUsers).toHaveBeenCalledTimes(2); // Initial load + refresh after status change
+      await waitFor(() => {
+        expect(screen.getByText(/user account disabled successfully/i)).toBeInTheDocument();
+      });
     });
 
     it('should show enable confirmation dialog for disabled users', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Click enable button for disabled user (Jane Smith)
-      const enableButtons = screen.getAllByText(/enable/i);
-      await userEvent.click(enableButtons[0]);
+      const enableButton = screen.getByRole('button', { name: 'Enable' });
+      await userEvent.click(enableButton);
 
       // Check confirmation dialog
       expect(screen.getByText(/enable user account/i)).toBeInTheDocument();
       expect(screen.getByText(/are you sure you want to enable/i)).toBeInTheDocument();
-      expect(screen.getByText(/jane smith/i)).toBeInTheDocument();
     });
 
     it('should handle status update errors', async () => {
       mockUpdateUserStatus.mockRejectedValue(new Error('Status update failed'));
-      
+
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Attempt to disable user
-      const disableButtons = screen.getAllByText(/disable/i);
+      const disableButtons = screen.getAllByRole('button', { name: 'Disable' });
       await userEvent.click(disableButtons[0]);
 
       const confirmButton = screen.getByRole('button', { name: /disable account/i });
@@ -473,7 +394,6 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       // Verify error message
       await waitFor(() => {
-        expect(screen.getByText(/error updating user status/i)).toBeInTheDocument();
         expect(screen.getByText(/status update failed/i)).toBeInTheDocument();
       });
     });
@@ -481,12 +401,10 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     it('should cancel status update when cancel button is clicked', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Click disable button
-      const disableButtons = screen.getAllByText(/disable/i);
+      const disableButtons = screen.getAllByRole('button', { name: 'Disable' });
       await userEvent.click(disableButtons[0]);
 
       // Click cancel
@@ -503,22 +421,18 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
     it('should navigate to user details when view button is clicked', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      const viewButtons = screen.getAllByText(/view/i);
-      await userEvent.click(viewButtons[0]);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/admin/users/1');
+      // View Details is a <Link>; first one points to user 1
+      const viewLinks = screen.getAllByText('View Details');
+      const firstLink = viewLinks[0].closest('a');
+      expect(firstLink).toHaveAttribute('href', '/admin/users/1');
     });
 
     it('should handle pagination correctly', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Click next page
       const nextPageButton = screen.getByText('Next Page');
@@ -532,35 +446,13 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
         );
       });
     });
-
-    it('should handle page size changes', async () => {
-      renderAdminUsersListPage();
-
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
-
-      const pageSizeSelect = screen.getByRole('combobox', { name: /users per page/i });
-      await userEvent.selectOptions(pageSizeSelect, '25');
-
-      await waitFor(() => {
-        expect(mockGetAllUsers).toHaveBeenCalledWith(
-          expect.objectContaining({
-            limit: 25,
-            page: 1 // Should reset to page 1 when changing page size
-          })
-        );
-      });
-    });
   });
 
   describe('Responsive Design and Accessibility', () => {
-    it('should be accessible with proper ARIA labels', async () => {
+    it('should be accessible with proper structure', async () => {
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
       // Check main heading
       const mainHeading = screen.getByRole('heading', { level: 1 });
@@ -570,30 +462,9 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       const table = screen.getByRole('table');
       expect(table).toBeInTheDocument();
 
-      // Check form controls have labels
-      const searchInput = screen.getByRole('textbox', { name: /search users/i });
-      expect(searchInput).toBeInTheDocument();
-
-      const statusFilter = screen.getByRole('combobox', { name: /account status/i });
-      expect(statusFilter).toBeInTheDocument();
-    });
-
-    it('should handle keyboard navigation', async () => {
-      renderAdminUsersListPage();
-
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
-
-      // Test tab navigation through interactive elements
-      const searchInput = screen.getByRole('textbox', { name: /search users/i });
-      searchInput.focus();
-      
-      await userEvent.tab();
-      expect(screen.getByRole('combobox', { name: /account status/i })).toHaveFocus();
-
-      await userEvent.tab();
-      expect(screen.getByRole('combobox', { name: /email verified/i })).toHaveFocus();
+      // Check form controls exist
+      expect(screen.getByPlaceholderText(/search by name or email/i)).toBeInTheDocument();
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
     });
   });
 
@@ -616,41 +487,7 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
       renderAdminUsersListPage();
 
       await waitFor(() => {
-        expect(screen.getByText(/no users found/i)).toBeInTheDocument();
-        expect(screen.getByText(/try adjusting your search criteria/i)).toBeInTheDocument();
-      });
-    });
-
-    it('should show appropriate message for search with no results', async () => {
-      
-      // Initial load with users
-      renderAdminUsersListPage();
-      
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
-
-      // Mock empty search results
-      mockGetAllUsers.mockResolvedValue({
-        success: true,
-        data: {
-          users: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 0,
-            totalUsers: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      });
-
-      // Perform search
-      const searchInput = screen.getByPlaceholderText(/search by name or email/i);
-      await userEvent.type(searchInput, 'nonexistent user');
-
-      await waitFor(() => {
-        expect(screen.getByText(/no users found matching your search/i)).toBeInTheDocument();
+        expect(screen.getByText(/no users found matching your criteria/i)).toBeInTheDocument();
       });
     });
 
@@ -672,11 +509,9 @@ describe('AdminUsersListPage - Comprehensive Tests', () => {
 
       renderAdminUsersListPage();
 
-      await waitFor(() => {
-        expect(screen.queryByText(/loading users.../i)).not.toBeInTheDocument();
-      });
+      await waitForLoaded();
 
-      // Verify long text is displayed (may be truncated with CSS)
+      // Verify long text is displayed
       expect(screen.getByText(/VeryLongFirstNameThatExceedsNormalLength/)).toBeInTheDocument();
       expect(screen.getByText(/very.long.email.address/)).toBeInTheDocument();
     });

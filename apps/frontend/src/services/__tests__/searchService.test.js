@@ -43,7 +43,7 @@ describe('searchService', () => {
     const result = await searchProducts('pixel');
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/products/search?q=pixel',
+      'http://localhost:5000/api/products/search?q=pixel',
       {
         method: 'GET',
         headers: {
@@ -73,7 +73,7 @@ describe('searchService', () => {
 
     await searchProducts('smartphone', options);
 
-    const expectedUrl = 'http://localhost:3000/api/products/search?q=smartphone&page=2&limit=6&sortBy=price&sortOrder=asc&condition=new&minPrice=100&maxPrice=500';
+    const expectedUrl = 'http://localhost:5000/api/products/search?q=smartphone&page=2&limit=6&sortBy=price&sortOrder=asc&condition=new&minPrice=100&maxPrice=500';
     
     expect(fetch).toHaveBeenCalledWith(
       expectedUrl,
@@ -159,7 +159,7 @@ describe('searchService', () => {
     await searchProducts('pixel & smartphone');
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/products/search?q=pixel+%26+smartphone',
+      'http://localhost:5000/api/products/search?q=pixel+%26+smartphone',
       expect.anything()
     );
   });
@@ -182,7 +182,7 @@ describe('searchService', () => {
 
     await searchProducts('pixel', options);
 
-    const expectedUrl = 'http://localhost:3000/api/products/search?q=pixel&page=1&sortBy=price&condition=new&maxPrice=500';
+    const expectedUrl = 'http://localhost:5000/api/products/search?q=pixel&page=1&sortBy=price&condition=new&maxPrice=500';
     
     expect(fetch).toHaveBeenCalledWith(expectedUrl, expect.anything());
   });
@@ -228,7 +228,7 @@ describe('searchService', () => {
     await searchProducts('C++ programming');
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/products/search?q=C%2B%2B+programming',
+      'http://localhost:5000/api/products/search?q=C%2B%2B+programming',
       expect.anything()
     );
   });
@@ -252,7 +252,7 @@ describe('searchService', () => {
 
     await searchProducts('test query', options);
 
-    const expectedUrl = 'http://localhost:3000/api/products/search?q=test+query&page=3&limit=20&sortBy=name&sortOrder=desc&condition=excellent&minPrice=200&maxPrice=800&category=smartphones';
+    const expectedUrl = 'http://localhost:5000/api/products/search?q=test+query&page=3&limit=20&sortBy=name&sortOrder=desc&condition=excellent&minPrice=200&maxPrice=800&category=smartphones';
     
     expect(fetch).toHaveBeenCalledWith(expectedUrl, expect.anything());
   });

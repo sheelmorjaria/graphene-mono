@@ -61,7 +61,6 @@ describe('User Management E2E Test Scenarios', () => {
       emailVerified: true,
       accountStatus: 'active',
       phone: '+447123456789',
-      marketingOptIn: true,
       shippingAddresses: [{
         fullName: 'Customer User',
         addressLine1: '123 Test Street',

@@ -8,8 +8,8 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
   return (
     <div 
       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50' 
+        isSelected
+          ? 'border-cyan-400 bg-cyan-subtle'
           : 'border-gray-200 hover:border-gray-300 bg-white'
       }`}
       onClick={() => onSelect(address)}
@@ -20,7 +20,7 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
             type="radio"
             checked={isSelected}
             onChange={() => onSelect(address)}
-            className="mt-1 text-blue-600 focus:ring-blue-500"
+            className="mt-1 text-cyan-400 focus:ring-cyan-400"
           />
           <div className="flex-1">
             <div className="flex items-center space-x-2">
@@ -49,7 +49,7 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit }) => {
             e.stopPropagation();
             onEdit(address);
           }}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          className="text-cyan-400 hover:text-cyan-600 text-sm font-medium"
         >
           Edit
         </button>
@@ -190,7 +190,7 @@ const ShippingAddressSection = () => {
       {/* Loading state */}
       {addressesLoading ? (
         <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-400"></div>
           <p className="mt-2 text-gray-600">Loading addresses...</p>
         </div>
       ) : (
@@ -224,7 +224,7 @@ const ShippingAddressSection = () => {
             <button
               onClick={handleAddNewAddress}
               data-testid="add-address-button"
-              className="w-full py-3 px-4 border-2 border-dashed border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors rounded-lg font-medium"
+              className="w-full py-3 px-4 border-2 border-dashed border-gray-300 text-gray-600 hover:border-cyan-400 hover:text-cyan-400 transition-colors rounded-lg font-medium"
             >
               + Add New Address
             </button>
@@ -234,10 +234,10 @@ const ShippingAddressSection = () => {
           {checkoutState.shippingAddress && (
             <div 
               data-testid="shipping-address"
-              className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4"
+              className="mt-6 bg-cyan-subtle border border-cyan-400 rounded-lg p-4"
             >
-              <h4 className="text-sm font-medium text-blue-800 mb-2">Selected Shipping Address:</h4>
-              <div className="text-sm text-blue-700">
+              <h4 className="text-sm font-medium text-cyan-400 mb-2">Selected Shipping Address:</h4>
+              <div className="text-sm text-cyan-400">
                 <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
                 <div>{checkoutState.shippingAddress.addressLine1}</div>
                 {checkoutState.shippingAddress.addressLine2 && (
@@ -265,7 +265,7 @@ const ShippingAddressSection = () => {
               disabled={!canProceedToPayment || !checkoutState.shippingMethod}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 canProceedToPayment && checkoutState.shippingMethod
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-cyan-400 text-white hover:bg-cyan-500'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >

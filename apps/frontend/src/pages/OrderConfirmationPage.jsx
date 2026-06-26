@@ -9,7 +9,7 @@ const OrderConfirmationPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = 'Order Confirmation - GrapheneOS Store';
+    document.title = 'Order Confirmation - Graphene Security';
 
     const fetchOrderDetails = async () => {
       try {

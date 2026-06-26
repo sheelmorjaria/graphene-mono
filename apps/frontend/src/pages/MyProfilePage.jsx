@@ -15,8 +15,7 @@ const MyProfilePage = () => {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    marketingOptIn: false
+    phone: ''
   });
 
   // Validation errors state
@@ -41,8 +40,7 @@ const MyProfilePage = () => {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
-        phone: user.phone || '',
-        marketingOptIn: user.marketingOptIn || false
+        phone: user.phone || ''
       });
     }
   }, [user]);
@@ -160,8 +158,7 @@ const MyProfilePage = () => {
       const updateData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        phone: formData.phone.trim() || undefined,
-        marketingOptIn: formData.marketingOptIn
+        phone: formData.phone.trim() || undefined
       };
 
       const response = await updateUserProfile(updateData);
@@ -319,22 +316,6 @@ const MyProfilePage = () => {
                     </p>
                   )}
                 </div>
-              </div>
-
-              {/* Marketing Opt-in */}
-              <div className="flex items-center">
-                <input
-                  id="marketingOptIn"
-                  name="marketingOptIn"
-                  type="checkbox"
-                  disabled={isLoading}
-                  checked={formData.marketingOptIn}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-cyan-400 focus:ring-cyan-400 border-border-default rounded"
-                />
-                <label htmlFor="marketingOptIn" className="ml-2 block text-sm text-text-primary">
-                  I would like to receive marketing emails about new products and offers
-                </label>
               </div>
 
               {/* Submit Button */}

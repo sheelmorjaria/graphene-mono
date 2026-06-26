@@ -2,21 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { getPaymentMethods, formatCurrency } from '../../services/paymentService';
 import { useCheckout } from '../../contexts/CheckoutContext';
-import PayPalPayment from './PayPalPayment';
 
 const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => {
-  const { 
-    paymentMethod, 
+  const {
+    paymentMethod,
     setPaymentMethod,
     paymentState: _paymentState,
     setPaymentState,
-    orderSummary 
+    orderSummary
   } = useCheckout();
-  
+
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [paypalError, setPaypalError] = useState(null);
 
   // Load payment methods
   useEffect(() => {
@@ -48,52 +46,24 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Note: Only want to load payment methods once on mount, not when paymentMethod changes
 
-  // Update validation state based on payment method and readiness
+  // Update validation state based on payment method
   useEffect(() => {
     if (paymentMethod?.type === 'paypal') {
-      // PayPal is always ready once selected (no additional validation needed)
-      const isValid = !paypalError;
-
+      // PayPal is always ready once selected; the actual PayPal commit
+      // happens in the review step, so no validation errors occur here.
       if (onValidationChange) {
         onValidationChange({
-          isValid,
-          error: paypalError
+          isValid: true,
+          error: null
         });
       }
     }
-  }, [paymentMethod, paypalError, onValidationChange]);
+  }, [paymentMethod, onValidationChange]);
 
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
-    setPaypalError(null);
-    
+
     // Reset payment state when changing methods
-    setPaymentState({
-      isProcessing: false,
-      error: null
-    });
-  };
-
-  const handlePayPalSuccess = (paymentData) => {
-    console.log('PayPal payment successful:', paymentData);
-    setPaymentState({
-      isProcessing: false,
-      error: null,
-      paymentData
-    });
-  };
-
-  const handlePayPalError = (error) => {
-    console.error('PayPal payment error:', error);
-    setPaypalError(error.message || 'PayPal payment failed');
-    setPaymentState({
-      isProcessing: false,
-      error: error.message || 'PayPal payment failed'
-    });
-  };
-
-  const handlePayPalCancel = () => {
-    console.log('PayPal payment cancelled');
     setPaymentState({
       isProcessing: false,
       error: null
@@ -215,21 +185,6 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
               </label>
             ))}
           </div>
-
-          {/* PayPal Payment Component */}
-          {paymentMethod?.type === 'paypal' && orderSummary && (
-            <div
-              data-testid="paypal-checkout-section"
-              className="mt-6 border-t pt-6"
-            >
-              <PayPalPayment
-                orderSummary={orderSummary}
-                onPaymentSuccess={handlePayPalSuccess}
-                onPaymentError={handlePayPalError}
-                onPaymentCancel={handlePayPalCancel}
-              />
-            </div>
-          )}
 
           {/* Security Information */}
           <div className="mt-6 bg-gray-50 p-4 rounded-lg">

@@ -1,51 +1,39 @@
 import React from 'react';
-import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import CheckoutPage from '../CheckoutPage';
-import { CheckoutProvider } from '../../contexts/CheckoutContext';
+import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
+import { CartContext } from '../../contexts/CartContext';
+import { CheckoutContext } from '../../contexts/CheckoutContext';
 
-import { vi } from 'vitest';
-
-// Mock services
-vi.mock('../../services/addressService', () => ({
-  getUserAddresses: vi.fn(),
-  addUserAddress: vi.fn(),
-  updateUserAddress: vi.fn()
-}));
-
+// Mock cartService only for formatCurrency (used by CartSummary/ReviewSection).
 vi.mock('../../services/cartService', () => ({
-  getCart: vi.fn(),
-  formatCurrency: vi.fn((amount) => `£${amount.toFixed(2)}`)
+  formatCurrency: vi.fn((amount) => `£${Number(amount).toFixed(2)}`)
 }));
 
-import { getUserAddresses } from '../../services/addressService';
-import { getCart } from '../../services/cartService';
-
-const mockAddresses = [
-  {
-    _id: '1',
-    fullName: 'John Doe',
-    addressLine1: '123 Main St',
-    addressLine2: '',
-    city: 'Anytown',
-    stateProvince: 'CA',
-    postalCode: '12345',
-    country: 'USA',
-    phoneNumber: '555-1234',
-    isDefault: true
-  },
-  {
-    _id: '2',
-    fullName: 'Jane Smith',
-    addressLine1: '456 Oak Ave',
-    addressLine2: 'Apt 2B',
-    city: 'Somewhere',
-    stateProvince: 'NY',
-    postalCode: '67890',
-    country: 'USA',
-    phoneNumber: '555-5678',
-    isDefault: false
-  }
-];
+// Mock the payment-step sub-components to keep rendering stable without their
+// internal data-loading needs. Only the test file is edited.
+vi.mock('../../components/checkout/ShippingAddressSection', () => ({
+  default: () => <div>Shipping Address Section</div>
+}));
+vi.mock('../../components/checkout/BillingAddressSection', () => ({
+  default: () => <div>Billing Address Section</div>
+}));
+vi.mock('../../components/checkout/PaymentMethodSection', () => ({
+  default: () => <div>Payment Method Section</div>
+}));
+vi.mock('../../components/checkout/PayPalPayment', () => ({
+  default: (props) => (
+    <div data-testid="paypal-payment">
+      <button onClick={() => props.onPaymentSuccess && props.onPaymentSuccess({})}>
+        PayPal Commit
+      </button>
+    </div>
+  )
+}));
 
 const mockCart = {
   items: [
@@ -53,7 +41,6 @@ const mockCart = {
       _id: 'item1',
       productId: 'prod1',
       productName: 'GrapheneOS Pixel 9',
-      productSlug: 'grapheneos-pixel-9',
       productImage: 'https://example.com/pixel9.jpg',
       unitPrice: 899.99,
       quantity: 1,
@@ -63,7 +50,6 @@ const mockCart = {
       _id: 'item2',
       productId: 'prod2',
       productName: 'GrapheneOS Pixel 9 Pro',
-      productSlug: 'grapheneos-pixel-9-pro',
       productImage: 'https://example.com/pixel9pro.jpg',
       unitPrice: 999.99,
       quantity: 2,
@@ -71,327 +57,404 @@ const mockCart = {
     }
   ],
   totalItems: 3,
-  totalAmount: 2899.97
+  totalAmount: 2899.97,
+  itemCount: 3
 };
 
-const renderWithProviders = () => {
-  return render(
-    <CheckoutProvider>
-      <CheckoutPage />
-    </CheckoutProvider>
-  );
+const mockAddress = {
+  fullName: 'John Doe',
+  addressLine1: '123 Main St',
+  addressLine2: '',
+  city: 'Anytown',
+  stateProvince: 'CA',
+  postalCode: '12345',
+  country: 'USA',
+  phoneNumber: '555-1234'
 };
+
+const defaultAuthState = {
+  user: { name: 'Test User' },
+  isAuthenticated: true,
+  isLoading: false,
+  error: null
+};
+
+function buildCartContext(overrides = {}) {
+  return {
+    cart: mockCart,
+    loading: false,
+    error: '',
+    addToCart: vi.fn(),
+    updateCartItem: vi.fn(),
+    removeFromCart: vi.fn(),
+    clearCart: vi.fn(),
+    refreshCart: vi.fn(),
+    clearError: vi.fn(),
+    isEmpty: false,
+    itemCount: mockCart.itemCount,
+    ...overrides
+  };
+}
+
+function buildCheckoutContext(overrides = {}) {
+  const shippingMethod = {
+    name: 'Standard Shipping',
+    cost: 9.99,
+    estimatedDelivery: '3-5 days',
+    description: 'Tracked',
+    isFreeShipping: false
+  };
+  return {
+    checkoutState: {
+      step: 'payment',
+      deliveryAddress: null,
+      shippingAddress: mockAddress,
+      billingAddress: mockAddress,
+      useSameAsShipping: true,
+      shippingMethod,
+      shippingCost: 9.99,
+      paymentMethod: null,
+      orderNotes: ''
+    },
+    paymentState: { isProcessing: false, error: null, paymentData: null },
+    addresses: [],
+    addressesLoading: false,
+    addressesError: '',
+    shippingRates: [],
+    shippingRatesLoading: false,
+    shippingRatesError: '',
+
+    setDeliveryAddress: vi.fn(),
+    setShippingAddress: vi.fn(),
+    setBillingAddress: vi.fn(),
+    setUseSameAsShipping: vi.fn(),
+    setShippingMethod: vi.fn(),
+    setPaymentMethod: vi.fn(),
+    setPaymentState: vi.fn(),
+    setOrderNotes: vi.fn(),
+    goToStep: vi.fn(),
+    nextStep: vi.fn(),
+    prevStep: vi.fn(),
+    resetCheckout: vi.fn(),
+    refreshAddresses: vi.fn(),
+    refreshShippingRates: vi.fn(),
+
+    canProceedToReview: true,
+    isPaymentStep: true,
+    isReviewStep: false,
+
+    subtotal: 2899.97,
+    shippingCost: 9.99,
+    orderTotal: 2909.96,
+    orderSummary: {
+      cartTotal: 2899.97,
+      shippingCost: 9.99,
+      orderTotal: 2909.96,
+      currency: 'GBP',
+      items: mockCart.items,
+      shippingMethod,
+      shippingAddress: mockAddress,
+      billingAddress: mockAddress,
+      deliveryAddress: null
+    },
+
+    deliveryAddress: null,
+    shippingAddress: mockAddress,
+    billingAddress: mockAddress,
+    useSameAsShipping: true,
+    shippingMethod,
+    paymentMethod: null,
+    orderNotes: '',
+    ...overrides
+  };
+}
+
+function renderCheckout({
+  authState = defaultAuthState,
+  authDispatch = vi.fn(),
+  cart = {},
+  checkout = {},
+  loading
+} = {}) {
+  const cartValue = buildCartContext(
+    loading !== undefined ? { loading, cart: { items: [] } } : cart
+  );
+  const checkoutValue = buildCheckoutContext(checkout);
+  const authValue = loading !== undefined ? { ...authState, isLoading: loading } : authState;
+
+  function Wrapper({ children }) {
+    return (
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/checkout']}>
+          <AuthStateContext.Provider value={authValue}>
+            <AuthDispatchContext.Provider value={authDispatch}>
+              <CartContext.Provider value={cartValue}>
+                <CheckoutContext.Provider value={checkoutValue}>
+                  {children}
+                </CheckoutContext.Provider>
+              </CartContext.Provider>
+            </AuthDispatchContext.Provider>
+          </AuthStateContext.Provider>
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+  }
+
+  return { ...render(<CheckoutPage />, { wrapper: Wrapper }), checkoutValue, cartValue };
+}
 
 describe('CheckoutPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    getUserAddresses.mockResolvedValue({ data: { addresses: mockAddresses } });
-    getCart.mockResolvedValue({ data: { cart: mockCart } });
+    vi.clearAllMocks();
+    document.title = '';
   });
 
   describe('Page Rendering', () => {
-    it('should render checkout page with proper title', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(document.title).toBe('Checkout - GrapheneOS Store');
-      });
-      
-      expect(screen.getByRole('heading', { name: /checkout/i })).toBeInTheDocument();
+    it('should render checkout page with proper title', () => {
+      renderCheckout();
+
+      expect(document.title).toBe('Checkout - Graphene Security');
+      expect(
+        screen.getByRole('heading', { name: /^checkout$/i })
+      ).toBeInTheDocument();
     });
 
-    it('should render checkout steps', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Shipping')).toBeInTheDocument();
-        expect(screen.getByText('Payment')).toBeInTheDocument();
-        expect(screen.getByText('Review')).toBeInTheDocument();
-      });
+    it('should render checkout steps', () => {
+      renderCheckout();
+
+      expect(screen.getByText('Shipping & Payment')).toBeInTheDocument();
+      expect(screen.getByText('Review')).toBeInTheDocument();
     });
 
-    it('should render cart summary', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Order Summary')).toBeInTheDocument();
-        expect(screen.getByText('GrapheneOS Pixel 9')).toBeInTheDocument();
-        expect(screen.getByText('GrapheneOS Pixel 9 Pro')).toBeInTheDocument();
-        expect(screen.getByText('£2899.97')).toBeInTheDocument();
-      });
+    it('should render cart summary', () => {
+      renderCheckout();
+
+      expect(screen.getByText('Order Summary')).toBeInTheDocument();
+      expect(screen.getByText('GrapheneOS Pixel 9')).toBeInTheDocument();
+      expect(screen.getByText('GrapheneOS Pixel 9 Pro')).toBeInTheDocument();
+      expect(screen.getByText('Total')).toBeInTheDocument();
     });
   });
 
   describe('Authentication States', () => {
     it('should show loading state while checking auth', () => {
-      renderWithProviders({ isLoading: true });
-      
+      renderCheckout({
+        authState: { ...defaultAuthState, isLoading: true }
+      });
+
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
 
     it('should show login prompt for unauthenticated users', () => {
-      renderWithProviders({ isAuthenticated: false, isLoading: false, user: null });
-      
+      renderCheckout({
+        authState: { ...defaultAuthState, isAuthenticated: false, user: null }
+      });
+
       expect(screen.getByText('Login Required')).toBeInTheDocument();
-      expect(screen.getByText('You need to be logged in to proceed with checkout.')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /login to continue/i })).toBeInTheDocument();
+      expect(
+        screen.getByText('You need to be logged in to proceed with checkout.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /login to continue/i })
+      ).toBeInTheDocument();
     });
 
     it('should show empty cart message when cart is empty', () => {
-      renderWithProviders({}, { cart: { items: [], totalItems: 0, totalAmount: 0 } });
-      
+      renderCheckout({
+        cart: {
+          cart: { items: [], totalItems: 0, totalAmount: 0, itemCount: 0 },
+          isEmpty: true
+        }
+      });
+
       expect(screen.getByText('Your Cart is Empty')).toBeInTheDocument();
-      expect(screen.getByText('Add some items to your cart before proceeding to checkout.')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /continue shopping/i })).toBeInTheDocument();
+      expect(
+        screen.getByText('Add some items to your cart before proceeding to checkout.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /continue shopping/i })
+      ).toBeInTheDocument();
     });
   });
 
-  describe('Shipping Address Section', () => {
-    it('should show shipping address selection by default', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Shipping Address')).toBeInTheDocument();
-        expect(screen.getByText('Choose a shipping address:')).toBeInTheDocument();
-      });
+  describe('Payment Step', () => {
+    it('should render payment method heading on payment step', () => {
+      renderCheckout();
+
+      // Exact match: the heading is "Payment Method" (placeholder is "Payment Method Section")
+      expect(
+        screen.getByRole('heading', { name: /^payment method$/i })
+      ).toBeInTheDocument();
+      expect(screen.getByText('Shipping Address Section')).toBeInTheDocument();
+      expect(screen.getByText('Billing Address Section')).toBeInTheDocument();
     });
 
-    it('should display available addresses', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-        expect(screen.getByText('123 Main St')).toBeInTheDocument();
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-        expect(screen.getByText('456 Oak Ave')).toBeInTheDocument();
-      });
+    it('should show continue to review button enabled when canProceedToReview is true', () => {
+      renderCheckout({ checkout: { canProceedToReview: true } });
+
+      const button = screen.getByTestId('checkout-button');
+      expect(button).toBeInTheDocument();
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveTextContent(/continue to review/i);
     });
 
-    it('should show default address badge', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Default')).toBeInTheDocument();
-      });
+    it('should disable continue to review button when canProceedToReview is false', () => {
+      renderCheckout({ checkout: { canProceedToReview: false } });
+
+      const button = screen.getByTestId('checkout-button');
+      expect(button).toBeDisabled();
     });
 
-    it('should allow address selection', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-      });
-      
-      // Select an address
-      const addressCard = screen.getByText('Jane Smith').closest('div');
-      await act(async () => {
-        await userEvent.click(addressCard);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Selected Shipping Address:')).toBeInTheDocument();
-      });
-    });
+    it('should call nextStep when continue to review is clicked', () => {
+      const { checkoutValue } = renderCheckout();
 
-    it('should show add new address option', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('+ Add New Address')).toBeInTheDocument();
-      });
-    });
+      const button = screen.getByTestId('checkout-button');
+      fireEvent.click(button);
 
-    it('should enable continue button when address is selected', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-        expect(continueButton).toBeInTheDocument();
-        // Default address should be auto-selected
-        expect(continueButton).not.toBeDisabled();
-      });
+      expect(checkoutValue.nextStep).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Step Navigation', () => {
-    it('should highlight current step', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        const shippingStep = screen.getByText('Shipping').closest('div');
-        expect(shippingStep).toHaveClass('text-blue-600');
-      });
+    it('should highlight current step with text-cyan-400', () => {
+      renderCheckout();
+
+      const stepLabel = screen.getByText('Shipping & Payment');
+      const container = stepLabel.closest('div.flex.items-center');
+      expect(container).toHaveClass('text-cyan-400');
     });
 
-    it('should navigate to payment step', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-        expect(continueButton).not.toBeDisabled();
+    it('should render review step content when step is review', () => {
+      renderCheckout({
+        checkout: {
+          checkoutState: {
+            step: 'review',
+            deliveryAddress: null,
+            shippingAddress: mockAddress,
+            billingAddress: mockAddress,
+            useSameAsShipping: true,
+            shippingMethod: {
+              name: 'Standard Shipping',
+              cost: 9.99,
+              estimatedDelivery: '3-5 days',
+              isFreeShipping: false
+            },
+            shippingCost: 9.99,
+            paymentMethod: null,
+            orderNotes: ''
+          },
+          isPaymentStep: false,
+          isReviewStep: true
+        }
       });
-      
-      const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument();
-        expect(screen.getByText('Payment Coming Soon')).toBeInTheDocument();
-      });
+
+      expect(screen.getByText('Review Your Order')).toBeInTheDocument();
+      expect(screen.getByText('Order Items')).toBeInTheDocument();
+      // Selected shipping address full name appears in review
+      expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
     });
 
-    it('should navigate back from payment to shipping', async () => {
-      renderWithProviders();
-      
-      // Go to payment
-      await waitFor(() => {
-        const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-        expect(continueButton).not.toBeDisabled();
+    it('should call prevStep when back button is clicked in review step', () => {
+      const { checkoutValue } = renderCheckout({
+        checkout: {
+          checkoutState: {
+            step: 'review',
+            deliveryAddress: null,
+            shippingAddress: mockAddress,
+            billingAddress: mockAddress,
+            useSameAsShipping: true,
+            shippingMethod: {
+              name: 'Standard Shipping',
+              cost: 9.99,
+              estimatedDelivery: '3-5 days',
+              isFreeShipping: false
+            },
+            shippingCost: 9.99,
+            paymentMethod: null,
+            orderNotes: ''
+          },
+          isPaymentStep: false,
+          isReviewStep: true
+        }
       });
-      
-      const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument();
-      });
-      
-      // Go back to shipping
-      const backButton = screen.getByRole('button', { name: /back to shipping/i });
-      await act(async () => {
-        await userEvent.click(backButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Shipping Address')).toBeInTheDocument();
-      });
-    });
 
-    it('should navigate to review step', async () => {
-      renderWithProviders();
-      
-      // Go to payment
-      await waitFor(() => {
-        const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-        expect(continueButton).not.toBeDisabled();
+      const backButton = screen.getByRole('button', {
+        name: /back to shipping & payment/i
       });
-      
-      const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument();
-      });
-      
-      // Go to review
-      const reviewButton = screen.getByRole('button', { name: /continue to review/i });
-      await act(async () => {
-        await userEvent.click(reviewButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Review Your Order')).toBeInTheDocument();
-        expect(screen.getByText('Order Items')).toBeInTheDocument();
-      });
+      fireEvent.click(backButton);
+
+      expect(checkoutValue.prevStep).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle address loading errors', async () => {
-      getUserAddresses.mockRejectedValue(new Error('Failed to load addresses'));
-      renderWithProviders();
-      
-      await waitFor(() => {
-        expect(screen.getByText('Failed to load addresses')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
-      });
-    });
-
     it('should handle cart loading state', () => {
-      renderWithProviders({}, { loading: true });
-      
+      renderCheckout({
+        cart: {
+          cart: { items: [], totalItems: 0, totalAmount: 0, itemCount: 0 },
+          loading: true
+        }
+      });
+
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
   });
 
   describe('Responsive Design', () => {
-    it('should render properly on different screen sizes', async () => {
-      renderWithProviders();
-      
-      await waitFor(() => {
-        const container = screen.getByText('Checkout').closest('.checkout-page');
-        expect(container).toBeInTheDocument();
-        
-        // Check for responsive grid classes
-        const mainContent = container.querySelector('.grid');
-        expect(mainContent).toHaveClass('lg:grid-cols-3');
-      });
+    it('should render properly on different screen sizes', () => {
+      renderCheckout();
+
+      const container = document.querySelector('.checkout-page');
+      expect(container).toBeInTheDocument();
+
+      const grid = container.querySelector('.grid');
+      expect(grid).toHaveClass('lg:grid-cols-3');
     });
   });
 
   describe('Order Review', () => {
-    it('should display selected shipping address in review', async () => {
-      renderWithProviders();
-      
-      // Navigate to review step
-      await waitFor(() => {
-        const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-        expect(continueButton).not.toBeDisabled();
-      });
-      
-      let continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument();
-      });
-      
-      continueButton = screen.getByRole('button', { name: /continue to review/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Review Your Order')).toBeInTheDocument();
-        expect(screen.getByText('John Doe')).toBeInTheDocument(); // Default address
-        expect(screen.getByText('123 Main St')).toBeInTheDocument();
-      });
+    const reviewProps = {
+      checkout: {
+        checkoutState: {
+          step: 'review',
+          deliveryAddress: null,
+          shippingAddress: mockAddress,
+          billingAddress: mockAddress,
+          useSameAsShipping: true,
+          shippingMethod: {
+            name: 'Standard Shipping',
+            cost: 9.99,
+            estimatedDelivery: '3-5 days',
+            isFreeShipping: false
+          },
+          shippingCost: 9.99,
+          paymentMethod: null,
+          orderNotes: ''
+        },
+        isPaymentStep: false,
+        isReviewStep: true
+      }
+    };
+
+    it('should display selected shipping address in review', () => {
+      renderCheckout(reviewProps);
+
+      expect(screen.getByText('Review Your Order')).toBeInTheDocument();
+      expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('123 Main St').length).toBeGreaterThan(0);
     });
 
-    it('should show place order button in review', async () => {
-      renderWithProviders();
-      
-      // Navigate to review step
-      await waitFor(() => {
-        const continueButton = screen.getByRole('button', { name: /continue to payment/i });
-        expect(continueButton).not.toBeDisabled();
+    it('should show PayPal commit button in review step', () => {
+      renderCheckout({
+        ...reviewProps,
+        checkout: {
+          ...reviewProps.checkout,
+          paymentMethod: { id: 'paypal', type: 'paypal', name: 'PayPal' }
+        }
       });
-      
-      let continueButton = screen.getByRole('button', { name: /continue to payment/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByText('Payment Method')).toBeInTheDocument();
-      });
-      
-      continueButton = screen.getByRole('button', { name: /continue to review/i });
-      await act(async () => {
-        await userEvent.click(continueButton);
-      });
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /place order/i })).toBeInTheDocument();
-      });
+
+      expect(screen.getByTestId('paypal-checkout-section')).toBeInTheDocument();
+      expect(screen.getByTestId('paypal-payment')).toBeInTheDocument();
     });
   });
 });

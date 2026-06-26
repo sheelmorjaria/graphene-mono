@@ -8,8 +8,8 @@ const ShippingMethodCard = ({ shippingMethod, isSelected, onSelect }) => {
   return (
     <div 
       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50' 
+        isSelected
+          ? 'border-cyan-400 bg-cyan-subtle'
           : 'border-gray-200 hover:border-gray-300 bg-white'
       }`}
       onClick={() => onSelect(shippingMethod)}
@@ -20,7 +20,7 @@ const ShippingMethodCard = ({ shippingMethod, isSelected, onSelect }) => {
             type="radio"
             checked={isSelected}
             onChange={() => onSelect(shippingMethod)}
-            className="mt-1 text-blue-600 focus:ring-blue-500"
+            className="mt-1 text-cyan-400 focus:ring-cyan-400"
           />
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
@@ -106,7 +106,7 @@ const ShippingMethodSection = () => {
       {/* Loading state */}
       {shippingRatesLoading ? (
         <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-400"></div>
           <p className="mt-2 text-gray-600">Calculating shipping rates...</p>
         </div>
       ) : (
@@ -133,7 +133,7 @@ const ShippingMethodSection = () => {
               </p>
               <button
                 onClick={refreshShippingRates}
-                className="text-blue-600 hover:text-blue-800 font-medium"
+                className="text-cyan-400 hover:text-cyan-600 font-medium"
               >
                 Refresh Shipping Options
               </button>
@@ -142,10 +142,10 @@ const ShippingMethodSection = () => {
 
           {/* Selected shipping method summary */}
           {checkoutState.shippingMethod && (
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-blue-800 mb-2">Selected Shipping Method:</h4>
+            <div className="mt-6 bg-cyan-subtle border border-cyan-400 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-cyan-400 mb-2">Selected Shipping Method:</h4>
               <div className="flex justify-between items-start">
-                <div className="text-sm text-blue-700">
+                <div className="text-sm text-cyan-400">
                   <div className="font-medium">{checkoutState.shippingMethod.name}</div>
                   <div>{checkoutState.shippingMethod.estimatedDelivery}</div>
                   {checkoutState.shippingMethod.description && (
@@ -156,7 +156,7 @@ const ShippingMethodSection = () => {
                   {checkoutState.shippingMethod.isFreeShipping ? (
                     <span className="text-lg font-semibold text-green-600">FREE</span>
                   ) : (
-                    <span className="text-lg font-semibold text-blue-800">
+                    <span className="text-lg font-semibold text-cyan-400">
                       {formatCurrency(checkoutState.shippingMethod.cost)}
                     </span>
                   )}

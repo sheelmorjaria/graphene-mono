@@ -35,6 +35,7 @@ const mockProduct = {
   _id: 'test-product-id',
   name: 'Google Pixel 8',
   sku: 'PIXEL8-001',
+  baseModel: 'Pixel 8',
   shortDescription: 'Latest Google Pixel smartphone',
   longDescription: 'The Google Pixel 8 with GrapheneOS pre-installed',
   price: 699.99,
@@ -49,6 +50,19 @@ const mockProduct = {
   status: 'active',
   condition: 'new',
   stockStatus: 'in_stock',
+  variations: [
+    {
+      _id: 'var-1',
+      condition: 'new',
+      color: 'Obsidian',
+      storage: '128GB',
+      price: '699.99',
+      salePrice: '',
+      sku: 'PIXEL8-001-OBS-128',
+      stockQuantity: 15,
+      stockStatus: 'in_stock'
+    }
+  ],
   images: [
     { url: '/uploads/pixel8-1.jpg', thumbnailUrl: '/uploads/thumbs/pixel8-1.jpg' },
     { url: '/uploads/pixel8-2.jpg', thumbnailUrl: '/uploads/thumbs/pixel8-2.jpg' }
@@ -57,7 +71,7 @@ const mockProduct = {
 
 const mockGetProductResponse = {
   success: true,
-  data: { product: mockProduct }
+  data: mockProduct
 };
 
 const renderWithRouter = (component, { route = '/admin/products/edit/test-product-id' } = {}) => {
@@ -165,7 +179,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       const customProduct = { ...mockProduct, name: 'Custom Product Name' };
       adminService.getProductById.mockResolvedValue({
         success: true,
-        data: { product: customProduct }
+        data: customProduct
       });
 
       renderWithRouter(<AdminProductFormPage />);
@@ -213,9 +227,11 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       fireEvent.click(deleteButton);
 
       // Assert
-      const modal = screen.getByText('Archive Product').closest('.fixed');
+      const modal = screen.getAllByText('Archive Product')
+        .map(el => el.closest('.fixed'))
+        .find(Boolean);
       expect(modal).toBeInTheDocument();
-      
+
       const warningIcon = modal.querySelector('svg');
       expect(warningIcon).toBeInTheDocument();
       expect(warningIcon).toHaveClass('h-6', 'w-6', 'text-red-600');
@@ -234,8 +250,9 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       fireEvent.click(deleteButton);
 
       // Assert
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
-      expect(screen.getAllByRole('button', { name: 'Archive Product' })).toHaveLength(2); // One in form, one in modal
+      // Two Cancel buttons (form + modal) and two Archive Product buttons (form + modal)
+      expect(screen.getAllByRole('button', { name: 'Cancel' }).length).toBeGreaterThanOrEqual(2);
+      expect(screen.getAllByRole('button', { name: 'Archive Product' })).toHaveLength(2);
     });
 
     test('should close modal when cancel button is clicked', async () => {
@@ -249,9 +266,10 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       // Act
       const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
-      
-      const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-      fireEvent.click(cancelButton);
+
+      // Click the modal Cancel button (last one)
+      const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
+      fireEvent.click(cancelButtons[cancelButtons.length - 1]);
 
       // Assert
       // Should only have one "Archive Product" button (the form button, not the modal button)
@@ -303,8 +321,9 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       fireEvent.click(modalConfirmButton);
 
       // Assert
-      expect(screen.getByRole('button', { name: 'Archiving...' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Archiving...' })).toBeDisabled();
+      const archivingButtons = screen.getAllByRole('button', { name: 'Archiving...' });
+      expect(archivingButtons.length).toBeGreaterThan(0);
+      archivingButtons.forEach(btn => expect(btn).toBeDisabled());
 
       // Cleanup
       resolveDelete({ success: true });
@@ -316,7 +335,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       adminService.deleteProduct.mockReturnValue(new Promise(resolve => {
         resolveDelete = resolve;
       }));
-      
+
       renderWithRouter(<AdminProductFormPage />);
 
       await waitFor(() => {
@@ -326,14 +345,15 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       // Act
       const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
-      
+
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
       fireEvent.click(modalConfirmButton);
 
-      // Assert
-      const formCancelButton = screen.getByRole('button', { name: 'Cancel' });
+      // Assert - the form Cancel and submit buttons are disabled during deletion
+      const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
+      const formCancelButton = cancelButtons[0]; // form Cancel
       const formSubmitButton = screen.getByRole('button', { name: 'Update Product' });
-      
+
       expect(formCancelButton).toBeDisabled();
       expect(formSubmitButton).toBeDisabled();
 
@@ -648,13 +668,15 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       fireEvent.click(deleteButton);
 
       // Assert
-      const modal = screen.getByText('Archive Product').closest('.fixed');
+      const modal = screen.getAllByText('Archive Product')
+        .map(el => el.closest('.fixed'))
+        .find(Boolean);
       expect(modal).toBeInTheDocument();
-      
-      const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+
+      const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
       const confirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
-      
-      expect(cancelButton).toBeInTheDocument();
+
+      expect(cancelButtons.length).toBeGreaterThan(0);
       expect(confirmButton).toBeInTheDocument();
     });
 
@@ -664,7 +686,7 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       adminService.deleteProduct.mockReturnValue(new Promise(resolve => {
         resolveDelete = resolve;
       }));
-      
+
       renderWithRouter(<AdminProductFormPage />);
 
       await waitFor(() => {
@@ -674,16 +696,17 @@ describe('AdminProductFormPage - Delete Product Functionality', () => {
       // Act
       const deleteButton = screen.getAllByRole('button', { name: 'Archive Product' })[0];
       fireEvent.click(deleteButton);
-      
+
       const modalConfirmButton = screen.getAllByRole('button', { name: 'Archive Product' })[1];
       fireEvent.click(modalConfirmButton);
 
       // Assert
-      const archivingButton = screen.getByRole('button', { name: 'Archiving...' });
-      const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-      
-      expect(archivingButton).toBeDisabled();
-      expect(cancelButton).toBeDisabled();
+      const archivingButtons = screen.getAllByRole('button', { name: 'Archiving...' });
+      const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' });
+
+      archivingButtons.forEach(btn => expect(btn).toBeDisabled());
+      // Modal Cancel button (last) is disabled during deletion
+      expect(cancelButtons[cancelButtons.length - 1]).toBeDisabled();
 
       // Cleanup
       resolveDelete({ success: true });

@@ -16,7 +16,7 @@ const AdminSettingsPage = () => {
   const adminUser = getAdminUser();
 
   useEffect(() => {
-    document.title = 'Settings - Admin - GrapheneOS Store';
+    document.title = 'Settings - Admin - Graphene Security';
     
     // Check authentication
     if (!isAdminAuthenticated()) {

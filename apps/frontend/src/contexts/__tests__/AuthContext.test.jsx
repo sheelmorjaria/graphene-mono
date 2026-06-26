@@ -1,5 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '../../test/test-utils';
+// Raw RTL render, with NO provider wrapper, for the "used outside provider" test.
+import { render as renderBare } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthProvider, useAuth, useLogout, useLogin, withAuth } from '../AuthContext';
 
@@ -158,8 +160,11 @@ describe('AuthContext', () => {
       });
 
       // Logout
-      act(() => {
+      await act(async () => {
         screen.getByTestId('logout-button').click();
+        // useLogout() awaits logoutUserService(); flush that microtask so the
+        // dispatch runs before we assert.
+        await Promise.resolve();
       });
 
       expect(screen.getByTestId('authenticated')).toHaveTextContent('not-authenticated');
@@ -246,7 +251,7 @@ describe('AuthContext', () => {
       console.error = vi.fn();
 
       expect(() => {
-        render(<TestComponent />);
+        renderBare(<TestComponent />);
       }).toThrow('useAuthState must be used within an AuthProvider');
 
       console.error = originalError;

@@ -6,7 +6,6 @@ const ImageGallery = ({ images, alt }) => {
 
   // Reset active image index when images change
   useEffect(() => {
-    console.log('ImageGallery: Images changed to:', images);
     setActiveImageIndex(0);
   }, [images]);
 
@@ -59,7 +58,6 @@ const ImageGallery = ({ images, alt }) => {
 
   const handleMainImageClick = () => {
     // Placeholder for zoom functionality
-    console.log('Zoom functionality would be implemented here');
   };
 
   return (

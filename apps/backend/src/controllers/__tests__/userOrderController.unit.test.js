@@ -255,10 +255,12 @@ describe('User Order Controller - Unit Tests', () => {
       Cart.prototype.clearCart = vi.fn().mockResolvedValue();
       
       // Mock the Order constructor and save
-      Order.mockImplementation(() => ({
-        ...mockOrder,
-        save: vi.fn().mockResolvedValue(mockOrder)
-      }));
+      Order.mockImplementation(function () {
+        return {
+          ...mockOrder,
+          save: vi.fn().mockResolvedValue(mockOrder)
+        };
+      });
 
       await placeOrder(req, res);
 

@@ -1,7 +1,9 @@
 import React from 'react';
-import { render, screen, waitFor, userEvent } from '../../test/test-utils';
+import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MyProfilePage from '../MyProfilePage';
+import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
 
 // Mock navigate function
 const mockNavigate = vi.fn();
@@ -23,6 +25,7 @@ vi.mock('../../services/authService', () => ({
 }));
 
 import { getCurrentUser, updateUserProfile } from '../../services/authService';
+import { screen, waitFor, userEvent } from '../../test/test-utils';
 
 const mockUser = {
   id: '123',
@@ -33,12 +36,30 @@ const mockUser = {
   role: 'customer'
 };
 
+// Mutable auth state shared with the test AuthProvider below.
+const authState = {
+  user: mockUser,
+  isAuthenticated: true,
+  isLoading: false,
+  error: null
+};
+
+// Test AuthProvider feeds the REAL context objects that MyProfilePage reads via
+// useAuth() (which calls useContext on AuthStateContext/AuthDispatchContext).
+const TestAuthProvider = ({ children }) => (
+  <AuthStateContext.Provider value={authState}>
+    <AuthDispatchContext.Provider value={vi.fn()}>
+      {children}
+    </AuthDispatchContext.Provider>
+  </AuthStateContext.Provider>
+);
+
 const renderProfilePage = () => {
   return render(
     <MemoryRouter>
-      <AuthProvider>
+      <TestAuthProvider>
         <MyProfilePage />
-      </AuthProvider>
+      </TestAuthProvider>
     </MemoryRouter>
   );
 };
@@ -49,6 +70,10 @@ describe('MyProfilePage', () => {
     document.title = 'Test';
     mockNavigate.mockClear();
     getCurrentUser.mockResolvedValue(mockUser);
+    authState.user = mockUser;
+    authState.isAuthenticated = true;
+    authState.isLoading = false;
+    authState.error = null;
   });
 
   describe('Page Rendering', () => {
@@ -79,16 +104,20 @@ describe('MyProfilePage', () => {
 
     it('should set correct page title', () => {
       renderProfilePage();
-      expect(document.title).toBe('My Profile - GrapheneOS Store');
+      expect(document.title).toBe('My Profile - Graphene Security');
     });
 
     it('should show loading state initially', () => {
-      getCurrentUser.mockImplementation(() => new Promise(() => {})); // Never resolves
-      
+      authState.user = null;
+      authState.isAuthenticated = false;
+      authState.isLoading = true;
+      authState.error = null;
+
       renderProfilePage();
 
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
     });
+
   });
 
   describe('Form Validation', () => {
@@ -183,8 +212,7 @@ describe('MyProfilePage', () => {
         expect(updateUserProfile).toHaveBeenCalledWith({
           firstName: 'Jane',
           lastName: 'Doe',
-          phone: '+447123456789',
-          marketingOptIn: false
+          phone: '+447123456789'
         });
       });
     });

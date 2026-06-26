@@ -16,8 +16,8 @@ const ReturnDetailsPage = () => {
 
   useEffect(() => {
     document.title = returnRequest 
-      ? `Return ${returnRequest.formattedRequestNumber} - GrapheneOS Store`
-      : 'Return Details - GrapheneOS Store';
+      ? `Return ${returnRequest.formattedRequestNumber} - Graphene Security`
+      : 'Return Details - Graphene Security';
   }, [returnRequest]);
 
   const loadReturnDetails = async () => {
