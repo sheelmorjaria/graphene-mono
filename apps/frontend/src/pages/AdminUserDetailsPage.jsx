@@ -199,16 +199,6 @@ function AdminUserDetailsPage() {
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Marketing Opt-in</label>
-              <p className="text-sm text-gray-900">
-                {user?.marketingOptIn ? (
-                  <span className="text-green-600">✓ Yes</span>
-                ) : (
-                  <span className="text-gray-600">✗ No</span>
-                )}
-              </p>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Account Status</label>
               <p className="text-sm text-gray-900">{getStatusBadge(user?.accountStatus)}</p>
             </div>

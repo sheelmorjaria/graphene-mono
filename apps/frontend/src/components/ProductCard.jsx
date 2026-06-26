@@ -51,13 +51,11 @@ const ProductCard = ({ product }) => {
     return { text: 'Out of Stock', className: 'text-red-400', icon: 'x' };
   };
 
-  // Get conditional lead time based on stock status
+  // Get lead time, honoring the product's lead time when available and
+  // falling back to the fixed default otherwise.
   const getLeadTime = () => {
-    if (isInStock) {
-      return '5-7 working days';
-    } else {
-      return '5-7 working days';
-    }
+    const leadTime = product.leadTime?.displayText;
+    return leadTime || '5-7 working days';
   };
 
 

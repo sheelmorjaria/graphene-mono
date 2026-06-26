@@ -269,7 +269,7 @@ describe('User Return Controller - Unit Tests', () => {
       };
       Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
       Order.findByIdAndUpdate = vi.fn().mockResolvedValue();
-      ReturnRequest.mockImplementation(() => mockReturnRequest);
+      ReturnRequest.mockImplementation(function () { return mockReturnRequest; });
       emailService.sendReturnRequestConfirmationEmail = vi.fn().mockResolvedValue();
 
       await submitReturnRequest(req, res);

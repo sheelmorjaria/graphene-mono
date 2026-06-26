@@ -111,7 +111,8 @@ describe('ReturnDetailsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('RET-20241201001')).toBeInTheDocument();
+      // The return number appears in both the breadcrumb and the summary
+      expect(screen.getAllByText('RET-20241201001').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('ORD-123456')).toBeInTheDocument();
       expect(screen.getByText('2')).toBeInTheDocument(); // items count
       expect(screen.getByText('£599.00')).toBeInTheDocument(); // refund amount
@@ -310,7 +311,8 @@ describe('ReturnDetailsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('My Account')).toBeInTheDocument();
       expect(screen.getByText('My Returns')).toBeInTheDocument();
-      expect(screen.getByText('RET-20241201001')).toBeInTheDocument();
+      // The return number appears in both the breadcrumb and the page heading
+      expect(screen.getAllByText('RET-20241201001').length).toBeGreaterThanOrEqual(1);
     });
   });
 

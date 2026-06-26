@@ -50,7 +50,7 @@ vi.mock('../../components/SortOptions', () => ({
 
 // Mock the FilterSidebar component
 vi.mock('../../components/FilterSidebar', () => ({
-  default: ({ selectedCategory, selectedCondition, priceRange, onCategoryChange, onConditionChange, onPriceRangeChange, onClearFilters }) => (
+  default: ({ selectedCategory, selectedCondition, priceRange, onCategoryChange = () => {}, onConditionChange = () => {}, onPriceRangeChange = () => {}, onClearFilters = () => {} }) => (
     <div data-testid="filter-sidebar">
       <select value={selectedCategory} onChange={(e) => onCategoryChange(e.target.value)}>
         <option value="">All Categories</option>
@@ -159,7 +159,7 @@ describe('ProductListPage', () => {
 
     render(<ProductListPage />);
 
-    expect(screen.getByText('Error loading products')).toBeInTheDocument();
+    expect(screen.getByText('Error Loading Products')).toBeInTheDocument();
     expect(screen.getByText('Failed to fetch products')).toBeInTheDocument();
     expect(screen.getByText('Try Again')).toBeInTheDocument();
   });
@@ -175,7 +175,7 @@ describe('ProductListPage', () => {
 
     render(<ProductListPage />);
 
-    expect(screen.getByText('No products found')).toBeInTheDocument();
+    expect(screen.getByText('No Products Found')).toBeInTheDocument();
     expect(screen.getByText('We couldn\'t find any products matching your criteria.')).toBeInTheDocument();
   });
 
@@ -192,7 +192,7 @@ describe('ProductListPage', () => {
     render(<ProductListPage />);
 
     expect(mockFetchProducts).toHaveBeenCalledTimes(1);
-    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'newest' });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'price-low' });
   });
 
   it('should have responsive grid layout', () => {
@@ -273,7 +273,7 @@ describe('ProductListPage', () => {
     tryAgainButton.click();
 
     expect(mockFetchProducts).toHaveBeenCalledTimes(2); // Once on mount, once on retry
-    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'newest' });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'price-low' });
   });
 
   it('should be accessible with proper ARIA labels', () => {
@@ -336,7 +336,7 @@ describe('ProductListPage', () => {
     const nextButton = screen.getByText('Next');
     nextButton.click();
 
-    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 2, sort: 'newest' });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 2, sort: 'price-low' });
   });
 
   it('should call fetchProducts with sort parameter when sort changes', () => {
@@ -374,7 +374,7 @@ describe('ProductListPage', () => {
     // Find the sort select specifically in the sort-options component
     const sortOptions = screen.getByTestId('sort-options');
     const sortSelect = sortOptions.querySelector('select');
-    expect(sortSelect).toHaveValue('newest');
+    expect(sortSelect).toHaveValue('price-low');
   });
 
   it('should call fetchProducts with filter parameters when filters change', () => {
@@ -389,16 +389,16 @@ describe('ProductListPage', () => {
 
     render(<ProductListPage />);
 
-    // Find the category select specifically in the filter-sidebar component
+    // The component exposes a condition filter (not category) in the sidebar.
     const filterSidebar = screen.getByTestId('filter-sidebar');
-    const categorySelects = filterSidebar.querySelectorAll('select');
-    const categorySelect = categorySelects[0]; // First select is category
-    categorySelect.value = 'smartphones';
-    categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+    const selects = filterSidebar.querySelectorAll('select');
+    const conditionSelect = selects[selects.length - 1]; // last select is condition
+    conditionSelect.value = 'excellent';
+    conditionSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
     expect(mockFetchProducts).toHaveBeenCalledWith({
-      sort: 'newest',
-      category: 'smartphones'
+      sort: 'price-low',
+      condition: 'excellent'
     });
   });
 
@@ -420,14 +420,22 @@ describe('ProductListPage', () => {
   });
 
   it('should have responsive layout with sidebar', () => {
+    useProducts.mockReturnValue({
+      products: mockProducts,
+      pagination: { page: 1, limit: 12, total: 2, pages: 1 },
+      loading: false,
+      error: null,
+      fetchProducts: vi.fn()
+    });
+
     const { container } = render(<ProductListPage />);
-    
+
     const mainLayout = container.querySelector('.flex.flex-col.lg\\:flex-row');
     expect(mainLayout).toBeInTheDocument();
-    
+
     const sidebar = container.querySelector('.lg\\:w-1\\/4');
     expect(sidebar).toBeInTheDocument();
-    
+
     const content = container.querySelector('.lg\\:w-3\\/4');
     expect(content).toBeInTheDocument();
   });

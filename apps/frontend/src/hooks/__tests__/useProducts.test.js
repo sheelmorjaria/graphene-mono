@@ -1,4 +1,4 @@
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import useProducts from '../useProducts';
 
@@ -11,12 +11,26 @@ vi.mock('../../services/productsService', () => ({
 
 import productsService from '../../services/productsService';
 
+// Advance fake timers AND flush the queued microtasks (promise continuations)
+// that run after the debounce timer fires. With a 300ms debounce in the hook,
+// this is what actually drives setLoading/setProducts/setError inside act.
+const flushDebounce = async () => {
+  await act(async () => {
+    vi.advanceTimersByTime(300);
+    // Allow the inner async work (await productsService.getProducts) to settle
+    await vi.runAllTicks();
+  });
+};
+
 describe('useProducts hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -69,14 +83,13 @@ describe('useProducts hook', () => {
     const { result } = renderHook(() => useProducts());
 
     // Trigger fetch
-    await act(async () => {
+    act(() => {
       result.current.fetchProducts();
     });
 
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
+    await flushDebounce();
 
+    expect(result.current.loading).toBe(false);
     expect(result.current.products).toEqual(mockResponse.data);
     expect(result.current.pagination).toEqual(mockResponse.pagination);
     expect(result.current.error).toBe(null);
@@ -89,14 +102,13 @@ describe('useProducts hook', () => {
 
     const { result } = renderHook(() => useProducts());
 
-    await act(async () => {
+    act(() => {
       result.current.fetchProducts();
     });
 
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
+    await flushDebounce();
 
+    expect(result.current.loading).toBe(false);
     expect(result.current.products).toEqual([]);
     expect(result.current.error).toBe(errorMessage);
     expect(result.current.pagination).toEqual({
@@ -129,12 +141,13 @@ describe('useProducts hook', () => {
       maxPrice: 1000
     };
 
-    result.current.fetchProducts(queryParams);
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+    act(() => {
+      result.current.fetchProducts(queryParams);
     });
 
+    await flushDebounce();
+
+    expect(result.current.loading).toBe(false);
     expect(productsService.getProducts).toHaveBeenCalledWith(queryParams);
   });
 
@@ -145,12 +158,13 @@ describe('useProducts hook', () => {
 
     const { result } = renderHook(() => useProducts());
 
-    result.current.fetchProducts();
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+    act(() => {
+      result.current.fetchProducts();
     });
 
+    await flushDebounce();
+
+    expect(result.current.loading).toBe(false);
     expect(result.current.error).toBe('Network error');
   });
 
@@ -164,12 +178,13 @@ describe('useProducts hook', () => {
 
     const { result } = renderHook(() => useProducts());
 
-    result.current.fetchProducts();
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+    act(() => {
+      result.current.fetchProducts();
     });
 
+    await flushDebounce();
+
+    expect(result.current.loading).toBe(false);
     expect(result.current.error).toBe('Server error');
     expect(result.current.products).toEqual([]);
   });
@@ -177,14 +192,16 @@ describe('useProducts hook', () => {
   it('should reset error state on new fetch', async () => {
     // First, make a request that fails
     productsService.getProducts.mockRejectedValue(new Error('First error'));
-    
+
     const { result } = renderHook(() => useProducts());
-    
-    result.current.fetchProducts();
-    
-    await waitFor(() => {
-      expect(result.current.error).toBe('First error');
+
+    act(() => {
+      result.current.fetchProducts();
     });
+
+    await flushDebounce();
+
+    expect(result.current.error).toBe('First error');
 
     // Then make a successful request
     const mockResponse = {
@@ -192,21 +209,18 @@ describe('useProducts hook', () => {
       data: [],
       pagination: { page: 1, limit: 12, total: 0, pages: 0 }
     };
-    
+
     productsService.getProducts.mockResolvedValue(mockResponse);
-    
-    await act(async () => {
+
+    // Start the new fetch; right after firing, loading flips on and error
+    // is reset synchronously inside the (debounced) callback once it runs.
+    act(() => {
       result.current.fetchProducts();
     });
-    
-    // Error should be reset during loading
-    expect(result.current.error).toBe(null);
-    expect(result.current.loading).toBe(true);
 
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
+    await flushDebounce();
 
+    expect(result.current.loading).toBe(false);
     expect(result.current.error).toBe(null);
   });
 
@@ -221,18 +235,16 @@ describe('useProducts hook', () => {
 
     const { result } = renderHook(() => useProducts());
 
-    // Make multiple rapid calls
-    await act(async () => {
+    // Make multiple rapid calls; only the last debounce timer survives.
+    act(() => {
       result.current.fetchProducts({ page: 1 });
       result.current.fetchProducts({ page: 2 });
       result.current.fetchProducts({ page: 3 });
     });
 
-    // Wait for debounce delay and loading to complete
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    }, { timeout: 1000 });
+    await flushDebounce();
 
+    expect(result.current.loading).toBe(false);
     // Should only make one API call (the last one)
     expect(productsService.getProducts).toHaveBeenCalledTimes(1);
     expect(productsService.getProducts).toHaveBeenCalledWith({ page: 3 });

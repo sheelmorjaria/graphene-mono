@@ -182,11 +182,11 @@ describe('ImageGallery', () => {
     render(<ImageGallery {...defaultProps} />);
     
     const mainImage = screen.getByRole('img', { name: /main product image/i });
-    expect(mainImage).toHaveClass('object-cover');
-    
+    expect(mainImage).toHaveClass('object-contain');
+
     const thumbnails = screen.getAllByRole('img', { name: /thumbnail/i });
     thumbnails.forEach(thumbnail => {
-      expect(thumbnail).toHaveClass('object-cover');
+      expect(thumbnail).toHaveClass('object-contain');
     });
   });
 

@@ -1,18 +1,8 @@
+import React from 'react';
 import { render, screen, waitFor, act, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppRoutes } from '../../App';
-
-// Mock navigate function
-const mockNavigate = vi.fn();
-
-// Mock react-router-dom
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
+import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
 
 // Mock auth service
 vi.mock('../../services/authService', () => ({
@@ -21,7 +11,15 @@ vi.mock('../../services/authService', () => ({
   loginUser: vi.fn()
 }));
 
+// Mock products service (ProductListPage fetches via productsService, not fetch)
+vi.mock('../../services/productsService', () => ({
+  default: {
+    getProducts: vi.fn()
+  }
+}));
+
 import { getCurrentUser, logoutUser } from '../../services/authService';
+import productsService from '../../services/productsService';
 
 const mockUser = {
   id: '123',
@@ -54,8 +52,41 @@ const mockProductsResponse = {
   }
 };
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Render with a pre-seeded authenticated user. The shared test-utils render
+// wraps in a TestAuthProvider that ignores getCurrentUser, so to simulate a
+// logged-in session we shadow the real AuthStateContext/AuthDispatchContext
+// with seeded values nested inside the provider tree.
+const renderAuthenticatedTest = (initialRoute = '/products', user) => {
+  function AuthSeededWrapper({ children }) {
+    const [state, setState] = React.useState({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null
+    });
+    const dispatch = React.useCallback((action) => {
+      if (action.type === 'AUTH_SUCCESS') {
+        setState({ user: action.payload, isAuthenticated: true, isLoading: false, error: null });
+      } else if (action.type === 'LOGOUT') {
+        setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
+      }
+    }, []);
+    return (
+      <AuthStateContext.Provider value={state}>
+        <AuthDispatchContext.Provider value={dispatch}>
+          {children}
+        </AuthDispatchContext.Provider>
+      </AuthStateContext.Provider>
+    );
+  }
+
+  return render(
+    <AuthSeededWrapper>
+      <AppRoutes />
+    </AuthSeededWrapper>,
+    { initialEntries: [initialRoute] }
+  );
+};
 
 const renderLogoutTest = (initialRoute = '/products') => {
   return render(<AppRoutes />, {
@@ -68,48 +99,36 @@ describe('Logout Flow Integration Tests', () => {
     vi.clearAllMocks();
     document.title = 'Test';
     localStorage.clear();
-    mockNavigate.mockClear();
-    
-    // Mock successful products fetch
-    fetch.mockResolvedValue({
-      ok: true,
-      json: async () => mockProductsResponse
-    });
+    getCurrentUser.mockResolvedValue(null);
+    logoutUser.mockResolvedValue({ success: true });
+    productsService.getProducts.mockResolvedValue(mockProductsResponse);
   });
 
   it('should show logout option when user is authenticated', async () => {
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
+    renderAuthenticatedTest('/products', mockUser);
 
-    renderLogoutTest('/products');
-
-    // Wait for authentication check and products to load
+    // User menu should be visible (header shows the user's first name)
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     });
 
-    // User menu should be visible
-    expect(screen.getByText('Welcome, John')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /login/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^login$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /register/i })).not.toBeInTheDocument();
   });
 
   it('should successfully logout user when clicking sign out', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
-    logoutUser.mockResolvedValue();
+    logoutUser.mockResolvedValue({ success: true });
 
-    renderLogoutTest('/products');
+    renderAuthenticatedTest('/products', mockUser);
 
     // Wait for authentication and products to load
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     });
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await userEvent.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('John'));
     });
 
     // Wait for dropdown to appear
@@ -129,31 +148,28 @@ describe('Logout Flow Integration Tests', () => {
 
     // Should show login/register links again
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /^login$/i })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument();
     });
 
     // User menu should no longer be visible
-    expect(screen.queryByText('Welcome, John')).not.toBeInTheDocument();
+    expect(screen.queryByText('John')).not.toBeInTheDocument();
   });
 
   it('should handle logout service error gracefully', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
     // Mock logout service error
     logoutUser.mockRejectedValue(new Error('Network error'));
 
-    renderLogoutTest('/products');
+    renderAuthenticatedTest('/products', mockUser);
 
     // Wait for authentication and products to load
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     });
 
     // Click on user dropdown
     await act(async () => {
-      await userEvent.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('John'));
     });
 
     // Click sign out
@@ -163,11 +179,11 @@ describe('Logout Flow Integration Tests', () => {
 
     // Even with logout error, user should be logged out locally
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /^login$/i })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Welcome, John')).not.toBeInTheDocument();
+    expect(screen.queryByText('John')).not.toBeInTheDocument();
   });
 
   it('should show login/register links when not authenticated', async () => {
@@ -176,35 +192,32 @@ describe('Logout Flow Integration Tests', () => {
 
     renderLogoutTest('/products');
 
-    // Wait for authentication check and products to load
+    // Wait for products to load
     await waitFor(() => {
       expect(screen.getByText('GrapheneOS Pixel 9 Pro')).toBeInTheDocument();
     });
 
     // Should show login/register links
-    expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^login$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument();
 
     // Should not show user menu
-    expect(screen.queryByText('Welcome, John')).not.toBeInTheDocument();
+    expect(screen.queryByText('John')).not.toBeInTheDocument();
   });
 
   it('should close dropdown after successful logout', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
-    logoutUser.mockResolvedValue();
+    logoutUser.mockResolvedValue({ success: true });
 
-    renderLogoutTest('/products');
+    renderAuthenticatedTest('/products', mockUser);
 
     // Wait for authentication and products to load
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     });
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await userEvent.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('John'));
     });
 
     // Verify dropdown content is visible
@@ -223,7 +236,7 @@ describe('Logout Flow Integration Tests', () => {
     await waitFor(() => {
       expect(screen.queryByText('john.doe@example.com')).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /profile/i })).not.toBeInTheDocument();
-      expect(screen.queryByText('Welcome, John')).not.toBeInTheDocument();
+      expect(screen.queryByText('John')).not.toBeInTheDocument();
     });
   });
 });

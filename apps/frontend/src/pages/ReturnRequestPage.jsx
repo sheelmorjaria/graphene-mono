@@ -38,7 +38,7 @@ const ReturnRequestPage = () => {
 
   useEffect(() => {
     if (order) {
-      document.title = `Request Return - Order ${order.orderNumber} - GrapheneOS Store`;
+      document.title = `Request Return - Order ${order.orderNumber} - Graphene Security`;
     }
   }, [order]);
 

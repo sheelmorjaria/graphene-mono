@@ -61,7 +61,12 @@ const AddressForm = ({
   const [touchedFields, setTouchedFields] = useState({});
 
   useEffect(() => {
-    if (initialData) {
+    // Only populate from initialData when it actually contains data.
+    // The default `initialData = {}` is a fresh object on every render, so
+    // depending on it would otherwise retrigger this effect and call
+    // setFormData forever (an infinite update loop). The initial state above
+    // already defaults country to 'GB', so there is nothing to do when empty.
+    if (initialData && Object.keys(initialData).length > 0) {
       setFormData({
         fullName: initialData.fullName || '',
         addressLine1: initialData.addressLine1 || '',
@@ -72,12 +77,6 @@ const AddressForm = ({
         country: initialData.country || 'GB', // Default to UK
         phoneNumber: initialData.phoneNumber || ''
       });
-    } else {
-      // Set default country for new addresses
-      setFormData(prev => ({
-        ...prev,
-        country: 'GB'
-      }));
     }
   }, [initialData]);
 
@@ -190,12 +189,13 @@ const AddressForm = ({
         <div className="md:col-span-2">
           <label htmlFor={getFieldId('fullName')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               Full Name
             </span>
-            <span className="text-red-400 ml-1">*</span>
+            <span aria-hidden="true" className="text-red-400 ml-1">*</span>
+            <span className="sr-only">required</span>
           </label>
           <input
             id={getFieldId('fullName')}
@@ -206,6 +206,7 @@ const AddressForm = ({
             onBlur={handleBlur}
             disabled={isLoading}
             required
+            aria-required="true"
             aria-describedby={errors.fullName ? getErrorId('fullName') : undefined}
             className={`form-input ${errors.fullName && touchedFields.fullName ? 'form-input-error' : ''}`}
             placeholder="John Doe"
@@ -223,12 +224,13 @@ const AddressForm = ({
         <div className="md:col-span-2">
           <label htmlFor={getFieldId('addressLine1')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
               Address Line 1
             </span>
-            <span className="text-red-400 ml-1">*</span>
+            <span aria-hidden="true" className="text-red-400 ml-1">*</span>
+            <span className="sr-only">required</span>
           </label>
           <input
             id={getFieldId('addressLine1')}
@@ -239,6 +241,7 @@ const AddressForm = ({
             onBlur={handleBlur}
             disabled={isLoading}
             required
+            aria-required="true"
             aria-describedby={errors.addressLine1 ? getErrorId('addressLine1') : undefined}
             className={`form-input ${errors.addressLine1 && touchedFields.addressLine1 ? 'form-input-error' : ''}`}
             placeholder="Street address, P.O. box, etc."
@@ -256,7 +259,7 @@ const AddressForm = ({
         <div className="md:col-span-2">
           <label htmlFor={getFieldId('addressLine2')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               Address Line 2
@@ -280,12 +283,13 @@ const AddressForm = ({
         <div>
           <label htmlFor={getFieldId('city')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               City
             </span>
-            <span className="text-red-400 ml-1">*</span>
+            <span aria-hidden="true" className="text-red-400 ml-1">*</span>
+            <span className="sr-only">required</span>
           </label>
           <input
             id={getFieldId('city')}
@@ -296,6 +300,7 @@ const AddressForm = ({
             onBlur={handleBlur}
             disabled={isLoading}
             required
+            aria-required="true"
             aria-describedby={errors.city ? getErrorId('city') : undefined}
             className={`form-input ${errors.city && touchedFields.city ? 'form-input-error' : ''}`}
             placeholder="City"
@@ -313,12 +318,13 @@ const AddressForm = ({
         <div>
           <label htmlFor={getFieldId('stateProvince')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
               </svg>
               State/Province
             </span>
-            <span className="text-red-400 ml-1">*</span>
+            <span aria-hidden="true" className="text-red-400 ml-1">*</span>
+            <span className="sr-only">required</span>
           </label>
           <input
             id={getFieldId('stateProvince')}
@@ -329,6 +335,7 @@ const AddressForm = ({
             onBlur={handleBlur}
             disabled={isLoading}
             required
+            aria-required="true"
             aria-describedby={errors.stateProvince ? getErrorId('stateProvince') : undefined}
             className={`form-input ${errors.stateProvince && touchedFields.stateProvince ? 'form-input-error' : ''}`}
             placeholder="State or Province"
@@ -346,12 +353,13 @@ const AddressForm = ({
         <div>
           <label htmlFor={getFieldId('postalCode')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
               </svg>
               Postal Code
             </span>
-            <span className="text-red-400 ml-1">*</span>
+            <span aria-hidden="true" className="text-red-400 ml-1">*</span>
+            <span className="sr-only">required</span>
           </label>
           <input
             id={getFieldId('postalCode')}
@@ -362,6 +370,7 @@ const AddressForm = ({
             onBlur={handleBlur}
             disabled={isLoading}
             required
+            aria-required="true"
             aria-describedby={errors.postalCode ? getErrorId('postalCode') : undefined}
             className={`form-input ${errors.postalCode && touchedFields.postalCode ? 'form-input-error' : ''}`}
             placeholder="Postal or ZIP code"
@@ -379,12 +388,13 @@ const AddressForm = ({
         <div>
           <label htmlFor={getFieldId('country')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Country
             </span>
-            <span className="text-red-400 ml-1">*</span>
+            <span aria-hidden="true" className="text-red-400 ml-1">*</span>
+            <span className="sr-only">required</span>
           </label>
           <select
             id={getFieldId('country')}
@@ -394,6 +404,7 @@ const AddressForm = ({
             onBlur={handleBlur}
             disabled={isLoading}
             required
+            aria-required="true"
             aria-describedby={errors.country ? getErrorId('country') : undefined}
             className={`form-input ${errors.country && touchedFields.country ? 'form-input-error' : ''}`}
           >
@@ -417,7 +428,7 @@ const AddressForm = ({
         <div className="md:col-span-2">
           <label htmlFor={getFieldId('phoneNumber')} className="form-label">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               Phone Number

@@ -32,12 +32,12 @@ const PayPalPayment = ({ orderSummary, onPaymentSuccess, onPaymentError, onPayme
             currency_code: "GBP",
             value: orderSummary.orderTotal.toFixed(2)
           },
-          description: `Order from GrapheneOS Store - ${orderSummary.items?.length || 0} item(s)`,
+          description: `Order from Graphene Security - ${orderSummary.items?.length || 0} item(s)`,
           custom_id: flashOrderId || `order_${Date.now()}`,
           invoice_id: `inv_${Date.now()}`
         }],
         application_context: {
-          brand_name: "GrapheneOS Store",
+          brand_name: "Graphene Security",
           locale: "en-GB",
           landing_page: "NO_PREFERENCE",
           user_action: "PAY_NOW",

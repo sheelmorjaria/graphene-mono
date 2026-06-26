@@ -7,6 +7,7 @@ const AdminOrderDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [statusUpdateError, setStatusUpdateError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
@@ -111,19 +112,20 @@ const AdminOrderDetailsPage = () => {
 
   const handleUpdateStatus = () => {
     if (!selectedStatus) return;
-    
+    setStatusUpdateError('');
+
     if (selectedStatus === 'shipped' && (!trackingNumber.trim() || !trackingUrl.trim())) {
-      setError('Tracking number and tracking URL are required when marking as shipped');
+      setStatusUpdateError('Tracking number and tracking URL are required when marking as shipped');
       return;
     }
-    
+
     setShowConfirmDialog(true);
   };
 
   const confirmStatusUpdate = async () => {
     try {
       setStatusUpdateLoading(true);
-      setError('');
+      setStatusUpdateError('');
       
       const statusData = {
         newStatus: selectedStatus
@@ -146,7 +148,7 @@ const AdminOrderDetailsPage = () => {
       // Reload order details to show updated status
       await loadOrderDetails();
     } catch (err) {
-      setError(err.message || 'Failed to update order status');
+      setStatusUpdateError(err.message || 'Failed to update order status');
     } finally {
       setStatusUpdateLoading(false);
     }
@@ -393,6 +395,12 @@ const AdminOrderDetailsPage = () => {
                     )}
                   </div>
                   
+                  {statusUpdateError && (
+                    <div className="mt-3 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700" role="alert">
+                      {statusUpdateError}
+                    </div>
+                  )}
+
                   <div className="mt-4 flex justify-end">
                     <button
                       onClick={handleUpdateStatus}

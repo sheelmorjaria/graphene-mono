@@ -41,7 +41,6 @@ describe('Privacy Controller - Integration Tests', () => {
       email: 'test.privacy@example.com',
       password: 'password123', // Raw password - will be hashed by User model
       phone: '+1234567890',
-      marketingOptIn: true,
       addresses: [{
         fullName: 'John Doe',
         addressLine1: '123 Test Street',

@@ -73,7 +73,7 @@ describe('Password Reset Integration', () => {
     // Verify API call was made
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/forgot-password',
+        'http://localhost:5000/api/auth/forgot-password',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

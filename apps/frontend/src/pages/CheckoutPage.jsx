@@ -8,7 +8,7 @@ import DeliveryAddressSection from '../components/checkout/DeliveryAddressSectio
 import ShippingAddressSection from '../components/checkout/ShippingAddressSection';
 import BillingAddressSection from '../components/checkout/BillingAddressSection';
 import PaymentMethodSection from '../components/checkout/PaymentMethodSection';
-import { placeOrder, validateOrderData } from '../services/orderService';
+import PayPalPayment from '../components/checkout/PayPalPayment';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
@@ -186,48 +186,36 @@ const PaymentSection = () => {
 const ReviewSection = () => {
   const {
     checkoutState,
-    paymentState: _paymentState,
     shippingAddress,
     billingAddress,
-    _deliveryAddress,
     shippingMethod,
     paymentMethod,
-    orderSummary: _orderSummary,
-    prevStep,
-    resetCheckout
+    orderSummary,
+    setPaymentState,
+    prevStep
   } = useCheckout();
-  const { cart, clearCart } = useCart();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderError, setOrderError] = useState(null);
+  const { cart } = useCart();
 
-  const navigate = useNavigate();
+  const handlePayPalSuccess = (paymentData) => {
+    setPaymentState({
+      isProcessing: false,
+      error: null,
+      paymentData
+    });
+  };
 
-  const handlePlaceOrder = async () => {
-    try {
-      setIsProcessing(true);
-      setOrderError(null);
+  const handlePayPalError = (error) => {
+    setPaymentState({
+      isProcessing: false,
+      error: error.message || 'PayPal payment failed'
+    });
+  };
 
-      // Validate required data
-      if (!shippingAddress || !billingAddress || !shippingMethod || !paymentMethod) {
-        throw new Error('Please complete all required fields before proceeding.');
-      }
-
-      if (paymentMethod.type === 'paypal') {
-        // For PayPal, we don't place the order here - PayPal handles the payment
-        // and redirects to our success page which then creates the order
-        setOrderError('Please use the PayPal button above to complete your payment.');
-        return;
-      }
-
-      // If we add other payment methods in the future, handle them here
-      throw new Error('Selected payment method is not supported.');
-
-    } catch (error) {
-      console.error('Order validation error:', error);
-      setOrderError(error.message);
-    } finally {
-      setIsProcessing(false);
-    }
+  const handlePayPalCancel = () => {
+    setPaymentState({
+      isProcessing: false,
+      error: null
+    });
   };
 
   return (
@@ -352,52 +340,27 @@ const ReviewSection = () => {
         </div>
       </div>
 
-      {/* Error display */}
-      {orderError && (
-        <div className="mb-6 bg-red-subtle border border-red rounded-lg p-4">
-          <div className="flex">
-            <svg className="h-5 w-5 text-red" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-red">
-                {orderError}
-              </p>
-            </div>
+      <div className="flex flex-col gap-4 mt-6">
+        {/* PayPal commit (checkout is PayPal-only) */}
+        {paymentMethod?.type === 'paypal' && orderSummary && (
+          <div data-testid="paypal-checkout-section">
+            <PayPalPayment
+              orderSummary={orderSummary}
+              onPaymentSuccess={handlePayPalSuccess}
+              onPaymentError={handlePayPalError}
+              onPaymentCancel={handlePayPalCancel}
+            />
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="flex justify-between">
-        <button
-          onClick={prevStep}
-          disabled={isProcessing}
-          className={`btn px-6 py-3 rounded-lg transition-colors ${
-            isProcessing
-              ? 'btn btn-secondary opacity-50 cursor-not-allowed'
-              : 'btn btn-secondary'
-          }`}
-        >
-          Back to Shipping & Payment
-        </button>
-        <button
-          onClick={handlePlaceOrder}
-          disabled={isProcessing}
-          data-testid="place-order-button"
-          className={`btn px-8 py-3 rounded-lg font-medium transition-colors flex items-center ${
-            isProcessing
-              ? 'btn btn-secondary opacity-50 cursor-not-allowed'
-              : 'btn btn-primary'
-          }`}
-        >
-          {isProcessing && (
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          )}
-          {isProcessing ? 'Processing...' : 'Place Order'}
-        </button>
+        <div className="flex justify-between">
+          <button
+            onClick={prevStep}
+            className="btn px-6 py-3 rounded-lg transition-colors btn btn-secondary"
+          >
+            Back to Shipping & Payment
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -34,7 +34,9 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      // Generate the coverage report even when tests fail (default is false).
+      reportOnFailure: true,
+      reporter: ['text', 'json', 'json-summary', 'html'],
       exclude: [
         'node_modules/**',
         'src/test/**',

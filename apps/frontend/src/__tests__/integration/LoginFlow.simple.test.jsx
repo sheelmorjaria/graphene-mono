@@ -54,7 +54,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     renderLoginTest();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     renderLoginTest();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out the form
@@ -100,7 +100,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     renderLoginTest();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out the form
@@ -116,7 +116,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     });
 
     // Should stay on login page
-    expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 
   it('should validate form fields', async () => {
@@ -124,7 +124,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     renderLoginTest();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Try to submit empty form
@@ -134,13 +134,13 @@ describe('Login Flow Integration Tests - Simple', () => {
     expect(loginUser).not.toHaveBeenCalled();
 
     // Should still be on login page
-    expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 
   it('should update document title', () => {
     renderLoginTest();
 
-    expect(document.title).toBe('Sign In - GrapheneOS Store');
+    expect(document.title).toBe('Sign In - Graphene Security');
   });
 
   it('should handle logout functionality', async () => {
@@ -151,7 +151,7 @@ describe('Login Flow Integration Tests - Simple', () => {
     renderLoginTest();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Login first

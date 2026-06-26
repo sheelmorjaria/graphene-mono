@@ -23,7 +23,7 @@ const ChangePasswordPage = () => {
 
   // Set page title
   useEffect(() => {
-    document.title = 'Change Password - GrapheneOS Store';
+    document.title = 'Change Password - Graphene Security';
   }, []);
 
   // Redirect to login if not authenticated

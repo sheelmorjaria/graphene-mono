@@ -1,6 +1,8 @@
 import { render, screen, waitFor, userEvent, act } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import React from 'react';
 import { AppRoutes } from '../../App';
+import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
 
 // Mock fetch globally for integration tests
 global.fetch = vi.fn();
@@ -79,6 +81,42 @@ const renderIntegrationTest = (initialRoute = '/login') => {
   });
 };
 
+// Render with a pre-seeded authenticated user. The shared test-utils render
+// wraps in a TestAuthProvider that ignores getCurrentUser, so to simulate a
+// logged-in session we shadow the real AuthStateContext/AuthDispatchContext
+// with seeded values nested inside the provider tree.
+const renderAuthenticatedTest = (initialRoute = '/products', user) => {
+  function AuthSeededWrapper({ children }) {
+    const [state, setState] = React.useState({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null
+    });
+    const dispatch = React.useCallback((action) => {
+      if (action.type === 'AUTH_SUCCESS') {
+        setState({ user: action.payload, isAuthenticated: true, isLoading: false, error: null });
+      } else if (action.type === 'LOGOUT') {
+        setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
+      }
+    }, []);
+    return (
+      <AuthStateContext.Provider value={state}>
+        <AuthDispatchContext.Provider value={dispatch}>
+          {children}
+        </AuthDispatchContext.Provider>
+      </AuthStateContext.Provider>
+    );
+  }
+
+  return render(
+    <AuthSeededWrapper>
+      <AppRoutes />
+    </AuthSeededWrapper>,
+    { initialEntries: [initialRoute] }
+  );
+};
+
 describe('Login Flow Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -108,7 +146,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Wait for the page to load
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out the login form
@@ -142,7 +180,7 @@ describe('Login Flow Integration Tests', () => {
     // Verify token was stored (this would be done by the loginUser service)
     // We can verify the user is logged in by checking for the welcome message
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     });
   });
 
@@ -155,7 +193,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Wait for the page to load
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out the form
@@ -175,10 +213,10 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Should stay on login page
-    expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
 
     // Should not show authenticated user menu
-    expect(screen.queryByText('Welcome, John')).not.toBeInTheDocument();
+    expect(screen.queryByText('John')).not.toBeInTheDocument();
   });
 
   it('should navigate to login page from header', async () => {
@@ -204,7 +242,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Should navigate to login page
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
   });
 
@@ -224,7 +262,7 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Form should still be on login page (validation prevented submission)
-    expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 
   it('should handle remember me functionality', async () => {
@@ -239,7 +277,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Wait for the page to load
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out the form
@@ -282,7 +320,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Wait for login page to load
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out and submit login form
@@ -302,7 +340,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Should redirect to products and show user menu
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     }, { timeout: 5000 });
 
     // Login/Register links should not be visible
@@ -312,9 +350,6 @@ describe('Login Flow Integration Tests', () => {
 
   it('should logout user when clicking sign out', async () => {
 
-    // Mock that user is initially authenticated
-    getCurrentUser.mockResolvedValueOnce(mockProfileResponse.data.user);
-    
     // Mock logout service that clears localStorage
     logoutUser.mockImplementationOnce(() => {
       localStorage.removeItem('authToken');
@@ -324,16 +359,16 @@ describe('Login Flow Integration Tests', () => {
     // Set up authenticated state
     localStorage.setItem('authToken', 'mock-jwt-token');
 
-    renderIntegrationTest('/products');
+    renderAuthenticatedTest('/products', mockProfileResponse.data.user);
 
     // Wait for products page to load with authenticated user
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     }, { timeout: 5000 });
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await userEvent.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('John'));
     });
 
     // Click sign out
@@ -353,7 +388,7 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // User menu should no longer be visible
-    expect(screen.queryByText('Welcome, John')).not.toBeInTheDocument();
+    expect(screen.queryByText('John')).not.toBeInTheDocument();
 
     // Token should be removed
     expect(localStorage.getItem('authToken')).toBeNull();
@@ -379,7 +414,7 @@ describe('Login Flow Integration Tests', () => {
   it('should update document title on login page', () => {
     renderIntegrationTest('/login');
 
-    expect(document.title).toBe('Sign In - GrapheneOS Store');
+    expect(document.title).toBe('Sign In - Graphene Security');
   });
 
   it('should provide links to registration page', () => {
@@ -396,7 +431,7 @@ describe('Login Flow Integration Tests', () => {
   it('should provide forgot password link', () => {
     renderIntegrationTest('/login');
 
-    const forgotPasswordLink = screen.getByRole('link', { name: /forgot your password/i });
+    const forgotPasswordLink = screen.getByRole('link', { name: /forgot password/i });
     expect(forgotPasswordLink).toHaveAttribute('href', '/forgot-password');
   });
 
@@ -409,7 +444,7 @@ describe('Login Flow Integration Tests', () => {
 
     // Wait for login page to load
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     // Fill out the form
@@ -437,7 +472,7 @@ describe('Login Flow Integration Tests', () => {
     });
 
     // Should stay on login page
-    expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
   });
 
   it('should clear field errors when user starts typing', async () => {

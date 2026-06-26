@@ -61,8 +61,7 @@ describe('User Management Integration Tests', () => {
       role: 'customer',
       emailVerified: true,
       accountStatus: 'active',
-      phone: '+447123456789',
-      marketingOptIn: true
+      phone: '+447123456789'
     });
     await regularUser1.save();
 
@@ -74,8 +73,7 @@ describe('User Management Integration Tests', () => {
       role: 'customer',
       emailVerified: true,
       accountStatus: 'disabled',
-      phone: '+447987654321',
-      marketingOptIn: false
+      phone: '+447987654321'
     });
     await regularUser2.save();
 
@@ -164,8 +162,7 @@ describe('User Management Integration Tests', () => {
         lastName: 'Doe',
         role: 'customer',
         accountStatus: 'active',
-        phone: '+447123456789',
-        marketingOptIn: true
+        phone: '+447123456789'
       });
 
       // Step 5: Disable user account

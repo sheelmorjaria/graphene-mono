@@ -69,11 +69,7 @@ export default defineConfig({
     setupFiles: './src/test/setup.js',
     testTimeout: 20000, // Increase timeout to 20 seconds
     pool: 'forks', // Use forks for better isolation
-    poolOptions: {
-      forks: {
-        singleFork: true
-      }
-    },
+    singleFork: true,
     // Add Jest compatibility
     server: {
       deps: {

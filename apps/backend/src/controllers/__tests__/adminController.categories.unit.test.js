@@ -3,11 +3,13 @@ import { vi, describe, test, beforeEach, expect } from 'vitest';
 // Mock the Category model
 vi.mock('../../models/Category.js', () => ({
   default: Object.assign(
-    vi.fn().mockImplementation((data) => ({
-      ...data,
-      save: vi.fn(),
-      populate: vi.fn()
-    })),
+    vi.fn().mockImplementation(function (data) {
+      return {
+        ...data,
+        save: vi.fn(),
+        populate: vi.fn()
+      };
+    }),
     {
       find: vi.fn(),
       findById: vi.fn(),
@@ -195,7 +197,7 @@ describe('Admin Controller - Category Management Unit Tests', () => {
         })
       };
 
-      Category.mockReturnValue(mockNewCategory);
+      Category.mockImplementation(function () { return mockNewCategory; });
 
       await createCategory(req, res);
 

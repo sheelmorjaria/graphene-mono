@@ -184,10 +184,11 @@ const AdminOrdersListPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="filter-status" className="block text-sm font-medium text-gray-700 mb-2">
                 Status
               </label>
               <select
+                id="filter-status"
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
@@ -205,10 +206,11 @@ const AdminOrdersListPage = () => {
 
             {/* Customer Search */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="filter-customer" className="block text-sm font-medium text-gray-700 mb-2">
                 Customer
               </label>
               <input
+                id="filter-customer"
                 type="text"
                 value={filters.customerQuery}
                 onChange={(e) => handleFilterChange('customerQuery', e.target.value)}
@@ -219,10 +221,11 @@ const AdminOrdersListPage = () => {
 
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="filter-start-date" className="block text-sm font-medium text-gray-700 mb-2">
                 From Date
               </label>
               <input
+                id="filter-start-date"
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => handleFilterChange('startDate', e.target.value)}
@@ -232,10 +235,11 @@ const AdminOrdersListPage = () => {
 
             {/* End Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="filter-end-date" className="block text-sm font-medium text-gray-700 mb-2">
                 To Date
               </label>
               <input
+                id="filter-end-date"
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => handleFilterChange('endDate', e.target.value)}

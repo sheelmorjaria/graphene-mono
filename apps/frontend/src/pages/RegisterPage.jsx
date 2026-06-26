@@ -384,33 +384,50 @@ const RegisterPage = () => {
               )}
 
               {/* Password Strength Indicator */}
-              {formData.password && (
-                <div className="mt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-muted font-mono">Strength:</span>
-                    <div className="flex gap-1">
-                      {getPasswordStrength()?.strength === 'weak' && (
-                        <span className="w-8 h-1.5 rounded-full bg-red"></span>
-                      )}
-                      {getPasswordStrength()?.strength === 'medium' && (
-                        <>
-                          <span className="w-8 h-1.5 rounded-full bg-amber"></span>
-                          <span className="w-8 h-1.5 rounded-full bg-amber"></span>
-                        </>
-                      )}
-                      {getPasswordStrength()?.strength === 'strong' && (
-                        <>
-                          <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
-                          <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
-                          <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
-                          <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
-                          <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
-                        </>
+              {formData.password && (() => {
+                const strength = getPasswordStrength()?.strength;
+                const strengthLabel = strength
+                  ? strength.charAt(0).toUpperCase() + strength.slice(1)
+                  : '';
+                return (
+                  <div className="mt-3">
+                    <div
+                      className="flex items-center gap-2"
+                      role="meter"
+                      aria-valuemin={0}
+                      aria-valuemax={3}
+                      aria-valuenow={strength === 'weak' ? 1 : strength === 'medium' ? 2 : strength === 'strong' ? 3 : 0}
+                      aria-valuetext={strengthLabel ? `Password strength: ${strengthLabel}` : undefined}
+                      aria-label={strengthLabel ? `Password strength: ${strengthLabel}` : 'Password strength'}
+                    >
+                      <span className="text-xs text-text-muted font-mono">Strength:</span>
+                      <div className="flex gap-1" aria-hidden="true">
+                        {strength === 'weak' && (
+                          <span className="w-8 h-1.5 rounded-full bg-red"></span>
+                        )}
+                        {strength === 'medium' && (
+                          <>
+                            <span className="w-8 h-1.5 rounded-full bg-amber"></span>
+                            <span className="w-8 h-1.5 rounded-full bg-amber"></span>
+                          </>
+                        )}
+                        {strength === 'strong' && (
+                          <>
+                            <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
+                            <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
+                            <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
+                            <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
+                            <span className="w-8 h-1.5 rounded-full bg-matrix-400"></span>
+                          </>
+                        )}
+                      </div>
+                      {strengthLabel && (
+                        <span className="sr-only">{strengthLabel}</span>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               {errors.password && (
                 <p id="password-error" className="form-error">
                   {errors.password}

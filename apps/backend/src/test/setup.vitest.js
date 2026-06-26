@@ -26,7 +26,7 @@ vi.mock('mongoose', async () => {
   // Add Types to Schema constructor
   mockSchema.Types = {
     ObjectId: Object.assign(
-      vi.fn().mockImplementation((id) => {
+      vi.fn().mockImplementation(function (id) {
         const mockId = id || `mock-objectid-${Math.random().toString(36).substr(2, 9)}`;
         return {
           toString: () => mockId,
@@ -113,7 +113,6 @@ vi.mock('mongoose', async () => {
             this.isActive = data.isActive !== undefined ? data.isActive : true;
             this.isAdmin = data.isAdmin !== undefined ? data.isAdmin : false;
             this.lastLoginAt = data.lastLoginAt || null;
-            this.marketingOptIn = data.marketingOptIn !== undefined ? data.marketingOptIn : false;
             this.phone = data.phone || null;
             
             // Initialize shippingAddresses as a mock DocumentArray
@@ -1214,7 +1213,7 @@ vi.mock('mongoose', async () => {
       }),
       Types: {
         ObjectId: Object.assign(
-          vi.fn().mockImplementation((id) => {
+          vi.fn().mockImplementation(function (id) {
             // Return a mock ObjectId-like object
             const mockId = id || `mock-objectid-${Math.random().toString(36).substr(2, 9)}`;
             return {

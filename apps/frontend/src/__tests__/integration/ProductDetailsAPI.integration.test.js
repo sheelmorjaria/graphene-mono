@@ -58,7 +58,7 @@ describe('Product Details API Integration Tests', () => {
     const result = await productDetailsService.getProductBySlug('grapheneos-pixel-9-pro');
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/products/grapheneos-pixel-9-pro',
+      'http://localhost:5000/api/products/grapheneos-pixel-9-pro',
       {
         method: 'GET',
         headers: {
@@ -135,25 +135,25 @@ describe('Product Details API Integration Tests', () => {
     const result1 = await productDetailsService.getProductBySlug('');
     expect(result1).toEqual({
       success: false,
-      error: 'Slug parameter is required'
+      error: 'Slug parameter is required and cannot be undefined'
     });
 
     const result2 = await productDetailsService.getProductBySlug(null);
     expect(result2).toEqual({
       success: false,
-      error: 'Slug parameter is required'
+      error: 'Slug parameter is required and cannot be undefined'
     });
 
     const result3 = await productDetailsService.getProductBySlug(undefined);
     expect(result3).toEqual({
       success: false,
-      error: 'Slug parameter is required'
+      error: 'Slug parameter is required and cannot be undefined'
     });
 
     const result4 = await productDetailsService.getProductBySlug('   ');
     expect(result4).toEqual({
       success: false,
-      error: 'Slug parameter is required'
+      error: 'Slug parameter is required and cannot be undefined'
     });
 
     // Ensure no API calls were made for invalid slugs
@@ -170,7 +170,7 @@ describe('Product Details API Integration Tests', () => {
     await productDetailsService.getProductBySlug('product-with-special-chars-123');
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/products/product-with-special-chars-123',
+      'http://localhost:5000/api/products/product-with-special-chars-123',
       expect.anything()
     );
   });
@@ -187,7 +187,7 @@ describe('Product Details API Integration Tests', () => {
     await productDetailsService.getProductBySlug(longSlug);
 
     expect(fetch).toHaveBeenCalledWith(
-      `http://localhost:3000/api/products/${longSlug}`,
+      `http://localhost:5000/api/products/${longSlug}`,
       expect.anything()
     );
   });
@@ -384,7 +384,7 @@ describe('Product Details API Integration Tests', () => {
     await productDetailsService.getProductBySlug('test-product');
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/products/test-product',
+      'http://localhost:5000/api/products/test-product',
       {
         method: 'GET',
         headers: {

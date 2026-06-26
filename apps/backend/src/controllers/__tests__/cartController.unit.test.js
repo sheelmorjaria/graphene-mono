@@ -164,7 +164,7 @@ describe('Cart Controller - Unit Tests', () => {
       const newCart = { ...mockCart, userId: 'user123', save: vi.fn().mockResolvedValue(true) };
       
       // Mock Cart constructor
-      Cart.mockImplementation(() => newCart);
+      Cart.mockImplementation(function () { return newCart; });
 
       await getCart(req, res);
 
@@ -205,7 +205,7 @@ describe('Cart Controller - Unit Tests', () => {
       const newGuestCart = { ...mockCart, sessionId: 'guest-mock-uuid-123', save: vi.fn().mockResolvedValue(true) };
       
       // Mock Cart constructor for guest
-      Cart.mockImplementation(() => newGuestCart);
+      Cart.mockImplementation(function () { return newGuestCart; });
 
       await getCart(req, res);
 
@@ -464,7 +464,7 @@ describe('Cart Controller - Unit Tests', () => {
         save: vi.fn().mockResolvedValue(true),
         addItem: vi.fn()
       };
-      Cart.mockImplementation(() => cartWithExistingItem);
+      Cart.mockImplementation(function () { return cartWithExistingItem; });
       Cart.findByUserId.mockResolvedValue(cartWithExistingItem);
 
       await addToCart(req, res);
@@ -585,7 +585,7 @@ describe('Cart Controller - Unit Tests', () => {
         items: [],
         save: vi.fn().mockResolvedValue(true)
       };
-      Cart.mockImplementation(() => emptyCart);
+      Cart.mockImplementation(function () { return emptyCart; });
       Cart.findByUserId.mockResolvedValue(emptyCart);
 
       await updateCartItem(req, res);
@@ -738,7 +738,7 @@ describe('Cart Controller - Unit Tests', () => {
         items: [],
         save: vi.fn().mockResolvedValue(true)
       };
-      Cart.mockImplementation(() => emptyCart);
+      Cart.mockImplementation(function () { return emptyCart; });
       Cart.findByUserId.mockResolvedValue(emptyCart);
 
       await removeFromCart(req, res);
@@ -825,7 +825,7 @@ describe('Cart Controller - Unit Tests', () => {
       Cart.findBySessionId.mockResolvedValue(null);
       
       const newGuestCart = { ...mockCart, sessionId: 'guest-mock-uuid-123', save: vi.fn().mockResolvedValue(true) };
-      Cart.mockImplementation(() => newGuestCart);
+      Cart.mockImplementation(function () { return newGuestCart; });
 
       await getCart(req, res);
 
@@ -850,7 +850,7 @@ describe('Cart Controller - Unit Tests', () => {
       Cart.findBySessionId.mockResolvedValue(null);
       
       const newGuestCart = { ...mockCart, sessionId: 'guest-mock-uuid-123', save: vi.fn().mockResolvedValue(true) };
-      Cart.mockImplementation(() => newGuestCart);
+      Cart.mockImplementation(function () { return newGuestCart; });
 
       await getCart(req, res);
 

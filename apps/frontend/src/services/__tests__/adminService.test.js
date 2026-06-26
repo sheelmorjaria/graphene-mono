@@ -66,7 +66,7 @@ describe('adminService', () => {
       const result = await adminLogin(credentials);
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/login',
+        'http://localhost:5000/api/admin/login',
         {
           method: 'POST',
           headers: {
@@ -124,7 +124,7 @@ describe('adminService', () => {
       const result = await getDashboardMetrics();
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/dashboard-metrics',
+        'http://localhost:5000/api/admin/dashboard-metrics',
         {
           method: 'GET',
           headers: {
@@ -185,7 +185,7 @@ describe('adminService', () => {
       const result = await getAdminProfile();
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/profile',
+        'http://localhost:5000/api/admin/profile',
         {
           method: 'GET',
           headers: {
@@ -327,7 +327,7 @@ describe('adminService', () => {
       const result = await issueRefund(orderId, refundData);
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/admin/orders/order123/refund',
+        'http://localhost:5000/api/admin/orders/order123/refund',
         {
           method: 'POST',
           headers: {

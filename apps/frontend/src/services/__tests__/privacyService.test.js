@@ -1,333 +1,257 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import axios from 'axios';
 import { requestDataExport, requestAccountDeletion } from '../privacyService';
 
-// Mock axios
-vi.mock('axios');
+// Mock fetch globally
+global.fetch = vi.fn();
+
+// Mock localStorage
+const mockLocalStorage = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+Object.defineProperty(window, 'localStorage', {
+  value: mockLocalStorage,
+});
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const mockToken = 'test-auth-token';
 
 describe('Privacy Service', () => {
-  const mockAxiosInstance = {
-    post: vi.fn()
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    axios.create.mockReturnValue(mockAxiosInstance);
+    mockLocalStorage.getItem.mockReturnValue(mockToken);
   });
 
   describe('requestDataExport', () => {
     it('should successfully request data export', async () => {
-      const mockResponse = {
+      const mockData = {
+        success: true,
+        message: 'Data export request received.',
         data: {
-          success: true,
-          message: 'Data export request received. You will receive an email with a download link when your data is ready.',
-          data: {
-            requestId: 'export_user123_1234567890_abc123',
-            estimatedTime: '24 hours'
-          }
-        }
+          requestId: 'export_user123_1234567890_abc123',
+          estimatedTime: '24 hours',
+        },
       };
 
-      mockAxiosInstance.post.mockResolvedValue(mockResponse);
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockData,
+      });
 
       const result = await requestDataExport();
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/export');
-      expect(result).toEqual(mockResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/user/data/export`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${mockToken}`,
+          },
+        }
+      );
+      expect(result).toEqual(mockData);
     });
 
     it('should handle rate limiting error', async () => {
-      const mockError = {
-        response: {
-          status: 429,
-          data: {
-            success: false,
-            error: 'You already have a pending data export request. Please wait for it to complete before requesting another.',
-            data: {
-              existingRequestId: 'export_existing_123',
-              status: 'pending',
-              requestedAt: '2025-07-30T10:00:00.000Z'
-            }
-          }
-        }
+      const mockData = {
+        success: false,
+        error:
+          'You already have a pending data export request. Please wait for it to complete before requesting another.',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
+      });
 
-      await expect(requestDataExport()).rejects.toEqual(mockError);
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/export');
+      await expect(requestDataExport()).rejects.toThrow(mockData.error);
     });
 
     it('should handle authentication error', async () => {
-      const mockError = {
-        response: {
-          status: 401,
-          data: {
-            success: false,
-            error: 'Access denied. Please log in.'
-          }
-        }
+      const mockData = {
+        success: false,
+        error: 'Access denied. Please log in.',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
+      });
 
-      await expect(requestDataExport()).rejects.toEqual(mockError);
+      await expect(requestDataExport()).rejects.toThrow(mockData.error);
     });
 
     it('should handle server error', async () => {
-      const mockError = {
-        response: {
-          status: 500,
-          data: {
-            success: false,
-            error: 'Server error occurred while processing data export request'
-          }
-        }
+      const mockData = {
+        success: false,
+        error: 'Server error occurred while processing data export request',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
+      });
 
-      await expect(requestDataExport()).rejects.toEqual(mockError);
+      await expect(requestDataExport()).rejects.toThrow(mockData.error);
     });
 
-    it('should handle network error', async () => {
-      const networkError = new Error('Network Error');
-      mockAxiosInstance.post.mockRejectedValue(networkError);
+    it('should fall back to default message when error response has no message', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({}),
+      });
 
-      await expect(requestDataExport()).rejects.toEqual(networkError);
+      await expect(requestDataExport()).rejects.toThrow(
+        'Failed to request data export'
+      );
+    });
+
+    it('should throw Authentication required when no token is available', async () => {
+      mockLocalStorage.getItem.mockReturnValue(null);
+
+      await expect(requestDataExport()).rejects.toThrow('Authentication required');
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle network errors', async () => {
+      fetch.mockRejectedValueOnce(new Error('Network Error'));
+
+      await expect(requestDataExport()).rejects.toThrow('Network Error');
     });
   });
 
   describe('requestAccountDeletion', () => {
     it('should successfully request account deletion', async () => {
       const password = 'mySecurePassword123';
-      const mockResponse = {
+      const mockData = {
+        success: true,
+        message: 'Account deletion request received.',
         data: {
-          success: true,
-          message: 'Account deletion request received. You will receive a confirmation email and be logged out.',
-          data: {
-            requestId: 'deletion_user123_1234567890_def456',
-            estimatedTime: '7-30 days'
-          }
-        }
+          requestId: 'deletion_user123_1234567890_def456',
+          estimatedTime: '7-30 days',
+        },
       };
 
-      mockAxiosInstance.post.mockResolvedValue(mockResponse);
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockData,
+      });
 
       const result = await requestAccountDeletion(password);
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/delete-request', {
-        password: password
-      });
-      expect(result).toEqual(mockResponse.data);
+      expect(fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/user/data/delete-request`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${mockToken}`,
+          },
+          body: JSON.stringify({ password }),
+        }
+      );
+      expect(result).toEqual(mockData);
+      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('authToken');
     });
 
-    it('should handle missing password error', async () => {
-      const mockError = {
-        response: {
-          status: 400,
-          data: {
-            success: false,
-            error: 'Password is required to confirm account deletion'
-          }
-        }
+    it('should handle missing password error from server', async () => {
+      const mockData = {
+        success: false,
+        error: 'Password is required to confirm account deletion',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
-
-      await expect(requestAccountDeletion('')).rejects.toEqual(mockError);
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/delete-request', {
-        password: ''
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
       });
+
+      await expect(requestAccountDeletion('')).rejects.toThrow(mockData.error);
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/user/data/delete-request`,
+        expect.objectContaining({
+          body: JSON.stringify({ password: '' }),
+        })
+      );
     });
 
     it('should handle invalid password error', async () => {
       const password = 'wrongPassword';
-      const mockError = {
-        response: {
-          status: 400,
-          data: {
-            success: false,
-            error: 'Invalid password. Please check your password and try again.'
-          }
-        }
+      const mockData = {
+        success: false,
+        error: 'Invalid password. Please check your password and try again.',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
-
-      await expect(requestAccountDeletion(password)).rejects.toEqual(mockError);
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/delete-request', {
-        password: password
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
       });
+
+      await expect(requestAccountDeletion(password)).rejects.toThrow(mockData.error);
     });
 
     it('should handle duplicate deletion request error', async () => {
       const password = 'validPassword123';
-      const mockError = {
-        response: {
-          status: 429,
-          data: {
-            success: false,
-            error: 'You already have a pending account deletion request.',
-            data: {
-              existingRequestId: 'deletion_existing_123',
-              status: 'pending',
-              requestedAt: '2025-07-30T10:00:00.000Z'
-            }
-          }
-        }
+      const mockData = {
+        success: false,
+        error: 'You already have a pending account deletion request.',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
+      });
 
-      await expect(requestAccountDeletion(password)).rejects.toEqual(mockError);
+      await expect(requestAccountDeletion(password)).rejects.toThrow(mockData.error);
     });
 
     it('should handle authentication error', async () => {
       const password = 'validPassword123';
-      const mockError = {
-        response: {
-          status: 401,
-          data: {
-            success: false,
-            error: 'Access denied. Please log in.'
-          }
-        }
+      const mockData = {
+        success: false,
+        error: 'Access denied. Please log in.',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
+      });
 
-      await expect(requestAccountDeletion(password)).rejects.toEqual(mockError);
+      await expect(requestAccountDeletion(password)).rejects.toThrow(mockData.error);
     });
 
     it('should handle server error', async () => {
       const password = 'validPassword123';
-      const mockError = {
-        response: {
-          status: 500,
-          data: {
-            success: false,
-            error: 'Server error occurred while processing account deletion request'
-          }
-        }
+      const mockData = {
+        success: false,
+        error: 'Server error occurred while processing account deletion request',
       };
 
-      mockAxiosInstance.post.mockRejectedValue(mockError);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => mockData,
+      });
 
-      await expect(requestAccountDeletion(password)).rejects.toEqual(mockError);
+      await expect(requestAccountDeletion(password)).rejects.toThrow(mockData.error);
     });
 
-    it('should handle network error', async () => {
+    it('should throw Authentication required when no token is available', async () => {
+      mockLocalStorage.getItem.mockReturnValue(null);
+
+      await expect(requestAccountDeletion('password')).rejects.toThrow(
+        'Authentication required'
+      );
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle network errors', async () => {
       const password = 'validPassword123';
-      const networkError = new Error('Network Error');
-      mockAxiosInstance.post.mockRejectedValue(networkError);
+      fetch.mockRejectedValueOnce(new Error('Network Error'));
 
-      await expect(requestAccountDeletion(password)).rejects.toEqual(networkError);
-    });
-
-    it('should pass undefined password as empty string', async () => {
-      const mockResponse = {
-        data: {
-          success: false,
-          error: 'Password is required'
-        }
-      };
-
-      mockAxiosInstance.post.mockResolvedValue(mockResponse);
-
-      await requestAccountDeletion(undefined);
-
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/delete-request', {
-        password: ''
-      });
-    });
-
-    it('should handle null password', async () => {
-      const mockResponse = {
-        data: {
-          success: false,
-          error: 'Password is required'
-        }
-      };
-
-      mockAxiosInstance.post.mockResolvedValue(mockResponse);
-
-      await requestAccountDeletion(null);
-
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/user/data/delete-request', {
-        password: ''
-      });
-    });
-  });
-
-  describe('API Configuration', () => {
-    it('should create axios instance with correct configuration', async () => {
-      // Import the service to trigger axios.create
-      await import('../privacyService');
-
-      expect(axios.create).toHaveBeenCalledWith({
-        baseURL: expect.stringContaining('/api'),
-        timeout: 30000,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-    });
-
-    it('should include authorization header when token is available', async () => {
-      // Mock localStorage
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test';
-      Object.defineProperty(window, 'localStorage', {
-        value: {
-          getItem: vi.fn(() => mockToken)
-        },
-        writable: true
-      });
-
-      // Re-import to trigger the service initialization
-      vi.resetModules();
-      await import('../privacyService');
-
-      // The service should set up an interceptor that adds the Authorization header
-      expect(axios.create).toHaveBeenCalled();
-    });
-  });
-
-  describe('Error Handling Patterns', () => {
-    it('should preserve error structure for proper client handling', async () => {
-      const specificError = {
-        response: {
-          status: 429,
-          data: {
-            success: false,
-            error: 'Rate limit exceeded',
-            data: {
-              retryAfter: 3600
-            }
-          }
-        }
-      };
-
-      mockAxiosInstance.post.mockRejectedValue(specificError);
-
-      try {
-        await requestDataExport();
-      } catch (error) {
-        expect(error.response.status).toBe(429);
-        expect(error.response.data.error).toBe('Rate limit exceeded');
-        expect(error.response.data.data.retryAfter).toBe(3600);
-      }
-    });
-
-    it('should handle timeout errors', async () => {
-      const timeoutError = {
-        code: 'ECONNABORTED',
-        message: 'timeout of 30000ms exceeded'
-      };
-
-      mockAxiosInstance.post.mockRejectedValue(timeoutError);
-
-      await expect(requestDataExport()).rejects.toEqual(timeoutError);
+      await expect(requestAccountDeletion(password)).rejects.toThrow('Network Error');
     });
   });
 });

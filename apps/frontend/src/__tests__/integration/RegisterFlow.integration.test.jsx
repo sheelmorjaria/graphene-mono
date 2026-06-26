@@ -23,7 +23,7 @@ describe('Registration Flow Integration Tests', () => {
     renderIntegrationTest('/register');
 
     // Verify we're on the registration page
-    expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /join our community/i })).toBeInTheDocument();
 
     // Verify all form fields are present
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
@@ -32,7 +32,6 @@ describe('Registration Flow Integration Tests', () => {
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/phone/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/marketing/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
   });
 
@@ -64,7 +63,7 @@ describe('Registration Flow Integration Tests', () => {
 
     // Form should not allow submission with empty required fields
     // The form validates client-side before attempting submission
-    expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /join our community/i })).toBeInTheDocument();
   });
 
   it('should validate password confirmation', async () => {
@@ -89,7 +88,7 @@ describe('Registration Flow Integration Tests', () => {
   it('should update document title on registration page', () => {
     renderIntegrationTest('/register');
     
-    expect(document.title).toBe('Create Account - GrapheneOS Store');
+    expect(document.title).toBe('Create Account - Graphene Security');
   });
 
   it('should provide links to login page', () => {
@@ -102,21 +101,10 @@ describe('Registration Flow Integration Tests', () => {
     });
   });
 
-  it('should toggle marketing opt-in checkbox', async () => {
+  it('should display the privacy notice', () => {
     renderIntegrationTest('/register');
 
-    const marketingCheckbox = screen.getByLabelText(/marketing/i);
-    
-    // Initially unchecked
-    expect(marketingCheckbox).not.toBeChecked();
-
-    // Click to check
-    await userEvent.click(marketingCheckbox);
-    expect(marketingCheckbox).toBeChecked();
-
-    // Click to uncheck
-    await userEvent.click(marketingCheckbox);
-    expect(marketingCheckbox).not.toBeChecked();
+    expect(screen.getByText(/privacy notice/i)).toBeInTheDocument();
   });
 
   it('should show password requirements when password field is focused', async () => {

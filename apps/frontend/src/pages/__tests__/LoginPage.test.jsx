@@ -53,7 +53,7 @@ describe('LoginPage', () => {
     it('should render login form with required fields', () => {
       renderLoginPage();
 
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
@@ -69,12 +69,12 @@ describe('LoginPage', () => {
     it('should render forgot password link', () => {
       renderLoginPage();
 
-      expect(screen.getByRole('link', { name: /forgot your password/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /forgot password/i })).toBeInTheDocument();
     });
 
     it('should set correct page title', () => {
       renderLoginPage();
-      expect(document.title).toBe('Sign In - GrapheneOS Store');
+      expect(document.title).toBe('Sign In - Graphene Security');
     });
   });
 
@@ -86,7 +86,7 @@ describe('LoginPage', () => {
       await userEvent.click(submitButton);
 
       // Should stay on login page (validation prevented submission)
-      expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
 
     it('should validate email format', async () => {
@@ -294,7 +294,7 @@ describe('LoginPage', () => {
     it('should have forgot password link with correct href', () => {
       renderLoginPage();
 
-      const forgotPasswordLink = screen.getByRole('link', { name: /forgot your password/i });
+      const forgotPasswordLink = screen.getByRole('link', { name: /forgot password/i });
       expect(forgotPasswordLink).toHaveAttribute('href', '/forgot-password');
     });
   });
@@ -313,7 +313,7 @@ describe('LoginPage', () => {
     it('should have proper heading hierarchy', () => {
       renderLoginPage();
 
-      const heading = screen.getByRole('heading', { name: /sign in to your account/i });
+      const heading = screen.getByRole('heading', { name: /graphene security/i });
       expect(heading.tagName).toBe('H1');
     });
 

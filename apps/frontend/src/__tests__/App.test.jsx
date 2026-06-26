@@ -33,9 +33,10 @@ vi.mock('../hooks/useProductDetails', () => ({
   })
 }));
 
-const renderWithRouter = (initialEntries = ['/']) => {
+const renderWithRouter = (initialEntries = ['/'], { initialIndex = 0 } = {}) => {
   return render(<AppRoutes />, {
-    initialEntries
+    initialEntries,
+    initialIndex
   });
 };
 
@@ -64,9 +65,9 @@ describe('App Routing', () => {
 
   it('should render 404 page for unknown routes', () => {
     renderWithRouter(['/unknown-route']);
-    
+
     expect(screen.getByText(/page not found/i)).toBeInTheDocument();
-    expect(screen.getByText(/the page you're looking for doesn't exist/i)).toBeInTheDocument();
+    expect(screen.getByText(/the page you are looking for might have been removed/i)).toBeInTheDocument();
   });
 
   it('should have navigation links in header', () => {
@@ -82,9 +83,12 @@ describe('App Routing', () => {
     // Should start on product list page
     expect(screen.getByTestId('product-list-page')).toBeInTheDocument();
 
-    // Click on products link (if it exists and is different from current)
-    const productsLink = screen.queryByRole('link', { name: /products/i });
-    if (productsLink && productsLink.getAttribute('href') !== '/') {
+    // Click on a products link (if one exists pointing elsewhere)
+    const productsLinks = screen.queryAllByRole('link', { name: /products/i });
+    const productsLink = productsLinks.find(
+      (link) => link.getAttribute('href') !== '/'
+    );
+    if (productsLink) {
       await userEvent.click(productsLink);
       expect(screen.getByTestId('product-list-page')).toBeInTheDocument();
     }
@@ -94,14 +98,14 @@ describe('App Routing', () => {
     renderWithRouter(['/']);
     
     await waitFor(() => {
-      expect(document.title).toContain('GrapheneOS Store');
+      expect(document.title).toContain('Graphene Security');
     });
   });
 
   it('should handle browser back navigation', () => {
-    renderWithRouter(['/products', '/products/test-product']);
-    
-    // Should be on product details page
+    renderWithRouter(['/products', '/products/test-product'], { initialIndex: 1 });
+
+    // Should be on product details page (second history entry)
     expect(screen.getByTestId('product-details-page')).toBeInTheDocument();
   });
 

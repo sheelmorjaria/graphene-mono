@@ -4,7 +4,7 @@ import { calculateShippingRates } from '../services/shippingService';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
 
-const CheckoutContext = createContext();
+export const CheckoutContext = createContext();
 
 export const useCheckout = () => {
   const context = useContext(CheckoutContext);
@@ -65,7 +65,12 @@ export const CheckoutProvider = ({ children }) => {
     } finally {
       setAddressesLoading(false);
     }
-  }, [checkoutState.deliveryAddress]);
+    // Deps intentionally empty: load addresses once when authenticated.
+    // Listing checkoutState.shippingAddress/deliveryAddress here would recreate
+    // this callback after the auto-select below (which sets them) and retrigger
+    // the effect, causing a duplicate getUserAddresses call on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load addresses when component mounts and user is authenticated
   useEffect(() => {

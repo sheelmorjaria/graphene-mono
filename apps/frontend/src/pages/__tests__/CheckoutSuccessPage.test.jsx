@@ -255,10 +255,10 @@ describe('CheckoutSuccessPage', () => {
     });
 
     // The component sets the title synchronously in useEffect
-    expect(document.title).toBe('Payment Processing - GrapheneOS Store');
+    expect(document.title).toBe('Payment Processing - Graphene Security');
 
     await waitFor(() => {
-      expect(document.title).toBe('Payment Successful - GrapheneOS Store');
+      expect(document.title).toBe('Payment Successful - Graphene Security');
     }, { timeout: 5000 });
 
     // Restore fake timers

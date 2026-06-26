@@ -51,7 +51,7 @@ describe('ForgotPasswordPage', () => {
 
     it('should set correct page title', () => {
       renderForgotPasswordPage();
-      expect(document.title).toBe('Forgot Password - GrapheneOS Store');
+      expect(document.title).toBe('Forgot Password - Graphene Security');
     });
 
     it('should have link back to login page', () => {

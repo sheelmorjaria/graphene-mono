@@ -47,8 +47,7 @@ export const register = async (req, res) => {
       confirmPassword,
       firstName,
       lastName,
-      phone,
-      marketingOptIn = false
+      phone
     } = req.body;
 
     // Input validation
@@ -110,8 +109,7 @@ export const register = async (req, res) => {
       email: email.toLowerCase().trim(),
       password,
       firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      marketingOptIn: Boolean(marketingOptIn)
+      lastName: lastName.trim()
     };
 
     if (phone) {
@@ -290,8 +288,7 @@ export const updateProfile = async (req, res) => {
     const {
       firstName,
       lastName,
-      phone,
-      marketingOptIn
+      phone
     } = req.body;
 
     if (!user) {
@@ -318,7 +315,6 @@ export const updateProfile = async (req, res) => {
         user.phone = undefined;
       }
     }
-    if (marketingOptIn !== undefined) user.marketingOptIn = Boolean(marketingOptIn);
 
     if (user.save) {
       await user.save();

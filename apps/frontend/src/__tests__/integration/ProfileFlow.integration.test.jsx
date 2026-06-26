@@ -1,6 +1,8 @@
+import React from 'react';
 import { render, screen, waitFor, act, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppRoutes } from '../../App';
+import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
 
 // Mock navigate function
 const mockNavigate = vi.fn();
@@ -14,15 +16,26 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock auth service
-vi.mock('../../services/authService', () => ({
-  getCurrentUser: vi.fn(),
-  updateUserProfile: vi.fn(),
-  logoutUser: vi.fn(),
-  loginUser: vi.fn()
+// authService is mocked by the shared test-utils (getCurrentUser/loginUser/
+// logoutUser). It omits updateUserProfile, which is installed onto the shared
+// mock module instance below (see authServiceModule.updateUserProfile).
+
+// Mock products service (ProductListPage fetches via productsService, not fetch)
+vi.mock('../../services/productsService', () => ({
+  default: {
+    getProducts: vi.fn()
+  }
 }));
 
-import { getCurrentUser, updateUserProfile } from '../../services/authService';
+import { getCurrentUser } from '../../services/authService';
+import * as authServiceModule from '../../services/authService';
+import productsService from '../../services/productsService';
+
+// The shared test-utils mock of authService omits updateUserProfile. The mock
+// object is a live shared module instance, so installing the mock method onto
+// it here makes it available to both this test and the component under test.
+const updateUserProfile = vi.fn();
+authServiceModule.updateUserProfile = updateUserProfile;
 
 const mockUser = {
   id: '123',
@@ -30,8 +43,7 @@ const mockUser = {
   firstName: 'John',
   lastName: 'Doe',
   phone: '+447123456789',
-  role: 'customer',
-  marketingOptIn: false
+  role: 'customer'
 };
 
 const mockProductsResponse = {
@@ -57,13 +69,40 @@ const mockProductsResponse = {
   }
 };
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Render with a pre-seeded authenticated user. The shared test-utils render
+// wraps in a TestAuthProvider that ignores getCurrentUser, so to simulate a
+// logged-in session we shadow the real AuthStateContext/AuthDispatchContext
+// with seeded values nested inside the provider tree.
+const renderAuthenticatedTest = (initialRoute = '/products', user) => {
+  function AuthSeededWrapper({ children }) {
+    const [state, setState] = React.useState({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null
+    });
+    const dispatch = React.useCallback((action) => {
+      if (action.type === 'AUTH_SUCCESS') {
+        setState({ user: action.payload, isAuthenticated: true, isLoading: false, error: null });
+      } else if (action.type === 'LOGOUT') {
+        setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
+      }
+    }, []);
+    return (
+      <AuthStateContext.Provider value={state}>
+        <AuthDispatchContext.Provider value={dispatch}>
+          {children}
+        </AuthDispatchContext.Provider>
+      </AuthStateContext.Provider>
+    );
+  }
 
-const renderProfileIntegrationTest = (initialRoute = '/products') => {
-  return render(<AppRoutes />, {
-    initialEntries: [initialRoute]
-  });
+  return render(
+    <AuthSeededWrapper>
+      <AppRoutes />
+    </AuthSeededWrapper>,
+    { initialEntries: [initialRoute] }
+  );
 };
 
 describe('Profile Flow Integration Tests', () => {
@@ -72,38 +111,34 @@ describe('Profile Flow Integration Tests', () => {
     document.title = 'Test';
     localStorage.clear();
     mockNavigate.mockClear();
-    
-    // Mock successful products fetch
-    fetch.mockResolvedValue({
-      ok: true,
-      json: async () => mockProductsResponse
+    getCurrentUser.mockResolvedValue(mockUser);
+    updateUserProfile.mockResolvedValue({
+      success: true,
+      data: { user: mockUser }
     });
+    productsService.getProducts.mockResolvedValue(mockProductsResponse);
   });
 
   it('should navigate to profile page from user menu', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
+    renderAuthenticatedTest('/products', mockUser);
 
-    renderProfileIntegrationTest('/products');
-
-    // Wait for authentication and products to load
+    // Wait for authentication and products to load (header shows first name)
     await waitFor(() => {
-      expect(screen.getByText('Welcome, John')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
     });
 
     // Click on user dropdown to open menu
     await act(async () => {
-      await userEvent.click(screen.getByText('Welcome, John'));
+      await userEvent.click(screen.getByText('John'));
     });
 
     // Wait for dropdown to appear and click Profile
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: /profile/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
     });
 
     await act(async () => {
-      await userEvent.click(screen.getByRole('link', { name: /profile/i }));
+      await userEvent.click(screen.getByRole('link', { name: /^profile$/i }));
     });
 
     // Should navigate to profile page
@@ -119,15 +154,12 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should successfully update profile information', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
     updateUserProfile.mockResolvedValue({
       success: true,
       data: { user: { ...mockUser, firstName: 'Jane', phone: '+441234567890' } }
     });
 
-    renderProfileIntegrationTest('/profile');
+    renderAuthenticatedTest('/profile', mockUser);
 
     // Wait for profile page to load
     await waitFor(() => {
@@ -153,11 +185,6 @@ describe('Profile Flow Integration Tests', () => {
       await userEvent.type(phoneInput, '+441234567890');
     });
 
-    // Enable marketing opt-in
-    await act(async () => {
-      await userEvent.click(screen.getByLabelText(/receive marketing emails/i));
-    });
-
     // Submit the form
     await act(async () => {
       await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
@@ -168,8 +195,7 @@ describe('Profile Flow Integration Tests', () => {
       expect(updateUserProfile).toHaveBeenCalledWith({
         firstName: 'Jane',
         lastName: 'Doe',
-        phone: '+441234567890',
-        marketingOptIn: true
+        phone: '+441234567890'
       });
     });
 
@@ -180,12 +206,9 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should handle profile update errors', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
     updateUserProfile.mockRejectedValue(new Error('Phone number is invalid'));
 
-    renderProfileIntegrationTest('/profile');
+    renderAuthenticatedTest('/profile', mockUser);
 
     // Wait for profile page to load
     await waitFor(() => {
@@ -209,11 +232,7 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should validate form fields before submission', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
-
-    renderProfileIntegrationTest('/profile');
+    renderAuthenticatedTest('/profile', mockUser);
 
     // Wait for profile page to load
     await waitFor(() => {
@@ -231,6 +250,11 @@ describe('Profile Flow Integration Tests', () => {
       await userEvent.clear(firstNameInput);
     });
 
+    // Trigger blur validation
+    await act(async () => {
+      await userEvent.tab();
+    });
+
     // Try to submit
     await act(async () => {
       await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
@@ -246,10 +270,7 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should show email field as disabled with explanation', async () => {
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
-
-    renderProfileIntegrationTest('/profile');
+    renderAuthenticatedTest('/profile', mockUser);
 
     // Wait for profile page to load
     await waitFor(() => {
@@ -270,11 +291,7 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should validate phone number format', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
-
-    renderProfileIntegrationTest('/profile');
+    renderAuthenticatedTest('/profile', mockUser);
 
     // Wait for profile page to load
     await waitFor(() => {
@@ -301,12 +318,9 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should show loading state during form submission', async () => {
-    
-    // Mock authenticated user
-    getCurrentUser.mockResolvedValue(mockUser);
     updateUserProfile.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-    renderProfileIntegrationTest('/profile');
+    renderAuthenticatedTest('/profile', mockUser);
 
     // Wait for profile page to load
     await waitFor(() => {
@@ -334,10 +348,12 @@ describe('Profile Flow Integration Tests', () => {
   });
 
   it('should redirect to login if not authenticated', async () => {
-    // Mock no authenticated user
+    // No authenticated user: render AppRoutes without seeding auth state.
+    // The TestAuthProvider defaults to an unauthenticated session, so
+    // MyProfilePage sees no user and navigates to /login.
     getCurrentUser.mockResolvedValue(null);
 
-    renderProfileIntegrationTest('/profile');
+    render(<AppRoutes />, { initialEntries: ['/profile'] });
 
     // Should navigate to login page
     await waitFor(() => {

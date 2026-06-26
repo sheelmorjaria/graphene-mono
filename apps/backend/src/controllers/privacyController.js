@@ -115,7 +115,6 @@ const generateDataExport = async (requestId, userId, userEmail) => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
-        marketingOptIn: user.marketingOptIn,
         accountCreated: user.createdAt,
         lastLogin: user.lastLoginAt,
         accountStatus: user.accountStatus
@@ -143,7 +142,6 @@ const generateDataExport = async (requestId, userId, userEmail) => {
         updatedAt: order.updatedAt
       })),
       preferences: {
-        marketingOptIn: user.marketingOptIn
         // Add other preferences as they're implemented
       },
       metadata: {
@@ -353,7 +351,6 @@ const processAccountDeletion = async (requestId, userId, userEmail) => {
       email: `deleted_${userId}@anonymous.local`,
       phone: '',
       addresses: [],
-      marketingOptIn: false,
       isActive: false,
       isDeleted: true,
       deletedAt: new Date(),

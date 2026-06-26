@@ -184,7 +184,8 @@ describe('AdminOrdersListPage', () => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('john@test.com')).toBeInTheDocument();
       expect(screen.getByText('£999.99')).toBeInTheDocument();
-      expect(screen.getByText('Pending')).toBeInTheDocument();
+      // "Pending" appears in the status filter option and the order badge
+      expect(screen.getAllByText('Pending').length).toBeGreaterThan(0);
     });
 
     it('should show View Details links', () => {
@@ -196,9 +197,13 @@ describe('AdminOrdersListPage', () => {
     });
 
     it('should format status badges correctly', () => {
-      const pendingBadge = screen.getByText('Pending');
-      const shippedBadge = screen.getByText('Shipped');
-      
+      // The status filter also contains "Pending"/"Shipped" option text, so
+      // locate the badge elements by their badge styling classes.
+      const pendingBadge = screen.getAllByText('Pending')
+        .find(el => el.className.includes('bg-yellow-100'));
+      const shippedBadge = screen.getAllByText('Shipped')
+        .find(el => el.className.includes('bg-green-100'));
+
       expect(pendingBadge).toHaveClass('bg-yellow-100', 'text-yellow-800');
       expect(shippedBadge).toHaveClass('bg-green-100', 'text-green-800');
     });
@@ -242,9 +247,10 @@ describe('AdminOrdersListPage', () => {
     });
 
     it('should filter by date range', async () => {
+      // The date inputs are labelled (via htmlFor/id), so locate them by label.
       const startDateInput = screen.getByLabelText('From Date');
       const endDateInput = screen.getByLabelText('To Date');
-      
+
       fireEvent.change(startDateInput, { target: { value: '2024-01-01' } });
       fireEvent.change(endDateInput, { target: { value: '2024-01-31' } });
 

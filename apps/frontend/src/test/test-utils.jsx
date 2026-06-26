@@ -3,12 +3,15 @@ import { render as rtlRender, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { vi } from 'vitest'
+import { AuthStateContext, AuthDispatchContext } from '../contexts/AuthContext'
+import { CartContext } from '../contexts/CartContext'
+import { CheckoutContext } from '../contexts/CheckoutContext'
 
-// Create mock contexts to avoid import issues when tests mock the actual modules
-const AuthStateContext = React.createContext()
-const AuthDispatchContext = React.createContext()
-const CartContext = React.createContext()
-const CheckoutContext = React.createContext()
+// IMPORTANT: import the REAL context objects from the app's context modules.
+// Components under test call useAuthState()/useCart()/useCheckout(), which read
+// from these exact context objects. Previously these were locally-created
+// contexts, so the test providers were invisible to the components, causing
+// "must be used within an AuthProvider/CartProvider" errors.
 
 // Mock auth service to prevent real API calls
 vi.mock('../services/authService', () => ({
@@ -20,7 +23,11 @@ vi.mock('../services/authService', () => ({
   registerUser: vi.fn(),
   logoutUser: vi.fn(),
   requestPasswordReset: vi.fn(),
-  resetPassword: vi.fn()
+  resetPassword: vi.fn(),
+  updateUserProfile: vi.fn(),
+  changePassword: vi.fn(),
+  forgotPassword: vi.fn(),
+  getAuthToken: vi.fn()
 }))
 
 // Mock cart service to prevent real API calls

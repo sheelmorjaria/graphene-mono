@@ -142,7 +142,7 @@ describe('SearchBar', () => {
     render(<SearchBar />);
     
     const searchInput = screen.getByPlaceholderText(/search products/i);
-    const searchContainer = searchInput.closest('[data-testid="search-bar"]');
+    const searchContainer = searchInput.closest('[data-testid="product-search"]');
     
     expect(searchInput).not.toHaveFocus();
     
@@ -168,18 +168,18 @@ describe('SearchBar', () => {
   it('should be responsive with proper CSS classes', () => {
     const { container } = render(<SearchBar />);
     
-    const searchBar = container.querySelector('[data-testid="search-bar"]');
+    const searchBar = container.querySelector('[data-testid="product-search"]');
     expect(searchBar).toHaveClass('relative', 'flex', 'items-center');
-    
+
     const searchInput = screen.getByPlaceholderText(/search products/i);
-    expect(searchInput).toHaveClass('w-full', 'px-4', 'py-2');
+    expect(searchInput).toHaveClass('w-full', 'px-4', 'py-2.5');
   });
 
   it('should support custom className prop', () => {
     const customClass = 'custom-search-bar';
     const { container } = render(<SearchBar className={customClass} />);
     
-    const searchBar = container.querySelector('[data-testid="search-bar"]');
+    const searchBar = container.querySelector('[data-testid="product-search"]');
     expect(searchBar).toHaveClass(customClass);
   });
 
