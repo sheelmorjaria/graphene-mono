@@ -86,7 +86,7 @@ describe('GDPR Compliance - End-to-End Tests', () => {
         },
         {
           productId: new mongoose.Types.ObjectId(),
-          productName: 'Privacy App Installation',
+          productName: 'Google Pixel 8',
           quantity: 1,
           unitPrice: 49.99,
           subtotal: 49.99

@@ -25,7 +25,7 @@ async function testEmailService() {
         totalPrice: 849.99
       },
       {
-        productName: 'Privacy App Installation',
+        productName: 'Google Pixel 8',
         quantity: 1,
         unitPrice: 50.00,
         totalPrice: 50.00

@@ -247,7 +247,6 @@ The platform supports multiple payment methods:
 
 - **GrapheneOS Smartphones**: Google Pixel phones pre-installed with GrapheneOS
 - **Lead Time Management**: 5-7 working days for custom preparation
-- **Privacy App Installation**: Optional service for enhanced privacy
 - **JIT Inventory**: Just-in-time ordering model
 - **Multi-currency Support**: All pricing in GBP with crypto conversion
 
