@@ -50,3 +50,4 @@ apps/backend/tmp/
 
 # Markdown files (as per original gitignore)
 *.md
+!CLAUDE.md
