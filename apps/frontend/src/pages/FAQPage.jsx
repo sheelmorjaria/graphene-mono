@@ -210,60 +210,6 @@ const FAQPage = () => {
       ]
     },
     {
-      category: 'Privacy App Installation',
-      icon: '🔐',
-      questions: [
-        {
-          q: 'What is the Privacy App Installation service?',
-          a: (
-            <div className="space-y-3 text-text-secondary">
-              <p>
-                Our optional Privacy App Installation service adds a curated suite of privacy-focused
-                applications to your device, pre-configured for optimal privacy and security:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>F-Droid (open-source app store)</li>
-                <li>Signal (encrypted messaging)</li>
-                <li>ProtonMail (secure email)</li>
-                <li>Orbot (Tor proxy)</li>
-                <li>Browser selection (Brave, Mull, etc.)</li>
-                <li>Other privacy utilities and tools</li>
-              </ul>
-              <p className="text-text-muted">
-                All apps are verified, signed, and configured with privacy-preserving settings.
-              </p>
-            </div>
-          )
-        },
-        {
-          q: 'Is the Privacy App Installation service required?',
-          a: (
-            <div className="space-y-3 text-text-secondary">
-              <p>
-                No, it's completely optional. You can purchase a device with GrapheneOS only and
-                install whatever apps you prefer. However, most customers find the service valuable
-                as it saves time and ensures proper configuration.
-              </p>
-            </div>
-          )
-        },
-        {
-          q: 'Can I customize which apps are installed?',
-          a: (
-            <div className="space-y-3 text-text-secondary">
-              <p>
-                Yes! After placing your order, you'll receive an email confirmation where you can
-                specify which apps you'd like included or excluded, or request additional apps.
-              </p>
-              <p className="text-text-muted">
-                Please contact us promptly after ordering if you have specific app requests.
-              </p>
-            </div>
-          )
-        }
-      ]
-    },
-    {
       category: 'Returns & Warranty',
       icon: '🔄',
       questions: [
@@ -375,7 +321,6 @@ const FAQPage = () => {
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Quantity needed</li>
                 <li>Device models and conditions</li>
-                <li>Privacy app installation requirements</li>
                 <li>Delivery location</li>
               </ul>
             </div>
@@ -433,7 +378,6 @@ const FAQPage = () => {
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Initial setup and configuration</li>
-                <li>App installation and configuration</li>
                 <li>Troubleshooting common issues</li>
                 <li>Questions about GrapheneOS features</li>
               </ul>

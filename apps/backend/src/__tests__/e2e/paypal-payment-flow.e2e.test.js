@@ -79,20 +79,20 @@ describe('PayPal Payment Flow E2E Tests', () => {
     });
 
     testProduct2 = await Product.create({
-      name: 'Privacy App Installation Service',
-      slug: 'privacy-app-installation-service-e2e',
-      sku: generateSKU('PRIVACY-SERVICE'),
-      shortDescription: 'Professional installation of privacy-focused applications',
-      longDescription: 'Expert installation and configuration of privacy apps',
-      price: 49.99,
+      name: 'Google Pixel 8',
+      slug: 'google-pixel-8-e2e',
+      sku: generateSKU('PIXEL-8'),
+      shortDescription: 'Google Pixel 8 with GrapheneOS pre-installed',
+      longDescription: 'A privacy-focused Google Pixel 8 flashed with GrapheneOS',
+      price: 649.99,
       category: testCategory2._id,
       stockQuantity: 100,
       condition: 'new',
       isActive: true,
       attributes: [
-        { name: 'Service Type', value: 'Privacy App Installation' },
-        { name: 'Duration', value: '1-2 hours' },
-        { name: 'Apps Included', value: 'Signal, Tor Browser, Orbot' }
+        { name: 'Storage', value: '128GB' },
+        { name: 'RAM', value: '8GB' },
+        { name: 'Display', value: '6.2" OLED' }
       ]
     });
 

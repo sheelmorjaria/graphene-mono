@@ -51,7 +51,6 @@ const TermsOfServicePage = () => {
               <p>Graphene Security provides the following services:</p>
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li>Sale of GrapheneOS-flashed Google Pixel smartphones</li>
-                <li>Optional privacy app installation services</li>
                 <li>Technical support and documentation</li>
                 <li>Secure payment processing</li>
                 <li>Shipping and delivery services</li>
@@ -179,7 +178,6 @@ const TermsOfServicePage = () => {
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
                 <li>14-day return period for most items</li>
                 <li>Items must be in original condition</li>
-                <li>Software-installation services are non-refundable once completed</li>
                 <li>Return shipping costs may apply</li>
               </ul>
             </div>

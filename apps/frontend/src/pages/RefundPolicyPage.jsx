@@ -37,17 +37,11 @@ const RefundPolicyPage = () => {
         <div className="space-y-4 text-text-secondary">
           <p>The following items are <strong className="text-red">NOT eligible for return</strong>:</p>
           <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>Services already performed (privacy app installation)</li>
             <li>Items damaged through misuse or improper handling</li>
             <li>Items with missing or damaged serial numbers</li>
             <li>Items that have been flashed with custom firmware after purchase</li>
             <li>Software or digital downloads</li>
           </ul>
-          <div className="mt-4 p-4 bg-red-subtle border border-red rounded-lg">
-            <p className="text-red font-mono text-sm">
-              Once privacy app installation services are completed, they are non-refundable.
-            </p>
-          </div>
         </div>
       )
     },
@@ -136,28 +130,6 @@ const RefundPolicyPage = () => {
             <li>Normal wear and tear</li>
             <li>Unauthorized repairs or modifications</li>
           </ul>
-        </div>
-      )
-    },
-    {
-      title: 'Software Installation Services',
-      icon: '💻',
-      content: (
-        <div className="space-y-4 text-text-secondary">
-          <div className="p-4 bg-matrix-subtle border border-matrix rounded-lg">
-            <p className="text-matrix-400 font-mono text-sm font-semibold mb-2">IMPORTANT NOTE</p>
-            <p className="text-text-secondary">
-              Privacy app installation services are <strong className="text-matrix-400">non-refundable</strong> once the service has been completed.
-              This is because the service involves labor and expertise that cannot be "un-done."
-            </p>
-          </div>
-          <p>If there is a technical issue with the installation, we will:</p>
-          <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>Work to resolve the issue remotely</li>
-            <li>Provide troubleshooting guidance</li>
-            <li>Offer re-installation if necessary</li>
-          </ul>
-          <p className="text-text-muted">No refunds will be issued for services that have been successfully completed.</p>
         </div>
       )
     },

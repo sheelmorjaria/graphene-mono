@@ -699,8 +699,6 @@ class EmailService {
         </div>
 
         <p>We hope you enjoy your new GrapheneOS device! If you have any questions about setup or need technical support, our team is here to help.</p>
-        
-        <p>Don't forget to explore our privacy app installation services to enhance your device's security and privacy features.</p>
       `;
 
       const htmlContent = this.generateEmailTemplate(
@@ -1366,7 +1364,6 @@ class EmailService {
           <h3>What's Next?</h3>
           <ul>
             <li>Browse our selection of privacy-focused GrapheneOS devices</li>
-            <li>Explore our privacy app installation services</li>
             <li>Set up your shipping preferences</li>
             <li>Join our community of privacy-conscious users</li>
           </ul>
