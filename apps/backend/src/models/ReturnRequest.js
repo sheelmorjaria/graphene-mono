@@ -262,8 +262,12 @@ returnRequestSchema.virtual('totalItemsCount').get(function() {
   return this.items.reduce((total, item) => total + item.quantity, 0);
 });
 
-// Pre-save middleware to generate return request number
-returnRequestSchema.pre('save', async function(next) {
+// Pre-validate middleware to generate return request number and compute the
+// total refund. This MUST run as pre('validate') (not pre('save')) because
+// `returnRequestNumber` and `totalRefundAmount` are required fields —
+// pre('save') runs AFTER required-field validation, so the document would
+// always fail validation before these values were populated.
+returnRequestSchema.pre('validate', async function(next) {
   if (this.isNew && !this.returnRequestNumber) {
     // Generate return request number
     const date = new Date();

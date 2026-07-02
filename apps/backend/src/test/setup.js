@@ -11,6 +11,9 @@ setupMocks();
 setupCommonMocks();
 
 beforeAll(async () => {
+  // The integration harness (src/test/setup.integration.js) owns the DB; don't
+  // create a standalone server or install session mocks here — that corrupts it.
+  if (global.__integrationSetupActive) return;
   try {
     // Setup in-memory MongoDB for testing
     mongoServer = await MongoMemoryServer.create({
@@ -56,6 +59,7 @@ beforeAll(async () => {
 }, 60000);
 
 afterAll(async () => {
+  if (global.__integrationSetupActive) return; // integration harness owns the DB
   try {
     // Clean up session mocks first
     if (global.sessionMocks && global.sessionMocks.cleanup) {
@@ -150,6 +154,7 @@ global.testUtils = {
 
 // Test database connection utilities
 export const connectTestDatabase = async () => {
+  if (global.__integrationSetupActive) return; // integration harness owns the DB
   if (mongoose.connection.readyState === 0) {
     if (!mongoServer) {
       mongoServer = await MongoMemoryServer.create();
@@ -160,6 +165,7 @@ export const connectTestDatabase = async () => {
 };
 
 export const disconnectTestDatabase = async () => {
+  if (global.__integrationSetupActive) return; // don't tear down the shared integration DB
   if (mongoose.connection.readyState === 1) {
     await mongoose.connection.close();
   }
@@ -206,23 +212,25 @@ const cleanup = async () => {
   }
 };
 
-// Handle process termination
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
-process.on('beforeExit', cleanup);
+// Process handlers — only when NOT running under the integration harness
+// (otherwise these accumulate per importing file and process.exit() the suite).
+if (!global.__integrationSetupActive) {
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('beforeExit', cleanup);
 
-// Handle uncaught exceptions in tests
-process.on('uncaughtException', async (error) => {
-  console.error('Uncaught exception in tests:', error);
-  await cleanup();
-  process.exit(1);
-});
+  process.on('uncaughtException', async (error) => {
+    console.error('Uncaught exception in tests:', error);
+    await cleanup();
+    process.exit(1);
+  });
 
-process.on('unhandledRejection', async (reason, promise) => {
-  console.error('Unhandled rejection in tests:', reason);
-  await cleanup();
-  process.exit(1);
-});
+  process.on('unhandledRejection', async (reason, promise) => {
+    console.error('Unhandled rejection in tests:', reason);
+    await cleanup();
+    process.exit(1);
+  });
+}
 
 // Export mongoServer for external use
 export { mongoServer };

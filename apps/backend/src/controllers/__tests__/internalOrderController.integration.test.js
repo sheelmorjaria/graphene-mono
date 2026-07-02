@@ -8,6 +8,10 @@ import { createValidOrderData, createValidUserData } from '../../test/helpers/te
 
 // Set up environment variables for testing
 process.env.INTERNAL_API_KEY = 'test-internal-api-key-12345';
+// internalOrderRoutes is mounted at '/api/internal/orders' and its handlers
+// now define single-segment paths, so the mounted endpoints are
+// '/api/internal/orders/:orderId/status', '/api/internal/orders/:orderId',
+// and '/api/internal/orders'.
 
 describe('Internal Order Controller (Admin Endpoints)', () => {
   // Using global test setup for MongoDB connection

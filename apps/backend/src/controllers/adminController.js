@@ -485,12 +485,16 @@ export const getAllOrders = async (req, res) => {
       }
     }
 
+    // Clamp pagination params to avoid Mongo error 15958 on limit=0
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 20);
+
     // Build sort object
     const sort = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     // Create aggregation pipeline
     const pipeline = [
@@ -544,7 +548,7 @@ export const getAllOrders = async (req, res) => {
     // Add pagination to main pipeline
     pipeline.push(
       { $skip: skip },
-      { $limit: parseInt(limit) }
+      { $limit: limitNum }
     );
 
     // Add projection to format the response
@@ -572,21 +576,21 @@ export const getAllOrders = async (req, res) => {
     const orders = await Order.aggregate(pipeline);
 
     // Calculate pagination info
-    const totalPages = Math.ceil(totalOrders / parseInt(limit));
-    const hasNextPage = parseInt(page) < totalPages;
-    const hasPrevPage = parseInt(page) > 1;
+    const totalPages = Math.ceil(totalOrders / limitNum);
+    const hasNextPage = pageNum < totalPages;
+    const hasPrevPage = pageNum > 1;
 
     res.json({
       success: true,
       data: {
         orders,
         pagination: {
-          currentPage: parseInt(page),
+          currentPage: pageNum,
           totalPages,
           totalOrders,
           hasNextPage,
           hasPrevPage,
-          limit: parseInt(limit)
+          limit: limitNum
         }
       }
     });
@@ -606,7 +610,8 @@ const getValidStatusTransitions = () => {
     'pending': ['processing', 'cancelled'],
     'processing': ['awaiting_shipment', 'shipped', 'cancelled'],
     'awaiting_shipment': ['shipped', 'cancelled'],
-    'shipped': ['delivered', 'cancelled'],
+    'shipped': ['out_for_delivery', 'delivered', 'cancelled'],
+    'out_for_delivery': ['delivered', 'cancelled'],
     'delivered': ['returned'], // Can be returned after delivery
     'cancelled': [],
     'returned': [] // Final state for returned items
@@ -674,13 +679,47 @@ export const updateOrderStatus = async (req, res) => {
 
       // If status is 'cancelled', handle stock restoration and refund
       if (newStatus === 'cancelled') {
-        // Restore stock for each item
+        // Restore stock for each item. Stock lives on product variations
+        // (`product.variations[].stockQuantity`), not on the product itself.
+        // Order items carry a `variationId` (string) that matches
+        // `variation._id`. For legacy items without a variationId, fall back to
+        // matching by sku, then condition+color, then a single-variation
+        // product; if no variation can be identified, skip (no-op, do not
+        // crash on legacy data).
         for (const item of order.items) {
-          await Product.findByIdAndUpdate(
-            item.productId,
-            { $inc: { stockQuantity: item.quantity } },
-            { session }
-          );
+          const qty = item.quantity || 0;
+          if (!qty) continue;
+
+          if (item.variationId) {
+            await Product.updateOne(
+              { _id: item.productId, 'variations._id': item.variationId },
+              { $inc: { 'variations.$.stockQuantity': qty } },
+              { session }
+            );
+          } else {
+            // Legacy item: locate the matching variation without a variationId.
+            const product = await Product.findById(item.productId).session(session);
+            if (product && product.variations && product.variations.length > 0) {
+              let match = null;
+              if (item.sku) {
+                match = product.variations.find(v => v.sku && v.sku.toUpperCase() === String(item.sku).toUpperCase());
+              }
+              if (!match && item.condition && item.color) {
+                match = product.variations.find(v => v.condition === item.condition && v.color === item.color);
+              }
+              if (!match && product.variations.length === 1) {
+                // Unambiguous single-variation product
+                match = product.variations[0];
+              }
+              if (match) {
+                await Product.updateOne(
+                  { _id: item.productId, 'variations._id': match._id },
+                  { $inc: { 'variations.$.stockQuantity': qty } },
+                  { session }
+                );
+              }
+            }
+          }
         }
 
         // TODO: Implement refund logic here
@@ -960,12 +999,16 @@ export const getAllReturnRequests = async (req, res) => {
       }
     }
 
+    // Clamp pagination params to avoid Mongo error 15958 on limit=0
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 20);
+
     // Build sort object
     const sort = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     // Create aggregation pipeline
     const pipeline = [
@@ -1033,7 +1076,7 @@ export const getAllReturnRequests = async (req, res) => {
     // Add pagination to main pipeline
     pipeline.push(
       { $skip: skip },
-      { $limit: parseInt(limit) }
+      { $limit: limitNum }
     );
 
     // Add projection to format the response
@@ -1062,21 +1105,21 @@ export const getAllReturnRequests = async (req, res) => {
     const returnRequests = await ReturnRequest.aggregate(pipeline);
 
     // Calculate pagination info
-    const totalPages = Math.ceil(totalReturnRequests / parseInt(limit));
-    const hasNextPage = parseInt(page) < totalPages;
-    const hasPrevPage = parseInt(page) > 1;
+    const totalPages = Math.ceil(totalReturnRequests / limitNum);
+    const hasNextPage = pageNum < totalPages;
+    const hasPrevPage = pageNum > 1;
 
     res.json({
       success: true,
       data: {
         returnRequests,
         pagination: {
-          currentPage: parseInt(page),
+          currentPage: pageNum,
           totalPages,
           totalReturnRequests,
           hasNextPage,
           hasPrevPage,
-          limit: parseInt(limit)
+          limit: limitNum
         }
       }
     });
@@ -2683,9 +2726,9 @@ export const getSalesReport = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: '$grandTotal' },
+          totalRevenue: { $sum: '$totalAmount' },
           orderCount: { $sum: 1 },
-          averageOrderValue: { $avg: '$grandTotal' }
+          averageOrderValue: { $avg: '$totalAmount' }
         }
       }
     ]);
@@ -2727,7 +2770,8 @@ export const getProductPerformanceReport = async (req, res) => {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    // Get top selling products
+    // Get top selling products. Order line items live in `items[]` and carry
+    // `productId`, `quantity`, and `unitPrice` (revenue per line is `totalPrice`).
     const topProducts = await Order.aggregate([
       {
         $match: {
@@ -2735,12 +2779,12 @@ export const getProductPerformanceReport = async (req, res) => {
           status: { $ne: 'cancelled' }
         }
       },
-      { $unwind: '$cartItems' },
+      { $unwind: '$items' },
       {
         $group: {
-          _id: '$cartItems.product',
-          quantitySold: { $sum: '$cartItems.quantity' },
-          revenue: { $sum: { $multiply: ['$cartItems.price', '$cartItems.quantity'] } }
+          _id: '$items.productId',
+          quantitySold: { $sum: '$items.quantity' },
+          revenue: { $sum: { $multiply: ['$items.unitPrice', '$items.quantity'] } }
         }
       },
       { $sort: { revenue: -1 } },
@@ -2753,7 +2797,7 @@ export const getProductPerformanceReport = async (req, res) => {
           as: 'productInfo'
         }
       },
-      { $unwind: '$productInfo' },
+      { $unwind: { path: '$productInfo', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
@@ -2764,15 +2808,38 @@ export const getProductPerformanceReport = async (req, res) => {
       }
     ]);
 
-    // Get low stock products
+    // Get low stock products. Stock lives in `variations[]`, so match products
+    // that have at least one variation in the low-stock band (0 < qty <= threshold).
     const lowStockThreshold = 10;
-    const lowStockProducts = await Product.find({
-      stockQuantity: { $gt: 0, $lte: lowStockThreshold },
-      isActive: true
-    })
-      .select('name sku stockQuantity')
-      .sort({ stockQuantity: 1 })
-      .limit(10);
+    const lowStockProducts = await Product.aggregate([
+      {
+        $match: {
+          isActive: true,
+          'variations.stockQuantity': { $gt: 0, $lte: lowStockThreshold }
+        }
+      },
+      {
+        $addFields: {
+          totalStock: {
+            $reduce: {
+              input: '$variations',
+              initialValue: 0,
+              in: { $add: ['$$value', { $ifNull: ['$$this.stockQuantity', 0] }] }
+            }
+          }
+        }
+      },
+      { $sort: { totalStock: 1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          sku: 1,
+          stockQuantity: '$totalStock'
+        }
+      }
+    ]);
 
     res.json({
       success: true,
@@ -2828,20 +2895,66 @@ export const getInventoryReport = async (req, res) => {
   try {
     const lowStockThreshold = 10;
 
-    // Count products by stock status
-    const [inStock, outOfStock, lowStock] = await Promise.all([
-      Product.countDocuments({ stockQuantity: { $gt: lowStockThreshold }, isActive: true }),
-      Product.countDocuments({ stockQuantity: 0, isActive: true }),
-      Product.countDocuments({ stockQuantity: { $gt: 0, $lte: lowStockThreshold }, isActive: true })
+    // Stock lives in `variations[]`, so classify each product by its total
+    // stock across all variations: in stock (> threshold), out of stock (0),
+    // or low stock (0 < total <= threshold).
+    const stockBuckets = await Product.aggregate([
+      { $match: { isActive: true } },
+      {
+        $addFields: {
+          totalStock: {
+            $reduce: {
+              input: { $ifNull: ['$variations', []] },
+              initialValue: 0,
+              in: { $add: ['$$value', { $ifNull: ['$$this.stockQuantity', 0] }] }
+            }
+          }
+        }
+      },
+      {
+        $bucket: {
+          groupBy: '$totalStock',
+          boundaries: [0, 1, lowStockThreshold + 1, Infinity],
+          default: 'other',
+          output: {
+            count: { $sum: 1 }
+          }
+        }
+      }
     ]);
 
-    // Get low stock products list
-    const lowStockProducts = await Product.find({
-      stockQuantity: { $gt: 0, $lte: lowStockThreshold },
-      isActive: true
-    })
-      .select('name sku stockQuantity')
-      .sort({ stockQuantity: 1 });
+    // Map buckets: [0,1) => out of stock, [1, threshold+1) => low, >= threshold+1 => in
+    const bucketCount = (lower) =>
+      stockBuckets.find(b => b._id === lower)?.count || 0;
+    const outOfStock = bucketCount(0);
+    const lowStock = bucketCount(1);
+    const inStock = bucketCount(lowStockThreshold + 1);
+
+    // Get low stock products list (0 < total stock <= threshold)
+    const lowStockProducts = await Product.aggregate([
+      { $match: { isActive: true, 'variations.stockQuantity': { $gt: 0 } } },
+      {
+        $addFields: {
+          totalStock: {
+            $reduce: {
+              input: '$variations',
+              initialValue: 0,
+              in: { $add: ['$$value', { $ifNull: ['$$this.stockQuantity', 0] }] }
+            }
+          }
+        }
+      },
+      { $match: { totalStock: { $gt: 0, $lte: lowStockThreshold } } },
+      { $sort: { totalStock: 1 } },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          sku: 1,
+          stockQuantity: '$totalStock'
+        }
+      }
+    ]);
 
     res.json({
       success: true,

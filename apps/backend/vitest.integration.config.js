@@ -28,15 +28,20 @@ export default defineConfig({
     ],
     testTimeout: 30000, // Longer timeout for integration tests
     pool: 'forks', // Use separate processes for integration tests
-    poolOptions: {
-      forks: {
-        singleFork: true // Run integration tests sequentially
-      }
-    },
+    singleFork: true, // Run integration tests sequentially (Vitest 4 top-level option)
     reporter: ['verbose'],
     coverage: {
-      provider: 'c8',
-      reporter: ['text', 'json', 'html'],
+      provider: 'v8',
+      reportOnFailure: true,
+      reporter: ['text', 'json', 'json-summary', 'html'],
+      include: ['src/**/*.js'],
+      exclude: [
+        'src/**/__tests__/**',
+        'src/test/**',
+        'node_modules/**',
+        '**/*.config.js',
+        'scripts/**'
+      ],
       reportsDirectory: './coverage/integration'
     }
   },

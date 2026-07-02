@@ -1,573 +1,434 @@
-import { vi, describe, it, test, expect, beforeEach, afterEach } from 'vitest';
-import {
-  getEligibleReturns,
-  initiateReturn,
-  getUserReturns,
-  getReturnDetails,
-  uploadReturnLabel
-} from '../userReturnController.js';
+import { describe, it, expect, beforeEach } from 'vitest';
+import request from 'supertest';
+import jwt from 'jsonwebtoken';
+import app from '../../app.js';
+import User from '../../models/User.js';
 import Order from '../../models/Order.js';
-import Return from '../../models/Return.js';
-import Product from '../../models/Product.js';
+import ReturnRequest from '../../models/ReturnRequest.js';
 import mongoose from 'mongoose';
 
-// Mock the models
-vi.mock('../../models/Order.js');
-vi.mock('../../models/Return.js');
-vi.mock('../../models/Product.js');
-// Use global mongoose mock from setup.vitest.js
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 describe('User Return Controller', () => {
-  let mockReq, mockRes;
+  let user;
+  let authToken;
+  let deliveredOrder;
 
-  beforeEach(() => {
-    mockReq = {
-      user: { userId: mongoose.Types.ObjectId() },
-      body: {},
-      params: {}
-    };
-    mockRes = {
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn()
-    };
-    vi.clearAllMocks();
+  const createUser = async (overrides = {}) => {
+    return User.create({
+      email: `returns-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`,
+      password: 'TestPassword123!',
+      firstName: 'Return',
+      lastName: 'Tester',
+      isActive: true,
+      role: 'customer',
+      ...overrides
+    });
+  };
+
+  const signToken = (u) => jwt.sign({ userId: u._id }, JWT_SECRET, { expiresIn: '7d' });
+
+  const createOrder = async (overrides = {}) => {
+    return Order.create({
+      userId: user._id,
+      customerEmail: user.email,
+      orderNumber: `O${Date.now().toString().slice(-10)}`,
+      status: 'delivered',
+      deliveryDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      items: [
+        {
+          productId: new mongoose.Types.ObjectId(),
+          productName: 'Google Pixel 8',
+          productSlug: 'google-pixel-8',
+          quantity: 2,
+          unitPrice: 599.99,
+          totalPrice: 1199.98
+        }
+      ],
+      subtotal: 1199.98,
+      tax: 0,
+      shipping: 0,
+      totalAmount: 1199.98,
+      shippingAddress: {
+        fullName: 'Return Tester',
+        addressLine1: '1 Test St',
+        city: 'London',
+        stateProvince: 'London',
+        postalCode: 'SW1A 1AA',
+        country: 'GB'
+      },
+      billingAddress: {
+        fullName: 'Return Tester',
+        addressLine1: '1 Test St',
+        city: 'London',
+        stateProvince: 'London',
+        postalCode: 'SW1A 1AA',
+        country: 'GB'
+      },
+      shippingMethod: { id: new mongoose.Types.ObjectId(), name: 'Standard', cost: 0 },
+      paymentMethod: { type: 'paypal', name: 'PayPal' },
+      paymentStatus: 'completed',
+      ...overrides
+    });
+  };
+
+  beforeEach(async () => {
+    user = await createUser();
+    authToken = signToken(user);
+    deliveredOrder = await createOrder();
   });
 
-  describe('getEligibleReturns', () => {
-    const mockOrder = {
-      _id: mongoose.Types.ObjectId(),
-      orderNumber: 'ORD-001',
-      status: 'delivered',
-      deliveredAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-      items: [{
-        _id: mongoose.Types.ObjectId(),
-        productId: mongoose.Types.ObjectId(),
-        productName: 'Google Pixel 7',
-        quantity: 1,
-        price: 599.99,
-        returnEligible: true
-      }]
-    };
+  describe('GET /api/user/returns', () => {
+    it('should get user return requests successfully', async () => {
+      const response = await request(app)
+        .get('/api/user/returns')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
 
-    it('should get eligible returns successfully', async () => {
-      Order.find.mockReturnValue({
-        populate: vi.fn().mockResolvedValue([mockOrder])
-      });
-
-      await getEligibleReturns(mockReq, mockRes);
-
-      expect(Order.find).toHaveBeenCalledWith({
-        userId: mongoose.Types.ObjectId(),
-        status: { $in: ['delivered', 'completed'] },
-        deliveredAt: { $gte: expect.any(Date) }
-      });
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          eligibleOrders: [{
-            orderId: mockOrder._id,
-            orderNumber: mockOrder.orderNumber,
-            deliveredAt: mockOrder.deliveredAt,
-            eligibleItems: mockOrder.items
-          }]
-        }
-      });
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.pagination).toBeDefined();
     });
 
-    it('should handle no eligible returns', async () => {
-      Order.find.mockReturnValue({
-        populate: vi.fn().mockResolvedValue([])
-      });
+    it('should return empty list when user has no return requests', async () => {
+      const response = await request(app)
+        .get('/api/user/returns')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
 
-      await getEligibleReturns(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          eligibleOrders: []
-        }
-      });
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(0);
     });
 
-    it('should handle server errors', async () => {
-      Order.find.mockReturnValue({
-        populate: vi.fn().mockRejectedValue(new Error('Database error'))
+    it('should require authentication', async () => {
+      const response = await request(app).get('/api/user/returns').expect(401);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should only return the authenticated user return requests', async () => {
+      const otherUser = await createUser();
+      await ReturnRequest.create({
+        orderId: deliveredOrder._id,
+        orderNumber: deliveredOrder.orderNumber,
+        userId: otherUser._id,
+        customerEmail: otherUser.email,
+        returnRequestNumber: 'RR-OTHER-001',
+        status: 'pending_review',
+        returnWindow: 30,
+        items: [
+          {
+            productId: deliveredOrder.items[0].productId,
+            productName: 'Google Pixel 8',
+            productSlug: 'google-pixel-8',
+            quantity: 1,
+            unitPrice: 599.99,
+            totalRefundAmount: 599.99,
+            reason: 'changed_mind'
+          }
+        ],
+        totalRefundAmount: 599.99
       });
 
-      await getEligibleReturns(mockReq, mockRes);
+      const response = await request(app)
+        .get('/api/user/returns')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
 
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Server error occurred while fetching eligible returns'
-      });
+      expect(response.body.data).toHaveLength(0); // belongs to other user
     });
   });
 
-  describe('initiateReturn', () => {
-    const mockOrderId = mongoose.Types.ObjectId();
-    const mockItemId = mongoose.Types.ObjectId();
-    const mockProductId = mongoose.Types.ObjectId();
-
-    const mockOrder = {
-      _id: mockOrderId,
-      userId: mongoose.Types.ObjectId(), // Will be set properly in tests
-      orderNumber: 'ORD-001',
-      status: 'delivered',
-      deliveredAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      items: [{
-        _id: mockItemId,
-        productId: mockProductId,
-        productName: 'Google Pixel 7',
-        quantity: 1,
-        price: 599.99,
-        returnEligible: true
-      }]
-    };
-
-    const mockProduct = {
-      _id: mockProductId,
-      name: 'Google Pixel 7',
-      returnPolicy: {
-        eligible: true,
-        periodDays: 30
-      }
-    };
-
-    beforeEach(() => {
-      mongoose.Types.ObjectId.isValid.mockReturnValue(true);
-      Order.findById.mockResolvedValue(mockOrder);
-      Product.findById.mockResolvedValue(mockProduct);
-      Return.findOne.mockResolvedValue(null); // No existing return
-      Return.prototype.save = vi.fn().mockResolvedValue({
-        _id: mongoose.Types.ObjectId(),
-        returnNumber: 'RET-001'
+  describe('GET /api/user/returns/:returnRequestId', () => {
+    it('should get return request details successfully', async () => {
+      const rr = await ReturnRequest.create({
+        orderId: deliveredOrder._id,
+        orderNumber: deliveredOrder.orderNumber,
+        userId: user._id,
+        customerEmail: user.email,
+        returnRequestNumber: 'RR-001',
+        status: 'pending_review',
+        returnWindow: 30,
+        items: [
+          {
+            productId: deliveredOrder.items[0].productId,
+            productName: 'Google Pixel 8',
+            productSlug: 'google-pixel-8',
+            quantity: 1,
+            unitPrice: 599.99,
+            totalRefundAmount: 599.99,
+            reason: 'changed_mind'
+          }
+        ],
+        totalRefundAmount: 599.99
       });
+
+      const response = await request(app)
+        .get(`/api/user/returns/${rr._id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.returnRequest).toBeDefined();
+      expect(response.body.data.returnRequest.id).toBe(String(rr._id));
     });
 
-    it('should initiate return successfully', async () => {
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective',
-        description: 'Screen is cracked'
-      };
+    it('should return 400 for invalid return request ID', async () => {
+      const response = await request(app)
+        .get('/api/user/returns/invalid-id')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
 
-      await initiateReturn(mockReq, mockRes);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Invalid return request ID');
+    });
 
-      expect(Order.findById).toHaveBeenCalledWith(mockOrderId.toString());
-      expect(Product.findById).toHaveBeenCalledWith(mockProductId);
-      expect(Return.findOne).toHaveBeenCalledWith({
-        orderId: mockOrderId.toString(),
-        'items.itemId': mockItemId.toString(),
-        status: { $nin: ['cancelled', 'rejected'] }
+    it('should return 404 for non-existent return request', async () => {
+      const response = await request(app)
+        .get(`/api/user/returns/${new mongoose.Types.ObjectId()}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('not found');
+    });
+
+    it('should not allow viewing another user return request', async () => {
+      const otherUser = await createUser();
+      const rr = await ReturnRequest.create({
+        orderId: deliveredOrder._id,
+        orderNumber: deliveredOrder.orderNumber,
+        userId: otherUser._id,
+        customerEmail: otherUser.email,
+        returnRequestNumber: 'RR-OTHER-DETAIL',
+        status: 'pending_review',
+        returnWindow: 30,
+        items: [
+          {
+            productId: deliveredOrder.items[0].productId,
+            productName: 'Google Pixel 8',
+            productSlug: 'google-pixel-8',
+            quantity: 1,
+            unitPrice: 599.99,
+            totalRefundAmount: 599.99,
+            reason: 'changed_mind'
+          }
+        ],
+        totalRefundAmount: 599.99
       });
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Return request initiated successfully',
-        data: expect.objectContaining({
-          returnNumber: 'RET-001'
+
+      const response = await request(app)
+        .get(`/api/user/returns/${rr._id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('POST /api/user/returns/request', () => {
+    it('should submit a return request successfully', async () => {
+      // The ReturnRequest model now populates `returnRequestNumber` and
+      // `totalRefundAmount` via a pre('validate') hook (before required-field
+      // validation), so the endpoint can successfully create a ReturnRequest.
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: deliveredOrder._id.toString(),
+          items: [
+            {
+              productId: deliveredOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
         })
-      });
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
     });
 
-    it('should return 400 if required fields are missing', async () => {
-      mockReq.body = {
-        orderId: mockOrderId.toString()
-        // Missing itemId, reason
-      };
+    it('should return 400 when required fields are missing', async () => {
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({})
+        .expect(400);
 
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Order ID, Item ID, and reason are required'
-      });
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Order ID and items are required');
     });
 
-    it('should return 400 if order ID is invalid format', async () => {
-      mongoose.Types.ObjectId.isValid.mockReturnValue(false);
+    it('should return 400 for invalid order ID format', async () => {
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: 'invalid-id',
+          items: [
+            {
+              productId: deliveredOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
+        })
+        .expect(400);
 
-      mockReq.body = {
-        orderId: 'invalid-id',
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Invalid order ID or item ID format'
-      });
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Invalid order ID');
     });
 
-    it('should return 404 if order not found', async () => {
-      Order.findById.mockResolvedValue(null);
+    it('should return 404 for non-existent order', async () => {
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: new mongoose.Types.ObjectId().toString(),
+          items: [
+            {
+              productId: deliveredOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
+        })
+        .expect(404);
 
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Order not found'
-      });
-    });
-
-    it('should return 403 if order belongs to different user', async () => {
-      const differentOrder = {
-        ...mockOrder,
-        userId: mongoose.Types.ObjectId() // Different user
-      };
-      Order.findById.mockResolvedValue(differentOrder);
-
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Unauthorized to return items from this order'
-      });
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Order not found');
     });
 
     it('should return 400 if order is not delivered', async () => {
-      const undeliveredOrder = {
-        ...mockOrder,
-        status: 'processing'
-      };
-      Order.findById.mockResolvedValue(undeliveredOrder);
+      const processingOrder = await createOrder({ status: 'processing' });
 
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Order must be delivered to initiate return'
-      });
-    });
-
-    it('should return 400 if item not found in order', async () => {
-      const orderWithoutItem = {
-        ...mockOrder,
-        items: [] // No items
-      };
-      Order.findById.mockResolvedValue(orderWithoutItem);
-
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Item not found in order'
-      });
-    });
-
-    it('should return 400 if return period has expired', async () => {
-      const expiredOrder = {
-        ...mockOrder,
-        deliveredAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000) // 35 days ago
-      };
-      Order.findById.mockResolvedValue(expiredOrder);
-
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Return period has expired. Returns must be initiated within 30 days of delivery.'
-      });
-    });
-
-    it('should return 400 if product is not return eligible', async () => {
-      const nonReturnableProduct = {
-        ...mockProduct,
-        returnPolicy: {
-          eligible: false,
-          periodDays: 30
-        }
-      };
-      Product.findById.mockResolvedValue(nonReturnableProduct);
-
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'This product is not eligible for returns'
-      });
-    });
-
-    it('should return 400 if return already exists', async () => {
-      const existingReturn = {
-        _id: mongoose.Types.ObjectId(),
-        status: 'pending'
-      };
-      Return.findOne.mockResolvedValue(existingReturn);
-
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'defective'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'A return request already exists for this item'
-      });
-    });
-
-    it('should return 400 if reason is invalid', async () => {
-      mockReq.body = {
-        orderId: mockOrderId.toString(),
-        itemId: mockItemId.toString(),
-        reason: 'invalid-reason'
-      };
-
-      await initiateReturn(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Invalid return reason. Valid reasons: defective, wrong_item, not_as_described, damaged_shipping, other'
-      });
-    });
-  });
-
-  describe('getUserReturns', () => {
-    const mockReturns = [{
-      _id: mongoose.Types.ObjectId(),
-      returnNumber: 'RET-001',
-      status: 'pending',
-      createdAt: new Date(),
-      orderId: mongoose.Types.ObjectId(),
-      orderNumber: 'ORD-001'
-    }];
-
-    it('should get user returns successfully', async () => {
-      Return.find.mockReturnValue({
-        populate: vi.fn().mockReturnValue({
-          sort: vi.fn().mockResolvedValue(mockReturns)
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: processingOrder._id.toString(),
+          items: [
+            {
+              productId: processingOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
         })
-      });
+        .expect(400);
 
-      await getUserReturns(mockReq, mockRes);
-
-      expect(Return.find).toHaveBeenCalledWith({ userId: mongoose.Types.ObjectId() });
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          returns: mockReturns
-        }
-      });
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Only delivered orders are eligible');
     });
 
-    it('should handle server errors', async () => {
-      Return.find.mockReturnValue({
-        populate: vi.fn().mockReturnValue({
-          sort: vi.fn().mockRejectedValue(new Error('Database error'))
+    it('should return 400 when return window has expired', async () => {
+      const oldOrder = await createOrder({
+        deliveryDate: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000) // 35 days ago
+      });
+
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: oldOrder._id.toString(),
+          items: [
+            {
+              productId: oldOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
         })
-      });
+        .expect(400);
 
-      await getUserReturns(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Server error occurred while fetching returns'
-      });
-    });
-  });
-
-  describe('getReturnDetails', () => {
-    const mockReturnId = mongoose.Types.ObjectId();
-    const mockReturn = {
-      _id: mockReturnId,
-      returnNumber: 'RET-001',
-      userId: mongoose.Types.ObjectId(),
-      status: 'pending'
-    };
-
-    beforeEach(() => {
-      mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('30-day return window has expired');
     });
 
-    it('should get return details successfully', async () => {
-      Return.findById.mockReturnValue({
-        populate: vi.fn().mockResolvedValue(mockReturn)
-      });
+    it('should return 400 if a return request already exists for the order', async () => {
+      // Simulate an order that already has a return request flagged. (We mark
+      // the order directly because the submit endpoint itself is currently
+      // broken — see the "submit a return request successfully" test note.)
+      await Order.findByIdAndUpdate(deliveredOrder._id, { hasReturnRequest: true });
 
-      mockReq.params.returnId = mockReturnId.toString();
-
-      await getReturnDetails(mockReq, mockRes);
-
-      expect(Return.findById).toHaveBeenCalledWith(mockReturnId.toString());
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          return: mockReturn
-        }
-      });
-    });
-
-    it('should return 400 if return ID is invalid format', async () => {
-      mongoose.Types.ObjectId.isValid.mockReturnValue(false);
-
-      mockReq.params.returnId = 'invalid-id';
-
-      await getReturnDetails(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Invalid return ID format'
-      });
-    });
-
-    it('should return 404 if return not found', async () => {
-      Return.findById.mockReturnValue({
-        populate: vi.fn().mockResolvedValue(null)
-      });
-
-      mockReq.params.returnId = mockReturnId.toString();
-
-      await getReturnDetails(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Return not found'
-      });
-    });
-
-    it('should return 403 if return belongs to different user', async () => {
-      const differentReturn = {
-        ...mockReturn,
-        userId: mongoose.Types.ObjectId()
-      };
-      Return.findById.mockReturnValue({
-        populate: vi.fn().mockResolvedValue(differentReturn)
-      });
-
-      mockReq.params.returnId = mockReturnId.toString();
-
-      await getReturnDetails(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Unauthorized to view this return'
-      });
-    });
-  });
-
-  describe('uploadReturnLabel', () => {
-    const mockReturnId = mongoose.Types.ObjectId();
-    const mockReturn = {
-      _id: mockReturnId,
-      userId: mongoose.Types.ObjectId(),
-      status: 'approved',
-      save: vi.fn().mockResolvedValue()
-    };
-
-    beforeEach(() => {
-      mongoose.Types.ObjectId.isValid.mockReturnValue(true);
-      Return.findById.mockResolvedValue(mockReturn);
-    });
-
-    it('should upload return label successfully', async () => {
-      mockReq.params.returnId = mockReturnId.toString();
-      mockReq.body = {
-        labelUrl: 'https://example.com/label.pdf',
-        trackingNumber: 'TRK123456'
+      const body = {
+        orderId: deliveredOrder._id.toString(),
+        items: [
+          {
+            productId: deliveredOrder.items[0].productId.toString(),
+            quantity: 1,
+            reason: 'changed_mind'
+          }
+        ]
       };
 
-      await uploadReturnLabel(mockReq, mockRes);
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(body)
+        .expect(400);
 
-      expect(mockReturn.save).toHaveBeenCalled();
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Return label uploaded successfully',
-        data: {
-          returnId: mockReturnId,
-          status: 'label_uploaded'
-        }
-      });
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('already been submitted');
     });
 
-    it('should return 400 if required fields are missing', async () => {
-      mockReq.params.returnId = mockReturnId.toString();
-      mockReq.body = {}; // Missing fields
+    it('should return 400 for an invalid return reason', async () => {
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: deliveredOrder._id.toString(),
+          items: [
+            {
+              productId: deliveredOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'invalid-reason'
+            }
+          ]
+        })
+        .expect(400);
 
-      await uploadReturnLabel(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Label URL and tracking number are required'
-      });
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('Invalid return reason');
     });
 
-    it('should return 400 if return is not approved', async () => {
-      const unapprovedReturn = {
-        ...mockReturn,
-        status: 'pending'
-      };
-      Return.findById.mockResolvedValue(unapprovedReturn);
+    it('should return 400 when product is not in the order', async () => {
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          orderId: deliveredOrder._id.toString(),
+          items: [
+            {
+              productId: new mongoose.Types.ObjectId().toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
+        })
+        .expect(400);
 
-      mockReq.params.returnId = mockReturnId.toString();
-      mockReq.body = {
-        labelUrl: 'https://example.com/label.pdf',
-        trackingNumber: 'TRK123456'
-      };
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toContain('not found in this order');
+    });
 
-      await uploadReturnLabel(mockReq, mockRes);
+    it('should require authentication', async () => {
+      const response = await request(app)
+        .post('/api/user/returns/request')
+        .send({
+          orderId: deliveredOrder._id.toString(),
+          items: [
+            {
+              productId: deliveredOrder.items[0].productId.toString(),
+              quantity: 1,
+              reason: 'changed_mind'
+            }
+          ]
+        })
+        .expect(401);
 
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Return must be approved before uploading label'
-      });
+      expect(response.body.success).toBe(false);
     });
   });
 });

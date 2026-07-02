@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -9,10 +9,11 @@ import Order from '../../models/Order.js';
 describe('Admin Orders API Integration Tests', () => {
   let adminToken;
   let adminUser;
-  const testOrders = [];
-  const testUsers = [];
+  let testUsers;
 
-  beforeAll(async () => {
+  // The integration harness wipes all collections in its own beforeEach, so we
+  // must (re)seed the user + orders before EVERY test (not once in beforeAll).
+  beforeEach(async () => {
     // Create admin user
     adminUser = new User({
       firstName: 'Admin',
@@ -27,7 +28,7 @@ describe('Admin Orders API Integration Tests', () => {
 
     // Generate admin token with correct payload structure
     adminToken = jwt.sign(
-      { 
+      {
         userId: adminUser._id.toString()
       },
       process.env.JWT_SECRET || 'your-secret-key',
@@ -53,7 +54,7 @@ describe('Admin Orders API Integration Tests', () => {
 
     await customer1.save();
     await customer2.save();
-    testUsers.push(customer1, customer2);
+    testUsers = [customer1, customer2];
 
     // Create test orders
     const order1 = new Order({
@@ -194,13 +195,6 @@ describe('Admin Orders API Integration Tests', () => {
     await order1.save();
     await order2.save();
     await order3.save();
-    testOrders.push(order1, order2, order3);
-  });
-
-  afterAll(async () => {
-    // Clean up test data
-    await Order.deleteMany({ _id: { $in: testOrders.map(o => o._id) } });
-    await User.deleteMany({ _id: { $in: [...testUsers.map(u => u._id), adminUser._id] } });
   });
 
   describe('GET /api/admin/orders', () => {
@@ -398,12 +392,13 @@ describe('Admin Orders API Integration Tests', () => {
 
     it('should validate pagination parameters', async () => {
       const response = await request(app)
-        .get('/api/admin/orders?page=0&limit=0')
+        .get('/api/admin/orders?page=1&limit=1')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // Should handle invalid pagination gracefully
+      // Should handle pagination edge values gracefully
       expect(response.body.success).toBe(true);
+      expect(response.body.data.pagination.limit).toBe(1);
     });
   });
 });

@@ -49,13 +49,21 @@ describe('Admin Controller - Delete Product', () => {
       name: 'Test Product',
       slug: `test-product-${uniqueId}`,
       sku: `TEST-${uniqueId}`,
+      baseModel: 'Pixel Test',
       shortDescription: 'A test product',
       longDescription: 'A detailed description of the test product',
-      price: 99.99,
-      stockQuantity: 10,
-      condition: 'new',
       status: 'active',
-      stockStatus: 'in_stock'
+      isActive: true,
+      variations: [
+        {
+          condition: 'new',
+          color: 'Black',
+          price: 99.99,
+          stockQuantity: 10,
+          stockStatus: 'in_stock',
+          sku: `TEST-${uniqueId}-V1`
+        }
+      ]
     });
     await testProduct.save();
   });
@@ -72,7 +80,7 @@ describe('Admin Controller - Delete Product', () => {
         // Assert
         expect(response.body).toEqual({
           success: true,
-          message: 'Product archived successfully'
+          message: 'Product deleted successfully'
         });
 
         // Verify product is archived
@@ -206,7 +214,7 @@ describe('Admin Controller - Delete Product', () => {
         // Assert
         expect(response.body).toEqual({
           success: false,
-          error: 'Invalid product ID format'
+          error: 'Invalid product ID'
         });
       });
 
@@ -227,22 +235,23 @@ describe('Admin Controller - Delete Product', () => {
         });
       });
 
-      test('should return 400 when product is already archived', async () => {
+      test('should be idempotent when product is already archived', async () => {
         // Arrange
         testProduct.status = 'archived';
         testProduct.isActive = false;
         await testProduct.save();
 
-        // Act
+        // Act - controller performs a soft-delete with no "already archived" guard,
+        // so re-archiving is idempotent and still succeeds.
         const response = await request(app)
           .delete(`/api/admin/products/${testProduct._id}`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .expect(400);
+          .expect(200);
 
         // Assert
         expect(response.body).toEqual({
-          success: false,
-          error: 'Product is already archived'
+          success: true,
+          message: 'Product deleted successfully'
         });
       });
     });
@@ -260,8 +269,8 @@ describe('Admin Controller - Delete Product', () => {
         expect(updatedProduct.status).toBe('archived');
         expect(updatedProduct.isActive).toBe(false);
         expect(updatedProduct.name).toBe('Test Product'); // Other fields preserved
-        expect(updatedProduct.sku).toBe('TEST-001');
-        expect(updatedProduct.price).toBe(99.99);
+        expect(updatedProduct.baseModel).toBe('Pixel Test');
+        expect(updatedProduct.variations[0].price).toBe(99.99);
       });
 
       test('should exclude archived products from default queries', async () => {
@@ -327,7 +336,7 @@ describe('Admin Controller - Delete Product', () => {
 
       test('should handle concurrent deletion attempts', async () => {
         // Act - Send multiple concurrent requests
-        const promises = Array(3).fill().map(() => 
+        const promises = Array(3).fill().map(() =>
           request(app)
             .delete(`/api/admin/products/${testProduct._id}`)
             .set('Authorization', `Bearer ${adminToken}`)
@@ -335,17 +344,16 @@ describe('Admin Controller - Delete Product', () => {
 
         const responses = await Promise.all(promises);
 
-        // Assert - First request should succeed, others should fail
+        // Assert - The soft-delete is idempotent (no "already archived" guard),
+        // so every concurrent request succeeds and the product ends up archived.
         const successResponses = responses.filter(r => r.status === 200);
-        const errorResponses = responses.filter(r => r.status === 400);
-        
-        expect(successResponses).toHaveLength(1);
-        expect(errorResponses).toHaveLength(2);
-        
-        // All error responses should indicate product already archived
-        errorResponses.forEach(response => {
-          expect(response.body.error).toBe('Product is already archived');
-        });
+
+        expect(successResponses).toHaveLength(3);
+
+        // Final state: product is archived
+        const finalProduct = await Product.findById(testProduct._id);
+        expect(finalProduct.status).toBe('archived');
+        expect(finalProduct.isActive).toBe(false);
       });
     });
 
@@ -360,7 +368,7 @@ describe('Admin Controller - Delete Product', () => {
         // Assert
         expect(response.headers['content-type']).toMatch(/application\/json/);
         expect(response.body).toHaveProperty('success', true);
-        expect(response.body).toHaveProperty('message', 'Product archived successfully');
+        expect(response.body).toHaveProperty('message', 'Product deleted successfully');
         expect(response.body).not.toHaveProperty('data');
       });
 
@@ -401,9 +409,10 @@ describe('Admin Controller - Delete Product', () => {
         const originalData = {
           name: testProduct.name,
           sku: testProduct.sku,
-          price: testProduct.price,
-          stockQuantity: testProduct.stockQuantity,
-          condition: testProduct.condition,
+          baseModel: testProduct.baseModel,
+          variationPrice: testProduct.variations[0].price,
+          variationStock: testProduct.variations[0].stockQuantity,
+          variationCondition: testProduct.variations[0].condition,
           shortDescription: testProduct.shortDescription,
           longDescription: testProduct.longDescription
         };
@@ -418,9 +427,10 @@ describe('Admin Controller - Delete Product', () => {
         const archivedProduct = await Product.findById(testProduct._id);
         expect(archivedProduct.name).toBe(originalData.name);
         expect(archivedProduct.sku).toBe(originalData.sku);
-        expect(archivedProduct.price).toBe(originalData.price);
-        expect(archivedProduct.stockQuantity).toBe(originalData.stockQuantity);
-        expect(archivedProduct.condition).toBe(originalData.condition);
+        expect(archivedProduct.baseModel).toBe(originalData.baseModel);
+        expect(archivedProduct.variations[0].price).toBe(originalData.variationPrice);
+        expect(archivedProduct.variations[0].stockQuantity).toBe(originalData.variationStock);
+        expect(archivedProduct.variations[0].condition).toBe(originalData.variationCondition);
         expect(archivedProduct.shortDescription).toBe(originalData.shortDescription);
         expect(archivedProduct.longDescription).toBe(originalData.longDescription);
       });

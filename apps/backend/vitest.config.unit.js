@@ -37,6 +37,7 @@ export default defineConfig({
       // Generate the coverage report even when tests fail (default is false).
       reportOnFailure: true,
       reporter: ['text', 'json', 'json-summary', 'html'],
+      include: ['src/**/*.js'],
       exclude: [
         'node_modules/**',
         'src/test/**',
@@ -44,7 +45,10 @@ export default defineConfig({
         'coverage/**',
         '**/*.config.js',
         'scripts/**'
-      ]
+      ],
+      // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
+      thresholds: { lines: 42, branches: 29, functions: 27, statements: 41 }
+      // @ratchet-end
     }
   },
   resolve: {

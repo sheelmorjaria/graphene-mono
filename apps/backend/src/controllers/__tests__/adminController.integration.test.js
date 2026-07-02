@@ -472,7 +472,7 @@ describe('Admin Controller', () => {
       
       // Check order has been updated
       const updatedOrder = await Order.findById(testOrder._id);
-      expect(updatedOrder.refundAmount).toBe(70);
+      expect(updatedOrder.totalRefundedAmount).toBe(70);
       expect(updatedOrder.refundHistory).toHaveLength(2);
     });
 
@@ -490,11 +490,13 @@ describe('Admin Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       
-      // Check order status updated
+      // Check order status updated. Per the controller, a full refund sets
+      // paymentStatus='refunded' and refundStatus='fully_refunded' but does NOT
+      // change order.status ('refunded' is not a valid order status).
       const updatedOrder = await Order.findById(testOrder._id);
-      expect(updatedOrder.status).toBe('refunded');
       expect(updatedOrder.paymentStatus).toBe('refunded');
-      expect(updatedOrder.refundStatus).toBe('succeeded');
+      expect(updatedOrder.refundStatus).toBe('fully_refunded');
+      expect(updatedOrder.totalRefundedAmount).toBe(110);
     });
 
     it('should require admin authentication', async () => {

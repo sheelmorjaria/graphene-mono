@@ -137,9 +137,13 @@ export const searchProducts = async (req, res) => {
       }
 
       // Build sort object
+      // The variation-based Product schema has no top-level `price` field, so
+      // map price sorting to `variations.price` (MongoDB sorts on the first
+      // array element's value) instead of the nonexistent top-level `price`.
       const validSortFields = ['createdAt', 'price', 'name'];
       if (validSortFields.includes(sortBy)) {
-        sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        const sortKey = sortBy === 'price' ? 'variations.price' : sortBy;
+        sortObj[sortKey] = sortOrder === 'asc' ? 1 : -1;
       } else {
         // Default sort by text score (relevance) when doing text search
         sortObj.score = { $meta: 'textScore' };
@@ -260,9 +264,11 @@ export const searchProducts = async (req, res) => {
       }
 
       // Build sort object for regex search
+      // Map price sorting to `variations.price` (no top-level price field).
       const validSortFields = ['createdAt', 'price', 'name'];
       if (validSortFields.includes(sortBy)) {
-        sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        const sortKey = sortBy === 'price' ? 'variations.price' : sortBy;
+        sortObj[sortKey] = sortOrder === 'asc' ? 1 : -1;
       } else {
         sortObj.createdAt = -1; // Default sort
       }

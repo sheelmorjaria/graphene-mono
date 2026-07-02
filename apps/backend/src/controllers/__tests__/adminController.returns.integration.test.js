@@ -1,51 +1,34 @@
-import { vi, describe, it, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus } from '../adminController.js';
 import ReturnRequest from '../../models/ReturnRequest.js';
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
+import emailService from '../../services/emailService.js';
 
-// Mock email service
-const emailService = {
-  sendEmail: vi.fn().mockResolvedValue(true),
-  sendReturnStatusUpdateEmail: vi.fn().mockResolvedValue(true),
-  sendReturnApprovalEmail: vi.fn().mockResolvedValue(true),
-  sendReturnRejectionEmail: vi.fn().mockResolvedValue(true)
-};
+// Integration tests that call the return-management controllers directly
+// against the shared in-memory MongoDB owned by the integration harness.
+// (Earlier revisions spun up their own MongoMemoryServer + disconnect, which
+// corrupted the shared harness connection — removed.)
 
 describe('Admin Controller - Return Management', () => {
-  let mongoServer;
   let req, res;
   let mockAdminUser, mockCustomerUser, mockOrder, mockReturnRequest;
 
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    
-    // Disconnect if already connected
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    
-    await mongoose.connect(mongoUri);
-  });
-
-  afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    await mongoServer.stop();
+    // The integration harness owns the DB connection; do not create/stop a
+    // standalone server here.
   });
 
   beforeEach(async () => {
-    // Clear all collections
-    await ReturnRequest.deleteMany({});
-    await User.deleteMany({});
-    await Order.deleteMany({});
-
-    // Reset mocks
+    // The harness global beforeEach wipes all collections; re-create data.
     vi.clearAllMocks();
+
+    // Spy on the real email service methods used by updateReturnRequestStatus.
+    // Each spy resolves so email never blocks the controller.
+    vi.spyOn(emailService, 'sendReturnApprovedEmail').mockResolvedValue(true);
+    vi.spyOn(emailService, 'sendReturnRejectedEmail').mockResolvedValue(true);
+    vi.spyOn(emailService, 'sendReturnRefundedEmail').mockResolvedValue(true);
 
     // Create mock admin user
     mockAdminUser = await User.create({
@@ -67,30 +50,32 @@ describe('Admin Controller - Return Management', () => {
       isActive: true
     });
 
-    // Create mock order
+    // Create mock order (schema-compliant)
     mockOrder = await Order.create({
       userId: mockCustomerUser._id,
+      customerEmail: mockCustomerUser.email,
       orderNumber: 'ORD-2024010001',
       items: [{
         productId: new mongoose.Types.ObjectId(),
-        name: 'Google Pixel 8',
-        slug: 'google-pixel-8',
-        price: 699.99,
+        productName: 'Google Pixel 8',
+        productSlug: 'google-pixel-8',
         quantity: 1,
-        image: 'pixel8.jpg',
-        lineTotal: 699.99
+        unitPrice: 699.99,
+        totalPrice: 699.99
       }],
+      subtotal: 699.99,
+      tax: 0,
+      shipping: 0,
       totalAmount: 699.99,
-      subtotalAmount: 699.99,
-      shippingCost: 0,
-      taxAmount: 0,
       status: 'delivered',
-      paymentMethod: 'paypal',
+      paymentMethod: { type: 'paypal', name: 'PayPal' },
+      shippingMethod: { id: new mongoose.Types.ObjectId(), name: 'Standard', cost: 0 },
       paymentStatus: 'completed',
       shippingAddress: {
         fullName: 'John Doe',
         addressLine1: '123 Test St',
         city: 'Test City',
+        stateProvince: 'Test State',
         postalCode: 'T3ST 1NG',
         country: 'GB'
       },
@@ -98,6 +83,7 @@ describe('Admin Controller - Return Management', () => {
         fullName: 'John Doe',
         addressLine1: '123 Test St',
         city: 'Test City',
+        stateProvince: 'Test State',
         postalCode: 'T3ST 1NG',
         country: 'GB'
       }

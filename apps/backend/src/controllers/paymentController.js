@@ -163,7 +163,7 @@ export const createPayPalOrder = async (req, res) => {
 
     for (const cartItem of cart.items) {
       const product = productMap.get(cartItem.productId.toString());
-      
+
       if (!product) {
         return res.status(400).json({
           success: false,
@@ -171,21 +171,41 @@ export const createPayPalOrder = async (req, res) => {
         });
       }
 
-      if (product.stockQuantity < cartItem.quantity) {
+      // Resolve the specific variation the cart item refers to. The Product
+      // schema is variation-based: price/stock live on variations[], not at
+      // the top level (reading product.price/product.stockQuantity yields
+      // undefined → NaN amounts). Match by variationId first, then fall back
+      // to condition/color, finally to the first variation.
+      const variation = cartItem.variationId
+        ? product.variations.find(v => v._id.toString() === cartItem.variationId)
+        : (product.variations.find(v =>
+            (!cartItem.condition || v.condition === cartItem.condition) &&
+            (!cartItem.color || v.color === cartItem.color)
+          ) || product.variations[0]);
+
+      if (!variation) {
+        return res.status(400).json({
+          success: false,
+          error: 'Selected variation no longer available'
+        });
+      }
+
+      if (variation.stockQuantity < cartItem.quantity) {
         return res.status(400).json({
           success: false,
           error: `Insufficient stock for product ${product.name}`
         });
       }
 
-      const itemTotal = product.price * cartItem.quantity;
+      const unitPrice = variation.salePrice || variation.price;
+      const itemTotal = unitPrice * cartItem.quantity;
       cartTotal += itemTotal;
 
       cartItems.push({
         productId: product._id,
         name: product.name,
         quantity: cartItem.quantity,
-        unitPrice: product.price,
+        unitPrice,
         totalPrice: itemTotal
       });
     }

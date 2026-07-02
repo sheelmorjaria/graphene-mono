@@ -24,6 +24,13 @@ export const createAdminUser = async (adminData = null) => {
     
     const finalAdminData = adminData || defaultAdminData;
 
+    // Force admin privileges regardless of the supplied adminData. Without
+    // these defaults a caller could create a non-admin / inactive / unverified
+    // user through this script, defeating its purpose.
+    finalAdminData.role = 'admin';
+    finalAdminData.isActive = true;
+    finalAdminData.emailVerified = true;
+
     // Check if admin user already exists
     const existingAdmin = await User.findOne({ email: finalAdminData.email });
     if (existingAdmin) {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -6,6 +6,25 @@ import app from '../../app.js';
 import User from '../../models/User.js';
 import DataExportRequest from '../../models/DataExportRequest.js';
 import AccountDeletionRequest from '../../models/AccountDeletionRequest.js';
+
+// privacyController imports email functions as NAMED exports, but the shared
+// integration harness only mocks the emailService DEFAULT export. Provide the
+// named exports here so the controller's email calls resolve during tests.
+vi.mock('../../services/emailService.js', () => {
+  const stub = () => vi.fn().mockResolvedValue(true);
+  return {
+    default: {
+      isEnabled: true,
+      sendEmail: stub(),
+      sendDataExportEmail: stub(),
+      sendAccountDeletionConfirmationEmail: stub(),
+      sendAccountDeletionCompletedEmail: stub()
+    },
+    sendDataExportEmail: stub(),
+    sendAccountDeletionConfirmationEmail: stub(),
+    sendAccountDeletionCompletedEmail: stub()
+  };
+});
 
 describe('Privacy Controller - Simple Integration Tests', () => {
   let testUser;

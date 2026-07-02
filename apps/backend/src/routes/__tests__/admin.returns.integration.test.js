@@ -9,7 +9,6 @@ import ReturnRequest from '../../models/ReturnRequest.js';
 import jwt from 'jsonwebtoken';
 import emailService from '../../services/emailService.js';
 import { createValidOrderData, createValidReturnRequestData } from '../../test/helpers/testDataFactory.js';
-import { setupAdvancedSessionMocking, restoreOriginalMethods } from '../../test/helpers/sessionMocks.js';
 
 // Will mock email service methods in beforeEach with spies
 
@@ -22,35 +21,18 @@ describe('Admin Returns Integration Tests', () => {
   let adminToken;
 
   beforeAll(async () => {
-    // Setup session mocking to prevent "Unable to acquire server session" errors
-    setupAdvancedSessionMocking();
-    
     // Setup Express app (DB connection handled by global test setup)
     app = express();
     app.use(express.json());
-    
-    // Mock authentication middleware
-    app.use((req, res, next) => {
-      // Add mock user based on authorization header
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret');
-          req.user = decoded;
-        } catch (error) {
-          return res.status(401).json({ success: false, error: 'Invalid token' });
-        }
-      }
-      next();
-    });
-    
+
+    // Use the REAL authenticate middleware wired into adminRoutes (it does
+    // jwt.verify + User.findById), so tokens must be signed with the same
+    // secret the middleware uses and the user must exist + be active in the DB.
     app.use('/api/admin', adminRoutes);
   });
 
   afterAll(async () => {
-    // Restore original MongoDB methods
-    restoreOriginalMethods();
+    // DB cleanup handled by global test setup
   });
 
   beforeEach(async () => {
@@ -97,7 +79,7 @@ describe('Admin Returns Integration Tests', () => {
         role: adminUser.role,
         email: adminUser.email
       },
-      process.env.JWT_SECRET || 'test-secret',
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '8h' }
     );
 
@@ -255,7 +237,7 @@ describe('Admin Returns Integration Tests', () => {
           role: customerUser.role,
           email: customerUser.email
         },
-        process.env.JWT_SECRET || 'test-secret',
+        process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '8h' }
       );
 
@@ -478,7 +460,7 @@ describe('Admin Returns Integration Tests', () => {
           role: customerUser.role,
           email: customerUser.email
         },
-        process.env.JWT_SECRET || 'test-secret',
+        process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '8h' }
       );
 

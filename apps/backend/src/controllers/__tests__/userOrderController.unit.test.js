@@ -208,13 +208,20 @@ describe('User Order Controller - Unit Tests', () => {
         }],
         getTotalAmount: vi.fn().mockReturnValue(100)
       };
-      
+
       const mockProduct = {
         _id: '444444444444444444444444',
         name: 'Test Product',
-        price: 50,
-        stockQuantity: 10,
-        images: ['image1.jpg']
+        images: ['image1.jpg'],
+        variations: [{
+          _id: '555555555555555555555550',
+          condition: 'new',
+          color: 'Black',
+          price: 50,
+          stockQuantity: 10,
+          sku: 'TEST-VAR-1',
+          images: ['var-image.jpg']
+        }]
       };
       
       const mockShippingMethod = {
@@ -247,6 +254,9 @@ describe('User Order Controller - Unit Tests', () => {
       Cart.findByUserId = vi.fn().mockResolvedValue(mockCart);
       Product.find = vi.fn().mockReturnValue({
         session: vi.fn().mockResolvedValue([mockProduct])
+      });
+      Product.updateOne = vi.fn().mockReturnValue({
+        session: vi.fn().mockResolvedValue()
       });
       Product.findByIdAndUpdate = vi.fn().mockResolvedValue();
       ShippingMethod.findOne = vi.fn().mockReturnValue({
@@ -329,6 +339,7 @@ describe('User Order Controller - Unit Tests', () => {
         items: [
           {
             productId: '333333333333333333333333',
+            variationId: '507f1f77bcf86cd799439011',
             quantity: 2,
             price: 50
           }
@@ -341,6 +352,7 @@ describe('User Order Controller - Unit Tests', () => {
         session: vi.fn().mockResolvedValue(mockOrder)
       };
       Order.findOne = vi.fn().mockReturnValue(mockFindOneWithSession);
+      Product.updateOne = vi.fn().mockReturnValue({ session: vi.fn().mockResolvedValue() });
       emailService.sendOrderCancellationEmail = vi.fn().mockResolvedValue();
 
       await cancelOrder(req, res);

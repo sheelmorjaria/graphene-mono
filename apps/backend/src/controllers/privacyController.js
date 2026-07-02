@@ -329,6 +329,9 @@ const processAccountDeletion = async (requestId, userId, userEmail) => {
     let recordsDeleted = 0;
 
     // Step 1: Anonymize order data (keep for legal/tax purposes)
+    // NOTE: the Order schema field is `customerEmail` (not `userEmail`).
+    // Anonymize the correct field so the customer's real email is actually
+    // removed (GDPR right to erasure).
     const orderUpdateResult = await Order.updateMany(
       { userId },
       {
@@ -337,7 +340,7 @@ const processAccountDeletion = async (requestId, userId, userEmail) => {
           'shippingAddress.phoneNumber': '',
           'billingAddress.fullName': 'DELETED USER',
           'billingAddress.phoneNumber': '',
-          userEmail: 'deleted@anonymous.local',
+          customerEmail: 'deleted@anonymous.local',
           userId: null // Remove user reference
         }
       }
@@ -345,6 +348,9 @@ const processAccountDeletion = async (requestId, userId, userEmail) => {
     ordersAnonymized = orderUpdateResult.modifiedCount;
 
     // Step 2: Delete user's personal data (soft deletion with anonymization)
+    // NOTE: the User schema has no `isDeleted`/`deletedAt` fields, so setting
+    // them would be silently stripped by the strict schema. Use the existing
+    // `isActive` and `accountStatus` fields to mark the account as disabled.
     await User.findByIdAndUpdate(userId, {
       firstName: 'Deleted',
       lastName: 'User',
@@ -352,8 +358,7 @@ const processAccountDeletion = async (requestId, userId, userEmail) => {
       phone: '',
       addresses: [],
       isActive: false,
-      isDeleted: true,
-      deletedAt: new Date(),
+      accountStatus: 'disabled',
       // Keep account for audit purposes but remove PII
       password: 'DELETED' // This will prevent login
     });
