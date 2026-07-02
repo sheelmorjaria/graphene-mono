@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -10,6 +10,25 @@ import Cart from '../../models/Cart.js';
 import DataExportRequest from '../../models/DataExportRequest.js';
 import AccountDeletionRequest from '../../models/AccountDeletionRequest.js';
 
+// privacyController imports email functions as NAMED exports, but the shared
+// integration harness only mocks the emailService DEFAULT export. Provide the
+// named exports here so the controller's email calls resolve during tests.
+vi.mock('../../services/emailService.js', () => {
+  const stub = () => vi.fn().mockResolvedValue(true);
+  return {
+    default: {
+      isEnabled: true,
+      sendEmail: stub(),
+      sendDataExportEmail: stub(),
+      sendAccountDeletionConfirmationEmail: stub(),
+      sendAccountDeletionCompletedEmail: stub()
+    },
+    sendDataExportEmail: stub(),
+    sendAccountDeletionConfirmationEmail: stub(),
+    sendAccountDeletionCompletedEmail: stub()
+  };
+});
+
 describe('Privacy Controller - Integration Tests', () => {
   let testUser;
   let authToken;
@@ -17,8 +36,11 @@ describe('Privacy Controller - Integration Tests', () => {
   let testCart;
 
   beforeAll(async () => {
-    // Ensure we're using test database
-    if (!process.env.MONGODB_URI?.includes('test')) {
+    // The integration harness spins up an in-memory MongoDB replica set and
+    // connects mongoose to it; the guard below accepts either an explicit
+    // test URI or the already-connected in-memory test database.
+    const connected = mongoose.connection.readyState === 1;
+    if (!connected && !process.env.MONGODB_URI?.includes('test')) {
       throw new Error('Integration tests must use test database');
     }
   });
@@ -55,7 +77,7 @@ describe('Privacy Controller - Integration Tests', () => {
     // Generate auth token
     authToken = jwt.sign(
       { userId: testUser._id },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
     );
 
@@ -132,7 +154,7 @@ describe('Privacy Controller - Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.close();
+    // The shared integration harness owns the DB connection; do not close it.
   });
 
   describe('POST /api/user/data/export', () => {
@@ -341,14 +363,19 @@ describe('Privacy Controller - Integration Tests', () => {
       expect(updatedUser.firstName).toBe('Deleted');
       expect(updatedUser.lastName).toBe('User');
       expect(updatedUser.email).toBe(`deleted_${testUser._id}@anonymous.local`);
-      expect(updatedUser.isDeleted).toBe(true);
+      // The User schema has no `isDeleted` field; processAccountDeletion marks
+      // the account disabled via the existing `isActive`/`accountStatus` fields.
       expect(updatedUser.isActive).toBe(false);
+      expect(updatedUser.accountStatus).toBe('disabled');
 
       // Check that orders were anonymized
       const updatedOrder = await Order.findById(testOrder._id);
       expect(updatedOrder.shippingAddress.fullName).toBe('DELETED USER');
       expect(updatedOrder.billingAddress.fullName).toBe('DELETED USER');
-      expect(updatedOrder.userEmail).toBe('deleted@anonymous.local');
+      // processAccountDeletion now anonymizes the correct Order field
+      // (`customerEmail`, not the nonexistent `userEmail`) so the customer's
+      // real email is removed (GDPR right to erasure).
+      expect(updatedOrder.customerEmail).toBe('deleted@anonymous.local');
       expect(updatedOrder.userId).toBeNull();
 
       // Check that cart was deleted

@@ -291,7 +291,7 @@ export const placeOrder = async (req, res) => {
 
     for (const cartItem of cart.items) {
       const product = productMap.get(cartItem.productId.toString());
-      
+
       if (!product) {
         await session.abortTransaction();
         return res.status(400).json({
@@ -300,32 +300,56 @@ export const placeOrder = async (req, res) => {
         });
       }
 
-      // Check stock availability
-      if (product.stockQuantity < cartItem.quantity) {
+      // Resolve the specific variation the cart item refers to. The Product
+      // schema is variation-based: price/stock live on variations[], not at
+      // the top level. Match by variationId first, then fall back to
+      // condition/color, finally to the first variation.
+      const variation = cartItem.variationId
+        ? product.variations.find(v => v._id.toString() === cartItem.variationId)
+        : (product.variations.find(v =>
+            (!cartItem.condition || v.condition === cartItem.condition) &&
+            (!cartItem.color || v.color === cartItem.color)
+          ) || product.variations[0]);
+
+      if (!variation) {
         await session.abortTransaction();
         return res.status(400).json({
           success: false,
-          error: `Insufficient stock for product ${product.name}. Available: ${product.stockQuantity}, Requested: ${cartItem.quantity}`
+          error: 'Selected variation no longer available'
         });
       }
 
-      const itemTotal = product.price * cartItem.quantity;
+      // Check stock availability on the resolved variation
+      if (variation.stockQuantity < cartItem.quantity) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          success: false,
+          error: `Insufficient stock for product ${product.name}. Available: ${variation.stockQuantity}, Requested: ${cartItem.quantity}`
+        });
+      }
+
+      const unitPrice = variation.salePrice || variation.price;
+      const itemTotal = unitPrice * cartItem.quantity;
       cartTotal += itemTotal;
 
       orderItems.push({
         productId: product._id,
         productName: product.name,
         productSlug: product.slug,
-        productImage: product.images?.[0] || null,
+        productImage: variation.images?.[0] || product.images?.[0] || null,
+        variationId: variation._id,
+        sku: variation.sku,
+        condition: variation.condition,
+        color: variation.color,
         quantity: cartItem.quantity,
-        unitPrice: product.price,
+        unitPrice,
         totalPrice: itemTotal
       });
 
-      // Decrement stock quantity
-      await Product.findByIdAndUpdate(
-        product._id,
-        { $inc: { stockQuantity: -cartItem.quantity } },
+      // Decrement stock on the resolved variation (not a top-level field)
+      await Product.updateOne(
+        { _id: product._id, 'variations._id': variation._id },
+        { $inc: { 'variations.$.stockQuantity': -cartItem.quantity } },
         { session }
       );
     }
@@ -540,13 +564,31 @@ export const cancelOrder = async (req, res) => {
       await order.save({ session });
     }
 
-    // Restore stock for all items in the order
+    // Restore stock for all items in the order (variation-aware)
     for (const item of order.items) {
-      await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { stockQuantity: item.quantity } },
-        { session }
-      );
+      if (item.variationId) {
+        // Variation-based orders: restore the specific variation's stock
+        await Product.updateOne(
+          { _id: item.productId, 'variations._id': item.variationId },
+          { $inc: { 'variations.$.stockQuantity': item.quantity } },
+          { session }
+        );
+      } else {
+        // Legacy order items (no variationId): best-effort restore by matching a
+        // variation on sku / condition+color. There is no top-level stock field.
+        const product = await Product.findById(item.productId).session(session);
+        const variation = product?.variations?.find(v =>
+          (item.sku && v.sku === item.sku) ||
+          (item.condition && item.color && v.condition === item.condition && v.color === item.color)
+        );
+        if (variation) {
+          await Product.updateOne(
+            { _id: item.productId, 'variations._id': variation._id },
+            { $inc: { 'variations.$.stockQuantity': item.quantity } },
+            { session }
+          );
+        }
+      }
     }
 
     // Initiate refund if payment was processed

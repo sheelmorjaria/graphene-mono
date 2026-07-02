@@ -5,18 +5,21 @@ import { connectTestDatabase, disconnectTestDatabase, clearTestDatabase } from '
 // Mock the Order model
 let mockOrderResolveValue = null;
 
-const createMockQueryChain = () => {
+const createMockQueryChain = (resolveValue = mockOrderResolveValue, populatedValue) => {
   const queryChain = {};
-  
+  const val = populatedValue !== undefined ? populatedValue : resolveValue;
+
   queryChain.session = vi.fn().mockReturnValue(queryChain);
   queryChain.populate = vi.fn().mockReturnValue(queryChain);
   queryChain.sort = vi.fn().mockReturnValue(queryChain);
   queryChain.limit = vi.fn().mockReturnValue(queryChain);
   queryChain.skip = vi.fn().mockReturnValue(queryChain);
   queryChain.select = vi.fn().mockReturnValue(queryChain);
-  queryChain.exec = vi.fn().mockImplementation(() => Promise.resolve(mockOrderResolveValue));
-  queryChain.then = vi.fn().mockImplementation((resolve) => Promise.resolve(mockOrderResolveValue).then(resolve));
-  
+  queryChain.exec = vi.fn().mockImplementation(() => Promise.resolve(resolveValue));
+  queryChain.lean = vi.fn().mockImplementation(() => Promise.resolve(val));
+  // Make the chain itself thenable so `await Order.findById(id).session(s)` resolves.
+  queryChain.then = vi.fn().mockImplementation((resolve) => Promise.resolve(resolveValue).then(resolve));
+
   return queryChain;
 };
 
@@ -177,9 +180,9 @@ describe('Admin Controller - issueRefund', () => {
         paymentStatus: 'pending',
         getMaxRefundableAmount: vi.fn()
       };
-      
-      mockFindById.mockResolvedValue(mockOrderDoc);
-      
+
+      mockFindById.mockImplementation(() => createMockQueryChain(mockOrderDoc));
+
       await issueRefund(req, res);
       
       expect(res.status).toHaveBeenCalledWith(400);
@@ -198,8 +201,8 @@ describe('Admin Controller - issueRefund', () => {
         totalAmount: 100,
         save: vi.fn()
       };
-      
-      mockFindById.mockResolvedValue(mockOrderDoc);
+
+      mockFindById.mockImplementation(() => createMockQueryChain(mockOrderDoc));
       req.body.refundAmount = 50.00; // Exceeds max refundable of 25.00
       
       await issueRefund(req, res);
@@ -219,6 +222,7 @@ describe('Admin Controller - issueRefund', () => {
       mockOrderDoc = {
         _id: '507f1f77bcf86cd799439011',
         paymentStatus: 'completed',
+        status: 'processing',
         refundStatus: 'none',
         totalAmount: 100,
         totalRefundedAmount: 0,
@@ -230,9 +234,9 @@ describe('Admin Controller - issueRefund', () => {
       
       // mongoose already imported at top
       mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
-      mockFindById.mockResolvedValue(mockOrderDoc);
-      
-      // Mock the populated order response
+
+      // Mock the populated order response (returned by the second findById
+      // chained with .populate().lean()).
       const mockPopulatedOrder = {
         ...mockOrderDoc,
         userId: { firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
@@ -244,13 +248,14 @@ describe('Admin Controller - issueRefund', () => {
           status: 'succeeded'
         }]
       };
-      
-      // Mock chained populate calls
-      const mockQuery = {
-        populate: vi.fn().mockReturnThis(),
-        lean: vi.fn().mockResolvedValue(mockPopulatedOrder)
-      };
-      mockOrder.findById = vi.fn().mockReturnValue(mockQuery);
+
+      // findById must support both call sites in the controller:
+      //   1) `Order.findById(id).session(s)`  -> resolves mockOrderDoc
+      //   2) `Order.findById(id).populate().lean()` -> resolves mockPopulatedOrder
+      mockFindById.mockImplementation(() =>
+        createMockQueryChain(mockOrderDoc, mockPopulatedOrder)
+      );
+      vi.spyOn(Order, 'findById').mockImplementation(mockFindById);
     });
 
     it('should process partial refund successfully', async () => {
@@ -278,15 +283,18 @@ describe('Admin Controller - issueRefund', () => {
     it('should process full refund and update order status', async () => {
       req.body.refundAmount = 100.00;
       mockOrderDoc.getMaxRefundableAmount.mockReturnValue(100);
-      
+
       await issueRefund(req, res);
-      
+
       expect(mockOrderDoc.totalRefundedAmount).toBe(100);
       expect(mockOrderDoc.refundStatus).toBe('fully_refunded');
       expect(mockOrderDoc.paymentStatus).toBe('refunded');
-      expect(mockOrderDoc.status).toBe('refunded');
+      // Per the controller, a full refund does NOT change order.status
+      // ('refunded' is not a valid order status); it only records a
+      // statusHistory entry carrying the current status.
+      expect(mockOrderDoc.status).toBe('processing');
       expect(mockOrderDoc.statusHistory).toHaveLength(1);
-      expect(mockOrderDoc.statusHistory[0].status).toBe('refunded');
+      expect(mockOrderDoc.statusHistory[0].status).toBe('processing');
     });
 
     it('should send refund confirmation email', async () => {
@@ -319,13 +327,16 @@ describe('Admin Controller - issueRefund', () => {
     beforeEach(() => {
       // mongoose already imported at top
       mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
+      // The controller uses mongoose.startSession(); route it to our mock
+      // session so abortTransaction/commitTransaction are observable.
+      vi.spyOn(mongoose, 'startSession').mockResolvedValue(mockSession);
     });
 
     it('should handle database errors and abort transaction', async () => {
-      mockFindById.mockRejectedValue(new Error('Database connection failed'));
-      
+      mockFindById.mockImplementation(() => { throw new Error('Database connection failed'); });
+
       await issueRefund(req, res);
-      
+
       expect(mockSession.abortTransaction).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
@@ -335,10 +346,10 @@ describe('Admin Controller - issueRefund', () => {
     });
 
     it('should handle validation errors specifically', async () => {
-      mockFindById.mockRejectedValue(new Error('refund amount exceeds limit'));
-      
+      mockFindById.mockImplementation(() => { throw new Error('refund amount exceeds limit'); });
+
       await issueRefund(req, res);
-      
+
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,

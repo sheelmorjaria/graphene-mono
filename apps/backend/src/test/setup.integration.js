@@ -1,6 +1,6 @@
 import { vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 
 // Set PayPal environment variables early for proper client initialization
 process.env.PAYPAL_CLIENT_ID = 'test-paypal-client-id';
@@ -25,30 +25,33 @@ let mongoUri;
 // Setup global test utilities
 global.vi = vi;
 
-// Setup in-memory MongoDB for integration tests
+// Signal to src/test/setup.js (imported by some integration test files) that the
+// integration harness owns the DB connection — so setup.js must NOT run its own
+// destructive standalone-server / session-mock setup (which corrupts this one).
+global.__integrationSetupActive = true;
+
+// Setup in-memory MongoDB for integration tests.
+// singleFork runs all files in ONE process, so create + connect ONCE and reuse
+// for every file. Per-file disconnect/reconnect/recreate corrupts the shared
+// connection's sessions (the original cause of the suite-wide failures).
 beforeAll(async () => {
+  if (global.__integrationDbReady) return;
   try {
-    // Create in-memory MongoDB instance
-    mongoServer = await MongoMemoryServer.create({
-      instance: {
-        // Use a simple configuration for reliability
-        storageEngine: 'wiredTiger'
-      }
+    // A replica set is required: controllers use transactions (startSession +
+    // commitTransaction), which only work on a replica-set member, not standalone.
+    mongoServer = await MongoMemoryReplSet.create({
+      replSet: { count: 1, storageEngine: 'wiredTiger' }
     });
     mongoUri = mongoServer.getUri();
-    
-    // Disconnect from any existing connection
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    
+
     // Connect to the in-memory database
     await mongoose.connect(mongoUri, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000
     });
-    
+    global.__integrationDbReady = true;
+
     console.log('Integration test database connected successfully');
   } catch (error) {
     console.error('Failed to setup integration test database:', error);
@@ -56,23 +59,11 @@ beforeAll(async () => {
   }
 }, 60000);
 
+// NOTE: with the singleton connection above we intentionally do NOT close the
+// connection / stop the server here — singleFork shares this process across all
+// files, and tearing it down per file breaks later files. Process exit cleans up
+// the in-memory server.
 afterAll(async () => {
-  try {
-    // Close database connection
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
-    
-    // Stop mongo server
-    if (mongoServer) {
-      await mongoServer.stop();
-      mongoServer = null;
-    }
-    
-    console.log('Integration test database cleanup completed');
-  } catch (error) {
-    console.error('Error during integration test cleanup:', error.message);
-  }
 }, 30000);
 
 beforeEach(async () => {
@@ -119,12 +110,41 @@ vi.mock('../services/paypalService.js', () => ({
   }
 }));
 
-// Mock email service
+// Mock email service — stub EVERY method so no real email is sent and each
+// call resolves successfully. (emailService is a class instance; methods listed
+// explicitly since they live on the prototype.)
+const emailStub = () => vi.fn().mockResolvedValue(true);
 vi.mock('../services/emailService.js', () => ({
   default: {
-    sendEmail: vi.fn().mockResolvedValue(true),
-    sendOrderConfirmation: vi.fn().mockResolvedValue(true),
-    sendPaymentNotification: vi.fn().mockResolvedValue(true)
+    isEnabled: true,
+    sesClient: {},
+    verifyConnection: emailStub(),
+    validateEmail: vi.fn().mockReturnValue(true),
+    canSendEmail: emailStub(),
+    generateEmailTemplate: vi.fn().mockReturnValue('<html><body></body></html>'),
+    addUnsubscribeLink: vi.fn().mockReturnValue(''),
+    sendEmail: emailStub(),
+    sendOrderConfirmationEmail: emailStub(),
+    sendOrderCancellationEmail: emailStub(),
+    sendOrderShippedEmail: emailStub(),
+    sendOrderDeliveredEmail: emailStub(),
+    sendOrderStatusUpdateEmail: emailStub(),
+    sendSupportRequestEmail: emailStub(),
+    sendContactAcknowledgmentEmail: emailStub(),
+    sendReturnRequestConfirmationEmail: emailStub(),
+    sendReturnApprovedEmail: emailStub(),
+    sendReturnRejectedEmail: emailStub(),
+    sendReturnRefundedEmail: emailStub(),
+    sendRefundConfirmationEmail: emailStub(),
+    sendAccountDisabledEmail: emailStub(),
+    sendAccountReEnabledEmail: emailStub(),
+    sendAccountDeletionConfirmationEmail: emailStub(),
+    sendAccountDeletionCompletedEmail: emailStub(),
+    sendAdminWelcomeEmail: emailStub(),
+    sendWelcomeEmail: emailStub(),
+    sendDataExportEmail: emailStub(),
+    sendPaymentConfirmationEmail: emailStub(),
+    sendPasswordResetEmail: emailStub()
   }
 }));
 

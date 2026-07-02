@@ -41,6 +41,7 @@ export default defineConfig({
       // Without this, any failing test suppresses coverage-summary.json.
       reportOnFailure: true,
       reporter: ['text', 'json', 'json-summary', 'html'],
+      include: ['src/**/*.{js,jsx}'],
       exclude: [
         'node_modules/',
         'src/test/',
@@ -48,7 +49,10 @@ export default defineConfig({
         '**/*.spec.*',
         '**/*.config.*',
         '**/e2e/**'
-      ]
+      ],
+      // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
+      thresholds: { lines: 45, branches: 41, functions: 43, statements: 45 }
+      // @ratchet-end
     },
     
     // Enhanced dependency handling

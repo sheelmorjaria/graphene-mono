@@ -34,13 +34,15 @@ const internalAuthMiddleware = (req, res, next) => {
 // Apply internal auth middleware to all routes
 router.use(internalAuthMiddleware);
 
-// Update order status
-router.put('/orders/:orderId/status', updateOrderStatus);
+// This router is mounted at '/api/internal/orders' (see app.js), so the route
+// paths below must NOT repeat the '/orders' segment — otherwise the mounted
+// path is doubled (e.g. '/api/internal/orders/orders/:orderId/status').
+router.put('/:orderId/status', updateOrderStatus);
 
 // Get order details for internal use
-router.get('/orders/:orderId', getOrderDetails);
+router.get('/:orderId', getOrderDetails);
 
 // Get all orders with filtering (Admin dashboard)
-router.get('/orders', getAllOrders);
+router.get('/', getAllOrders);
 
 export default router;

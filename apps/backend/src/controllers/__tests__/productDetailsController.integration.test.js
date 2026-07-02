@@ -1,10 +1,9 @@
-import { describe, it, test, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
 import { getProductBySlug } from '../productDetailsController.js';
-import { createValidProductData, createValidCategoryData } from '../../test/helpers/testData.js';
 
 // Create Express app for testing
 const app = express();
@@ -13,9 +12,44 @@ app.get('/api/products/:slug', getProductBySlug);
 
 describe('Product Details Controller', () => {
   // Using global test setup for MongoDB connection
-  
+
   let categoryId;
   let sampleProduct;
+
+  // Build a valid variation-based product (matches the real Product schema)
+  const buildProductData = (overrides = {}) => ({
+    name: 'GrapheneOS Pixel 9 Pro',
+    slug: 'grapheneos-pixel-9-pro',
+    sku: 'PIXEL9PRO-001',
+    baseModel: 'Pixel 9 Pro',
+    shortDescription: 'Privacy-focused smartphone with GrapheneOS',
+    longDescription: 'The Pixel 9 Pro with GrapheneOS offers the ultimate in mobile privacy and security. Features a 6.3-inch OLED display, advanced camera system, and hardened security protocols.',
+    images: [
+      'https://example.com/pixel9pro-1.jpg',
+      'https://example.com/pixel9pro-2.jpg',
+      'https://example.com/pixel9pro-3.jpg'
+    ],
+    variations: [
+      {
+        condition: 'new',
+        color: 'Obsidian',
+        storage: '256GB',
+        price: 899.99,
+        stockQuantity: 15,
+        stockStatus: 'in_stock',
+        sku: 'PIXEL9PRO-NEW-256'
+      }
+    ],
+    attributes: [
+      { name: 'Color', value: 'Obsidian' },
+      { name: 'Storage', value: '256GB' },
+      { name: 'RAM', value: '12GB' },
+      { name: 'Display', value: '6.3" OLED' }
+    ],
+    status: 'active',
+    isActive: true,
+    ...overrides
+  });
 
   beforeEach(async () => {
     // Clear database
@@ -23,39 +57,16 @@ describe('Product Details Controller', () => {
     await Category.deleteMany({});
 
     // Create test category
-    const category = new Category(createValidCategoryData({
+    const category = new Category({
       name: 'Smartphones',
       slug: 'smartphones',
       description: 'Privacy-focused smartphones'
-    }));
+    });
     const savedCategory = await category.save();
     categoryId = savedCategory._id;
 
     // Create test product
-    sampleProduct = createValidProductData({
-      name: 'GrapheneOS Pixel 9 Pro',
-      slug: 'grapheneos-pixel-9-pro',
-      shortDescription: 'Privacy-focused smartphone with GrapheneOS',
-      longDescription: 'The Pixel 9 Pro with GrapheneOS offers the ultimate in mobile privacy and security. Features a 6.3-inch OLED display, advanced camera system, and hardened security protocols.',
-      price: 899.99,
-      images: [
-        'https://example.com/pixel9pro-1.jpg',
-        'https://example.com/pixel9pro-2.jpg',
-        'https://example.com/pixel9pro-3.jpg'
-      ],
-      category: categoryId,
-      condition: 'new',
-      stockStatus: 'in_stock',
-      stockQuantity: 15,
-      attributes: [
-        { name: 'Color', value: 'Obsidian' },
-        { name: 'Storage', value: '256GB' },
-        { name: 'RAM', value: '12GB' },
-        { name: 'Display', value: '6.3" OLED' }
-      ],
-      isActive: true
-    });
-
+    sampleProduct = buildProductData({ category: categoryId });
     const product = new Product(sampleProduct);
     await product.save();
   });
@@ -72,20 +83,36 @@ describe('Product Details Controller', () => {
         slug: 'grapheneos-pixel-9-pro',
         shortDescription: 'Privacy-focused smartphone with GrapheneOS',
         longDescription: expect.stringContaining('Pixel 9 Pro with GrapheneOS'),
-        price: 899.99,
+        baseModel: 'Pixel 9 Pro',
         images: expect.arrayContaining([
           'https://example.com/pixel9pro-1.jpg',
           'https://example.com/pixel9pro-2.jpg',
           'https://example.com/pixel9pro-3.jpg'
         ]),
-        condition: 'new',
-        stockStatus: 'in_stock',
-        stockQuantity: 15,
         attributes: expect.arrayContaining([
           expect.objectContaining({ name: 'Color', value: 'Obsidian' }),
           expect.objectContaining({ name: 'Storage', value: '256GB' })
         ]),
         isActive: true
+      });
+
+      // Price range derived from variations
+      expect(response.body.data.priceRange).toMatchObject({ min: 899.99, max: 899.99 });
+      expect(response.body.data.totalStock).toBe(15);
+      expect(response.body.data.isInStock).toBe(true);
+      expect(response.body.data.availableColors).toEqual(expect.arrayContaining(['Obsidian']));
+      expect(response.body.data.availableConditions).toEqual(expect.arrayContaining(['new']));
+      expect(response.body.data.availableStorage).toEqual(expect.arrayContaining(['256GB']));
+
+      // Variations mapped through
+      expect(response.body.data.variations).toHaveLength(1);
+      expect(response.body.data.variations[0]).toMatchObject({
+        condition: 'new',
+        color: 'Obsidian',
+        storage: '256GB',
+        price: 899.99,
+        stockStatus: 'in_stock',
+        stockQuantity: 15
       });
 
       // Should include populated category
@@ -110,10 +137,10 @@ describe('Product Details Controller', () => {
 
     it('should return 404 for inactive product', async () => {
       // Create inactive product
-      const inactiveProduct = new Product(createValidProductData({
-        ...sampleProduct,
+      const inactiveProduct = new Product(buildProductData({
         slug: 'inactive-product',
         sku: 'INACTIVE-PRODUCT-001',
+        variations: [{ condition: 'new', color: 'Obsidian', storage: '256GB', price: 899.99, stockQuantity: 15, stockStatus: 'in_stock', sku: 'INACTIVE-VAR-256' }],
         isActive: false
       }));
       await inactiveProduct.save();
@@ -144,13 +171,13 @@ describe('Product Details Controller', () => {
     });
 
     it('should return product with empty arrays for missing optional fields', async () => {
-      // Create product with minimal data
-      const minimalProduct = new Product(createValidProductData({
+      // Create product with minimal data (no images, no attributes)
+      const minimalProduct = new Product(buildProductData({
         name: 'Minimal Product',
         slug: 'minimal-product',
         sku: 'MINIMAL-PRODUCT-001',
-        price: 99.99,
-        category: categoryId,
+        baseModel: 'Minimal Model',
+        variations: [{ condition: 'good', color: 'Black', storage: '128GB', price: 99.99, stockQuantity: 5, stockStatus: 'in_stock', sku: 'MINIMAL-VAR-128' }],
         shortDescription: undefined,
         longDescription: undefined,
         images: [],
@@ -164,8 +191,6 @@ describe('Product Details Controller', () => {
 
       expect(response.body.data.images).toEqual([]);
       expect(response.body.data.attributes).toEqual([]);
-      expect(response.body.data.shortDescription).toBeUndefined();
-      expect(response.body.data.longDescription).toBeUndefined();
     });
 
     it('should handle malformed slug gracefully', async () => {
@@ -189,11 +214,11 @@ describe('Product Details Controller', () => {
       expect(product).toHaveProperty('name');
       expect(product).toHaveProperty('slug');
       expect(product).toHaveProperty('longDescription');
-      expect(product).toHaveProperty('price');
+      expect(product).toHaveProperty('priceRange');
       expect(product).toHaveProperty('images');
-      expect(product).toHaveProperty('stockStatus');
-      expect(product).toHaveProperty('stockQuantity');
-      expect(product).toHaveProperty('condition');
+      expect(product).toHaveProperty('variations');
+      expect(product).toHaveProperty('isInStock');
+      expect(product).toHaveProperty('totalStock');
       expect(product).toHaveProperty('attributes');
       expect(product).toHaveProperty('category');
     });

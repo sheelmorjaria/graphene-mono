@@ -34,7 +34,7 @@ const useProductDetails = (slug) => {
 
   const refetch = useCallback(() => {
     if (slug) {
-      fetchProduct(slug);
+      return fetchProduct(slug);
     }
   }, [slug, fetchProduct]);
 

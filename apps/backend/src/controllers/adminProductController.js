@@ -114,10 +114,31 @@ export const createProduct = async (req, res) => {
     // Process variation images from processed variation images
     const processedVariationImages = req.body.processedVariationImages || {};
 
+    // Derive a required top-level product SKU. The Product schema marks the
+    // top-level `sku` as required/unique, but it is not part of the request
+    // body (SKUs live on variations). Derive it from the first variation's
+    // SKU, falling back to the slug/name, uppercased to satisfy the schema.
+    let productSku = variations[0]?.sku?.trim();
+    if (!productSku) {
+      productSku = finalSlug || name;
+    }
+    productSku = productSku.toUpperCase();
+
+    // Ensure top-level SKU uniqueness against other products (the variation
+    // SKUs were already checked above; the derived product SKU could still
+    // collide with an existing product-level SKU).
+    let skuCounter = 1;
+    let finalProductSku = productSku;
+    while (await Product.findOne({ sku: finalProductSku })) {
+      finalProductSku = `${productSku}-${skuCounter}`;
+      skuCounter++;
+    }
+
     // Create product data
     const productData = {
       name: name.trim(),
       slug: finalSlug,
+      sku: finalProductSku,
       shortDescription: shortDescription?.trim() || '',
       longDescription: longDescription?.trim() || '',
       baseModel: baseModel.trim(),

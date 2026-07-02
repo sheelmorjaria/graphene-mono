@@ -11,8 +11,9 @@ describe('Cart Controller - Variations', () => {
   let testUser;
   let testProduct;
 
-  beforeAll(async () => {
-    // Create test user
+  beforeEach(async () => {
+    // The shared integration harness wipes all collections before each test,
+    // so create fresh user + product here.
     testUser = new User({
       firstName: 'Test',
       lastName: 'User',
@@ -25,7 +26,7 @@ describe('Cart Controller - Variations', () => {
     // Generate auth token
     authToken = jwt.sign(
       { userId: testUser._id, role: testUser.role },
-      process.env.JWT_SECRET || 'test-secret'
+      process.env.JWT_SECRET || 'your-secret-key'
     );
 
     // Create test product with variations
@@ -65,17 +66,6 @@ describe('Cart Controller - Variations', () => {
       ]
     });
     await testProduct.save();
-  });
-
-  beforeEach(async () => {
-    await Cart.deleteMany({});
-  });
-
-  afterAll(async () => {
-    await User.deleteMany({});
-    await Product.deleteMany({});
-    await Cart.deleteMany({});
-    await mongoose.connection.close();
   });
 
   describe('POST /api/cart/add', () => {

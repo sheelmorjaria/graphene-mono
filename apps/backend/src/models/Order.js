@@ -22,6 +22,23 @@ const orderItemSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500
   },
+  variationId: {
+    type: String,
+    trim: true
+  },
+  sku: {
+    type: String,
+    trim: true,
+    maxlength: 50
+  },
+  condition: {
+    type: String,
+    trim: true
+  },
+  color: {
+    type: String,
+    trim: true
+  },
   quantity: {
     type: Number,
     required: [true, 'Quantity is required'],
@@ -94,7 +111,7 @@ const orderSchema = new mongoose.Schema({
     type: String,
     unique: true,
     trim: true,
-    maxlength: 20
+    maxlength: 30
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -113,8 +130,8 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Order status is required'],
     enum: {
-      values: ['pending', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
-      message: 'Status must be one of: pending, processing, shipped, out_for_delivery, delivered, cancelled, returned'
+      values: ['pending', 'processing', 'awaiting_shipment', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
+      message: 'Status must be one of: pending, processing, awaiting_shipment, shipped, out_for_delivery, delivered, cancelled, returned'
     },
     default: 'pending'
   },

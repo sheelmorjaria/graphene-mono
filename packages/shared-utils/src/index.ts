@@ -1,6 +1,7 @@
 // Currency formatting utilities
 export const formatCurrency = (amount: number, currency: string = 'GBP'): string => {
-  return new Intl.NumberFormat('en-GB', {
+  const locale = currency === 'USD' ? 'en-US' : 'en-GB';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
   }).format(amount);

@@ -110,14 +110,18 @@ describe('useProductDetails', () => {
 
     expect(result.current.error).toBe('First error');
 
-    // Call refetch
-    result.current.refetch();
+    // Call refetch and await its returned promise so the assertion runs
+    // only after the re-fetch has settled.
+    await result.current.refetch();
 
+    // Wait specifically for the refetched product (not just loading===false,
+    // which can be satisfied by a stale read before the re-render lands).
+    // This keeps the assertion robust to async/timing differences, including
+    // under v8 coverage instrumentation.
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.product).toEqual(mockProduct);
     });
 
-    expect(result.current.product).toEqual(mockProduct);
     expect(result.current.error).toBe(null);
     expect(productDetailsService.getProductBySlug).toHaveBeenCalledTimes(2);
   });
