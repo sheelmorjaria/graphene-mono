@@ -25,6 +25,7 @@
     "test:ci": "npm run test:unit && npm run test:integration",
     "test:coverage": "vitest --config vitest.config.unit.js --coverage --no-file-parallelism",
     "test:coverage:integration": "vitest --config vitest.integration.config.js --coverage",
+    "test:coverage:models": "vitest --config vitest.model.config.js --coverage",
     "test:coverage:all": "vitest --config vitest.config.unit.js --coverage --no-file-parallelism && vitest --config vitest.integration.config.js --coverage",
     "test:playwright": "playwright test",
     "test:playwright:headed": "playwright test --headed",

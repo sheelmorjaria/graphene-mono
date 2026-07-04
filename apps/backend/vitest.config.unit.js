@@ -53,7 +53,7 @@ export default defineConfig({
         'src/middleware/cors.js'
       ],
       // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
-      thresholds: { lines: 64, branches: 52, functions: 44, statements: 63 }
+      thresholds: { lines: 65, branches: 54, functions: 47, statements: 65 }
       // @ratchet-end
     }
   },

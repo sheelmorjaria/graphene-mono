@@ -16,7 +16,8 @@ const projects = [
   { config: 'apps/backend/vitest.config.unit.js', summary: 'apps/backend/coverage/coverage-summary.json' },
   { config: 'apps/frontend/vitest.config.js', summary: 'apps/frontend/coverage/coverage-summary.json' },
   { config: 'packages/shared-utils/vitest.config.ts', summary: 'packages/shared-utils/coverage/coverage-summary.json' },
-  { config: 'apps/backend/vitest.integration.config.js', summary: 'apps/backend/coverage/integration/coverage-summary.json' }
+  { config: 'apps/backend/vitest.integration.config.js', summary: 'apps/backend/coverage/integration/coverage-summary.json' },
+  { config: 'apps/backend/vitest.model.config.js', summary: 'apps/backend/coverage/models/coverage-summary.json' }
 ];
 
 for (const p of projects) {

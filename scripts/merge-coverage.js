@@ -13,6 +13,7 @@ const metrics = ['lines', 'statements', 'branches', 'functions'];
 const sources = [
   { name: 'backend (unit)', file: 'apps/backend/coverage/coverage-final.json' },
   { name: 'backend (integration)', file: 'apps/backend/coverage/integration/coverage-final.json' },
+  { name: 'backend (models)', file: 'apps/backend/coverage/models/coverage-final.json' },
   { name: 'frontend', file: 'apps/frontend/coverage/coverage-final.json' },
   { name: 'shared-utils', file: 'packages/shared-utils/coverage/coverage-final.json' }
 ];
