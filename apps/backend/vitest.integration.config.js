@@ -45,7 +45,7 @@ export default defineConfig({
       ],
       reportsDirectory: './coverage/integration',
       // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
-      thresholds: { lines: 48, branches: 36, functions: 45, statements: 48 }
+      thresholds: { lines: 50, branches: 37, functions: 48, statements: 49 }
       // @ratchet-end
     }
   },

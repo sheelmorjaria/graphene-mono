@@ -24,7 +24,10 @@ export default defineConfig({
       provider: 'v8',
       reportOnFailure: true,
       reporter: ['text', 'json', 'json-summary', 'html'],
-      reportsDirectory: './coverage/models'
+      reportsDirectory: './coverage/models',
+      // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
+      thresholds: { lines: 83, branches: 62, functions: 82, statements: 81 }
+      // @ratchet-end
     }
   },
   resolve: {
