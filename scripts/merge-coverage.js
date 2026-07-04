@@ -54,7 +54,7 @@ console.log(`Wrote ${out}`);
 
 // Merged coverage gate — fails (exit 1) if the monorepo total drops below the floor.
 // Ratchet upward as coverage improves (update GATE values below).
-const GATE = { statements: 74, branches: 63 };
+const GATE = { statements: 80, branches: 70 };
 const gateFailures = [];
 for (const [m, min] of Object.entries(GATE)) {
   if (merged[m].pct < min) gateFailures.push(`  ${m}: ${merged[m].pct.toFixed(2)}% < ${min}%`);
