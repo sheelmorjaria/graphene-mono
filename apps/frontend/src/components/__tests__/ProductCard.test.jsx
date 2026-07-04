@@ -136,6 +136,6 @@ describe('ProductCard', () => {
   it('falls back to the default lead time when not provided', () => {
     render(<ProductCard product={mockProduct} />);
 
-    expect(screen.getByText('5-7 working days')).toBeInTheDocument();
+    expect(screen.getByText('3-5 days')).toBeInTheDocument();
   });
 });

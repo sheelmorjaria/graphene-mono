@@ -85,7 +85,7 @@ const CartSummary = () => {
               </div>
               {item.leadTime && (
                 <div className="text-xs text-cyan-400 mt-1">
-                  Lead time: {item.leadTime.displayText || '5-7 working days'}
+                  Shipping time: {item.leadTime.displayText || '3-5 days'}
                 </div>
               )}
             </div>
