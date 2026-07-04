@@ -44,10 +44,16 @@ export default defineConfig({
         'src/**/__tests__/**',
         'coverage/**',
         '**/*.config.js',
-        'scripts/**'
+        'scripts/**',
+        // Dead code — not imported anywhere
+        'src/controllers/PaymentController.class.js',
+        'src/controllers/paymentControllerFactory.js',
+        'src/controllers/adminUserController.js',
+        'src/models/Return.js',
+        'src/middleware/cors.js'
       ],
       // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
-      thresholds: { lines: 42, branches: 29, functions: 27, statements: 41 }
+      thresholds: { lines: 64, branches: 52, functions: 44, statements: 63 }
       // @ratchet-end
     }
   },

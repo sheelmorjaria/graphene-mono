@@ -9,7 +9,10 @@ export default defineConfig({
       reportOnFailure: true,
       reporter: ['text', 'json', 'json-summary', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['**/*.test.ts', '**/*.spec.ts', 'node_modules/**', 'dist/**']
+      exclude: ['**/*.test.ts', '**/*.spec.ts', 'node_modules/**', 'dist/**'],
+      // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
+      thresholds: { lines: 85, branches: 65, functions: 82, statements: 85 }
+      // @ratchet-end
     }
   }
 });

@@ -45,13 +45,17 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/test/',
+        'src/scripts/**',
         '**/*.test.*',
         '**/*.spec.*',
         '**/*.config.*',
-        '**/e2e/**'
+        '**/e2e/**',
+        // Dead code — not imported anywhere
+        'src/components/ProductsDropdown.jsx',
+        'src/main.jsx'  // app bootstrap, not unit-testable
       ],
       // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
-      thresholds: { lines: 45, branches: 41, functions: 43, statements: 45 }
+      thresholds: { lines: 79, branches: 66, functions: 71, statements: 78 }
       // @ratchet-end
     },
     

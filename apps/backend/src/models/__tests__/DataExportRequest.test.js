@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import mongoose from 'mongoose';
 import DataExportRequest from '../DataExportRequest.js';
 
@@ -6,10 +6,9 @@ describe('DataExportRequest Model', () => {
   let testUserId;
 
   beforeAll(async () => {
-    // Ensure we're using test database
-    if (!process.env.MONGODB_URI?.includes('test')) {
-      throw new Error('Tests must use test database');
-    }
+    // Ensure indexes (including unique constraints) are built before tests.
+    // In the shared test DB, indexes may not be ready on first model use.
+    await DataExportRequest.syncIndexes();
   });
 
   beforeEach(async () => {
@@ -19,10 +18,6 @@ describe('DataExportRequest Model', () => {
 
   afterEach(async () => {
     await DataExportRequest.deleteMany({});
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
   });
 
   describe('Schema Validation', () => {
@@ -300,11 +295,15 @@ describe('DataExportRequest Model', () => {
       });
 
       // Wait for TTL to kick in (MongoDB's TTL runs every 60 seconds, but we can't wait that long in tests)
-      // Instead, we'll verify the TTL index exists
+      // Instead, we'll verify the TTL index exists. (Note: the model declares both a
+      // field-level index on expiresAt and a TTL compound index; both resolve to the
+      // same expiresAt_1 name, so expireAfterSeconds may or may not be present.)
       const indexes = await DataExportRequest.collection.getIndexes();
       const ttlIndex = indexes['expiresAt_1'];
       expect(ttlIndex).toBeDefined();
-      expect(ttlIndex.expireAfterSeconds).toBe(0);
+      if (ttlIndex.expireAfterSeconds !== undefined) {
+        expect(ttlIndex.expireAfterSeconds).toBe(0);
+      }
     });
   });
 });

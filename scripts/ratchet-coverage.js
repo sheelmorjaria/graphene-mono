@@ -14,7 +14,9 @@ const headroom = { lines: 1, statements: 1, branches: 2, functions: 2 };
 
 const projects = [
   { config: 'apps/backend/vitest.config.unit.js', summary: 'apps/backend/coverage/coverage-summary.json' },
-  { config: 'apps/frontend/vitest.config.js', summary: 'apps/frontend/coverage/coverage-summary.json' }
+  { config: 'apps/frontend/vitest.config.js', summary: 'apps/frontend/coverage/coverage-summary.json' },
+  { config: 'packages/shared-utils/vitest.config.ts', summary: 'packages/shared-utils/coverage/coverage-summary.json' },
+  { config: 'apps/backend/vitest.integration.config.js', summary: 'apps/backend/coverage/integration/coverage-summary.json' }
 ];
 
 for (const p of projects) {
@@ -31,7 +33,13 @@ for (const p of projects) {
   }
   const t = JSON.parse(readFileSync(sumPath, 'utf8')).total;
   const th = {};
-  for (const m of metrics) th[m] = Math.max(0, Math.floor(t[m]?.pct ?? 0) - (headroom[m] ?? 1));
+  for (const m of metrics) {
+    // Never lower a threshold — ratchet only goes up (prevents stale summaries
+    // from destroying gates). Read the current value from the config.
+    const cur = cfg.match(new RegExp(`${m}:\\s*(\\d+)`));
+    const curVal = cur ? parseInt(cur[1], 10) : 0;
+    th[m] = Math.max(curVal, Math.floor(t[m]?.pct ?? 0) - (headroom[m] ?? 1));
+  }
 
   const replacement =
     `      // @ratchet-begin (auto-updated by \`npm run coverage:ratchet\` — do not edit manually)\n` +

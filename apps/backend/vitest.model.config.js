@@ -15,17 +15,15 @@ export default defineConfig({
       'dist/**',
       'build/**'
     ],
-    testTimeout: 30000, // Longer timeout for database operations
-    pool: 'forks', // Use separate processes
-    poolOptions: {
-      forks: {
-        singleFork: true // Run tests sequentially to avoid DB conflicts
-      }
-    },
-    reporter: ['verbose'],
+    testTimeout: 30000,
+    pool: 'forks',
+    singleFork: true,
+    silent: true,
+    reporter: ['dot'],
     coverage: {
-      provider: 'c8',
-      reporter: ['text', 'json', 'html'],
+      provider: 'v8',
+      reportOnFailure: true,
+      reporter: ['text', 'json', 'json-summary', 'html'],
       reportsDirectory: './coverage/models'
     }
   },

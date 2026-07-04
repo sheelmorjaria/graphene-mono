@@ -30,12 +30,10 @@ global.vi = vi;
 // destructive standalone-server / session-mock setup (which corrupts this one).
 global.__integrationSetupActive = true;
 
-// Setup in-memory MongoDB for integration tests.
-// singleFork runs all files in ONE process, so create + connect ONCE and reuse
-// for every file. Per-file disconnect/reconnect/recreate corrupts the shared
-// connection's sessions (the original cause of the suite-wide failures).
+// Setup in-memory MongoDB replica set for integration tests.
+// Each file creates + connects its own server and tears it down in afterAll.
+// This guarantees cleanup (no leaked temp directories or mongod processes).
 beforeAll(async () => {
-  if (global.__integrationDbReady) return;
   try {
     // A replica set is required: controllers use transactions (startSession +
     // commitTransaction), which only work on a replica-set member, not standalone.
@@ -44,13 +42,15 @@ beforeAll(async () => {
     });
     mongoUri = mongoServer.getUri();
 
-    // Connect to the in-memory database
+    // Disconnect any existing connection, then connect to the fresh server.
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
     await mongoose.connect(mongoUri, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000
     });
-    global.__integrationDbReady = true;
 
     console.log('Integration test database connected successfully');
   } catch (error) {
@@ -59,11 +59,19 @@ beforeAll(async () => {
   }
 }, 60000);
 
-// NOTE: with the singleton connection above we intentionally do NOT close the
-// connection / stop the server here — singleFork shares this process across all
-// files, and tearing it down per file breaks later files. Process exit cleans up
-// the in-memory server.
 afterAll(async () => {
+  try {
+    // Close the connection and stop the server to prevent temp-dir leaks.
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+    if (mongoServer) {
+      await mongoServer.stop();
+      mongoServer = null;
+    }
+  } catch (error) {
+    console.error('Error during integration test cleanup:', error.message);
+  }
 }, 30000);
 
 beforeEach(async () => {
