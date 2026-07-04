@@ -1,298 +1,234 @@
-import { vi, describe, test, beforeEach, expect } from 'vitest';
-
-// Mock the Category model
-vi.mock('../Category.js', () => ({
-  default: {
-    generateSlug: vi.fn(),
-    checkCircularDependency: vi.fn(),
-    getChildren: vi.fn(),
-    getProductCount: vi.fn(),
-    findOne: vi.fn(),
-    findById: vi.fn(),
-    find: vi.fn(),
-    countDocuments: vi.fn()
-  }
-}));
-
-// Mock mongoose
-vi.mock('mongoose', () => ({
-  default: {
-    Schema: {
-      Types: {
-        ObjectId: vi.fn()
-      }
-    },
-    model: vi.fn((name) => {
-      if (name === 'Product') {
-        return { countDocuments: vi.fn() };
-      }
-      return {
-        generateSlug: vi.fn(),
-        checkCircularDependency: vi.fn(),
-        getChildren: vi.fn(),
-        getProductCount: vi.fn(),
-        findOne: vi.fn(),
-        findById: vi.fn(),
-        find: vi.fn(),
-        countDocuments: vi.fn()
-      };
-    })
-  },
-  Schema: {
-    Types: {
-      ObjectId: vi.fn()
-    }
-  },
-  model: vi.fn((name) => {
-    if (name === 'Product') {
-      return { countDocuments: vi.fn() };
-    }
-    return {
-      generateSlug: vi.fn(),
-      checkCircularDependency: vi.fn(),
-      getChildren: vi.fn(),
-      getProductCount: vi.fn(),
-      findOne: vi.fn(),
-      findById: vi.fn(),
-      find: vi.fn(),
-      countDocuments: vi.fn()
-    };
-  })
-}));
-
-// Import after mocking
-import Category from '../Category.js';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
+import Category from '../Category.js';
+// Importing Product registers it with mongoose so getProductCount can reach it.
+import '../Product.js';
 
-describe('Category Model Unit Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+// Helper: valid category payload
+const validCategory = (over = {}) => ({
+  name: 'Phones',
+  slug: 'phones',
+  description: 'Privacy-first phones',
+  ...over
+});
+
+describe('Category Model', () => {
+  beforeAll(async () => {
+    // Ensure the unique index on `slug` is built in the in-memory DB so the
+    // unique-constraint test actually fires at the DB layer.
+    await Category.syncIndexes();
   });
 
-  describe('generateSlug static method', () => {
-    test('should generate basic slug from name', async () => {
-      // Mock the actual implementation behavior
-      const generateSlug = async (name, excludeId = null) => {
-        const baseSlug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim();
+  beforeEach(async () => {
+    await Category.deleteMany({});
+  });
 
-        // Simulate no existing categories
-        Category.findOne.mockResolvedValue(null);
-        return baseSlug;
-      };
+  afterEach(async () => {
+    await Category.deleteMany({});
+  });
 
-      const result = await generateSlug('Test Category');
-      expect(result).toBe('test-category');
+  describe('Schema Validation', () => {
+    it('creates a valid category with required fields', async () => {
+      const doc = await new Category(validCategory()).save();
+
+      expect(doc._id).toBeDefined();
+      expect(doc.name).toBe('Phones');
+      expect(doc.slug).toBe('phones');
+      expect(doc.description).toBe('Privacy-first phones');
+      expect(doc.parentId).toBeNull();
+      expect(doc.createdAt).toBeDefined();
+      expect(doc.updatedAt).toBeDefined();
     });
 
-    test('should handle special characters and spaces', async () => {
-      const generateSlug = async (name) => {
-        const baseSlug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
-          .trim();
-
-        Category.findOne.mockResolvedValue(null);
-        return baseSlug;
-      };
-
-      const result = await generateSlug('Test & Category @#$%');
-      expect(result).toBe('test-category');
+    it('requires name', async () => {
+      await expect(new Category(validCategory({ name: undefined })).save()).rejects.toThrow();
     });
 
-    test('should handle duplicate slugs by adding counter', async () => {
-      const generateSlug = async (name) => {
-        const baseSlug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim();
+    it('requires slug', async () => {
+      await expect(new Category(validCategory({ slug: undefined })).save()).rejects.toThrow();
+    });
 
-        // Simulate existing category
-        Category.findOne
-          .mockResolvedValueOnce({ slug: 'test-category' }) // First check fails
-          .mockResolvedValueOnce(null); // Second check with counter passes
+    it('defaults parentId to null', async () => {
+      const doc = await new Category(validCategory()).save();
+      expect(doc.parentId).toBeNull();
+    });
 
-        return `${baseSlug}-1`;
-      };
+    it('trims name, slug, and description', async () => {
+      const doc = await new Category(validCategory({
+        name: '  Phones  ',
+        slug: '  phones  ',
+        description: '  desc  '
+      })).save();
+      expect(doc.name).toBe('Phones');
+      expect(doc.slug).toBe('phones');
+      expect(doc.description).toBe('desc');
+    });
 
-      const result = await generateSlug('Test Category');
-      expect(result).toBe('test-category-1');
+    it('lowercases slug via the lowercase setter', async () => {
+      const doc = await new Category(validCategory({ slug: 'PHONES' })).save();
+      expect(doc.slug).toBe('phones');
+    });
+
+    it('enforces a unique slug', async () => {
+      await new Category(validCategory()).save();
+      await expect(new Category(validCategory()).save()).rejects.toThrow();
+    });
+
+    it('rejects a name longer than 100 chars', async () => {
+      await expect(new Category(validCategory({ name: 'x'.repeat(101) })).save()).rejects.toThrow();
+    });
+
+    it('rejects a slug longer than 100 chars', async () => {
+      await expect(new Category(validCategory({ slug: 'x'.repeat(101) })).save()).rejects.toThrow();
+    });
+
+    it('rejects a description longer than 500 chars', async () => {
+      await expect(new Category(validCategory({ description: 'x'.repeat(501) })).save()).rejects.toThrow();
     });
   });
 
-  describe('checkCircularDependency static method', () => {
-    test('should return true for self-parenting', async () => {
-      const checkCircularDependency = async (categoryId, parentId) => {
-        return categoryId.toString() === parentId.toString();
-      };
+  describe('Instance methods', () => {
+    it('getUrl returns the SEO-friendly category URL', async () => {
+      const doc = await new Category(validCategory()).save();
+      expect(doc.getUrl()).toBe('/categories/phones');
+    });
+  });
 
-      const result = await checkCircularDependency('cat123', 'cat123');
+  describe('Static: generateSlug', () => {
+    it('lowercases and slugifies a name', async () => {
+      const slug = await Category.generateSlug('Smart Phones & Tablets!');
+      expect(slug).toBe('smart-phones-tablets');
+    });
+
+    it('collapses multiple spaces and hyphens into a single hyphen', async () => {
+      const slug = await Category.generateSlug('Foo   Bar---Baz');
+      expect(slug).toBe('foo-bar-baz');
+    });
+
+    it('strips leading and trailing hyphens', async () => {
+      const slug = await Category.generateSlug('---hello---');
+      expect(slug).toBe('hello');
+    });
+
+    it('appends a counter when the slug already exists', async () => {
+      await new Category(validCategory({ slug: 'phones' })).save();
+      const slug = await Category.generateSlug('Phones');
+      expect(slug).toBe('phones-1');
+    });
+
+    it('keeps incrementing the counter until a free slug is found', async () => {
+      await new Category(validCategory({ slug: 'phones' })).save();
+      await new Category(validCategory({ slug: 'phones-1' })).save();
+      await new Category(validCategory({ slug: 'phones-2' })).save();
+      const slug = await Category.generateSlug('Phones');
+      expect(slug).toBe('phones-3');
+    });
+
+    it('excludes the given excludeId so a category can keep its own slug', async () => {
+      const existing = await new Category(validCategory({ slug: 'phones' })).save();
+      const slug = await Category.generateSlug('Phones', existing._id);
+      expect(slug).toBe('phones');
+    });
+  });
+
+  describe('Static: checkCircularDependency', () => {
+    it('returns true when categoryId equals parentId', async () => {
+      const cat = await new Category(validCategory()).save();
+      const result = await Category.checkCircularDependency(cat._id, cat._id.toString());
       expect(result).toBe(true);
     });
 
-    test('should return false for valid parent-child relationship', async () => {
-      const checkCircularDependency = async (categoryId, parentId) => {
-        if (categoryId.toString() === parentId.toString()) return true;
-        
-        // Simulate no circular dependency
-        Category.findById.mockResolvedValue({ parentId: null });
-        return false;
-      };
+    // NOTE: when parentId is null the production short-circuit
+    //   `!parentId || categoryId.toString() === parentId.toString()`
+    // evaluates the right-hand side of `||` (because !null is true) and calls
+    // `null.toString()`, throwing. We assert that real behaviour here rather
+    // than a wished-for false; see Category.js checkCircularDependency.
+    it('throws when parentId is null (documents current behaviour)', async () => {
+      const cat = await new Category(validCategory()).save();
+      await expect(Category.checkCircularDependency(cat._id, null)).rejects.toThrow();
+    });
 
-      const result = await checkCircularDependency('child123', 'parent123');
+    it('returns false when parentId is a leaf with no further parent', async () => {
+      const parent = await new Category(validCategory({ slug: 'parent' })).save();
+      const child = await new Category(validCategory({ slug: 'child', parentId: parent._id })).save();
+      const result = await Category.checkCircularDependency(child._id, parent._id);
       expect(result).toBe(false);
     });
 
-    test('should detect indirect circular dependency', async () => {
-      const checkCircularDependency = async (categoryId, parentId) => {
-        if (categoryId.toString() === parentId.toString()) return true;
-        
-        // Simulate A -> B -> A circular dependency
-        Category.findById
-          .mockResolvedValueOnce({ parentId: 'categoryA' }) // B's parent is A
-          .mockResolvedValueOnce({ parentId: null }); // A has no parent
+    it('returns true when the parentId chain leads back to categoryId', async () => {
+      const a = await new Category(validCategory({ slug: 'a' })).save();
+      const b = await new Category(validCategory({ slug: 'b', parentId: a._id })).save();
+      // Re-point A at B, creating a cycle A -> B -> A.
+      a.parentId = b._id;
+      await a.save();
 
-        // If we're trying to set B as parent of A, it would create A -> B -> A
-        if (categoryId === 'categoryA' && parentId === 'categoryB') {
-          return true;
-        }
-        
-        return false;
-      };
-
-      const result = await checkCircularDependency('categoryA', 'categoryB');
+      const result = await Category.checkCircularDependency(a._id, b._id);
       expect(result).toBe(true);
     });
-  });
 
-  describe('getChildren static method', () => {
-    test('should return children categories sorted by name', async () => {
-      const mockChildren = [
-        { _id: 'child2', name: 'Z Category', parentId: 'parent123' },
-        { _id: 'child1', name: 'A Category', parentId: 'parent123' }
-      ];
+    it('detects a pre-existing cycle via the visited-set guard', async () => {
+      const a = await new Category(validCategory({ slug: 'aa' })).save();
+      const b = await new Category(validCategory({ slug: 'bb', parentId: a._id })).save();
+      const c = await new Category(validCategory({ slug: 'cc', parentId: b._id })).save();
+      // Close a cycle: A -> C -> B -> A
+      a.parentId = c._id;
+      await a.save();
 
-      const getChildren = async (parentId) => {
-        // Simulate find with sort
-        const mockQuery = {
-          sort: vi.fn().mockResolvedValue(mockChildren.sort((a, b) => a.name.localeCompare(b.name)))
-        };
-        Category.find.mockReturnValue(mockQuery);
-        
-        return mockChildren.sort((a, b) => a.name.localeCompare(b.name));
-      };
-
-      const result = await getChildren('parent123');
-      expect(result[0].name).toBe('A Category');
-      expect(result[1].name).toBe('Z Category');
+      // Start from an external id that is not part of the chain; the walk
+      // enters the existing cycle and the visited guard returns true.
+      const external = new mongoose.Types.ObjectId();
+      const result = await Category.checkCircularDependency(external, c._id);
+      expect(result).toBe(true);
     });
 
-    test('should return empty array for category with no children', async () => {
-      const getChildren = async (parentId) => {
-        const mockQuery = {
-          sort: vi.fn().mockResolvedValue([])
-        };
-        Category.find.mockReturnValue(mockQuery);
-        return [];
-      };
-
-      const result = await getChildren('parent123');
-      expect(result).toEqual([]);
+    it('stops walking when a parent reference cannot be found', async () => {
+      const parent = await new Category(validCategory({ slug: 'ghost-parent' })).save();
+      const child = await new Category(validCategory({ slug: 'ghost-child', parentId: parent._id })).save();
+      // parent.parentId is null, so the walk terminates without hitting child.
+      const result = await Category.checkCircularDependency(child._id, parent._id);
+      expect(result).toBe(false);
     });
   });
 
-  describe('getProductCount static method', () => {
-    test('should return product count for category', async () => {
-      const getProductCount = async (categoryId) => {
-        const Product = mongoose.model('Product');
-        Product.countDocuments.mockResolvedValue(15);
-        return 15;
-      };
+  describe('Static: getChildren', () => {
+    it('returns child categories sorted by name', async () => {
+      const parent = await new Category(validCategory({ slug: 'parent' })).save();
+      await new Category(validCategory({ name: 'Zeta', slug: 'zeta', parentId: parent._id })).save();
+      await new Category(validCategory({ name: 'Alpha', slug: 'alpha', parentId: parent._id })).save();
 
-      const result = await getProductCount('cat123');
-      expect(result).toBe(15);
+      const children = await Category.getChildren(parent._id);
+      expect(children).toHaveLength(2);
+      expect(children[0].name).toBe('Alpha');
+      expect(children[1].name).toBe('Zeta');
     });
 
-    test('should return 0 for category with no products', async () => {
-      const getProductCount = async (categoryId) => {
-        const Product = mongoose.model('Product');
-        Product.countDocuments.mockResolvedValue(0);
-        return 0;
-      };
-
-      const result = await getProductCount('cat123');
-      expect(result).toBe(0);
+    it('returns an empty array when the parent has no children', async () => {
+      const parent = await new Category(validCategory({ slug: 'lonely' })).save();
+      const children = await Category.getChildren(parent._id);
+      expect(children).toHaveLength(0);
     });
   });
 
-  describe('instance methods', () => {
-    test('getUrl should return proper category URL', () => {
-      const categoryInstance = {
-        slug: 'test-category',
-        getUrl() {
-          return `/categories/${this.slug}`;
-        }
-      };
-
-      const result = categoryInstance.getUrl();
-      expect(result).toBe('/categories/test-category');
-    });
-  });
-
-  describe('schema validation', () => {
-    test('should require name field', () => {
-      // This would typically be tested through mongoose schema validation
-      // Simulating the validation logic
-      const validateCategory = (data) => {
-        const errors = {};
-        if (!data.name || !data.name.trim()) {
-          errors.name = 'Name is required';
-        }
-        if (!data.slug || !data.slug.trim()) {
-          errors.slug = 'Slug is required';
-        }
-        return errors;
-      };
-
-      const errors = validateCategory({});
-      expect(errors.name).toBe('Name is required');
-      expect(errors.slug).toBe('Slug is required');
+  describe('Static: getProductCount', () => {
+    it('returns 0 when the Product model has no matching products', async () => {
+      const cat = await new Category(validCategory()).save();
+      const count = await Category.getProductCount(cat._id);
+      expect(count).toBe(0);
     });
 
-    test('should validate name length', () => {
-      const validateCategory = (data) => {
-        const errors = {};
-        if (data.name && data.name.length > 100) {
-          errors.name = 'Name too long';
-        }
-        return errors;
-      };
+    it('counts products referencing the category', async () => {
+      const cat = await new Category(validCategory()).save();
+      const Product = mongoose.model('Product');
+      await Product.deleteMany({});
+      await Product.create([
+        { name: 'P1', slug: 'p1', sku: 'SKU1', price: 10, baseModel: 'Pixel', category: cat._id, variations: [{ sku: 'V1', condition: 'new', price: 10, stockQuantity: 1 }] },
+        { name: 'P2', slug: 'p2', sku: 'SKU2', price: 20, baseModel: 'Pixel', category: cat._id, variations: [{ sku: 'V2', condition: 'new', price: 20, stockQuantity: 1 }] }
+      ]);
 
-      const longName = 'a'.repeat(101);
-      const errors = validateCategory({ name: longName });
-      expect(errors.name).toBe('Name too long');
-    });
+      const count = await Category.getProductCount(cat._id);
+      expect(count).toBe(2);
 
-    test('should validate slug format', () => {
-      const validateCategory = (data) => {
-        const errors = {};
-        if (data.slug && !/^[a-z0-9-]+$/.test(data.slug)) {
-          errors.slug = 'Invalid slug format';
-        }
-        return errors;
-      };
-
-      const errors = validateCategory({ slug: 'Invalid Slug!' });
-      expect(errors.slug).toBe('Invalid slug format');
+      await Product.deleteMany({});
     });
   });
 });
