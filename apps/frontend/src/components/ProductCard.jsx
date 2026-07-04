@@ -64,7 +64,7 @@ const ProductCard = ({ product }) => {
   return (
     <article
       data-testid={`product-card-${slug}`}
-      className="group card card-glow"
+      className="group card card-glow flex h-full flex-col"
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-bg-elevated">
@@ -101,7 +101,7 @@ const ProductCard = ({ product }) => {
       </div>
 
       {/* Product Info */}
-      <div className="p-5">
+      <div className="p-5 flex flex-1 flex-col">
         {/* Available Options */}
         <div className="mb-3 flex flex-wrap gap-2">
           {/* Show color, condition, and storage options */}
@@ -163,7 +163,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Action Button */}
-        <div>
+        <div className="mt-auto pt-2">
           <Link
             to={`/products/${slug}`}
             data-testid="product-details"
