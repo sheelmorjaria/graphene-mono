@@ -1,5 +1,5 @@
 import { HashRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import ProductListPage from './pages/ProductListPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
@@ -181,9 +181,48 @@ const AuthenticatedUserMenu = () => {
 const Header = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+
+  // Keep the latest mobile-menu state in a ref so the scroll handler (subscribed
+  // once) can read it without re-subscribing or holding a stale closure.
+  const menuOpenRef = useRef(isMobileMenuOpen);
+  menuOpenRef.current = isMobileMenuOpen;
+
+  // Auto-hide the header on scroll-down and reveal it on scroll-up. It stays
+  // visible near the top of the page and while the mobile menu is open, so the
+  // expanded menu never slides away. rAF-throttled + passive for smoothness.
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let frame = null;
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = null;
+        const y = window.scrollY;
+        if (menuOpenRef.current || y < 10) {
+          setIsHidden(false);
+        } else if (y > lastY + 8 && y > 120) {
+          setIsHidden(true);
+        } else if (y < lastY - 8) {
+          setIsHidden(false);
+        }
+        lastY = y;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
-    <header className="sticky top-0 z-sticky bg-bg-primary/95 backdrop-blur-lg border-b border-border-subtle" role="banner">
+    <header
+      className={`sticky top-0 z-sticky bg-bg-primary/95 backdrop-blur-lg border-b border-border-subtle transition-transform duration-300 ease-in-out ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}
+      role="banner"
+    >
       <div className="container mx-auto px-4 lg:px-6 py-4">
         {/* Mobile layout - Stack vertically */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
