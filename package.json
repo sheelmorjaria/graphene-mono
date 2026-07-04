@@ -23,7 +23,7 @@
     "test:frontend": "npm run test --workspace=@graphene-security/frontend",
     "test:backend": "npm run test --workspace=@graphene-security/backend",
     "test:e2e": "npm run test:e2e --workspace=@graphene-security/backend",
-    "coverage:all": "npm run test:coverage --workspace=@graphene-security/backend && npm run test:coverage --workspace=@graphene-security/frontend && npm run coverage:merge",
+    "coverage:all": "npm run test:coverage --workspace=@graphene-security/backend && npm run test:coverage:integration --workspace=@graphene-security/backend && npm run test:coverage --workspace=@graphene-security/frontend && npm run test:coverage --workspace=@graphene-store/shared-utils && npm run coverage:merge",
     "coverage:merge": "node scripts/merge-coverage.js",
     "coverage:ratchet": "node scripts/ratchet-coverage.js",
     "lint": "npm run lint --workspaces --if-present",
@@ -46,6 +46,7 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "eslint": "^9.0.0",
+    "istanbul-lib-coverage": "^3.2.2",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
     "turbo": "^1.13.0"

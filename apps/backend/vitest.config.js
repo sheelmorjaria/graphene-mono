@@ -20,7 +20,7 @@ export default defineConfig({
       '**/playwright/**'
     ],
     coverage: {
-      provider: 'c8',
+      provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
         'coverage/**',

@@ -10,7 +10,8 @@
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@graphene-store/shared-types": "*",
@@ -18,7 +19,8 @@
   },
   "devDependencies": {
     "typescript": "^5.3.0",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.8"
   },
   "files": [
     "dist/**/*",

@@ -117,11 +117,11 @@ emailPreferenceSchema.methods.recordBounce = function(bounceType, reason) {
   this.emailStatus.bounceCount += 1;
   
   this.updateHistory.push({
-    changes: new Map([
-      ['emailStatus.isBounced', true],
-      ['emailStatus.bounceCount', this.emailStatus.bounceCount],
-      ['emailStatus.lastBounceReason', reason]
-    ]),
+    changes: {
+      'emailStatus.isBounced': true,
+      'emailStatus.bounceCount': this.emailStatus.bounceCount,
+      'emailStatus.lastBounceReason': reason
+    },
     source: 'webhook',
     reason: `Bounce: ${bounceType} - ${reason}`
   });
@@ -149,15 +149,15 @@ emailPreferenceSchema.methods.recordComplaint = function(complaintType, reason) 
   this.notifications.newProductAlerts = false;
   
   this.updateHistory.push({
-    changes: new Map([
-      ['emailStatus.isComplained', true],
-      ['emailStatus.complaintCount', this.emailStatus.complaintCount],
-      ['emailStatus.lastComplaintReason', reason],
-      ['marketing', this.marketing],
-      ['notifications.priceDropAlerts', false],
-      ['notifications.backInStockAlerts', false],
-      ['notifications.newProductAlerts', false]
-    ]),
+    changes: {
+      'emailStatus.isComplained': true,
+      'emailStatus.complaintCount': this.emailStatus.complaintCount,
+      'emailStatus.lastComplaintReason': reason,
+      'marketing': this.marketing,
+      'notifications.priceDropAlerts': false,
+      'notifications.backInStockAlerts': false,
+      'notifications.newProductAlerts': false
+    },
     source: 'webhook',
     reason: `Complaint: ${complaintType} - ${reason}`
   });
@@ -166,14 +166,14 @@ emailPreferenceSchema.methods.recordComplaint = function(complaintType, reason) 
 };
 
 emailPreferenceSchema.methods.updatePreferences = function(updates, source = 'user') {
-  const changes = new Map();
+  const changes = {};
   
   // Update notifications
   if (updates.notifications) {
     Object.keys(updates.notifications).forEach(key => {
       if (this.notifications[key] !== undefined) {
         this.notifications[key] = updates.notifications[key];
-        changes.set(`notifications.${key}`, updates.notifications[key]);
+        changes[`notifications.${key}`] = updates.notifications[key];
       }
     });
   }
@@ -183,7 +183,7 @@ emailPreferenceSchema.methods.updatePreferences = function(updates, source = 'us
     Object.keys(updates.marketing).forEach(key => {
       if (this.marketing[key] !== undefined) {
         this.marketing[key] = updates.marketing[key];
-        changes.set(`marketing.${key}`, updates.marketing[key]);
+        changes[`marketing.${key}`] = updates.marketing[key];
       }
     });
   }
@@ -191,7 +191,7 @@ emailPreferenceSchema.methods.updatePreferences = function(updates, source = 'us
   // Update global unsubscribe
   if (updates.globalUnsubscribe !== undefined) {
     this.globalUnsubscribe = updates.globalUnsubscribe;
-    changes.set('globalUnsubscribe', updates.globalUnsubscribe);
+    changes['globalUnsubscribe'] = updates.globalUnsubscribe;
   }
   
   this.lastUpdated = new Date();

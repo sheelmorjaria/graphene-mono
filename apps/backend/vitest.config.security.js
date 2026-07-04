@@ -19,7 +19,7 @@ export default defineConfig({
       'node_modules/**'
     ],
     coverage: {
-      provider: 'c8',
+      provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/**',

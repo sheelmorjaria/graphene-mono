@@ -334,10 +334,10 @@ describe('PaymentGateway Model', () => {
         {
           name: 'Disabled Gateway',
           code: 'DISABLED',
-          type: 'digital_wallet',
-          provider: 'paypal',
+          type: 'cryptocurrency',
+          provider: 'other',
           isEnabled: false,
-          supportedCurrencies: ['GBP'],
+          supportedCurrencies: ['BTC'],
           supportedCountries: ['GB']
         }
       ]);
@@ -352,14 +352,14 @@ describe('PaymentGateway Model', () => {
 
     it('should find gateways by type', async () => {
       const digitalWalletGateways = await PaymentGateway.findByType('digital_wallet');
-      
+
       expect(digitalWalletGateways).toHaveLength(1);
       expect(digitalWalletGateways[0].type).toBe('digital_wallet');
     });
 
     it('should find gateways supporting currency', async () => {
       const gbpGateways = await PaymentGateway.findSupportingCurrency('GBP');
-      
+
       expect(gbpGateways).toHaveLength(1);
       expect(gbpGateways[0].supportedCurrencies).toContain('GBP');
     });

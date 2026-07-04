@@ -188,8 +188,8 @@ describe('Cart Model', () => {
     });
 
     it('should add new item to empty cart', () => {
-      cart.addItem(mockProduct, 2);
-      
+      cart.addItem({ product: mockProduct, quantity: 2 });
+
       expect(cart.items).toHaveLength(1);
       expect(cart.items[0].productId).toEqual(mockProduct._id);
       expect(cart.items[0].quantity).toBe(2);
@@ -198,54 +198,54 @@ describe('Cart Model', () => {
 
     it('should increment quantity for existing item', () => {
       // Add item first time
-      cart.addItem(mockProduct, 1);
+      cart.addItem({ product: mockProduct, quantity: 1 });
       expect(cart.items[0].quantity).toBe(1);
-      
+
       // Add same item again
-      cart.addItem(mockProduct, 2);
+      cart.addItem({ product: mockProduct, quantity: 2 });
       expect(cart.items).toHaveLength(1); // Still only one unique item
       expect(cart.items[0].quantity).toBe(3); // 1 + 2
       expect(cart.items[0].subtotal).toBe(mockProduct.price * 3);
     });
 
     it('should update item quantity', () => {
-      cart.addItem(mockProduct, 5);
-      cart.updateItemQuantity(mockProduct._id, 3);
-      
+      cart.addItem({ product: mockProduct, quantity: 5 });
+      cart.updateItemQuantity(mockProduct._id.toString(), 3);
+
       expect(cart.items[0].quantity).toBe(3);
       expect(cart.items[0].subtotal).toBe(mockProduct.price * 3);
     });
 
     it('should remove item when quantity is set to 0', () => {
-      cart.addItem(mockProduct, 2);
+      cart.addItem({ product: mockProduct, quantity: 2 });
       expect(cart.items).toHaveLength(1);
-      
-      cart.updateItemQuantity(mockProduct._id, 0);
+
+      cart.updateItemQuantity(mockProduct._id.toString(), 0);
       expect(cart.items).toHaveLength(0);
     });
 
     it('should remove item completely', () => {
-      cart.addItem(mockProduct, 2);
+      cart.addItem({ product: mockProduct, quantity: 2 });
       expect(cart.items).toHaveLength(1);
-      
-      cart.removeItem(mockProduct._id);
+
+      cart.removeItem(mockProduct._id.toString());
       expect(cart.items).toHaveLength(0);
     });
 
     it('should clear all items', () => {
-      cart.addItem(mockProduct, 1);
-      cart.addItem({ ...mockProduct, _id: new mongoose.Types.ObjectId() }, 2);
+      cart.addItem({ product: mockProduct, quantity: 1 });
+      cart.addItem({ product: { ...mockProduct, _id: new mongoose.Types.ObjectId() }, quantity: 2 });
       expect(cart.items).toHaveLength(2);
-      
+
       cart.clearCart();
       expect(cart.items).toHaveLength(0);
     });
 
     it('should get cart summary', async () => {
-      cart.addItem(mockProduct, 2);
-      cart.addItem({ ...mockProduct, _id: new mongoose.Types.ObjectId() }, 1);
+      cart.addItem({ product: mockProduct, quantity: 2 });
+      cart.addItem({ product: { ...mockProduct, _id: new mongoose.Types.ObjectId() }, quantity: 1 });
       await cart.save(); // Save to trigger pre-save middleware
-      
+
       const summary = cart.getSummary();
       expect(summary.totalItems).toBe(3);
       expect(summary.totalAmount).toBe(mockProduct.price * 3);
@@ -281,13 +281,13 @@ describe('Cart Model', () => {
 
       // Create user cart with one item
       const userCart = new Cart({ userId });
-      userCart.addItem(mockProduct, 1);
+      userCart.addItem({ product: mockProduct, quantity: 1 });
       await userCart.save();
 
       // Create guest cart with different item
       const guestProduct = { ...mockProduct, _id: new mongoose.Types.ObjectId() };
       const guestCart = new Cart({ sessionId });
-      guestCart.addItem(guestProduct, 2);
+      guestCart.addItem({ product: guestProduct, quantity: 2 });
       await guestCart.save();
 
       // Merge carts
@@ -308,12 +308,12 @@ describe('Cart Model', () => {
 
       // Create user cart with product
       const userCart = new Cart({ userId });
-      userCart.addItem(mockProduct, 2);
+      userCart.addItem({ product: mockProduct, quantity: 2 });
       await userCart.save();
 
       // Create guest cart with same product
       const guestCart = new Cart({ sessionId });
-      guestCart.addItem(mockProduct, 3);
+      guestCart.addItem({ product: mockProduct, quantity: 3 });
       await guestCart.save();
 
       // Merge carts
@@ -330,7 +330,7 @@ describe('Cart Model', () => {
 
       // Create guest cart
       const guestCart = new Cart({ sessionId });
-      guestCart.addItem(mockProduct, 1);
+      guestCart.addItem({ product: mockProduct, quantity: 1 });
       await guestCart.save();
 
       // Merge into non-existing user cart

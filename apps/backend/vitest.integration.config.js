@@ -29,7 +29,8 @@ export default defineConfig({
     testTimeout: 30000, // Longer timeout for integration tests
     pool: 'forks', // Use separate processes for integration tests
     singleFork: true, // Run integration tests sequentially (Vitest 4 top-level option)
-    reporter: ['verbose'],
+    reporter: ['dot'],
+    silent: true,
     coverage: {
       provider: 'v8',
       reportOnFailure: true,
@@ -42,7 +43,10 @@ export default defineConfig({
         '**/*.config.js',
         'scripts/**'
       ],
-      reportsDirectory: './coverage/integration'
+      reportsDirectory: './coverage/integration',
+      // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
+      thresholds: { lines: 48, branches: 36, functions: 45, statements: 48 }
+      // @ratchet-end
     }
   },
   resolve: {

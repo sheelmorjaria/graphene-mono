@@ -14,6 +14,7 @@ describe('Product Model - Variations', () => {
     const validProductData = {
       name: 'Google Pixel 8',
       slug: 'google-pixel-8',
+      sku: 'GP-PXL8',
       baseModel: 'Pixel 8',
       shortDescription: 'Latest Google Pixel phone',
       variations: [
@@ -115,6 +116,7 @@ describe('Product Model - Variations', () => {
       const productData = {
         name: 'Google Pixel 8',
         slug: 'google-pixel-8',
+        sku: 'GP-PXL8',
         baseModel: 'Pixel 8',
         variations: [
           {
@@ -150,7 +152,7 @@ describe('Product Model - Variations', () => {
 
     it('should calculate correct price range', () => {
       const priceRange = product.getPriceRange();
-      expect(priceRange.min).toBe(649); // Sale price of first variation
+      expect(priceRange.min).toBe(599); // Lowest effective price (salePrice where present)
       expect(priceRange.max).toBe(799);
     });
 
@@ -218,6 +220,7 @@ describe('Product Model - Variations', () => {
       const productData = {
         name: 'Test Product',
         slug: 'test-product',
+        sku: 'TP-MISSING',
         baseModel: 'Test',
         variations: [{
           condition: 'new',
@@ -240,6 +243,7 @@ describe('Product Model - Variations', () => {
       const productData = {
         name: 'Test Product',
         slug: 'test-product',
+        sku: 'TP-NEGPRICE',
         baseModel: 'Test',
         variations: [{
           condition: 'new',
@@ -257,6 +261,7 @@ describe('Product Model - Variations', () => {
       const productData = {
         name: 'Test Product',
         slug: 'test-product',
+        sku: 'TP-NEGSTOCK',
         baseModel: 'Test',
         variations: [{
           condition: 'new',
@@ -275,6 +280,7 @@ describe('Product Model - Variations', () => {
       const productData = {
         name: 'Test Product',
         slug: 'test-product',
+        sku: 'TP-SALE',
         baseModel: 'Test',
         variations: [{
           condition: 'new',

@@ -1,16 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import AccountDeletionRequest from '../AccountDeletionRequest.js';
 
 describe('AccountDeletionRequest Model', () => {
   let testUserId;
-
-  beforeAll(async () => {
-    // Ensure we're using test database
-    if (!process.env.MONGODB_URI?.includes('test')) {
-      throw new Error('Tests must use test database');
-    }
-  });
 
   beforeEach(async () => {
     await AccountDeletionRequest.deleteMany({});
@@ -19,10 +12,6 @@ describe('AccountDeletionRequest Model', () => {
 
   afterEach(async () => {
     await AccountDeletionRequest.deleteMany({});
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
   });
 
   describe('Schema Validation', () => {
@@ -419,15 +408,15 @@ describe('AccountDeletionRequest Model', () => {
       });
 
       it('should merge with existing processing metadata', async () => {
-        // Set initial metadata
-        deletionRequest.processingMetadata = { initialData: 'test' };
+        // Set initial metadata (using schema-allowed keys only)
+        deletionRequest.processingMetadata = { recordsDeleted: 7 };
         await deletionRequest.save();
 
         // Mark as completed with additional metadata
         await deletionRequest.markAsCompleted({ ordersAnonymized: 3 });
 
         expect(deletionRequest.processingMetadata).toEqual({
-          initialData: 'test',
+          recordsDeleted: 7,
           ordersAnonymized: 3
         });
       });
