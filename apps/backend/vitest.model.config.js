@@ -26,7 +26,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'json-summary', 'html'],
       reportsDirectory: './coverage/models',
       // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
-      thresholds: { lines: 83, branches: 62, functions: 82, statements: 81 }
+      thresholds: { lines: 88, branches: 69, functions: 85, statements: 86 }
       // @ratchet-end
     }
   },
