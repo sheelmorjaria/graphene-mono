@@ -165,7 +165,7 @@ describe('ProductCard with Variations', () => {
   it('falls back to the standard lead time when not provided', () => {
     renderProductCard({ ...mockProduct, leadTime: undefined });
 
-    expect(screen.getByText('5-7 working days')).toBeInTheDocument();
+    expect(screen.getByText('3-5 days')).toBeInTheDocument();
   });
 
   it('should handle missing images gracefully', () => {

@@ -40,7 +40,7 @@ async function testOutOfStockDisplay() {
     console.log('🌐 Visit: http://localhost:3001/products?category=usb-drives');
     console.log('👀 Check if the first product shows:');
     console.log('   - Out-of-stock placeholder image');
-    console.log('   - "5-7 working days" lead time');
+    console.log('   - "3-5 days" lead time');
     console.log('   - "Out of Stock" status');
     
     await new Promise(resolve => setTimeout(resolve, 10000));

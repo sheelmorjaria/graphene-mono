@@ -1729,9 +1729,9 @@ export const createProduct = async (req, res) => {
     // Add lead time information
     if (leadTimeMinDays !== undefined || leadTimeMaxDays !== undefined || leadTimeDisplayText) {
       productData.leadTime = {
-        minDays: leadTimeMinDays ? parseInt(leadTimeMinDays) : 5,
-        maxDays: leadTimeMaxDays ? parseInt(leadTimeMaxDays) : 7,
-        displayText: leadTimeDisplayText || '5-7 working days'
+        minDays: leadTimeMinDays ? parseInt(leadTimeMinDays) : 3,
+        maxDays: leadTimeMaxDays ? parseInt(leadTimeMaxDays) : 5,
+        displayText: leadTimeDisplayText || '3-5 days'
       };
     }
 
@@ -1906,9 +1906,9 @@ export const updateProduct = async (req, res) => {
     // Add lead time information
     if (leadTimeMinDays !== undefined || leadTimeMaxDays !== undefined || leadTimeDisplayText !== undefined) {
       updateData.leadTime = {
-        minDays: leadTimeMinDays ? parseInt(leadTimeMinDays) : (existingProduct.leadTime?.minDays || 5),
-        maxDays: leadTimeMaxDays ? parseInt(leadTimeMaxDays) : (existingProduct.leadTime?.maxDays || 7),
-        displayText: leadTimeDisplayText || (existingProduct.leadTime?.displayText || '5-7 working days')
+        minDays: leadTimeMinDays ? parseInt(leadTimeMinDays) : (existingProduct.leadTime?.minDays || 3),
+        maxDays: leadTimeMaxDays ? parseInt(leadTimeMaxDays) : (existingProduct.leadTime?.maxDays || 5),
+        displayText: leadTimeDisplayText || (existingProduct.leadTime?.displayText || '3-5 days')
       };
     }
 

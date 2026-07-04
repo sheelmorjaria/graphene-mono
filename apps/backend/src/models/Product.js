@@ -138,16 +138,16 @@ const productSchema = new mongoose.Schema({
     minDays: {
       type: Number,
       min: 0,
-      default: 5 // Default minimum lead time for GrapheneOS phones
+      default: 3 // Default minimum lead time for GrapheneOS phones
     },
     maxDays: {
       type: Number,
       min: 0,
-      default: 7 // Default maximum lead time for GrapheneOS phones
+      default: 5 // Default maximum lead time for GrapheneOS phones
     },
     displayText: {
       type: String,
-      default: '5-7 working days' // Human-readable lead time
+      default: '3-5 days' // Human-readable lead time
     }
   },
   dimensions: {
@@ -278,14 +278,14 @@ productSchema.methods.getLeadTimeText = function() {
     return this.leadTime.displayText;
   }
   
-  const minDays = this.leadTime?.minDays || 5;
-  const maxDays = this.leadTime?.maxDays || 7;
-  
+  const minDays = this.leadTime?.minDays || 3;
+  const maxDays = this.leadTime?.maxDays || 5;
+
   if (minDays === maxDays) {
-    return `${minDays} working days`;
+    return `${minDays} days`;
   }
-  
-  return `${minDays}-${maxDays} working days`;
+
+  return `${minDays}-${maxDays} days`;
 };
 
 // Create text index for efficient search

@@ -133,7 +133,7 @@ const FAQPage = () => {
             <div className="space-y-3 text-text-secondary">
               <p>Delivery times vary by location:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li><strong className="text-cyan-400">UK:</strong> 5-7 working days (standard), 2-3 days (express)</li>
+                <li><strong className="text-cyan-400">UK:</strong> 3-5 days (standard), 2-3 days (express)</li>
                 <li><strong className="text-cyan-400">Europe:</strong> 7-14 working days</li>
                 <li><strong className="text-cyan-400">USA/Canada:</strong> 10-15 working days</li>
                 <li><strong className="text-cyan-400">Rest of World:</strong> 14-21 working days</li>

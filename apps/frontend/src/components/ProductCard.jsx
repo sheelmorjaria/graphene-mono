@@ -55,7 +55,7 @@ const ProductCard = ({ product }) => {
   // falling back to the fixed default otherwise.
   const getLeadTime = () => {
     const leadTime = product.leadTime?.displayText;
-    return leadTime || '5-7 working days';
+    return leadTime || '3-5 days';
   };
 
 

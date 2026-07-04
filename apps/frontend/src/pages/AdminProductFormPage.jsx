@@ -26,9 +26,9 @@ function AdminProductFormPage() {
     category: '',
     tags: '',
     status: 'draft',
-    leadTimeMinDays: '5',
-    leadTimeMaxDays: '7',
-    leadTimeDisplayText: '5-7 working days'
+    leadTimeMinDays: '3',
+    leadTimeMaxDays: '5',
+    leadTimeDisplayText: '3-5 days'
   });
 
   const [variations, setVariations] = useState([]);
@@ -74,9 +74,9 @@ function AdminProductFormPage() {
           category: product.category?._id || '',
           tags: Array.isArray(product.tags) ? product.tags.join(', ') : '',
           status: product.status || 'draft',
-          leadTimeMinDays: product.leadTime?.minDays?.toString() || '5',
-          leadTimeMaxDays: product.leadTime?.maxDays?.toString() || '7',
-          leadTimeDisplayText: product.leadTime?.displayText || '5-7 working days'
+          leadTimeMinDays: product.leadTime?.minDays?.toString() || '3',
+          leadTimeMaxDays: product.leadTime?.maxDays?.toString() || '5',
+          leadTimeDisplayText: product.leadTime?.displayText || '3-5 days'
         });
 
         // Set variations preserving all fields (phone or USB drive)
@@ -587,12 +587,12 @@ function AdminProductFormPage() {
                     value={formData.leadTimeDisplayText}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="5-7 working days"
+                    placeholder="3-5 days"
                   />
                 </div>
               </div>
               <p className="mt-2 text-sm text-gray-500">
-                Lead time information for GrapheneOS phones (default: 5-7 working days for custom preparation)
+                Lead time information for GrapheneOS phones (default: 3-5 days for custom preparation)
               </p>
             </div>
 

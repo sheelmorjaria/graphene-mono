@@ -269,7 +269,7 @@ const ProductDetailsPage = () => {
                     <div>
                       <h4 className="font-heading font-semibold text-text-primary mb-1">Delivery Information</h4>
                       <p className="text-text-secondary text-sm">
-                        Lead time: <span className="font-mono text-cyan-400">{product.leadTime.displayText || '5-7 working days'}</span>
+                        Shipping time: <span className="font-mono text-cyan-400">{product.leadTime.displayText || '3-5 days'}</span>
                       </p>
                       <p className="text-text-muted text-xs mt-1 font-mono">
                         All GrapheneOS phones are custom-prepared upon order to ensure maximum security and privacy.

@@ -21,9 +21,9 @@ const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) 
       height: ''
     },
     leadTime: {
-      minDays: 5,
-      maxDays: 7,
-      displayText: '5-7 working days'
+      minDays: 3,
+      maxDays: 5,
+      displayText: '3-5 days'
     },
     images: [],
     variations: []
@@ -47,7 +47,7 @@ const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) 
         attributes: product.attributes || [],
         weight: product.weight || '',
         dimensions: product.dimensions || { length: '', width: '', height: '' },
-        leadTime: product.leadTime || { minDays: 5, maxDays: 7, displayText: '5-7 working days' },
+        leadTime: product.leadTime || { minDays: 3, maxDays: 5, displayText: '3-5 days' },
         images: product.images || [],
         variations: product.variations || []
       });
@@ -410,7 +410,7 @@ const ProductForm = ({ product = null, onSubmit, onCancel, isLoading = false }) 
               value={formData.leadTime.displayText}
               onChange={(e) => handleNestedInputChange('leadTime', 'displayText', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="5-7 working days"
+              placeholder="3-5 days"
             />
           </div>
         </div>
