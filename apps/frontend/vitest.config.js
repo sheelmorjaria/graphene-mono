@@ -55,7 +55,7 @@ export default defineConfig({
         'src/main.jsx'  // app bootstrap, not unit-testable
       ],
       // @ratchet-begin (auto-updated by `npm run coverage:ratchet` — do not edit manually)
-      thresholds: { lines: 81, branches: 69, functions: 73, statements: 80 }
+      thresholds: { lines: 83, branches: 70, functions: 75, statements: 82 }
       // @ratchet-end
     },
     
