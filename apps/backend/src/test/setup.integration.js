@@ -299,7 +299,10 @@ export const createTestCart = (overrides = {}) => ({
   ...overrides
 });
 
-// Process cleanup handlers
+// Process cleanup handlers — ensure mongod is stopped even if vitest exits
+// abnormally (SIGTERM in CI, crash under coverage instrumentation). Node.js
+// does NOT await async signal handlers, so we must call process.exit() after
+// cleanup to guarantee the process stays alive long enough for stop() to finish.
 const cleanup = async () => {
   try {
     if (mongoose.connection.readyState !== 0) {
@@ -307,12 +310,13 @@ const cleanup = async () => {
     }
     if (mongoServer) {
       await mongoServer.stop();
+      mongoServer = null;
     }
   } catch (error) {
-    console.error('Error during process cleanup:', error.message);
+    // Best-effort — don't block exit on cleanup failure
   }
 };
 
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
+process.on('SIGINT', async () => { await cleanup(); process.exit(130); });
+process.on('SIGTERM', async () => { await cleanup(); process.exit(143); });
 process.on('beforeExit', cleanup);
