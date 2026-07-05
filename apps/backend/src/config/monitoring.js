@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 // Initialize Sentry for error tracking.
 //
@@ -9,7 +8,7 @@ import { nodeProfilingIntegration } from '@sentry/profiling-node';
 // @sentry/profiling-node integration — which has caused native crashes
 // (segfaults) in this project — is opt-in via SENTRY_ENABLE_PROFILING=true,
 // off by default for a safe startup. Error tracking still works without it.
-export const initializeSentry = () => {
+export const initializeSentry = async () => {
   if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
     console.log('⚠️  Sentry not initialized - missing SENTRY_DSN or not in production');
     return;
@@ -27,6 +26,9 @@ export const initializeSentry = () => {
     ];
     // Native performance profiling is opt-in (off by default) — see comment above.
     if (enableProfiling) {
+      // The profiler uses an optional native binding. Loading it eagerly can
+      // crash production containers that intentionally omit optional packages.
+      const { nodeProfilingIntegration } = await import('@sentry/profiling-node');
       integrations.push(nodeProfilingIntegration());
     }
 

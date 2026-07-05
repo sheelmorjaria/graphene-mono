@@ -2,18 +2,22 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import logger, { logError } from './src/utils/logger.js';
 import { initializeSentry, initializeNewRelic } from './src/config/monitoring.js';
-import app from './src/app.js';
 
 dotenv.config();
 
 // Initialize monitoring services. Wrapped defensively so a monitoring init
 // failure can never prevent the server from booting (monitoring is non-essential).
 try {
-  initializeSentry();
+  await initializeSentry();
   initializeNewRelic();
 } catch (error) {
   console.error('❌ Monitoring initialization error - continuing startup:', error?.message || error);
 }
+
+// Import the app after monitoring initialization. Besides ensuring Sentry's
+// Express handler sees an initialized client, this keeps optional monitoring
+// failures from preventing the HTTP server module from loading.
+const { default: app } = await import('./src/app.js');
 
 const PORT = process.env.PORT || 5000;
 
