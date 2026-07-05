@@ -6,7 +6,6 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
-import * as Sentry from '@sentry/node';
 import logger, { logError } from './utils/logger.js';
 import { metrics } from './config/monitoring.js';
 import { globalSanitization } from './middleware/validation.js';
@@ -147,8 +146,6 @@ app.use(fraudDetectionMiddleware);
 // Global input sanitization
 app.use(globalSanitization);
 
-// Sentry middleware is automatically set up by the expressIntegration in monitoring.js
-
 // Add custom metrics middleware
 app.use(metrics.responseTime);
 
@@ -240,11 +237,6 @@ app.get('/favicon.ico', (req, res) => {
 
 // 404 handler
 app.use(notFound);
-
-// Add Sentry error handler before our custom error handler
-if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
-  Sentry.setupExpressErrorHandler(app);
-}
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
