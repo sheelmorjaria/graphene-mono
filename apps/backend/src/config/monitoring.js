@@ -1,29 +1,43 @@
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
-// Initialize Sentry for error tracking
+// Initialize Sentry for error tracking.
+//
+// Monitoring is non-essential: a Sentry init failure (bad DSN, config error,
+// or the native profiling integration misbehaving) must NEVER prevent the
+// server from starting. init() is wrapped in try/catch, and the
+// @sentry/profiling-node integration — which has caused native crashes
+// (segfaults) in this project — is opt-in via SENTRY_ENABLE_PROFILING=true,
+// off by default for a safe startup. Error tracking still works without it.
 export const initializeSentry = () => {
-  if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
+  if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
+    console.log('⚠️  Sentry not initialized - missing SENTRY_DSN or not in production');
+    return;
+  }
+
+  try {
+    const enableProfiling = process.env.SENTRY_ENABLE_PROFILING === 'true';
+    const integrations = [
+      // Enable HTTP calls tracing
+      Sentry.httpIntegration({ tracing: true, breadcrumbs: true }),
+      // Enable Express.js middleware tracing
+      Sentry.expressIntegration(),
+      // Enable MongoDB tracing
+      Sentry.mongoIntegration()
+    ];
+    // Native performance profiling is opt-in (off by default) — see comment above.
+    if (enableProfiling) {
+      integrations.push(nodeProfilingIntegration());
+    }
+
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV,
-      integrations: [
-        // Enable HTTP calls tracing
-        Sentry.httpIntegration({
-          tracing: true,
-          breadcrumbs: true
-        }),
-        // Enable Express.js middleware tracing
-        Sentry.expressIntegration(),
-        // Enable MongoDB tracing
-        Sentry.mongoIntegration(),
-        // Enable performance profiling
-        nodeProfilingIntegration()
-      ],
+      integrations,
       // Performance Monitoring
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-      // Performance Profiling
-      profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+      // Performance Profiling (only meaningful when the profiling integration is loaded)
+      profilesSampleRate: enableProfiling ? (process.env.NODE_ENV === 'production' ? 0.1 : 1.0) : 0,
       // Release tracking
       release: process.env.npm_package_version || '1.0.0',
       // Additional configuration
@@ -36,34 +50,40 @@ export const initializeSentry = () => {
             delete event.request.headers.cookie;
           }
         }
-        
+
         // Log errors in development
         if (process.env.NODE_ENV === 'development') {
           console.error('Sentry Error:', hint.originalException || hint.syntheticException);
         }
-        
+
         return event;
       }
     });
 
-    console.log('✅ Sentry error tracking initialized');
-  } else {
-    console.log('⚠️  Sentry not initialized - missing SENTRY_DSN or not in production');
+    console.log(enableProfiling
+      ? '✅ Sentry error tracking initialized (profiling enabled)'
+      : '✅ Sentry error tracking initialized');
+  } catch (error) {
+    console.error('❌ Sentry initialization failed - continuing without Sentry:', error?.message || error);
   }
 };
 
-// Initialize New Relic for APM
+// Initialize New Relic for APM. Non-fatal: the dynamic import is given a
+// rejection handler so a failed load can't become an unhandled rejection or
+// block startup.
 export const initializeNewRelic = () => {
-  if (process.env.NODE_ENV === 'production' && process.env.NEW_RELIC_LICENSE_KEY) {
-    try {
-      // New Relic should be imported first in your main app file
-      import('newrelic');
-      console.log('✅ New Relic APM initialized');
-    } catch (error) {
-      console.error('❌ Failed to initialize New Relic:', error.message);
-    }
-  } else {
+  if (process.env.NODE_ENV !== 'production' || !process.env.NEW_RELIC_LICENSE_KEY) {
     console.log('⚠️  New Relic not initialized - missing license key or not in production');
+    return;
+  }
+
+  try {
+    import('newrelic').catch((error) => {
+      console.error('❌ New Relic failed to load - continuing without it:', error?.message || error);
+    });
+    console.log('✅ New Relic APM initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize New Relic:', error?.message || error);
   }
 };
 

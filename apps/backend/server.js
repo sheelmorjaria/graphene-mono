@@ -6,9 +6,14 @@ import app from './src/app.js';
 
 dotenv.config();
 
-// Initialize monitoring services
-initializeSentry();
-initializeNewRelic();
+// Initialize monitoring services. Wrapped defensively so a monitoring init
+// failure can never prevent the server from booting (monitoring is non-essential).
+try {
+  initializeSentry();
+  initializeNewRelic();
+} catch (error) {
+  console.error('❌ Monitoring initialization error - continuing startup:', error?.message || error);
+}
 
 const PORT = process.env.PORT || 5000;
 
