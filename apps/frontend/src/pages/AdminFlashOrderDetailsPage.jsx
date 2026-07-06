@@ -324,6 +324,10 @@ const AdminFlashOrderDetailsPage = () => {
                 <span className="text-text-secondary">Return Shipping</span>
                 <span className="text-text-primary font-mono">{formatCurrency(order.returnShipping)}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Shipping Region</span>
+                <span className="text-text-primary font-mono">{(order.shippingRegion || 'uk').toUpperCase()}</span>
+              </div>
               <div className="flex justify-between pt-3 border-t border-border-subtle font-semibold">
                 <span className="text-text-primary">Total</span>
                 <span className="text-cyan-400 font-mono">{formatCurrency(order.totalPrice)}</span>

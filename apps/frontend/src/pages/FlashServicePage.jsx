@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import FlashServiceForm from '../components/checkout/FlashServiceForm';
 import PayPalPayment from '../components/checkout/PayPalPayment';
-import { createFlashOrder, formatFlashOrderCurrency } from '../services/flashOrderService';
+import { createFlashOrder, formatFlashOrderCurrency, getShippingOption } from '../services/flashOrderService';
 import SEOWrapper from '../components/SEO/SEOWrapper';
 
 const FlashServicePage = () => {
@@ -133,7 +133,7 @@ const FlashServicePage = () => {
                     <span className="text-text-primary font-mono">{formatFlashOrderCurrency(orderData.basePrice || 119.99)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary">Return Shipping:</span>
+                    <span className="text-text-secondary">Return Shipping ({getShippingOption(orderData.shippingRegion).label}):</span>
                     <span className="text-text-primary font-mono">{formatFlashOrderCurrency(orderData.returnShipping || 20.45)}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-border-subtle font-semibold">

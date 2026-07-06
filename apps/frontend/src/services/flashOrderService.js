@@ -88,12 +88,32 @@ export const SUPPORTED_PIXEL_MODELS = [
 
 /**
  * Flash Order pricing
+ *
+ * Return shipping is chosen by destination region. UK includes insurance;
+ * Europe and Rest of World are standard (uninsured) rates. The backend is the
+ * source of truth for the charged amount — these are for display only.
  */
 export const FLASH_ORDER_PRICING = {
   basePrice: 119.99,
-  returnShipping: 20.45,
-  totalPrice: 140.44
+  shippingOptions: [
+    { region: 'uk', label: 'UK (insured)', price: 20.45 },
+    { region: 'europe', label: 'Europe', price: 13.95 },
+    { region: 'world', label: 'Rest of World', price: 13.95 }
+  ]
 };
+
+/**
+ * Resolve the return-shipping option for a region (defaults to UK).
+ */
+export const getShippingOption = (region = 'uk') =>
+  FLASH_ORDER_PRICING.shippingOptions.find((o) => o.region === region) ||
+  FLASH_ORDER_PRICING.shippingOptions[0];
+
+/**
+ * Total price for a region: flashing + return shipping (2-decimal rounded).
+ */
+export const getFlashOrderTotal = (region = 'uk') =>
+  Math.round((FLASH_ORDER_PRICING.basePrice + getShippingOption(region).price) * 100) / 100;
 
 /**
  * Format currency for Flash Orders

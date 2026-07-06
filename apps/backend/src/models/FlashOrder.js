@@ -98,6 +98,11 @@ const flashOrderSchema = new mongoose.Schema({
     type: Number,
     default: 20.45
   },
+  shippingRegion: {
+    type: String,
+    enum: ['uk', 'europe', 'world'],
+    default: 'uk'
+  },
   totalPrice: {
     type: Number,
     default: 140.44, // 119.99 + 20.45
