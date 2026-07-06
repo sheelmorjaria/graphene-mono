@@ -4,26 +4,35 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FlashServiceForm from '../FlashServiceForm';
 
 // Mock flash order service
-vi.mock('../../../services/flashOrderService', () => ({
-  createFlashOrder: vi.fn(),
-  SUPPORTED_PIXEL_MODELS: [
-    { value: 'Pixel 6', label: 'Pixel 6' },
-    { value: 'Pixel 6 Pro', label: 'Pixel 6 Pro' },
-    { value: 'Pixel 6a', label: 'Pixel 6a' },
-    { value: 'Pixel 7', label: 'Pixel 7' },
-    { value: 'Pixel 7 Pro', label: 'Pixel 7 Pro' },
-    { value: 'Pixel 7a', label: 'Pixel 7a' },
-    { value: 'Pixel 8', label: 'Pixel 8' },
-    { value: 'Pixel 8 Pro', label: 'Pixel 8 Pro' },
-    { value: 'Pixel 8a', label: 'Pixel 8a' }
-  ],
-  FLASH_ORDER_PRICING: {
-    basePrice: 119.99,
-    returnShipping: 20.45,
-    totalPrice: 140.44
-  },
-  formatFlashOrderCurrency: (amount) => `£${amount.toFixed(2)}`
-}));
+vi.mock('../../../services/flashOrderService', () => {
+  const SHIPPING_OPTIONS = [
+    { region: 'uk', label: 'UK (insured)', price: 20.45 },
+    { region: 'europe', label: 'Europe', price: 13.95 },
+    { region: 'world', label: 'Rest of World', price: 13.95 }
+  ];
+  const basePrice = 119.99;
+  const optionFor = (region = 'uk') =>
+    SHIPPING_OPTIONS.find((o) => o.region === region) || SHIPPING_OPTIONS[0];
+  return {
+    createFlashOrder: vi.fn(),
+    SUPPORTED_PIXEL_MODELS: [
+      { value: 'Pixel 6', label: 'Pixel 6' },
+      { value: 'Pixel 6 Pro', label: 'Pixel 6 Pro' },
+      { value: 'Pixel 6a', label: 'Pixel 6a' },
+      { value: 'Pixel 7', label: 'Pixel 7' },
+      { value: 'Pixel 7 Pro', label: 'Pixel 7 Pro' },
+      { value: 'Pixel 7a', label: 'Pixel 7a' },
+      { value: 'Pixel 8', label: 'Pixel 8' },
+      { value: 'Pixel 8 Pro', label: 'Pixel 8 Pro' },
+      { value: 'Pixel 8a', label: 'Pixel 8a' }
+    ],
+    FLASH_ORDER_PRICING: { basePrice, shippingOptions: SHIPPING_OPTIONS },
+    getShippingOption: optionFor,
+    getFlashOrderTotal: (region = 'uk') =>
+      Math.round((basePrice + optionFor(region).price) * 100) / 100,
+    formatFlashOrderCurrency: (amount) => `£${amount.toFixed(2)}`
+  };
+});
 
 import { createFlashOrder } from '../../../services/flashOrderService';
 
@@ -65,8 +74,21 @@ describe('FlashServiceForm Component', () => {
       render(<FlashServiceForm onSuccess={mockOnSuccess} onError={mockOnError} />);
 
       expect(screen.getByText(/£119.99/)).toBeInTheDocument();
-      expect(screen.getByText(/£20.45/)).toBeInTheDocument();
+      // £20.45 appears in both the Return Shipping summary and the UK <option>
+      expect(screen.getAllByText(/£20.45/).length).toBeGreaterThan(0);
       expect(screen.getByText(/£140.44/i)).toBeInTheDocument();
+    });
+
+    it('updates return shipping and total when region changes', async () => {
+      render(<FlashServiceForm onSuccess={mockOnSuccess} onError={mockOnError} />);
+
+      // Defaults to UK (insured): 119.99 + 20.45 = 140.44
+      expect(screen.getByText(/£140.44/)).toBeInTheDocument();
+
+      await userEvent.selectOptions(screen.getByLabelText(/return shipping region/i), 'europe');
+
+      // Europe: 119.99 + 13.95 = 133.94
+      expect(screen.getByText(/£133.94/)).toBeInTheDocument();
     });
 
     it('should render service description', () => {
@@ -174,6 +196,7 @@ describe('FlashServiceForm Component', () => {
     const validFormData = {
       customerEmail: 'test@example.com',
       pixelModel: 'Pixel 8 Pro',
+      shippingRegion: 'uk',
       returnAddress: {
         fullName: 'Test User',
         addressLine1: '123 Test Street',

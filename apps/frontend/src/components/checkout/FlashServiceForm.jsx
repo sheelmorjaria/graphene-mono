@@ -3,13 +3,16 @@ import {
   createFlashOrder,
   SUPPORTED_PIXEL_MODELS,
   FLASH_ORDER_PRICING,
-  formatFlashOrderCurrency
+  formatFlashOrderCurrency,
+  getShippingOption,
+  getFlashOrderTotal
 } from '../../services/flashOrderService';
 
 const FlashServiceForm = ({ onSuccess, onError }) => {
   const [formData, setFormData] = useState({
     customerEmail: '',
     pixelModel: '',
+    shippingRegion: 'uk',
     returnAddress: {
       fullName: '',
       addressLine1: '',
@@ -107,6 +110,7 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
       const orderData = {
         customerEmail: formData.customerEmail,
         pixelModel: formData.pixelModel,
+        shippingRegion: formData.shippingRegion,
         returnAddress: {
           fullName: formData.returnAddress.fullName,
           addressLine1: formData.returnAddress.addressLine1,
@@ -139,6 +143,8 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
 
   const showEmailError = emailError || (formData.customerEmail && errors.customerEmail);
 
+  const selectedShipping = getShippingOption(formData.shippingRegion);
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8 p-6 bg-bg-card rounded-lg border border-border-subtle">
@@ -156,12 +162,12 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
             <span className="text-text-primary font-mono">{formatFlashOrderCurrency(FLASH_ORDER_PRICING.basePrice)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary">Return Shipping:</span>
-            <span className="text-text-primary font-mono">{formatFlashOrderCurrency(FLASH_ORDER_PRICING.returnShipping)}</span>
+            <span className="text-text-secondary">Return Shipping ({selectedShipping.label}):</span>
+            <span className="text-text-primary font-mono">{formatFlashOrderCurrency(selectedShipping.price)}</span>
           </div>
           <div className="flex justify-between pt-2 border-t border-border-subtle">
             <span className="text-text-primary font-semibold">Total:</span>
-            <span className="text-cyan-400 font-mono font-bold">{formatFlashOrderCurrency(FLASH_ORDER_PRICING.totalPrice)}</span>
+            <span className="text-cyan-400 font-mono font-bold">{formatFlashOrderCurrency(getFlashOrderTotal(formData.shippingRegion))}</span>
           </div>
         </div>
       </div>
@@ -204,6 +210,25 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
             {SUPPORTED_PIXEL_MODELS.map(model => (
               <option key={model.value} value={model.value}>
                 {model.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Return Shipping Region */}
+        <div>
+          <label htmlFor="shippingRegion" className="block text-sm font-heading font-semibold text-text-primary uppercase tracking-wider mb-2">
+            Return Shipping Region
+          </label>
+          <select
+            id="shippingRegion"
+            value={formData.shippingRegion}
+            onChange={(e) => handleInputChange('shippingRegion', e.target.value)}
+            className="w-full px-4 py-3 bg-bg-elevated border border-border-subtle rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
+          >
+            {FLASH_ORDER_PRICING.shippingOptions.map((option) => (
+              <option key={option.region} value={option.region}>
+                {option.label} — {formatFlashOrderCurrency(option.price)}
               </option>
             ))}
           </select>

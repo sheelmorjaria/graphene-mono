@@ -13,7 +13,14 @@ const SUPPORTED_PIXEL_MODELS = [
 
 // Default pricing
 const BASE_PRICE = 119.99;
-const RETURN_SHIPPING = 20.45;
+// Return-shipping rates by destination region. UK includes insurance;
+// Europe and Rest of World are standard (uninsured) rates.
+const SHIPPING_RATES = {
+  uk: 20.45,
+  europe: 13.95,
+  world: 13.95
+};
+const round2 = (n) => Math.round(n * 100) / 100;
 
 // PO Box address (revealed only after payment)
 const PO_BOX_ADDRESS = {
@@ -30,7 +37,7 @@ const PO_BOX_ADDRESS = {
  */
 export const createFlashOrder = async (req, res) => {
   try {
-    const { customerEmail, pixelModel, returnAddress, factoryResetConfirmed } = req.body;
+    const { customerEmail, pixelModel, returnAddress, factoryResetConfirmed, shippingRegion } = req.body;
 
     // Validate required fields
     if (!customerEmail || !pixelModel || !returnAddress) {
@@ -66,6 +73,10 @@ export const createFlashOrder = async (req, res) => {
       });
     }
 
+    // Resolve return-shipping region (defaults to UK for backward compatibility)
+    const region = Object.keys(SHIPPING_RATES).includes(shippingRegion) ? shippingRegion : 'uk';
+    const returnShipping = SHIPPING_RATES[region];
+
     // Create Flash Order
     const order = new FlashOrder({
       customerEmail,
@@ -82,7 +93,9 @@ export const createFlashOrder = async (req, res) => {
       },
       factoryResetConfirmed: true,
       basePrice: BASE_PRICE,
-      returnShipping: RETURN_SHIPPING
+      returnShipping,
+      shippingRegion: region,
+      totalPrice: round2(BASE_PRICE + returnShipping)
     });
 
     await order.save();
@@ -101,6 +114,7 @@ export const createFlashOrder = async (req, res) => {
         paymentStatus: order.paymentStatus,
         basePrice: order.basePrice,
         returnShipping: order.returnShipping,
+        shippingRegion: order.shippingRegion,
         totalPrice: order.totalPrice,
         createdAt: order.createdAt
       }

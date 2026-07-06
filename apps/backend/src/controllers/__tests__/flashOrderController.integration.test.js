@@ -82,6 +82,30 @@ describe('FlashOrder API Endpoints', () => {
       expect(response.body.data.returnShipping).toBe(20.45);
     });
 
+    it('should price return shipping by shippingRegion', async () => {
+      // UK (default) — insured
+      const uk = await request(app).post('/api/flash-orders').send(validOrderData);
+      expect(uk.body.data.shippingRegion).toBe('uk');
+      expect(uk.body.data.returnShipping).toBe(20.45);
+      expect(uk.body.data.totalPrice).toBe(140.44); // 119.99 + 20.45
+
+      // Europe — standard rate
+      const europe = await request(app)
+        .post('/api/flash-orders')
+        .send({ ...validOrderData, shippingRegion: 'europe' });
+      expect(europe.body.data.shippingRegion).toBe('europe');
+      expect(europe.body.data.returnShipping).toBe(13.95);
+      expect(europe.body.data.totalPrice).toBe(133.94); // 119.99 + 13.95
+
+      // Rest of World — same standard rate
+      const world = await request(app)
+        .post('/api/flash-orders')
+        .send({ ...validOrderData, shippingRegion: 'world' });
+      expect(world.body.data.shippingRegion).toBe('world');
+      expect(world.body.data.returnShipping).toBe(13.95);
+      expect(world.body.data.totalPrice).toBe(133.94);
+    });
+
     it('should return 400 if factoryResetConfirmed is false', async () => {
       const response = await request(app)
         .post('/api/flash-orders')
