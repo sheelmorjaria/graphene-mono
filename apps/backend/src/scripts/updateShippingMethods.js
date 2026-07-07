@@ -78,31 +78,6 @@ const improvedShippingMethods = [
     },
     isActive: true,
     displayOrder: 4
-  },
-  {
-    name: 'Express International',
-    code: 'EXPRESS_INTERNATIONAL',
-    description: 'Fast worldwide delivery with priority handling',
-    estimatedDeliveryDays: { min: 5, max: 10 },
-    baseCost: 49.99, // £49.99
-    criteria: {
-      minWeight: 0,
-      maxWeight: 20000, // 20kg
-      minOrderValue: 150.00, // £150 minimum
-      maxOrderValue: 999999.99,
-      supportedCountries: [
-        'US', 'CA', 'AU', 'NZ', 'JP', 'KR', 'SG', 'HK',
-        'DE', 'FR', 'NL', 'BE', 'AT', 'CH', 'SE', 'DK', 'NO'
-      ],
-      freeShippingThreshold: 300.00 // £300
-    },
-    pricing: {
-      weightRate: 0.0040, // £0.0040 per gram over base
-      baseWeight: 500, // 0.5kg included in base cost
-      dimensionalWeightFactor: 3500
-    },
-    isActive: true,
-    displayOrder: 5
   }
 ];
 
@@ -132,7 +107,6 @@ const updateShippingMethods = async () => {
     console.log('✅ UK: Royal Mail Special Delivery (next working day, fully insured)');
     console.log('✅ Europe (29 countries): European shipping'); 
     console.log('✅ Worldwide (34 countries): International shipping');
-    console.log('✅ Priority countries: Express International shipping');
 
     console.log('\n🧪 Testing improved coverage...');
     

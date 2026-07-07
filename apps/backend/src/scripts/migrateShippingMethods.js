@@ -20,7 +20,7 @@ dotenv.config();
 
 const APPLY = process.env.APPLY === '1' || process.env.APPLY === 'true';
 
-const REMOVE_CODES = ['STANDARD', 'EXPRESS'];
+const REMOVE_CODES = ['STANDARD', 'EXPRESS', 'EXPRESS_INTERNATIONAL'];
 const TARGET_CODE = 'SPECIALDELIVERY';
 
 // Correct values for Royal Mail Special Delivery (next working day, GB-only).
