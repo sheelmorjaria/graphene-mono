@@ -232,10 +232,11 @@ const Header = () => {
               to="/"
               className="flex items-center gap-3 group flex-shrink-0"
             >
-              <div>
-                <h1 className="font-display font-bold text-lg text-text-primary tracking-wider">GRAPHENE</h1>
-                <p className="font-mono text-xs text-cyan-400 tracking-[0.2em] uppercase">Security</p>
-              </div>
+              <img
+                src="/images/logo.png"
+                alt="Graphene Security"
+                className="h-9 lg:h-10 w-auto object-contain group-hover:opacity-90 transition-opacity"
+              />
             </Link>
 
             {/* Mobile menu button - only visible on small screens */}
