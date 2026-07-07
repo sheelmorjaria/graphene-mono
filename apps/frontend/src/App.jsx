@@ -235,7 +235,7 @@ const Header = () => {
               <img
                 src="/images/logo.png"
                 alt="Graphene Security"
-                className="h-16 lg:h-20 w-auto object-contain group-hover:opacity-90 transition-opacity"
+                className="h-20 lg:h-24 w-auto object-contain group-hover:opacity-90 transition-opacity"
               />
             </Link>
 
