@@ -334,7 +334,7 @@ describe('PaymentGateway Model', () => {
         {
           name: 'Disabled Gateway',
           code: 'DISABLED',
-          type: 'cryptocurrency',
+          type: 'bank_transfer',
           provider: 'other',
           isEnabled: false,
           supportedCurrencies: ['BTC'],

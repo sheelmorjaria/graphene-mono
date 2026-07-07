@@ -18,7 +18,7 @@ const paymentGatewaySchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['credit_card', 'digital_wallet', 'bank_transfer', 'cryptocurrency', 'buy_now_pay_later'],
+    enum: ['credit_card', 'digital_wallet', 'bank_transfer', 'buy_now_pay_later'],
     default: 'credit_card'
   },
   provider: {
