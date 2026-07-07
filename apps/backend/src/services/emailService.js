@@ -290,23 +290,23 @@ class EmailService {
     const category = emailType.split('.')[0];
     
     const unsubscribeHtml = `
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #666;">
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(0, 212, 255, 0.15); text-align: center; font-size: 12px; color: #8a96a3;">
         <p>
           You received this email because you're subscribed to ${category} emails from Graphene Security.
         </p>
         <p>
           <a href="${baseUrl}/api/webhook/unsubscribe/${unsubscribeToken}?category=${category}" 
-             style="color: #667eea; text-decoration: underline;">
+             style="color: #00d4ff; text-decoration: underline;">
             Unsubscribe from ${category} emails
           </a>
           |
           <a href="${baseUrl}/api/webhook/unsubscribe/${unsubscribeToken}?all=true" 
-             style="color: #667eea; text-decoration: underline;">
+             style="color: #00d4ff; text-decoration: underline;">
             Unsubscribe from all emails
           </a>
           |
           <a href="${baseUrl}/profile/email-preferences" 
-             style="color: #667eea; text-decoration: underline;">
+             style="color: #00d4ff; text-decoration: underline;">
             Manage email preferences
           </a>
         </p>
@@ -330,56 +330,66 @@ class EmailService {
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
           line-height: 1.6;
-          color: #333;
+          color: #d1d5db;
           margin: 0;
           padding: 0;
-          background-color: #f4f4f4;
+          background-color: #0a0a0a;
+          -webkit-text-size-adjust: 100%;
         }
         .email-container {
           max-width: 600px;
           margin: 20px auto;
-          background-color: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          background-color: #0d0d0d;
+          border: 1px solid rgba(0, 212, 255, 0.25);
+          border-radius: 10px;
+          box-shadow: 0 0 24px rgba(0, 212, 255, 0.12);
           overflow: hidden;
         }
         .header {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background-color: #0a0a0a;
+          background-image: linear-gradient(135deg, rgba(0, 212, 255, 0.14) 0%, rgba(0, 255, 65, 0.08) 100%);
+          border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+          color: #00d4ff;
           padding: 30px 20px;
           text-align: center;
         }
         .header h1 {
           margin: 0;
-          font-size: 24px;
-          font-weight: 600;
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: #00d4ff;
         }
         .content {
           padding: 30px 20px;
+          color: #d1d5db;
         }
         .content h2 {
-          color: #333;
+          color: #00d4ff;
           font-size: 20px;
           margin-bottom: 20px;
         }
         .order-details {
-          background-color: #f8f9fa;
+          background-color: #141414;
           padding: 20px;
           margin: 20px 0;
           border-radius: 6px;
-          border-left: 4px solid #667eea;
+          border-left: 4px solid #00d4ff;
         }
         .order-details h3 {
           margin: 0 0 15px 0;
-          color: #333;
+          color: #e5e7eb;
           font-size: 16px;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
         }
         .detail-row {
           display: flex;
           justify-content: space-between;
           margin-bottom: 8px;
           padding-bottom: 8px;
-          border-bottom: 1px solid #eee;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
         .detail-row:last-child {
           border-bottom: none;
@@ -388,42 +398,47 @@ class EmailService {
         }
         .detail-label {
           font-weight: 600;
-          color: #666;
+          color: #8a96a3;
+          font-size: 13px;
+          letter-spacing: 0.4px;
+          text-transform: uppercase;
         }
         .detail-value {
-          color: #333;
+          color: #e5e7eb;
         }
         .highlight {
-          color: #667eea;
+          color: #00d4ff;
           font-weight: bold;
         }
         .success {
-          color: #28a745;
+          color: #00ff41;
           font-weight: bold;
         }
         .warning {
-          color: #dc3545;
+          color: #ff4d4d;
           font-weight: bold;
         }
         .footer {
-          background-color: #f8f9fa;
+          background-color: #0a0a0a;
           padding: 20px;
           text-align: center;
-          border-top: 1px solid #eee;
+          border-top: 1px solid rgba(0, 212, 255, 0.15);
         }
         .footer p {
           margin: 5px 0;
-          color: #666;
+          color: #8a96a3;
           font-size: 14px;
         }
         .btn {
           display: inline-block;
           padding: 12px 24px;
-          background-color: #667eea;
-          color: white;
+          background-color: #00d4ff;
+          background-image: linear-gradient(135deg, #00d4ff 0%, #00ff41 100%);
+          color: #0a0a0a;
           text-decoration: none;
           border-radius: 6px;
-          font-weight: 600;
+          font-weight: 700;
+          letter-spacing: 0.5px;
           margin: 20px 0;
         }
         .items-list {
@@ -431,10 +446,33 @@ class EmailService {
         }
         .item {
           padding: 10px 0;
-          border-bottom: 1px solid #eee;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
         .item:last-child {
           border-bottom: none;
+        }
+        a {
+          color: #00d4ff;
+        }
+        ul {
+          padding-left: 20px;
+          margin: 10px 0;
+        }
+        li {
+          margin-bottom: 6px;
+          color: #c7cdd4;
+        }
+        .important-notice {
+          background-color: rgba(0, 255, 65, 0.06);
+          border: 1px solid rgba(0, 255, 65, 0.25);
+          border-radius: 6px;
+          padding: 16px 20px;
+          margin: 20px 0;
+        }
+        .important-notice h3 {
+          margin: 0 0 10px 0;
+          color: #00ff41;
+          font-size: 16px;
         }
         @media (max-width: 600px) {
           .email-container {
@@ -826,7 +864,7 @@ class EmailService {
       });
 
     } catch (error) {
-      logError(error, { context: 'contact_acknowledgment_email', supportData });
+      logError(error, { context: 'contact_acknowledgment_email', contactData });
       return { success: false, error: error.message };
     }
   }
@@ -1290,7 +1328,7 @@ class EmailService {
           <a href="${resetUrl}" class="btn">Reset Password</a>
           <p style="font-size: 14px; color: #666; margin-top: 15px;">
             If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${resetUrl}" style="color: #667eea; word-break: break-all;">${resetUrl}</a>
+            <a href="${resetUrl}" style="color: #00d4ff; word-break: break-all;">${resetUrl}</a>
           </p>
         </div>
 
@@ -1333,7 +1371,7 @@ class EmailService {
       // Point directly to backend API which will handle verification and redirect
       const verificationUrl = process.env.BACKEND_URL ? 
         `${process.env.BACKEND_URL}/api/auth/verify-email?token=${emailVerificationToken}` : 
-        `https://graphene-backend.onrender.com/api/auth/verify-email?token=${emailVerificationToken}`;
+        `https://api.graphene-security.com/api/auth/verify-email?token=${emailVerificationToken}`;
 
       const content = `
         <p>Welcome to Graphene Security! Thank you for creating an account with us.</p>
@@ -1356,7 +1394,7 @@ class EmailService {
           <a href="${verificationUrl}" class="btn">Verify Email Address</a>
           <p style="font-size: 14px; color: #666; margin-top: 15px;">
             If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${verificationUrl}" style="color: #667eea; word-break: break-all;">${verificationUrl}</a>
+            <a href="${verificationUrl}" style="color: #00d4ff; word-break: break-all;">${verificationUrl}</a>
           </p>
         </div>
 
