@@ -49,7 +49,7 @@
     "istanbul-lib-coverage": "^3.2.2",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
-    "turbo": "^1.13.0"
+    "turbo": "^2.10.4"
   },
   "keywords": [
     "grapheneos",

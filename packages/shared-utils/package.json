@@ -14,13 +14,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@graphene-store/shared-types": "*",
-    "nodemailer": "8.0.10"
+    "@graphene-store/shared-types": "*"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.8",
     "typescript": "^5.3.0",
-    "vitest": "^4.1.8",
-    "@vitest/coverage-v8": "^4.1.8"
+    "vitest": "^4.1.8"
   },
   "files": [
     "dist/**/*",
