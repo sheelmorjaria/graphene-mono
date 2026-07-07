@@ -1166,7 +1166,7 @@ class EmailService {
           </div>
         </div>
 
-        <p>Your order is now being processed and will ship within 1-2 business days.</p>
+        <p>Your order is now being processed and will ship within 2-4 business days.</p>
       `;
 
       const htmlContent = this.generateEmailTemplate(
