@@ -6,18 +6,17 @@ dotenv.config();
 
 const improvedShippingMethods = [
   {
-    name: 'Standard Shipping',
-    code: 'STANDARD',
-    description: 'Regular delivery service with tracking',
-    estimatedDeliveryDays: { min: 5, max: 7 },
-    baseCost: 7.99, // £7.99
+    name: 'Royal Mail Special Delivery',
+    code: 'SPECIALDELIVERY',
+    description: 'Fully insured delivery guaranteed next working day',
+    estimatedDeliveryDays: { min: 1, max: 1 },
+    baseCost: 20.45, // £20.45
     criteria: {
       minWeight: 0,
       maxWeight: 20000, // 20kg
       minOrderValue: 0,
       maxOrderValue: 999999.99,
-      supportedCountries: ['GB', 'IE'], // UK and Ireland only
-      freeShippingThreshold: 60.00 // £60
+      supportedCountries: ['GB'] // UK only — Royal Mail Special Delivery Guaranteed
     },
     pricing: {
       weightRate: 0.0008, // £0.0008 per gram over base
@@ -26,28 +25,6 @@ const improvedShippingMethods = [
     },
     isActive: true,
     displayOrder: 1
-  },
-  {
-    name: 'Express Shipping',
-    code: 'EXPRESS',
-    description: 'Fast delivery service with priority handling',
-    estimatedDeliveryDays: { min: 3, max: 4 },
-    baseCost: 15.99, // £15.99
-    criteria: {
-      minWeight: 0,
-      maxWeight: 15000, // 15kg
-      minOrderValue: 0,
-      maxOrderValue: 999999.99,
-      supportedCountries: ['GB', 'IE'], // UK and Ireland only
-      freeShippingThreshold: 120.00 // £120
-    },
-    pricing: {
-      weightRate: 0.0016, // £0.0016 per gram over base
-      baseWeight: 500, // 0.5kg included in base cost
-      dimensionalWeightFactor: 4000
-    },
-    isActive: true,
-    displayOrder: 2
   },
   {
     name: 'European Shipping',
@@ -152,7 +129,7 @@ const updateShippingMethods = async () => {
 
     console.log('\n🌍 Coverage Summary:');
     console.log('===================');
-    console.log('✅ UK & Ireland: Standard + Express shipping');
+    console.log('✅ UK: Royal Mail Special Delivery (next working day, fully insured)');
     console.log('✅ Europe (29 countries): European shipping'); 
     console.log('✅ Worldwide (34 countries): International shipping');
     console.log('✅ Priority countries: Express International shipping');
