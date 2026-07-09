@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import useProducts from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 import Pagination from '../components/Pagination';
@@ -250,6 +250,25 @@ const ProductListPage = () => {
 
           {/* Products Content */}
           <div className="lg:w-3/4">
+            {/* Flashing Service promo */}
+            <Link
+              to="/flash-service"
+              className="group mb-6 flex items-center gap-4 rounded-lg border border-border-cyan bg-cyan-subtle p-4 transition-all duration-200 hover:border-cyan-400 hover:shadow-glow-cyan"
+            >
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-matrix-400 text-text-on-accent">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h2 className="font-heading font-bold text-text-primary">GrapheneOS Flashing Service</h2>
+                <p className="text-sm text-text-secondary">Already own a Pixel? Send it to us and we'll flash it with the latest GrapheneOS — fully insured return shipping, guaranteed next working day delivery.</p>
+              </div>
+              <span className="hidden sm:block font-heading text-sm font-semibold uppercase tracking-wider text-cyan-400 transition-transform group-hover:translate-x-1">
+                Learn more →
+              </span>
+            </Link>
+
             {/* Sorting Controls */}
             <div className="flex justify-end mb-6">
               <SortOptions currentSort={currentSort} onSortChange={handleSortChange} />
