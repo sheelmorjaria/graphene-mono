@@ -2,9 +2,10 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
-const SEOWrapper = ({ 
-  title, 
-  description, 
+const SEOWrapper = ({
+  title,
+  description,
+  keywords,
   image,
   type = 'website',
   additionalMeta = [],
@@ -19,9 +20,14 @@ const SEOWrapper = ({
   const defaultTitle = 'Graphene Security - Privacy-Focused Smartphones';
   const defaultDescription = 'Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private, and anonymous shopping with PayPal payment options.';
   const defaultImage = `${siteUrl}/og-image.jpg`;
-  
+  const defaultKeywords = [
+    'GrapheneOS', 'Google Pixel', 'GrapheneOS smartphone', 'privacy phone',
+    'secure smartphone', 'degoogled phone', 'Graphene Security'
+  ];
+
   const fullTitle = title ? `${title} - Graphene Security` : defaultTitle;
   const metaDescription = description || defaultDescription;
+  const metaKeywords = (Array.isArray(keywords) && keywords.length ? keywords : defaultKeywords).join(', ');
   const metaImage = image ? `${siteUrl}${image}` : defaultImage;
   const canonicalUrl = canonical || currentUrl;
 
@@ -29,6 +35,7 @@ const SEOWrapper = ({
     <Helmet>
       <title>{fullTitle}</title>
       <meta name="description" content={metaDescription} />
+      <meta name="keywords" content={metaKeywords} />
       <link rel="canonical" href={canonicalUrl} />
       
       {noindex && <meta name="robots" content="noindex, nofollow" />}

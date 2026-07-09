@@ -147,6 +147,7 @@ const ProductDetailsPage = () => {
       <SEOWrapper
         title={product.name}
         description={product.shortDescription || product.description?.substring(0, 160)}
+        keywords={[product.name, 'GrapheneOS', 'Google Pixel', 'privacy phone', 'secure smartphone', 'degoogled phone']}
         image={product.images?.[0]}
         type="product"
         structuredData={[productStructuredData, breadcrumbStructuredData]}

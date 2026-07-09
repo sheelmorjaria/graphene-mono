@@ -162,7 +162,8 @@ const ProductListPage = () => {
     <>
       <SEOWrapper
         title="GrapheneOS Smartphones - Privacy-Focused Phones"
-        description="Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private smartphones with PayPal payment options. Free UK shipping available."
+        description="Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private smartphones with PayPal payment options. Royal Mail Special Delivery next-day insured shipping across the UK."
+        keywords={['GrapheneOS', 'GrapheneOS smartphones', 'Google Pixel', 'privacy phone', 'secure smartphone', 'buy GrapheneOS Pixel', 'degoogled phone']}
         additionalMeta={[
           { name: 'keywords', content: 'GrapheneOS phones, privacy smartphones, secure phones, Google Pixel GrapheneOS' },
           { property: 'og:type', content: 'website' }
