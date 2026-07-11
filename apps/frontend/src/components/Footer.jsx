@@ -140,7 +140,7 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t border-border-subtle">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-text-muted font-mono">
-              &copy; {currentYear} Graphene Security. All rights reserved.
+              &copy; {currentYear} Privacy Store Ltd. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <a
