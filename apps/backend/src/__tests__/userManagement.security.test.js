@@ -3,22 +3,22 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
 // Mock email service
-const mockSendAccountDisabledEmail = vi.fn();
-const mockSendAccountReEnabledEmail = vi.fn();
-
-const mockEmailService = {
-  sendAccountDisabledEmail: mockSendAccountDisabledEmail,
-  sendAccountReEnabledEmail: mockSendAccountReEnabledEmail
-};
+const { mockSendAccountDisabledEmail, mockSendAccountReEnabledEmail } = vi.hoisted(() => ({
+  mockSendAccountDisabledEmail: vi.fn(),
+  mockSendAccountReEnabledEmail: vi.fn()
+}));
 
 // Set up mocks before imports
 vi.mock('../services/emailService.js', () => ({
-  default: mockEmailService
+  default: {
+    sendAccountDisabledEmail: mockSendAccountDisabledEmail,
+    sendAccountReEnabledEmail: mockSendAccountReEnabledEmail
+  }
 }));
 
 // Dynamic imports after mocking
-import '../../server.js';
-import '../models/User.js';
+import app from '../../server.js';
+import User from '../models/User.js';
 
 describe('User Management Security Tests', () => {
   let adminUser;
@@ -236,7 +236,7 @@ describe('User Management Security Tests', () => {
 
       expect([401, 429]).toContain(disabledAdminAccess.status);
       if (disabledAdminAccess.status === 401) {
-        expect(disabledAdminAccess.body.error).toContain('disabled');
+        expect(disabledAdminAccess.body.error).toContain('deactivated');
       }
     });
 
@@ -497,7 +497,7 @@ describe('User Management Security Tests', () => {
 
       expect([401, 429]).toContain(disabledUserAccess.status);
       if (disabledUserAccess.status === 401) {
-        expect(disabledUserAccess.body.error).toContain('disabled');
+        expect(disabledUserAccess.body.error).toContain('deactivated');
       }
     });
 

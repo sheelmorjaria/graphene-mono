@@ -99,7 +99,6 @@ const generateDataExport = async (requestId, userId, userEmail) => {
     }
 
     const orders = await Order.find({ userId }).populate('items.productId');
-    const carts = await Cart.find({ userId });
 
     // Compile user data
     const exportData = {
@@ -119,7 +118,7 @@ const generateDataExport = async (requestId, userId, userEmail) => {
         lastLogin: user.lastLoginAt,
         accountStatus: user.accountStatus
       },
-      addresses: user.addresses || [],
+      addresses: user.shippingAddresses || [],
       orders: orders.map(order => ({
         orderId: order._id,
         orderNumber: order.orderNumber,
@@ -170,7 +169,7 @@ const generateDataExport = async (requestId, userId, userEmail) => {
     // Update metadata
     exportRequest.metadata = {
       dataTypes: ['profile', 'orders', 'addresses', 'preferences'],
-      totalRecords: orders.length + (user.addresses?.length || 0) + 1, // +1 for profile
+      totalRecords: orders.length + (user.shippingAddresses?.length || 0) + 1, // +1 for profile
       processingTimeMs: processingTime
     };
     await exportRequest.save();
@@ -356,7 +355,7 @@ const processAccountDeletion = async (requestId, userId, userEmail) => {
       lastName: 'User',
       email: `deleted_${userId}@anonymous.local`,
       phone: '',
-      addresses: [],
+      shippingAddresses: [],
       isActive: false,
       accountStatus: 'disabled',
       // Keep account for audit purposes but remove PII

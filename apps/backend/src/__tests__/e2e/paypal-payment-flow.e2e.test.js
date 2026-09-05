@@ -11,6 +11,7 @@ import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 import Cart from '../../models/Cart.js';
+import PaymentGateway from '../../models/PaymentGateway.js';
 import { generateSKU } from '../../test/helpers/testData.js';
 
 // PayPal End-to-End Payment Flow Tests
@@ -20,6 +21,8 @@ describe('PayPal Payment Flow E2E Tests', () => {
   let testUser;
   let testProduct1;
   let testProduct2;
+  let product1Price;
+  let product2Price;
   let testCategory1;
   let testCategory2;
   let testShippingMethod;
@@ -57,42 +60,48 @@ describe('PayPal Payment Flow E2E Tests', () => {
       description: 'Test services category'
     });
 
-    // Create test products
+    // Create test products (variation-based schema: baseModel required,
+    // price/stock live on variations[])
     testProduct1 = await Product.create({
       name: 'GrapheneOS Pixel 7 Pro',
       slug: 'grapheneos-pixel-7-pro-e2e',
-      sku: generateSKU('PIXEL7PRO'),
+      sku: generateSKU('P7PRO-BASE'),
+      baseModel: 'Pixel 7 Pro',
       shortDescription: 'Privacy-focused Pixel 7 Pro with GrapheneOS',
       longDescription: 'Google Pixel 7 Pro pre-installed with GrapheneOS for maximum privacy',
-      price: 899.99,
       category: testCategory1._id,
-      stockQuantity: 50,
-      condition: 'new',
-      isActive: true,
       images: ['pixel-7-pro.jpg'],
-      attributes: [
-        { name: 'Operating System', value: 'GrapheneOS' },
-        { name: 'Storage', value: '256GB' },
-        { name: 'RAM', value: '12GB' },
-        { name: 'Display', value: '6.7" LTPO OLED' }
+      variations: [
+        {
+          condition: 'new',
+          color: 'Obsidian',
+          storage: '256GB',
+          price: 899.99,
+          stockQuantity: 50,
+          stockStatus: 'in_stock',
+          sku: generateSKU('PIXEL7PRO')
+        }
       ]
     });
 
     testProduct2 = await Product.create({
       name: 'Google Pixel 8',
       slug: 'google-pixel-8-e2e',
-      sku: generateSKU('PIXEL-8'),
+      sku: generateSKU('P8-BASE'),
+      baseModel: 'Pixel 8',
       shortDescription: 'Google Pixel 8 with GrapheneOS pre-installed',
       longDescription: 'A privacy-focused Google Pixel 8 flashed with GrapheneOS',
-      price: 649.99,
       category: testCategory2._id,
-      stockQuantity: 100,
-      condition: 'new',
-      isActive: true,
-      attributes: [
-        { name: 'Storage', value: '128GB' },
-        { name: 'RAM', value: '8GB' },
-        { name: 'Display', value: '6.2" OLED' }
+      variations: [
+        {
+          condition: 'new',
+          color: 'Obsidian',
+          storage: '128GB',
+          price: 649.99,
+          stockQuantity: 100,
+          stockStatus: 'in_stock',
+          sku: generateSKU('PIXEL-8')
+        }
       ]
     });
 
@@ -112,12 +121,21 @@ describe('PayPal Payment Flow E2E Tests', () => {
       }
     });
 
+    // Products use the variation schema — expose the single variation price
+    // for the cart/order fixtures below
+    product1Price = testProduct1.variations[0].price;
+    product2Price = testProduct2.variations[0].price;
+
     // Setup Express app
     app = express();
     app.use(express.json());
     
-    // Mock user authentication
+    // Mock user authentication. The x-test-guest header simulates an
+    // anonymous visitor (no req.user) for guest-checkout validation tests.
     app.use((req, res, next) => {
+      if (req.headers['x-test-guest']) {
+        return next();
+      }
       req.user = testUser;
       next();
     });
@@ -140,7 +158,25 @@ describe('PayPal Payment Flow E2E Tests', () => {
     // Clean up and recreate test cart
     await Cart.deleteMany({ userId: testUser._id });
     await Order.deleteMany({ userId: testUser._id });
-    
+
+    // The e2e harness wipes all collections in its own beforeEach, so the
+    // gateway must be (re)seeded here for /api/payments/methods to return it
+    await PaymentGateway.deleteMany({});
+    await PaymentGateway.create({
+      name: 'PayPal',
+      code: 'PAYPAL_E2E',
+      type: 'digital_wallet',
+      provider: 'paypal',
+      isEnabled: true,
+      supportedCurrencies: ['GBP'],
+      config: {
+        paypalClientId: 'test-paypal-e2e-client-id'
+      }
+    });
+
+    const price1 = testProduct1.variations[0].price;
+    const price2 = testProduct2.variations[0].price;
+
     testCart = await Cart.create({
       userId: testUser._id,
       items: [
@@ -150,8 +186,8 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productSlug: testProduct1.slug,
           productImage: testProduct1.images[0] || '',
           quantity: 1,
-          unitPrice: testProduct1.price,
-          subtotal: testProduct1.price
+          unitPrice: price1,
+          subtotal: price1
         },
         {
           productId: testProduct2._id,
@@ -159,11 +195,11 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productSlug: testProduct2.slug,
           productImage: testProduct2.images[0] || '',
           quantity: 1,
-          unitPrice: testProduct2.price,
-          subtotal: testProduct2.price
+          unitPrice: price2,
+          subtotal: price2
         }
       ],
-      totalAmount: testProduct1.price + testProduct2.price,
+      totalAmount: price1 + price2,
       totalItems: 2
     });
   });
@@ -194,7 +230,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
       const foundCart = await Cart.findById(testCart._id);
       expect(foundCart).toBeDefined();
       expect(foundCart.items).toHaveLength(2);
-      expect(foundCart.totalAmount).toBe(testProduct1.price + testProduct2.price);
+      expect(foundCart.totalAmount).toBe(product1Price + product2Price);
 
       // Step 3: Initiate PayPal order creation
       const orderData = {
@@ -250,8 +286,8 @@ describe('PayPal Payment Flow E2E Tests', () => {
           const order = orders[0];
           expect(order.paymentMethod.type).toBe('paypal');
           expect(order.items).toHaveLength(2);
-          expect(order.subtotal).toBe(testProduct1.price + testProduct2.price);
-          expect(order.orderTotal).toBe(testProduct1.price + testProduct2.price + testShippingMethod.cost);
+          expect(order.subtotal).toBe(product1Price + product2Price);
+          expect(order.totalAmount).toBe(product1Price + product2Price + testShippingMethod.baseCost);
         }
       }
     });
@@ -268,10 +304,10 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productSlug: testProduct1.slug,
           productImage: testProduct1.images[0] || '',
           quantity: 1,
-          unitPrice: testProduct1.price,
-          subtotal: testProduct1.price
+          unitPrice: product1Price,
+          subtotal: product1Price
         }],
-        totalAmount: testProduct1.price,
+        totalAmount: product1Price,
         totalItems: 1
       });
 
@@ -302,21 +338,28 @@ describe('PayPal Payment Flow E2E Tests', () => {
 
     it('should handle PayPal payment flow with high-value order', async () => {
       // Create high-value product
+      const highValuePrice = 2499.99;
       const highValueProduct = await Product.create({
         name: 'GrapheneOS Enterprise Bundle',
         slug: 'grapheneos-enterprise-bundle-e2e',
-        sku: generateSKU('ENTERPRISE'),
+        sku: generateSKU('ENTERPRISE-BASE'),
+        baseModel: 'Enterprise Bundle',
         shortDescription: 'Enterprise bundle for businesses',
         longDescription: 'Complete enterprise solution with multiple devices',
-        price: 2499.99,
         category: testCategory1._id,
-        stockQuantity: 10,
-        condition: 'new',
-        isActive: true
+        variations: [
+          {
+            condition: 'new',
+            price: highValuePrice,
+            stockQuantity: 10,
+            stockStatus: 'in_stock',
+            sku: generateSKU('ENTERPRISE')
+          }
+        ]
       });
 
       await Cart.deleteMany({ userId: testUser._id });
-      
+
       await Cart.create({
         userId: testUser._id,
         items: [{
@@ -325,10 +368,10 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productSlug: highValueProduct.slug,
           productImage: highValueProduct.images?.[0] || '',
           quantity: 1,
-          unitPrice: highValueProduct.price,
-          subtotal: highValueProduct.price
+          unitPrice: highValuePrice,
+          subtotal: highValuePrice
         }],
-        totalAmount: highValueProduct.price,
+        totalAmount: highValuePrice,
         totalItems: 1
       });
 
@@ -368,11 +411,11 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productName: testProduct1.name,
           productSlug: testProduct1.slug,
           quantity: 1,
-          unitPrice: testProduct1.price,
-          totalPrice: testProduct1.price
+          unitPrice: product1Price,
+          totalPrice: product1Price
         }],
-        subtotal: testProduct1.price,
-        orderTotal: testProduct1.price + testShippingMethod.cost,
+        subtotal: product1Price,
+        totalAmount: product1Price + testShippingMethod.baseCost,
         shippingAddress: {
           fullName: 'Webhook Test User',
           addressLine1: '123 Webhook Street',
@@ -412,12 +455,12 @@ describe('PayPal Payment Flow E2E Tests', () => {
           id: 'E2E_CAPTURE_123456789',
           amount: {
             currency_code: 'GBP',
-            value: (testProduct1.price + testShippingMethod.cost).toFixed(2)
+            value: (product1Price + testShippingMethod.baseCost).toFixed(2)
           },
           seller_receivable_breakdown: {
             gross_amount: {
               currency_code: 'GBP',
-              value: (testProduct1.price + testShippingMethod.cost).toFixed(2)
+              value: (product1Price + testShippingMethod.baseCost).toFixed(2)
             },
             paypal_fee: {
               currency_code: 'GBP',
@@ -425,7 +468,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
             },
             net_amount: {
               currency_code: 'GBP',
-              value: (testProduct1.price + testShippingMethod.cost - 26.55).toFixed(2)
+              value: (product1Price + testShippingMethod.baseCost - 26.55).toFixed(2)
             }
           },
           supplementary_data: {
@@ -452,7 +495,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
           purchase_units: [{
             amount: {
               currency_code: 'GBP',
-              value: (testProduct1.price + testShippingMethod.cost).toFixed(2)
+              value: (product1Price + testShippingMethod.baseCost).toFixed(2)
             }
           }]
         }
@@ -479,11 +522,11 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productName: testProduct2.name,
           productSlug: testProduct2.slug,
           quantity: 1,
-          unitPrice: testProduct2.price,
-          totalPrice: testProduct2.price
+          unitPrice: product2Price,
+          totalPrice: product2Price
         }],
-        subtotal: testProduct2.price,
-        orderTotal: testProduct2.price + testShippingMethod.cost,
+        subtotal: product2Price,
+        totalAmount: product2Price + testShippingMethod.baseCost,
         shippingAddress: {
           fullName: 'Denied Test User',
           addressLine1: '456 Denied Avenue',
@@ -522,7 +565,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
           id: 'E2E_DENIED_CAPTURE_123',
           amount: {
             currency_code: 'GBP',
-            value: (testProduct2.price + testShippingMethod.cost).toFixed(2)
+            value: (product2Price + testShippingMethod.baseCost).toFixed(2)
           },
           supplementary_data: {
             related_ids: {
@@ -628,35 +671,93 @@ describe('PayPal Payment Flow E2E Tests', () => {
       expect(captureResponse.body.success).toBe(false);
       expect(['PayPal payment processing is not available', 'Cannot read properties of undefined (reading \'ordersCapture\')']).toContain(captureResponse.body.error);
     });
+
+    it('rejects a guest capture without an email before touching PayPal', async () => {
+      // x-test-guest header → the mock auth middleware leaves req.user unset
+      const response = await request(app)
+        .post('/api/payments/paypal/capture')
+        .set('x-test-guest', '1')
+        .send({ paypalOrderId: 'GUEST-VALIDATION-1' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Email is required for guest checkout');
+    });
+
+    it('rejects a guest capture with a malformed email', async () => {
+      const response = await request(app)
+        .post('/api/payments/paypal/capture')
+        .set('x-test-guest', '1')
+        .send({ paypalOrderId: 'GUEST-VALIDATION-2', customerEmail: 'nope' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Email is required for guest checkout');
+    });
+
+    it('rejects a guest create-order with no cart session cookie', async () => {
+      const response = await request(app)
+        .post('/api/payments/paypal/create-order')
+        .set('x-test-guest', '1')
+        .send({
+          shippingAddress: {
+            firstName: 'No',
+            lastName: 'Cookie',
+            addressLine1: '1 Main St',
+            city: 'London',
+            stateProvince: 'ENG',
+            postalCode: 'W1 1AA',
+            country: 'GB'
+          },
+          shippingMethodId: testShippingMethod._id.toString()
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('No cart session found');
+    });
   });
 
   describe('PayPal Multi-Product Order Flow', () => {
     it('should handle complex multi-product order with different categories', async () => {
       // Create additional products
+      const accessoryPrice = 29.99;
+      const softwarePrice = 149.99;
       const accessoryProduct = await Product.create({
         name: 'Privacy Screen Protector',
         slug: 'privacy-screen-protector-e2e',
-        sku: generateSKU('PRIVACY-SCREEN'),
+        sku: generateSKU('PRIVACY-SCREEN-BASE'),
+        baseModel: 'Screen Protector',
         shortDescription: 'Anti-spy screen protector',
         longDescription: 'Privacy screen protector for enhanced security',
-        price: 29.99,
         category: testCategory2._id,
-        stockQuantity: 100,
-        condition: 'new',
-        isActive: true
+        variations: [
+          {
+            condition: 'new',
+            price: accessoryPrice,
+            stockQuantity: 100,
+            stockStatus: 'in_stock',
+            sku: generateSKU('PRIVACY-SCREEN')
+          }
+        ]
       });
 
       const softwareProduct = await Product.create({
         name: 'GrapheneOS Setup Consultation',
         slug: 'grapheneos-setup-consultation-e2e',
-        sku: generateSKU('SETUP-CONSULT'),
+        sku: generateSKU('SETUP-CONSULT-BASE'),
+        baseModel: 'Setup Consultation',
         shortDescription: 'Professional GrapheneOS setup service',
         longDescription: 'Expert consultation for GrapheneOS installation and configuration',
-        price: 149.99,
         category: testCategory2._id,
-        stockQuantity: 50,
-        condition: 'new',
-        isActive: true
+        variations: [
+          {
+            condition: 'new',
+            price: softwarePrice,
+            stockQuantity: 50,
+            stockStatus: 'in_stock',
+            sku: generateSKU('SETUP-CONSULT')
+          }
+        ]
       });
 
       // Create complex cart
@@ -671,8 +772,8 @@ describe('PayPal Payment Flow E2E Tests', () => {
             productSlug: testProduct1.slug,
             productImage: testProduct1.images[0] || '',
             quantity: 1,
-            unitPrice: testProduct1.price,
-            subtotal: testProduct1.price
+            unitPrice: product1Price,
+            subtotal: product1Price
           },
           {
             productId: accessoryProduct._id,
@@ -680,8 +781,8 @@ describe('PayPal Payment Flow E2E Tests', () => {
             productSlug: accessoryProduct.slug,
             productImage: accessoryProduct.images?.[0] || '',
             quantity: 2,
-            unitPrice: accessoryProduct.price,
-            subtotal: accessoryProduct.price * 2
+            unitPrice: accessoryPrice,
+            subtotal: accessoryPrice * 2
           },
           {
             productId: softwareProduct._id,
@@ -689,11 +790,11 @@ describe('PayPal Payment Flow E2E Tests', () => {
             productSlug: softwareProduct.slug,
             productImage: softwareProduct.images?.[0] || '',
             quantity: 1,
-            unitPrice: softwareProduct.price,
-            subtotal: softwareProduct.price
+            unitPrice: softwarePrice,
+            subtotal: softwarePrice
           }
         ],
-        totalAmount: testProduct1.price + (accessoryProduct.price * 2) + softwareProduct.price,
+        totalAmount: product1Price + (accessoryPrice * 2) + softwarePrice,
         totalItems: 4
       });
 
@@ -734,11 +835,11 @@ describe('PayPal Payment Flow E2E Tests', () => {
           productName: testProduct1.name,
           productSlug: testProduct1.slug,
           quantity: 1,
-          unitPrice: testProduct1.price,
-          totalPrice: testProduct1.price
+          unitPrice: product1Price,
+          totalPrice: product1Price
         }],
-        subtotal: testProduct1.price,
-        orderTotal: testProduct1.price + testShippingMethod.cost,
+        subtotal: product1Price,
+        totalAmount: product1Price + testShippingMethod.baseCost,
         shippingAddress: {
           fullName: 'Lifecycle Test User',
           addressLine1: '123 Lifecycle Avenue',
@@ -781,7 +882,7 @@ describe('PayPal Payment Flow E2E Tests', () => {
           id: 'E2E_LIFECYCLE_CAPTURE_123',
           amount: {
             currency_code: 'GBP',
-            value: (testProduct1.price + testShippingMethod.cost).toFixed(2)
+            value: (product1Price + testShippingMethod.baseCost).toFixed(2)
           },
           supplementary_data: {
             related_ids: {

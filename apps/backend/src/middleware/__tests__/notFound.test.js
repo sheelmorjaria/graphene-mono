@@ -21,10 +21,14 @@ describe('NotFound Middleware', () => {
   it('should create error with correct message and status', () => {
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: 'Not Found - /api/nonexistent-endpoint'
+        message: 'Not Found - /api/nonexistent-endpoint',
+        statusCode: 404
       })
     );
   });
@@ -34,7 +38,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - /'
@@ -47,7 +54,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - /api/users?page=1&limit=10'
@@ -60,7 +70,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - /api/products#top'
@@ -73,7 +86,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - /api/very/long/path/that/does/not/exist/in/the/application/routes'
@@ -86,7 +102,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - /api/search?q=user@example.com&sort=created_at'
@@ -99,7 +118,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - '
@@ -112,7 +134,10 @@ describe('NotFound Middleware', () => {
     
     notFound(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
+    // errorHandler derives the HTTP status from err.statusCode — the
+    // middleware must NOT set the response status itself (it would be
+    // overridden by errorHandler's res.status call)
+    expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Not Found - undefined'
