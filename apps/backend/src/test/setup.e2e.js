@@ -119,7 +119,16 @@ vi.mock('../services/emailService.js', () => ({
     sendPaymentNotification: vi.fn().mockResolvedValue(true),
     sendAccountStatusUpdate: vi.fn().mockResolvedValue(true),
     sendRefundNotification: vi.fn().mockResolvedValue(true)
-  }
+  },
+  // Controllers import these as named exports (e.g. privacyController) —
+  // without them the mock module has no such binding and calls throw.
+  sendWelcomeEmail: vi.fn().mockResolvedValue(true),
+  sendPasswordResetEmail: vi.fn().mockResolvedValue(true),
+  sendDataExportEmail: vi.fn().mockResolvedValue(true),
+  sendAccountDeletionConfirmationEmail: vi.fn().mockResolvedValue(true),
+  sendAccountDeletionCompletedEmail: vi.fn().mockResolvedValue(true),
+  sendAccountDisabledEmail: vi.fn().mockResolvedValue(true),
+  sendAccountReEnabledEmail: vi.fn().mockResolvedValue(true)
 }));
 
 // Mock logger but allow some output for debugging E2E tests

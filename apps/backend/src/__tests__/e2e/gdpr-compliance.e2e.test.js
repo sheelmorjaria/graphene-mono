@@ -17,8 +17,9 @@ describe('GDPR Compliance - End-to-End Tests', () => {
   let testCart;
 
   beforeAll(async () => {
-    // Ensure we're using test database
-    if (!process.env.MONGODB_URI?.includes('test')) {
+    // Ensure we're using a test database — either one named "test" or the
+    // in-memory instance set up by the e2e harness (setup.e2e.js)
+    if (!process.env.MONGODB_URI?.includes('test') && mongoose.connection.readyState !== 1) {
       throw new Error('E2E tests must use test database');
     }
   });
@@ -41,12 +42,13 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       email: 'gdpr.test@example.com',
       password: 'GDPRTest123!', // Raw password - will be hashed by User model
       phone: '+44123456789',
-      addresses: [
+      shippingAddresses: [
         {
           fullName: 'Jane Smith',
           addressLine1: '123 Privacy Street',
           addressLine2: 'Apartment 4B',
           city: 'London',
+          stateProvince: 'London',
           postalCode: 'SW1A 1AA',
           country: 'GB',
           phoneNumber: '+44123456789',
@@ -56,6 +58,7 @@ describe('GDPR Compliance - End-to-End Tests', () => {
           fullName: 'Jane Smith',
           addressLine1: '456 Work Avenue',
           city: 'Manchester',
+          stateProvince: 'Greater Manchester',
           postalCode: 'M1 1AA',
           country: 'GB',
           phoneNumber: '+44987654321',
@@ -68,38 +71,42 @@ describe('GDPR Compliance - End-to-End Tests', () => {
     // Generate auth token
     authToken = jwt.sign(
       { userId: testUser._id },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
     );
 
     // Create multiple test orders with different payment methods and statuses
     testOrder1 = await Order.create({
       userId: testUser._id,
+      customerEmail: testUser.email,
       orderNumber: 'GDPR-ORDER-001',
       items: [
         {
           productId: new mongoose.Types.ObjectId(),
           productName: 'GrapheneOS Pixel 7 Pro',
+          productSlug: 'grapheneos-pixel-7-pro',
           quantity: 1,
           unitPrice: 849.99,
-          subtotal: 849.99
+          totalPrice: 849.99
         },
         {
           productId: new mongoose.Types.ObjectId(),
           productName: 'Google Pixel 8',
+          productSlug: 'google-pixel-8',
           quantity: 1,
           unitPrice: 49.99,
-          subtotal: 49.99
+          totalPrice: 49.99
         }
       ],
-      total: 899.98,
-      currency: 'GBP',
+      subtotal: 899.98,
+      totalAmount: 899.98,
       status: 'delivered',
       shippingAddress: {
         fullName: 'Jane Smith',
         addressLine1: '123 Privacy Street',
         addressLine2: 'Apartment 4B',
         city: 'London',
+        stateProvince: 'London',
         postalCode: 'SW1A 1AA',
         country: 'GB',
         phoneNumber: '+44123456789'
@@ -109,33 +116,43 @@ describe('GDPR Compliance - End-to-End Tests', () => {
         addressLine1: '123 Privacy Street',
         addressLine2: 'Apartment 4B',
         city: 'London',
+        stateProvince: 'London',
         postalCode: 'SW1A 1AA',
         country: 'GB',
         phoneNumber: '+44123456789'
       },
+      shippingMethod: {
+        id: new mongoose.Types.ObjectId(),
+        name: 'Standard Shipping',
+        cost: 5.99
+      },
       paymentMethod: {
-        type: 'paypal'
+        type: 'paypal',
+        name: 'PayPal'
       },
       createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
     });
 
     testOrder2 = await Order.create({
       userId: testUser._id,
+      customerEmail: testUser.email,
       orderNumber: 'GDPR-ORDER-002',
       items: [{
         productId: new mongoose.Types.ObjectId(),
         productName: 'GrapheneOS Pixel 8',
+        productSlug: 'grapheneos-pixel-8',
         quantity: 1,
         unitPrice: 699.99,
-        subtotal: 699.99
+        totalPrice: 699.99
       }],
-      total: 699.99,
-      currency: 'GBP',
+      subtotal: 699.99,
+      totalAmount: 699.99,
       status: 'processing',
       shippingAddress: {
         fullName: 'Jane Smith',
         addressLine1: '456 Work Avenue',
         city: 'Manchester',
+        stateProvince: 'Greater Manchester',
         postalCode: 'M1 1AA',
         country: 'GB',
         phoneNumber: '+44987654321'
@@ -144,12 +161,19 @@ describe('GDPR Compliance - End-to-End Tests', () => {
         fullName: 'Jane Smith',
         addressLine1: '456 Work Avenue',
         city: 'Manchester',
+        stateProvince: 'Greater Manchester',
         postalCode: 'M1 1AA',
         country: 'GB',
         phoneNumber: '+44987654321'
       },
+      shippingMethod: {
+        id: new mongoose.Types.ObjectId(),
+        name: 'Standard Shipping',
+        cost: 5.99
+      },
       paymentMethod: {
-        type: 'paypal'
+        type: 'paypal',
+        name: 'PayPal'
       },
       createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
     });
@@ -160,11 +184,19 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       items: [
         {
           productId: new mongoose.Types.ObjectId(),
-          quantity: 1
+          productName: 'GrapheneOS Pixel 8',
+          productSlug: 'grapheneos-pixel-8',
+          unitPrice: 699.99,
+          quantity: 1,
+          subtotal: 699.99
         },
         {
           productId: new mongoose.Types.ObjectId(),
-          quantity: 2
+          productName: 'GrapheneOS Pixel 8 Pro',
+          productSlug: 'grapheneos-pixel-8-pro',
+          unitPrice: 999.99,
+          quantity: 2,
+          subtotal: 1999.98
         }
       ]
     });
@@ -191,6 +223,7 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       const exportResponse = await request(app)
         .post('/api/user/data/export')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('User-Agent', 'vitest-e2e')
         .expect(200);
 
       expect(exportResponse.body.success).toBe(true);
@@ -207,6 +240,18 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       expect(exportRequest.status).toBe('pending');
       expect(exportRequest.ipAddress).toBeTruthy();
       expect(exportRequest.userAgent).toBeTruthy();
+
+      // Step 2b: Test rate limiting immediately — the request is still
+      // pending (background processing starts after ~1s), so a second
+      // request must be rejected with 429.
+      const secondExportResponse = await request(app)
+        .post('/api/user/data/export')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(429);
+
+      expect(secondExportResponse.body.success).toBe(false);
+      expect(secondExportResponse.body.error).toContain('pending data export request');
+      expect(secondExportResponse.body.data.existingRequestId).toBe(requestId);
 
       // Step 3: Wait for background processing to complete
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -227,16 +272,6 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       expect(exportRequest.metadata.dataTypes).toContain('preferences');
       expect(exportRequest.metadata.totalRecords).toBeGreaterThan(0);
       expect(exportRequest.metadata.processingTimeMs).toBeGreaterThan(0);
-
-      // Step 6: Test rate limiting - second request should be rejected
-      const secondExportResponse = await request(app)
-        .post('/api/user/data/export')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(429);
-
-      expect(secondExportResponse.body.success).toBe(false);
-      expect(secondExportResponse.body.error).toContain('pending data export request');
-      expect(secondExportResponse.body.data.existingRequestId).toBe(requestId);
     });
 
     it('should export comprehensive user data accurately', async () => {
@@ -314,8 +349,8 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       expect(updatedUser.lastName).toBe('User');
       expect(updatedUser.email).toBe(`deleted_${testUser._id}@anonymous.local`);
       expect(updatedUser.phone).toBe('');
-      expect(updatedUser.addresses).toHaveLength(0);
-      expect(updatedUser.isDeleted).toBe(true);
+      expect(updatedUser.shippingAddresses).toHaveLength(0);
+      expect(updatedUser.accountStatus).toBe('disabled');
       expect(updatedUser.isActive).toBe(false);
       expect(updatedUser.password).toBe('DELETED');
 
@@ -325,7 +360,7 @@ describe('GDPR Compliance - End-to-End Tests', () => {
       expect(anonymizedOrder1.shippingAddress.phoneNumber).toBe('');
       expect(anonymizedOrder1.billingAddress.fullName).toBe('DELETED USER');
       expect(anonymizedOrder1.billingAddress.phoneNumber).toBe('');
-      expect(anonymizedOrder1.userEmail).toBe('deleted@anonymous.local');
+      expect(anonymizedOrder1.customerEmail).toBe('deleted@anonymous.local');
       expect(anonymizedOrder1.userId).toBeNull();
 
       const anonymizedOrder2 = await Order.findById(testOrder2._id);
@@ -396,7 +431,7 @@ describe('GDPR Compliance - End-to-End Tests', () => {
 
       const minimalToken = jwt.sign(
         { userId: minimalUser._id },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '1h' }
       );
 
@@ -447,8 +482,8 @@ describe('GDPR Compliance - End-to-End Tests', () => {
         })
       ]);
 
-      const tokens = users.map(user => 
-        jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' })
+      const tokens = users.map(user =>
+        jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1h' })
       );
 
       // Make concurrent export requests
