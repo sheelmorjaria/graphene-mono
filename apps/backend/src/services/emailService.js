@@ -536,7 +536,7 @@ class EmailService {
           </div>
           <div class="detail-row">
             <span class="detail-label">Total Amount:</span>
-            <span class="detail-value success">£${order.orderTotal.toFixed(2)}</span>
+            <span class="detail-value success">£${order.totalAmount.toFixed(2)}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Payment Method:</span>
@@ -620,7 +620,7 @@ class EmailService {
           </div>
           <div class="detail-row">
             <span class="detail-label">Order Total:</span>
-            <span class="detail-value">£${order.orderTotal.toFixed(2)}</span>
+            <span class="detail-value">£${order.totalAmount.toFixed(2)}</span>
           </div>
         </div>
 
@@ -957,7 +957,7 @@ class EmailService {
           </div>
           <div class="detail-row">
             <span class="detail-label">Processed Date:</span>
-            <span class="detail-value">${new Date(refundEntry.processedAt).toLocaleDateString()}</span>
+            <span class="detail-value">${new Date(refundEntry.date || refundEntry.processedAt).toLocaleDateString()}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Reason:</span>
@@ -973,11 +973,13 @@ class EmailService {
       const htmlContent = this.generateEmailTemplate(
         'Refund Confirmation',
         content,
-        `${order.userId.firstName} ${order.userId.lastName}`
+        // Guest orders have no populated userId — the shipping name is the
+        // only reliable display name on every order shape.
+        order.shippingAddress?.fullName || 'Valued Customer'
       );
 
       return await this.sendEmail({
-        to: order.userId.email,
+        to: order.customerEmail,
         subject: `Refund Confirmation - ${order.orderNumber}`,
         htmlContent
       });
@@ -1150,7 +1152,7 @@ class EmailService {
           </div>
           <div class="detail-row">
             <span class="detail-label">Payment Amount:</span>
-            <span class="detail-value success">£${order.orderTotal.toFixed(2)}</span>
+            <span class="detail-value success">£${order.totalAmount.toFixed(2)}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Payment Method:</span>

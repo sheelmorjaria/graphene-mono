@@ -65,7 +65,8 @@ const BillingAddressSection = () => {
     addressesError,
     setBillingAddress,
     setUseSameAsShipping,
-    refreshAddresses
+    refreshAddresses,
+    isGuestCheckout
   } = useCheckout();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -73,6 +74,36 @@ const BillingAddressSection = () => {
   const [editingAddress, setEditingAddress] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Guest checkout with a DIFFERENT billing address: one-time form entry,
+  // nothing persisted (no address book exists for guests).
+  if (isGuestCheckout && !checkoutState.useSameAsShipping) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-6">Billing Address</h3>
+        {checkoutState.billingAddress ? (
+          <div className="border-2 border-cyan-400 bg-cyan-subtle rounded-lg p-4">
+            <div className="font-medium text-gray-900">{checkoutState.billingAddress.fullName}</div>
+            <div className="text-sm text-gray-600 mt-1">
+              <div>{checkoutState.billingAddress.addressLine1}</div>
+              <div>
+                {checkoutState.billingAddress.city}, {checkoutState.billingAddress.stateProvince} {checkoutState.billingAddress.postalCode}
+              </div>
+              <div>{checkoutState.billingAddress.country}</div>
+            </div>
+            <button
+              onClick={() => setBillingAddress(null)}
+              className="mt-3 text-cyan-400 hover:text-cyan-600 text-sm font-medium"
+            >
+              Edit
+            </button>
+          </div>
+        ) : (
+          <AddressForm onSubmit={(formData) => setBillingAddress(formData)} />
+        )}
+      </div>
+    );
+  }
 
   const handleUseSameAsShippingChange = (e) => {
     const useSame = e.target.checked;

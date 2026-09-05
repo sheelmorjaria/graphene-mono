@@ -25,10 +25,10 @@ vi.mock('../../components/checkout/BillingAddressSection', () => ({
 vi.mock('../../components/checkout/PaymentMethodSection', () => ({
   default: () => <div>Payment Method Section</div>
 }));
-vi.mock('../../components/checkout/PayPalPayment', () => ({
+vi.mock('../../components/checkout/PayPalServerPayment', () => ({
   default: (props) => (
     <div data-testid="paypal-payment">
-      <button onClick={() => props.onPaymentSuccess && props.onPaymentSuccess({})}>
+      <button onClick={() => props.onSuccess && props.onSuccess({})}>
         PayPal Commit
       </button>
     </div>
@@ -132,12 +132,16 @@ function buildCheckoutContext(overrides = {}) {
     setPaymentMethod: vi.fn(),
     setPaymentState: vi.fn(),
     setOrderNotes: vi.fn(),
+    setGuestEmail: vi.fn(),
     goToStep: vi.fn(),
     nextStep: vi.fn(),
     prevStep: vi.fn(),
     resetCheckout: vi.fn(),
     refreshAddresses: vi.fn(),
     refreshShippingRates: vi.fn(),
+
+    guestEmail: '',
+    isGuestCheckout: false,
 
     canProceedToReview: true,
     isPaymentStep: true,
@@ -245,18 +249,19 @@ describe('CheckoutPage', () => {
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
 
-    it('should show login prompt for unauthenticated users', () => {
+    it('lets unauthenticated users check out as guests (no login wall)', () => {
       renderCheckout({
-        authState: { ...defaultAuthState, isAuthenticated: false, user: null }
+        authState: { ...defaultAuthState, isAuthenticated: false, user: null },
+        checkout: { isGuestCheckout: true }
       });
 
-      expect(screen.getByText('Login Required')).toBeInTheDocument();
-      expect(
-        screen.getByText('You need to be logged in to proceed with checkout.')
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('link', { name: /login to continue/i })
-      ).toBeInTheDocument();
+      // The checkout form itself renders — guests provide an email instead
+      expect(screen.getByTestId('checkout-form')).toBeInTheDocument();
+      expect(screen.getByTestId('guest-email-input')).toBeInTheDocument();
+      expect(screen.queryByText('Login Required')).not.toBeInTheDocument();
+
+      // Optional login path back into checkout
+      expect(screen.getByTestId('guest-login-link')).toBeInTheDocument();
     });
 
     it('should show empty cart message when cart is empty', () => {

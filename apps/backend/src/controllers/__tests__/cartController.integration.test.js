@@ -15,6 +15,7 @@ import { authenticate, optionalAuth } from '../../middleware/auth.js';
 import User from '../../models/User.js';
 import Product from '../../models/Product.js';
 import Cart from '../../models/Cart.js';
+import { mergeGuestCartOnLogin } from '../../controllers/cartController.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -28,6 +29,7 @@ app.post('/api/cart/add', optionalAuth, addToCart);
 app.put('/api/cart/item/:itemId', optionalAuth, updateCartItem);
 app.delete('/api/cart/item/:itemId', optionalAuth, removeFromCart);
 app.delete('/api/cart/clear', optionalAuth, clearCart);
+app.post('/api/cart/merge', optionalAuth, mergeGuestCartOnLogin);
 
 // Build a valid variation-based product in the real DB.
 const createProduct = async (overrides = {}) => {
@@ -434,6 +436,91 @@ describe('Cart Controller', () => {
 
       expect(response2.body.success).toBe(true);
       expect(response2.body.data.cart.items).toHaveLength(1);
+    });
+  });
+
+  describe('POST /api/cart/merge (guest cart merge on login)', () => {
+    const buildItem = (prod, qty = 1) => ({
+      productId: prod._id,
+      variationId: prod.variations[0]._id.toString(),
+      productName: prod.name,
+      productSlug: prod.slug,
+      productImage: '',
+      quantity: qty,
+      unitPrice: prod.variations[0].price,
+      subtotal: prod.variations[0].price * qty
+    });
+
+    it('merges the guest cart into the user cart and clears the session cookie', async () => {
+      const guestProduct = await createProduct();
+      await Cart.create({
+        sessionId: 'guest-merge-1',
+        items: [buildItem(guestProduct, 2)],
+        totalItems: 2,
+        totalAmount: guestProduct.variations[0].price * 2
+      });
+      await Cart.create({
+        userId: user._id,
+        items: [buildItem(product, 1)],
+        totalItems: 1,
+        totalAmount: product.variations[0].price
+      });
+
+      const response = await request(app)
+        .post('/api/cart/merge')
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('Cookie', ['cartSessionId=guest-merge-1']);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.merged).toBe(true);
+
+      // Guest cart consumed, user cart has both items
+      expect(await Cart.findOne({ sessionId: 'guest-merge-1' })).toBeNull();
+      const merged = await Cart.findOne({ userId: user._id });
+      expect(merged.items).toHaveLength(2);
+      expect(merged.totalItems).toBe(3);
+
+      // Session cookie cleared
+      const setCookie = response.headers['set-cookie'] || [];
+      expect(setCookie.some(c => c.startsWith('cartSessionId=;'))).toBe(true);
+    });
+
+    it('transfers a guest cart when the user has no cart yet', async () => {
+      await Cart.create({
+        sessionId: 'guest-merge-2',
+        items: [buildItem(product, 1)],
+        totalItems: 1,
+        totalAmount: product.variations[0].price
+      });
+
+      const response = await request(app)
+        .post('/api/cart/merge')
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('Cookie', ['cartSessionId=guest-merge-2']);
+
+      expect(response.status).toBe(200);
+      const cart = await Cart.findOne({ userId: user._id });
+      expect(cart).toBeTruthy();
+      expect(cart.items).toHaveLength(1);
+      expect(await Cart.findOne({ sessionId: 'guest-merge-2' })).toBeNull();
+    });
+
+    it('is a no-op when there is no guest session cookie', async () => {
+      const response = await request(app)
+        .post('/api/cart/merge')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.merged).toBe(false);
+    });
+
+    it('rejects unauthenticated callers', async () => {
+      const response = await request(app)
+        .post('/api/cart/merge')
+        .set('Cookie', ['cartSessionId=guest-merge-3']);
+
+      expect(response.status).toBe(401);
     });
   });
 });

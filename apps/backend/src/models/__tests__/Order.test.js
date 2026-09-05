@@ -70,13 +70,40 @@ describe('Order Model', () => {
       expect(savedOrder.paymentStatus).toBe('pending'); // default value
     });
 
-    it('should require userId', async () => {
-      const invalidOrder = new Order({
+    it('should allow guest orders without userId', async () => {
+      const guestOrder = new Order({
         ...getValidOrderData(),
-        userId: undefined
+        userId: undefined,
+        isGuest: true
       });
 
-      await expect(invalidOrder.save()).rejects.toThrow('User ID is required');
+      const savedOrder = await guestOrder.save();
+
+      expect(savedOrder._id).toBeDefined();
+      expect(savedOrder.userId).toBeUndefined();
+      expect(savedOrder.isGuest).toBe(true);
+      expect(savedOrder.orderNumber).toMatch(/^ORD-\d+-\d{3}$/);
+      expect(savedOrder.totalAmount).toBe(1094.99); // pre-save hook runs for guests too
+    });
+
+    it('should default isGuest to false for logged-in orders', async () => {
+      const order = new Order(getValidOrderData());
+      const savedOrder = await order.save();
+
+      expect(savedOrder.isGuest).toBe(false);
+      expect(savedOrder.userId).toBeDefined();
+    });
+
+    it('should lowercases guest customerEmail', async () => {
+      const guestOrder = new Order({
+        ...getValidOrderData(),
+        userId: undefined,
+        isGuest: true,
+        customerEmail: 'GUEST@Example.COM'
+      });
+
+      const savedOrder = await guestOrder.save();
+      expect(savedOrder.customerEmail).toBe('guest@example.com');
     });
 
     it('should require customerEmail', async () => {
@@ -328,6 +355,14 @@ describe('Order Model', () => {
         userId: new mongoose.Types.ObjectId(),
         customerEmail: 'user2@example.com'
       }).save();
+
+      // Create a guest order (no userId)
+      await new Order({
+        ...getValidOrderData(),
+        userId: undefined,
+        isGuest: true,
+        customerEmail: 'guest@example.com'
+      }).save();
     });
 
     it('should find orders by user with default sorting (newest first)', async () => {
@@ -337,6 +372,14 @@ describe('Order Model', () => {
       expect(userOrders[0].totalAmount).toBe(300); // Most recent order
       expect(userOrders[1].totalAmount).toBe(200);
       expect(userOrders[2].totalAmount).toBe(100); // Oldest order
+    });
+
+    it('should never return guest orders from findByUser/countByUser', async () => {
+      const userOrders = await Order.findByUser(userId);
+      expect(userOrders.every(o => o.customerEmail !== 'guest@example.com')).toBe(true);
+
+      const count = await Order.countByUser(userId);
+      expect(count).toBe(3); // guest order not counted
     });
 
     it('should support pagination', async () => {

@@ -8,7 +8,8 @@ import DeliveryAddressSection from '../components/checkout/DeliveryAddressSectio
 import ShippingAddressSection from '../components/checkout/ShippingAddressSection';
 import BillingAddressSection from '../components/checkout/BillingAddressSection';
 import PaymentMethodSection from '../components/checkout/PaymentMethodSection';
-import PayPalPayment from '../components/checkout/PayPalPayment';
+import GuestEmailSection from '../components/checkout/GuestEmailSection';
+import PayPalServerPayment from '../components/checkout/PayPalServerPayment';
 
 const CheckoutSteps = ({ currentStep }) => {
   const steps = [
@@ -137,7 +138,7 @@ const CartSummary = () => {
 };
 
 const PaymentSection = () => {
-  const { nextStep, canProceedToReview } = useCheckout();
+  const { nextStep, canProceedToReview, isGuestCheckout } = useCheckout();
   const [_validationState, setValidationState] = useState({ isValid: false, error: null });
 
   const handleValidationChange = (state) => {
@@ -149,6 +150,24 @@ const PaymentSection = () => {
       data-testid="checkout-form"
       className="space-y-6"
     >
+      {/* Guest checkout: receipt email (logged-in users skip this) */}
+      {isGuestCheckout && (
+        <>
+          <GuestEmailSection />
+          <div className="text-center text-sm text-text-secondary">
+            Checking out as a guest.{' '}
+            <Link
+              to="/login"
+              state={{ from: '/checkout' }}
+              className="text-cyan-400 hover:text-matrix-400 font-medium"
+              data-testid="guest-login-link"
+            >
+              Already have an account? Log in
+            </Link>
+          </div>
+        </>
+      )}
+
       {/* Shipping Address Section */}
       <ShippingAddressSection />
 
@@ -191,31 +210,26 @@ const ReviewSection = () => {
     shippingMethod,
     paymentMethod,
     orderSummary,
-    setPaymentState,
-    prevStep
+    prevStep,
+    resetCheckout
   } = useCheckout();
-  const { cart } = useCart();
+  const { cart, refreshCart } = useCart();
+  const navigate = useNavigate();
 
-  const handlePayPalSuccess = (paymentData) => {
-    setPaymentState({
-      isProcessing: false,
-      error: null,
-      paymentData
-    });
+  // The backend has already captured the payment and persisted the order —
+  // show the confirmation and reset the checkout state.
+  const handlePaymentSuccess = (capturedOrder) => {
+    refreshCart(); // cart was cleared server-side; sync the badge/mini-cart
+    navigate('/checkout/success', { state: { capturedOrder } });
+    setTimeout(() => resetCheckout(), 0);
   };
 
-  const handlePayPalError = (error) => {
-    setPaymentState({
-      isProcessing: false,
-      error: error.message || 'PayPal payment failed'
-    });
+  const handlePaymentError = () => {
+    // PayPalServerPayment surfaces its own error UI; nothing to reset here
   };
 
-  const handlePayPalCancel = () => {
-    setPaymentState({
-      isProcessing: false,
-      error: null
-    });
+  const handlePaymentCancel = () => {
+    // user closed the PayPal popup — stay on review
   };
 
   return (
@@ -341,14 +355,14 @@ const ReviewSection = () => {
       </div>
 
       <div className="flex flex-col gap-4 mt-6">
-        {/* PayPal commit (checkout is PayPal-only) */}
+        {/* PayPal commit — server-side create/capture (checkout is PayPal-only) */}
         {paymentMethod?.type === 'paypal' && orderSummary && (
           <div data-testid="paypal-checkout-section">
-            <PayPalPayment
+            <PayPalServerPayment
               orderSummary={orderSummary}
-              onPaymentSuccess={handlePayPalSuccess}
-              onPaymentError={handlePayPalError}
-              onPaymentCancel={handlePayPalCancel}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+              onCancel={handlePaymentCancel}
             />
           </div>
         )}
@@ -369,7 +383,7 @@ const ReviewSection = () => {
 const CheckoutPage = () => {
   const { cart, loading: cartLoading } = useCart();
   const { checkoutState } = useCheckout();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     document.title = 'Checkout - Graphene Security';
@@ -389,29 +403,8 @@ const CheckoutPage = () => {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="checkout-page min-h-screen bg-bg-primary">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center max-w-md mx-auto">
-            <div className="text-6xl mb-4">🔒</div>
-            <h1 className="text-2xl font-display uppercase tracking-wider text-text-primary mb-4">Login Required</h1>
-            <p className="text-text-secondary mb-6">
-              You need to be logged in to proceed with checkout.
-            </p>
-            <Link
-              to="/login"
-              state={{ from: '/checkout' }}
-              className="btn btn-primary inline-flex items-center px-6 py-3 rounded-lg"
-            >
-              Login to Continue
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Guest checkout is fully supported — no login wall. Unauthenticated
+  // visitors enter an email + one-time address on the payment step.
 
   // Show empty cart message
   if (cart.items.length === 0) {

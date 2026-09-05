@@ -4,6 +4,9 @@ import { calculateShippingRates } from '../services/shippingService';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
 
+export const isValidEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
+
 export const CheckoutContext = createContext();
 
 export const useCheckout = () => {
@@ -26,6 +29,9 @@ export const CheckoutProvider = ({ children }) => {
     paymentMethod: null,
     orderNotes: ''
   });
+
+  // Guest checkout: receipt/contact email for customers without an account
+  const [guestEmail, setGuestEmailState] = useState('');
   
   const [paymentState, setPaymentState] = useState({
     isProcessing: false,
@@ -85,6 +91,10 @@ export const CheckoutProvider = ({ children }) => {
       deliveryAddress: address,
       shippingAddress: address // Keep both for backward compatibility
     }));
+  };
+
+  const setGuestEmail = (email) => {
+    setGuestEmailState((email || '').trim().toLowerCase());
   };
 
   const setShippingAddress = (address) => {
@@ -159,6 +169,7 @@ export const CheckoutProvider = ({ children }) => {
       paymentMethod: null,
       orderNotes: ''
     });
+    setGuestEmailState('');
     setPaymentState({
       isProcessing: false,
       error: null,
@@ -247,16 +258,22 @@ export const CheckoutProvider = ({ children }) => {
     setPaymentMethod,
     setPaymentState,
     setOrderNotes,
+    setGuestEmail,
     goToStep,
     nextStep,
     prevStep,
     resetCheckout,
     refreshAddresses,
     refreshShippingRates,
-    
-    // Computed values
+
+    // Guest checkout
+    guestEmail,
+    isGuestCheckout: !isAuthenticated,
+
+    // Computed values — guests must also provide a valid receipt email
     canProceedToReview: !!checkoutState.shippingAddress && !!checkoutState.shippingMethod &&
-      !!checkoutState.paymentMethod && (checkoutState.useSameAsShipping || !!checkoutState.billingAddress),
+      !!checkoutState.paymentMethod && (checkoutState.useSameAsShipping || !!checkoutState.billingAddress) &&
+      (isAuthenticated || isValidEmail(guestEmail)),
     isPaymentStep: checkoutState.step === 'payment',
     isReviewStep: checkoutState.step === 'review',
     

@@ -67,7 +67,8 @@ const ShippingAddressSection = () => {
     setShippingAddress,
     nextStep,
     canProceedToPayment,
-    refreshAddresses
+    refreshAddresses,
+    isGuestCheckout
   } = useCheckout();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -79,6 +80,57 @@ const ShippingAddressSection = () => {
   const handleSelectAddress = (address) => {
     setShippingAddress(address);
   };
+
+  // Guest checkout: no address book — the form is a one-time entry that
+  // simply selects the entered address (nothing is persisted server-side).
+  if (isGuestCheckout) {
+    return (
+      <div
+        data-testid="shipping-form"
+        data-testid-guest="true"
+        className="bg-white rounded-lg shadow p-6"
+      >
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Shipping Address</h2>
+
+        {checkoutState.shippingAddress ? (
+          <>
+            <div
+              data-testid="shipping-address"
+              className="bg-cyan-subtle border border-cyan-400 rounded-lg p-4"
+            >
+              <h4 className="text-sm font-medium text-cyan-400 mb-2">Shipping to:</h4>
+              <div className="text-sm text-cyan-400">
+                <div className="font-medium">{checkoutState.shippingAddress.fullName}</div>
+                <div>{checkoutState.shippingAddress.addressLine1}</div>
+                {checkoutState.shippingAddress.addressLine2 && (
+                  <div>{checkoutState.shippingAddress.addressLine2}</div>
+                )}
+                <div>
+                  {checkoutState.shippingAddress.city}, {checkoutState.shippingAddress.stateProvince} {checkoutState.shippingAddress.postalCode}
+                </div>
+                <div>{checkoutState.shippingAddress.country}</div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <ShippingMethodSection />
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShippingAddress(null)}
+                className="px-6 py-3 rounded-lg font-medium border-2 border-dashed border-gray-300 text-gray-600 hover:border-cyan-400 hover:text-cyan-400 transition-colors"
+              >
+                Edit Address
+              </button>
+            </div>
+          </>
+        ) : (
+          <AddressForm onSubmit={(formData) => setShippingAddress(formData)} />
+        )}
+      </div>
+    );
+  }
 
   const handleAddNewAddress = () => {
     setEditingAddress(null);

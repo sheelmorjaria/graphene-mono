@@ -332,6 +332,69 @@ describe('Admin Controller', () => {
     });
   });
 
+  describe('GET /api/admin/orders (guest orders)', () => {
+    let customerUser;
+
+    beforeEach(async () => {
+      customerUser = await User.create(createValidUserData({
+        email: 'listed@test.com',
+        firstName: 'Listed',
+        lastName: 'Customer',
+        role: 'customer',
+        emailVerified: true
+      }));
+
+      await Order.create(createValidOrderData({
+        orderNumber: 'LISTED-USER-1',
+        userId: customerUser._id,
+        customerEmail: 'listed@test.com'
+      }));
+
+      await Order.create(createValidOrderData({
+        orderNumber: 'LISTED-GUEST-1',
+        userId: null,
+        isGuest: true,
+        customerEmail: 'guestshopper@example.com'
+      }));
+    });
+
+    it('lists guest orders alongside account orders', async () => {
+      const response = await request(app)
+        .get('/api/admin/orders')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      const numbers = response.body.data.orders.map(o => o.orderNumber);
+      expect(numbers).toContain('LISTED-GUEST-1');
+      expect(numbers).toContain('LISTED-USER-1');
+
+      const guestOrder = response.body.data.orders.find(o => o.orderNumber === 'LISTED-GUEST-1');
+      expect(guestOrder.isGuest).toBe(true);
+      expect(guestOrder.customerEmail).toBe('guestshopper@example.com');
+    });
+
+    it('finds guest orders by their email via customerQuery', async () => {
+      const response = await request(app)
+        .get('/api/admin/orders?customerQuery=guestshopper')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      const numbers = response.body.data.orders.map(o => o.orderNumber);
+      expect(numbers).toContain('LISTED-GUEST-1');
+      expect(numbers).not.toContain('LISTED-USER-1');
+    });
+
+    it('still finds account orders by customer name (no regression)', async () => {
+      const response = await request(app)
+        .get('/api/admin/orders?customerQuery=Listed')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      const numbers = response.body.data.orders.map(o => o.orderNumber);
+      expect(numbers).toContain('LISTED-USER-1');
+    });
+  });
+
   describe('POST /api/admin/orders/:orderId/refund', () => {
     let testOrder;
     let customerUser;

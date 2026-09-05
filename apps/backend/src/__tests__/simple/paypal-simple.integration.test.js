@@ -257,7 +257,10 @@ describe('PayPal Simple Tests', () => {
       expect(response.body.error).toBe('PayPal order ID is required');
     });
 
-    it('should handle PayPal service unavailability during capture', async () => {
+    it('should reject a capture with an empty cart before reaching PayPal', async () => {
+      // The mock app attaches a user with no cart; capture validation now
+      // runs BEFORE the PayPal client is consulted, so an empty cart gets a
+      // 400 — never a paid-but-no-order situation.
       const captureData = {
         paypalOrderId: 'PP_ORDER_123',
         payerId: 'PAYER123'
@@ -267,9 +270,9 @@ describe('PayPal Simple Tests', () => {
         .post('/api/payments/paypal/capture')
         .send(captureData);
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('PayPal payment processing is not available');
+      expect(response.body.error).toBe('Cart is empty');
     });
   });
 
