@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { AppRoutes } from '../../App';
 import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
+import { mergeGuestCart } from '../../services/cartService';
 
 // Mock fetch globally for integration tests
 global.fetch = vi.fn();
@@ -120,6 +121,8 @@ const renderAuthenticatedTest = (initialRoute = '/products', user) => {
 describe('Login Flow Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // restore the shared cartService mock's merge implementation
+    vi.mocked(mergeGuestCart).mockImplementation(() => Promise.resolve({ success: true }));
     document.title = 'Test';
     localStorage.clear();
     // Mock getCurrentUser to return null initially (not authenticated)

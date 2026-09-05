@@ -1,6 +1,7 @@
 import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LoginPage from '../../pages/LoginPage';
+import { mergeGuestCart } from '../../services/cartService';
 
 // Mock navigate function
 const mockNavigate = vi.fn();
@@ -44,6 +45,8 @@ const renderLoginTest = () => {
 describe('Login Flow Integration Tests - Simple', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // restore the shared cartService mock's merge implementation
+    vi.mocked(mergeGuestCart).mockImplementation(() => Promise.resolve({ success: true }));
     document.title = 'Test';
     localStorage.clear();
     getCurrentUser.mockResolvedValue(null);

@@ -199,7 +199,9 @@ vi.mock('../utils/logger.js', () => ({
   },
   logError: vi.fn(),
   logInfo: vi.fn(),
-  logPaymentEvent: vi.fn()
+  logPaymentEvent: vi.fn(),
+  logAuthEvent: vi.fn(),
+  logSecurityEvent: vi.fn()
 }));
 
 // No session mocking needed - the controller handles missing sessions gracefully

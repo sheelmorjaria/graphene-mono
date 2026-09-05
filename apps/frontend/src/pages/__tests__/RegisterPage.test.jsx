@@ -1,6 +1,7 @@
 import { render, screen, waitFor, act, userEvent, fireEvent, within } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import RegisterPage from '../RegisterPage';
+import { mergeGuestCart } from '../../services/cartService';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -8,7 +9,8 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({ state: null })
   };
 });
 
@@ -28,6 +30,8 @@ const renderRegisterPage = (initialRoute = '/register') => {
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // restore the shared cartService mock's implementation after clearing
+    vi.mocked(mergeGuestCart).mockResolvedValue({ success: true });
     document.title = 'Test';
   });
 

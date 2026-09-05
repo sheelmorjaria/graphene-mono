@@ -91,8 +91,9 @@ export const createPayPalOrder = async (checkoutData) => {
   }
 };
 
-// Capture PayPal payment
-export const capturePayPalPayment = async ({ paypalOrderId, payerId }) => {
+// Capture PayPal payment. `customerEmail` is the guest receipt address —
+// required by the backend for guest checkout.
+export const capturePayPalPayment = async ({ paypalOrderId, payerId, customerEmail }) => {
   try {
     const response = await fetch(`${API_BASE_URL}/payments/paypal/capture`, {
       method: 'POST',
@@ -100,14 +101,15 @@ export const capturePayPalPayment = async ({ paypalOrderId, payerId }) => {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         paypalOrderId,
-        payerId 
+        payerId,
+        ...(customerEmail ? { customerEmail } : {})
       })
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Failed to capture PayPal payment');
     }

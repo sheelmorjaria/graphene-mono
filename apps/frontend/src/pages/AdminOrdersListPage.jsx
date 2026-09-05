@@ -345,6 +345,21 @@ const AdminOrdersListPage = () => {
                                   {order.customer.email}
                                 </div>
                               </>
+                            ) : order.customerEmail ? (
+                              // Guest checkout — no account, show the order email
+                              <>
+                                <div className="font-medium flex items-center gap-2">
+                                  Guest Customer
+                                  {order.isGuest && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                      Guest
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-gray-500">
+                                  {order.customerEmail}
+                                </div>
+                              </>
                             ) : (
                               <span className="text-gray-500">Unknown Customer</span>
                             )}

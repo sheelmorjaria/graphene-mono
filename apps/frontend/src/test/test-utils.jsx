@@ -39,7 +39,8 @@ vi.mock('../services/cartService', () => ({
   addToCart: vi.fn(),
   updateCartItem: vi.fn(),
   removeFromCart: vi.fn(),
-  clearCart: vi.fn()
+  clearCart: vi.fn(),
+  mergeGuestCart: vi.fn(() => Promise.resolve({ success: true }))
 }))
 
 // React act warnings are now properly handled in test files

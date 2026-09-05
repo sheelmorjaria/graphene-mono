@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { mergeGuestCart } from '../services/cartService';
 import { loginUser } from '../services/authService';
 import { useLogin } from '../contexts/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useLogin();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -110,10 +112,16 @@ const LoginPage = () => {
       });
 
       if (response.success) {
+        // Merge any guest cart into the account BEFORE the auth state flips
+        // (CartContext reloads on that flip and must see the merged cart).
+        // Best-effort: a missing or failing merge must never block login.
+        await (mergeGuestCart ? mergeGuestCart() : Promise.resolve()).catch(() => {});
+
         // Update global auth state
         login(response.data.user);
         // Navigate to products page on successful login
-        navigate('/products');
+        // Return to where the user was sent from (e.g. mid-checkout login)
+        navigate(location.state?.from || '/products');
       }
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');

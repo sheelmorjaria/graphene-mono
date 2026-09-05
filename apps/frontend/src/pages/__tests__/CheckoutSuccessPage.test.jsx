@@ -9,8 +9,10 @@ const mockNavigate = vi.fn();
 const mockCapturePayPalPayment = vi.fn();
 const mockFormatCurrency = vi.fn((amount) => `£${amount.toFixed(2)}`);
 
-// Create a mutable ref for search params
+// Mutable refs the mocked hooks read from
 const searchParamsRef = { current: new URLSearchParams('token=PAYPAL123&PayerID=PAYER123') };
+const locationStateRef = { current: null };
+const authRef = { current: { isAuthenticated: true, isLoading: false } };
 
 // Mock react-router-dom
 vi.mock('react-router-dom', async () => {
@@ -18,9 +20,15 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useSearchParams: () => [searchParamsRef.current]
+    useSearchParams: () => [searchParamsRef.current],
+    useLocation: () => ({ state: locationStateRef.current })
   };
 });
+
+// Mock auth context (the page renders guest vs account variants from it)
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => authRef.current
+}));
 
 // Mock payment service
 vi.mock('../../services/paymentService', () => ({
@@ -36,16 +44,26 @@ const renderWithRouter = (component) => {
   );
 };
 
+const successResponse = () => ({
+  success: true,
+  data: {
+    orderId: 'ORDER_123',
+    orderNumber: 'ORD123456',
+    amount: 299.99,
+    paymentMethod: 'paypal',
+    customerEmail: 'guest@example.com'
+  }
+});
+
 describe('CheckoutSuccessPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.clearAllTimers();
     vi.useFakeTimers();
-    
-    // Reset to default search params
+
     searchParamsRef.current = new URLSearchParams('token=PAYPAL123&PayerID=PAYER123');
-    
-    // Reset document title
+    locationStateRef.current = null;
+    authRef.current = { isAuthenticated: true, isLoading: false };
     document.title = '';
   });
 
@@ -63,162 +81,27 @@ describe('CheckoutSuccessPage', () => {
 
     expect(screen.getByText('Processing Payment')).toBeInTheDocument();
     expect(screen.getByText('Please wait while we confirm your payment. This may take a few moments.')).toBeInTheDocument();
-    expect(screen.getByText('Please do not close this window or navigate away from this page.')).toBeInTheDocument();
   });
 
-  it('processes PayPal payment successfully', async () => {
-    const mockSuccessResponse = {
-      success: true,
-      data: {
-        orderId: 'ORDER_123',
-        orderNumber: 'ORD123456',
-        amount: 299.99,
-        paymentMethod: 'paypal'
-      }
-    };
-
-    mockCapturePayPalPayment.mockResolvedValue(mockSuccessResponse);
+  it('renders immediately from navigation state without re-capturing', async () => {
+    locationStateRef.current = { capturedOrder: successResponse().data };
 
     await act(async () => {
       renderWithRouter(<CheckoutSuccessPage />);
     });
 
-    // Use real timers for this test to let promises resolve
-    vi.useRealTimers();
-
-    await waitFor(() => {
-      expect(screen.getByText('Payment Successful!')).toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText('Your payment has been processed successfully. You will be redirected to your order details shortly.')).toBeInTheDocument();
-    expect(screen.getByText('Order Number:')).toBeInTheDocument();
+    expect(screen.getByText('Payment Successful!')).toBeInTheDocument();
     expect(screen.getByText('#ORD123456')).toBeInTheDocument();
-    expect(screen.getByText('Amount Paid:')).toBeInTheDocument();
-    expect(screen.getByText('£299.99')).toBeInTheDocument();
-    expect(screen.getByText('Payment Method:')).toBeInTheDocument();
-    expect(screen.getByText('paypal')).toBeInTheDocument();
-
-    // Restore fake timers
-    vi.useFakeTimers();
+    expect(mockCapturePayPalPayment).not.toHaveBeenCalled();
   });
 
-  it('redirects to order details after successful payment', async () => {
-    const mockSuccessResponse = {
-      success: true,
-      data: {
-        orderId: 'ORDER_123',
-        orderNumber: 'ORD123456',
-        amount: 299.99,
-        paymentMethod: 'paypal'
-      }
-    };
+  it('captures via the URL fallback when no state is present', async () => {
+    mockCapturePayPalPayment.mockResolvedValue(successResponse());
 
-    mockCapturePayPalPayment.mockResolvedValue(mockSuccessResponse);
-
-    // Use real timers for this entire test
     vi.useRealTimers();
-
     await act(async () => {
       renderWithRouter(<CheckoutSuccessPage />);
     });
-    
-    await waitFor(() => {
-      expect(screen.getByText('Payment Successful!')).toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    // Wait for the setTimeout to trigger the navigation
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/orders/ORDER_123');
-    }, { timeout: 4000 });
-
-    // Restore fake timers
-    vi.useFakeTimers();
-  });
-
-  it('handles PayPal payment failure', async () => {
-    const mockErrorResponse = {
-      success: false,
-      error: 'Payment capture failed'
-    };
-
-    mockCapturePayPalPayment.mockResolvedValue(mockErrorResponse);
-
-    await act(async () => {
-      renderWithRouter(<CheckoutSuccessPage />);
-    });
-
-    // Use real timers
-    vi.useRealTimers();
-
-    await waitFor(() => {
-      expect(screen.getByText('Payment Failed')).toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText('Payment capture failed')).toBeInTheDocument();
-    expect(screen.getByText('Your payment was not processed. No charges have been made to your account.')).toBeInTheDocument();
-    expect(screen.getByText('Try Again')).toBeInTheDocument();
-    expect(screen.getByText('Return to Cart')).toBeInTheDocument();
-    expect(screen.getByText('Contact Support')).toBeInTheDocument();
-
-    // Restore fake timers
-    vi.useFakeTimers();
-  });
-
-  it('handles network errors during payment processing', async () => {
-    mockCapturePayPalPayment.mockRejectedValue(new Error('Network error'));
-
-    await act(async () => {
-      renderWithRouter(<CheckoutSuccessPage />);
-    });
-
-    // Use real timers
-    vi.useRealTimers();
-
-    await waitFor(() => {
-      expect(screen.getByText('Payment Failed')).toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText('Network error')).toBeInTheDocument();
-
-    // Restore fake timers
-    vi.useFakeTimers();
-  });
-
-  it('handles missing PayPal parameters', async () => {
-    // Set empty search params for this test
-    searchParamsRef.current = new URLSearchParams('');
-
-    await act(async () => {
-      renderWithRouter(<CheckoutSuccessPage />);
-    });
-
-    // Use real timers
-    vi.useRealTimers();
-
-    await waitFor(() => {
-      expect(screen.getByText('Payment Failed')).toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText('Invalid payment parameters. Please try again.')).toBeInTheDocument();
-
-    // Restore fake timers
-    vi.useFakeTimers();
-  });
-
-  it('calls capturePayPalPayment with correct parameters', async () => {
-    const mockSuccessResponse = {
-      success: true,
-      data: { orderId: 'ORDER_123' }
-    };
-
-    mockCapturePayPalPayment.mockResolvedValue(mockSuccessResponse);
-
-    await act(async () => {
-      renderWithRouter(<CheckoutSuccessPage />);
-    });
-
-    // Use real timers
-    vi.useRealTimers();
 
     await waitFor(() => {
       expect(mockCapturePayPalPayment).toHaveBeenCalledWith({
@@ -227,120 +110,110 @@ describe('CheckoutSuccessPage', () => {
       });
     }, { timeout: 5000 });
 
-    // Restore fake timers
-    vi.useFakeTimers();
+    await waitFor(() => {
+      expect(screen.getByText('Payment Successful!')).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  it('updates document title based on payment status', async () => {
-    const mockSuccessResponse = {
-      success: true,
-      data: { orderId: 'ORDER_123' }
-    };
+  it('shows order summary with receipt email for a successful payment', async () => {
+    mockCapturePayPalPayment.mockResolvedValue(successResponse());
 
-    // Make the promise resolve after a small delay to observe the processing state
-    mockCapturePayPalPayment.mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve(mockSuccessResponse), 100))
-    );
-
-    // Use real timers for this test
     vi.useRealTimers();
+    await act(async () => {
+      renderWithRouter(<CheckoutSuccessPage />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Payment Successful!')).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    expect(screen.getByText('Order Number:')).toBeInTheDocument();
+    expect(screen.getByText('#ORD123456')).toBeInTheDocument();
+    expect(screen.getByText('£299.99')).toBeInTheDocument();
+    expect(screen.getByText('Confirmation sent to:')).toBeInTheDocument();
+    expect(screen.getByText('guest@example.com')).toBeInTheDocument();
+  });
+
+  it('links logged-in users to their order details without auto-redirect', async () => {
+    mockCapturePayPalPayment.mockResolvedValue(successResponse());
+
+    vi.useRealTimers();
+    await act(async () => {
+      renderWithRouter(<CheckoutSuccessPage />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('View Order Details')).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    expect(screen.getByText('View Order Details').closest('a')).toHaveAttribute('href', '/orders/ORDER_123');
+    expect(screen.getByText('Continue Shopping').closest('a')).toHaveAttribute('href', '/products');
+
+    // No forced 3s redirect anymore
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 3500));
+    });
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('hides order links for guests and shows the email-receipt note', async () => {
+    authRef.current = { isAuthenticated: false, isLoading: false };
+    locationStateRef.current = { capturedOrder: successResponse().data };
 
     await act(async () => {
       renderWithRouter(<CheckoutSuccessPage />);
     });
 
-    // Wait a tick for useEffect to run
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
-    });
-
-    // The component sets the title synchronously in useEffect
-    expect(document.title).toBe('Payment Processing - Graphene Security');
-
-    await waitFor(() => {
-      expect(document.title).toBe('Payment Successful - Graphene Security');
-    }, { timeout: 5000 });
-
-    // Restore fake timers
-    vi.useFakeTimers();
+    expect(screen.getByText(/as a guest/)).toBeInTheDocument();
+    expect(screen.getByText(/confirmation email with your order details/)).toBeInTheDocument();
+    expect(screen.queryByText('View Order Details')).not.toBeInTheDocument();
+    expect(screen.getByText('Continue Shopping')).toBeInTheDocument();
   });
 
-  it('provides navigation options on success', async () => {
-    const mockSuccessResponse = {
-      success: true,
-      data: { orderId: 'ORDER_123' }
-    };
+  it('handles PayPal payment failure', async () => {
+    mockCapturePayPalPayment.mockResolvedValue({
+      success: false,
+      error: 'Payment capture failed'
+    });
 
-    mockCapturePayPalPayment.mockResolvedValue(mockSuccessResponse);
-
+    vi.useRealTimers();
     await act(async () => {
       renderWithRouter(<CheckoutSuccessPage />);
     });
 
-    // Use real timers
-    vi.useRealTimers();
-
     await waitFor(() => {
-      expect(screen.getByText('View My Orders')).toBeInTheDocument();
-      expect(screen.getByText('Continue Shopping')).toBeInTheDocument();
+      expect(screen.getByText('Payment Failed')).toBeInTheDocument();
     }, { timeout: 5000 });
 
-    const viewOrdersLink = screen.getByText('View My Orders');
-    const continueShoppingLink = screen.getByText('Continue Shopping');
-
-    expect(viewOrdersLink.closest('a')).toHaveAttribute('href', '/orders');
-    expect(continueShoppingLink.closest('a')).toHaveAttribute('href', '/products');
-
-    // Restore fake timers
-    vi.useFakeTimers();
+    expect(screen.getByText('Payment capture failed')).toBeInTheDocument();
+    expect(screen.getByText('Try Again')).toBeInTheDocument();
+    expect(screen.getByText('Return to Cart')).toBeInTheDocument();
+    expect(screen.getByText('Contact Support')).toBeInTheDocument();
   });
 
-  it('provides error recovery options on failure', async () => {
-    mockCapturePayPalPayment.mockRejectedValue(new Error('Payment failed'));
+  it('handles network errors during payment processing', async () => {
+    mockCapturePayPalPayment.mockRejectedValue(new Error('Network error'));
 
+    vi.useRealTimers();
     await act(async () => {
       renderWithRouter(<CheckoutSuccessPage />);
     });
 
-    // Use real timers
-    vi.useRealTimers();
-
     await waitFor(() => {
-      expect(screen.getByText('Try Again')).toBeInTheDocument();
-      expect(screen.getByText('Return to Cart')).toBeInTheDocument();
-      expect(screen.getByText('Contact Support')).toBeInTheDocument();
+      expect(screen.getByText('Network error')).toBeInTheDocument();
     }, { timeout: 5000 });
-
-    const returnToCartLink = screen.getByText('Return to Cart');
-    const contactSupportLink = screen.getByText('Contact Support');
-
-    expect(returnToCartLink.closest('a')).toHaveAttribute('href', '/cart');
-    expect(contactSupportLink.closest('a')).toHaveAttribute('href', '/support');
-
-    // Restore fake timers
-    vi.useFakeTimers();
   });
 
-  it('shows auto-redirect message on success', async () => {
-    const mockSuccessResponse = {
-      success: true,
-      data: { orderId: 'ORDER_123' }
-    };
+  it('handles missing PayPal parameters', async () => {
+    searchParamsRef.current = new URLSearchParams('');
 
-    mockCapturePayPalPayment.mockResolvedValue(mockSuccessResponse);
-
+    vi.useRealTimers();
     await act(async () => {
       renderWithRouter(<CheckoutSuccessPage />);
     });
 
-    // Use real timers
-    vi.useRealTimers();
-
     await waitFor(() => {
-      expect(screen.getByText('Redirecting to your order details in a few seconds...')).toBeInTheDocument();
+      expect(screen.getByText('Invalid payment parameters. Please try again.')).toBeInTheDocument();
     }, { timeout: 5000 });
-
-    // Restore fake timers
-    vi.useFakeTimers();
   });
 });

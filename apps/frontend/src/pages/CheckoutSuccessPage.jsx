@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { capturePayPalPayment, formatCurrency } from '../services/paymentService';
+import { useAuth } from '../contexts/AuthContext';
 
 const CheckoutSuccessPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [status, setStatus] = useState('processing'); // processing, success, error
   const [orderData, setOrderData] = useState(null);
   const [error, setError] = useState(null);
@@ -12,17 +15,33 @@ const CheckoutSuccessPage = () => {
   useEffect(() => {
     document.title = 'Payment Processing - Graphene Security';
 
+    // Preferred path: the checkout review already captured the payment
+    // server-side and navigated here with the result — render it directly.
+    const captured = location.state?.capturedOrder;
+    if (captured) {
+      setOrderData(captured);
+      setStatus('success');
+      document.title = 'Payment Successful - Graphene Security';
+      return;
+    }
+
+    // Fallback: PayPal redirected back with ?token&PayerID (popup blocked
+    // etc.) — the backend capture is idempotent, so this is safe.
     const processPayment = async () => {
       try {
-        // Get payment information from URL parameters
-        const paypalOrderId = searchParams.get('token'); // PayPal order ID
-        const payerId = searchParams.get('PayerID'); // PayPal payer ID
+        const paypalOrderId = searchParams.get('token');
+        const payerId = searchParams.get('PayerID');
 
         if (paypalOrderId && payerId) {
-          // Handle PayPal payment completion
-          await handlePayPalPayment(paypalOrderId, payerId);
+          const response = await capturePayPalPayment({ paypalOrderId, payerId });
+          if (response.success) {
+            setOrderData(response.data);
+            setStatus('success');
+            document.title = 'Payment Successful - Graphene Security';
+          } else {
+            throw new Error(response.error || 'PayPal payment capture failed');
+          }
         } else {
-          // No valid payment parameters found
           setError('Invalid payment parameters. Please try again.');
           setStatus('error');
         }
@@ -34,43 +53,7 @@ const CheckoutSuccessPage = () => {
     };
 
     processPayment();
-  }, [searchParams]);
-
-  const handlePayPalPayment = async (paypalOrderId, payerId) => {
-    try {
-      setStatus('processing');
-
-      // Capture the PayPal payment
-      const response = await capturePayPalPayment({
-        paypalOrderId,
-        payerId
-      });
-
-      if (response.success) {
-        setOrderData(response.data);
-        setStatus('success');
-
-        // Update document title
-        document.title = 'Payment Successful - Graphene Security';
-
-        // Redirect to order confirmation page after a short delay
-        setTimeout(() => {
-          if (response.data.orderId) {
-            navigate(`/orders/${response.data.orderId}`);
-          } else {
-            navigate('/orders');
-          }
-        }, 3000);
-      } else {
-        throw new Error(response.error || 'PayPal payment capture failed');
-      }
-    } catch (err) {
-      console.error('PayPal payment processing error:', err);
-      setError(err.message || 'PayPal payment processing failed');
-      setStatus('error');
-    }
-  };
-
+  }, [searchParams, location.state]);
 
   const handleRetryPayment = () => {
     navigate('/checkout');
@@ -83,7 +66,7 @@ const CheckoutSuccessPage = () => {
         <div className="text-center max-w-md mx-auto px-6 animate-fadeIn">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-cyan-subtle border border-cyan-400 rounded-full mb-6">
             <svg className="h-8 w-8 text-cyan-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 8.0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
           <h1 className="text-2xl font-display uppercase tracking-wider text-cyan-400 mb-4">Processing Payment</h1>
@@ -112,12 +95,12 @@ const CheckoutSuccessPage = () => {
           </div>
           <h1 className="text-2xl font-display uppercase tracking-wider text-cyan-400 mb-4">Payment Successful!</h1>
           <p className="text-text-secondary mb-6">
-            Your payment has been processed successfully. You will be redirected to your order details shortly.
+            Your order has been placed{isAuthenticated ? '' : ' as a guest'}. Keep the order number below for your records.
           </p>
 
           {orderData && (
-            <div className="card card-glow p-6 mb-6 text-left">
-              <h2 className="text-lg font-heading text-text-primary mb-4">Payment Summary</h2>
+            <div className="card card-glow p-6 mb-6 text-left" data-testid="payment-summary">
+              <h2 className="text-lg font-heading text-text-primary mb-4">Order Summary</h2>
               {orderData.orderNumber && (
                 <div className="flex justify-between mb-2">
                   <span className="text-text-secondary">Order Number:</span>
@@ -131,27 +114,37 @@ const CheckoutSuccessPage = () => {
                 </div>
               )}
               {orderData.paymentMethod && (
-                <div className="flex justify-between">
+                <div className="flex justify-between mb-2">
                   <span className="text-text-secondary">Payment Method:</span>
                   <span className="font-semibold capitalize text-text-primary">{orderData.paymentMethod}</span>
+                </div>
+              )}
+              {orderData.customerEmail && (
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Confirmation sent to:</span>
+                  <span className="font-semibold text-text-primary">{orderData.customerEmail}</span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="card card-glow p-4 mb-6">
-            <p className="text-text-muted text-sm font-mono">
-              Redirecting to your order details in a few seconds...
-            </p>
-          </div>
-
           <div className="space-y-3">
-            <Link
-              to="/orders"
-              className="block btn btn-primary w-full px-6 py-3 rounded-lg text-center"
-            >
-              View My Orders
-            </Link>
+            {isAuthenticated ? (
+              orderData?.orderId && (
+                <Link
+                  to={`/orders/${orderData.orderId}`}
+                  className="block btn btn-primary w-full px-6 py-3 rounded-lg text-center"
+                >
+                  View Order Details
+                </Link>
+              )
+            ) : (
+              <div className="card card-glow p-4 mb-2">
+                <p className="text-text-muted text-sm font-mono">
+                  A confirmation email with your order details is on its way.
+                </p>
+              </div>
+            )}
             <Link
               to="/products"
               className="block btn btn-secondary w-full px-6 py-3 rounded-lg text-center"

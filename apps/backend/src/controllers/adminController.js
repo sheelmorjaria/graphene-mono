@@ -406,6 +406,9 @@ export const getOrderById = async (req, res) => {
             email: '$customer.email',
             phone: '$customer.phone'
           },
+          // Guest orders have no joined customer — these let the UI fall back
+          customerEmail: 1,
+          isGuest: 1,
           refundStatus: 1,
           refundHistory: 1,
           notes: 1
@@ -523,6 +526,8 @@ export const getAllOrders = async (req, res) => {
             { 'customer.firstName': { $regex: customerQuery, $options: 'i' } },
             { 'customer.lastName': { $regex: customerQuery, $options: 'i' } },
             { 'customer.email': { $regex: customerQuery, $options: 'i' } },
+            // Guest orders have no joined customer — match their order email
+            { customerEmail: { $regex: customerQuery, $options: 'i' } },
             {
               $expr: {
                 $regexMatch: {
@@ -563,6 +568,8 @@ export const getAllOrders = async (req, res) => {
         paymentMethod: 1,
         shippingAddress: 1,
         items: 1,
+        customerEmail: 1,
+        isGuest: 1,
         customer: {
           _id: '$customer._id',
           firstName: '$customer.firstName',
@@ -1051,6 +1058,8 @@ export const getAllReturnRequests = async (req, res) => {
             { 'customer.firstName': { $regex: customerQuery, $options: 'i' } },
             { 'customer.lastName': { $regex: customerQuery, $options: 'i' } },
             { 'customer.email': { $regex: customerQuery, $options: 'i' } },
+            // Guest orders have no joined customer — match their order email
+            { customerEmail: { $regex: customerQuery, $options: 'i' } },
             {
               $expr: {
                 $regexMatch: {

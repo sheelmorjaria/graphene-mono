@@ -116,7 +116,8 @@ const orderSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'User ID is required'],
+    // Optional: guest checkout orders have no account. Use `isGuest` to
+    // distinguish them; keyed lookups (findByUser) never match null userId.
     index: true
   },
   customerEmail: {
@@ -124,7 +125,12 @@ const orderSchema = new mongoose.Schema({
     required: [true, 'Customer email is required'],
     lowercase: true,
     trim: true,
-    maxlength: 255
+    maxlength: 255,
+    index: true // admin search for guest orders (which have no user join)
+  },
+  isGuest: {
+    type: Boolean,
+    default: false
   },
   status: {
     type: String,

@@ -4,7 +4,7 @@ import {
   addToCart, 
   updateCartItem, 
   removeFromCart, 
-  clearCart
+  clearCart, mergeGuestCartOnLogin
 } from '../controllers/cartController.js';
 import { optionalAuth } from '../middleware/auth.js';
 
@@ -19,6 +19,7 @@ router.post('/add', addToCart);
 router.put('/item/:itemId', updateCartItem);
 router.delete('/item/:itemId', removeFromCart);
 router.delete('/clear', clearCart);
+router.post('/merge', mergeGuestCartOnLogin);
 
 
 export default router;

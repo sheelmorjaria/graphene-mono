@@ -5,6 +5,39 @@ const getAuthToken = () => {
   return localStorage.getItem('authToken');
 };
 
+// Merge the guest cart (cartSessionId cookie) into the logged-in user's
+// cart. Called right after login/register — BEFORE the auth state flips so
+// the subsequent cart reload sees the merged cart.
+export const mergeGuestCart = async () => {
+  try {
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/cart/merge`, {
+      method: 'POST',
+      headers,
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to merge guest cart');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error merging guest cart:', error);
+    throw error;
+  }
+};
+
 // Fetch cart contents
 export const getCart = async () => {
   try {

@@ -47,7 +47,7 @@ const findOrCreateCart = async (req) => {
     return cart;
   } else {
     // Guest user
-    const sessionId = req.cookies.cartSessionId;
+    const sessionId = req.cookies?.cartSessionId;
     if (!sessionId) {
       throw new Error('No cart session found');
     }
@@ -239,6 +239,9 @@ export const createPayPalOrder = async (req, res) => {
     const orderRequest = {
       intent: 'CAPTURE',
       purchase_units: [{
+        // Round-trips cart + shipping method to capture (create is stateless).
+        // PayPal caps custom_id at 127 chars; compact keys keep it ~60.
+        custom_id: JSON.stringify({ c: cart._id.toString(), s: shippingMethodId }),
         amount: {
           currency_code: 'GBP',
           value: orderTotal.toFixed(2),
@@ -333,7 +336,7 @@ export const createPayPalOrder = async (req, res) => {
 // Capture PayPal payment
 export const capturePayPalPayment = async (req, res) => {
   const session = await mongoose.startSession();
-  
+
   try {
     const { paypalOrderId, payerId } = req.body;
 
@@ -341,6 +344,53 @@ export const capturePayPalPayment = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'PayPal order ID is required'
+      });
+    }
+
+    // Idempotency: a retry (double-click, success-page refresh) must neither
+    // re-capture the payment nor duplicate the order.
+    const alreadyCaptured = await Order.exists({ 'paymentDetails.paypalOrderId': paypalOrderId });
+    if (alreadyCaptured) {
+      const existing = await Order.findOne({ 'paymentDetails.paypalOrderId': paypalOrderId }).lean();
+      return res.json({
+        success: true,
+        data: {
+          orderId: existing?._id,
+          orderNumber: existing?.orderNumber,
+          amount: existing?.totalAmount,
+          customerEmail: existing?.customerEmail,
+          isGuest: existing?.isGuest ?? false,
+          paymentMethod: 'paypal',
+          status: 'already_captured'
+        }
+      });
+    }
+
+    // Guest email guard — BEFORE money moves. Guests must have a receipt
+    // address; PayPal payer data is sparse for some payment methods.
+    const guestEmail = (req.body.customerEmail || '').trim().toLowerCase();
+    if (!req.user && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required for guest checkout'
+      });
+    }
+
+    // Cart resolution and emptiness — BEFORE money moves. Failing on these
+    // after capture leaves a paid-but-no-order situation.
+    let cart;
+    try {
+      cart = await findOrCreateCart(req);
+    } catch (cartError) {
+      return res.status(400).json({
+        success: false,
+        error: cartError.message
+      });
+    }
+    if (!cart || !cart.items || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cart is empty'
       });
     }
 
@@ -406,27 +456,96 @@ export const capturePayPalPayment = async (req, res) => {
       });
     }
 
-    await session.withTransaction(async () => {
-      // Get user's cart to create order
-      let cart;
+    // Decode the checkout reference threaded through custom_id at create time
+    // ({ c: cartId, s: shippingMethodId }). Tolerant of pre-deploy orders.
+    let checkoutRef = null;
+    try {
+      checkoutRef = JSON.parse(purchaseUnit?.custom_id || '');
+    } catch {
+      checkoutRef = null;
+    }
+
+    if (checkoutRef?.c && checkoutRef.c !== cart._id.toString()) {
+      // The cart changed between PayPal approval and capture (e.g. edited in
+      // another tab). Money has moved — log loudly for support reconciliation.
+      logPaymentEvent('capture_cart_mismatch', {
+        paypalOrderId,
+        expectedCartId: checkoutRef.c,
+        actualCartId: cart._id?.toString(),
+        payerEmail: paymentDetails.payer?.email_address,
+        amount: orderAmount
+      });
+      return res.status(409).json({
+        success: false,
+        error: 'Your cart changed after payment was approved. Please contact support with your PayPal order ID.',
+        data: { paypalOrderId }
+      });
+    }
+
+    // Resolve the real shipping method chosen at create time; fall back to a
+    // default when custom_id is absent/unparseable (legacy PayPal orders).
+    const breakdownShipping = parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0);
+    let shippingMethodData = {
+      id: new mongoose.Types.ObjectId(),
+      name: 'Standard Shipping',
+      cost: breakdownShipping
+    };
+    if (checkoutRef?.s) {
       try {
-        cart = await findOrCreateCart(req);
-      } catch (cartError) {
-        throw new Error(cartError.message);
+        const ShippingMethodModel = (await import('../models/ShippingMethod.js')).default;
+        const method = await ShippingMethodModel.findOne({ _id: checkoutRef.s });
+        if (method) {
+          shippingMethodData = {
+            id: method._id,
+            name: method.name,
+            cost: breakdownShipping,
+            ...(method.estimatedDeliveryDays ? {
+              estimatedDelivery: `${method.estimatedDeliveryDays.min}-${method.estimatedDeliveryDays.max} business days`
+            } : {})
+          };
+        }
+      } catch (methodError) {
+        logError(methodError, { context: 'capture_shipping_method_lookup', shippingMethodId: checkoutRef.s });
       }
-      
-      if (!cart || !cart.items || cart.items.length === 0) {
-        throw new Error('Cart is empty');
+    }
+
+    await session.withTransaction(async () => {
+      // Decrement stock per cart item (mirrors userOrderController.placeOrder).
+      // Aborting after capture is a paid-but-no-order situation, so the thrown
+      // error carries paypalOrderId for the 502 response and support lookup.
+      for (const item of cart.items) {
+        const filter = item.variationId
+          ? { _id: item.productId, 'variations._id': item.variationId }
+          : { _id: item.productId, 'variations.condition': item.condition, 'variations.color': item.color };
+        const result = await Product.updateOne(
+          filter,
+          { $inc: { 'variations.$.stockQuantity': -item.quantity } },
+          { session }
+        );
+        if (result.modifiedCount === 0) {
+          const stockError = new Error('Insufficient stock after payment — order not created. Please contact support.');
+          stockError.status = 502;
+          stockError.paypalOrderId = paypalOrderId;
+          logPaymentEvent('capture_failed_after_payment', {
+            paypalOrderId,
+            reason: 'insufficient_stock',
+            productId: item.productId?.toString?.(),
+            quantity: item.quantity
+          });
+          throw stockError;
+        }
       }
 
-      // Get shipping info from PayPal response or cart metadata
-      // Note: In a real implementation, you'd store this info when creating the PayPal order
+      // Get shipping info from PayPal response
       const shippingInfo = purchaseUnit?.shipping || {};
-      
-      // Create order in database
+
+      // Create order in database. Email precedence: account email (always
+      // right for logged-in users) > guest-entered email (the address the
+      // customer designated for this order) > PayPal payer email.
       const orderData = {
-        userId: req.user?._id || cart.userId,
-        customerEmail: req.user?.email || paymentDetails.payer?.email_address,
+        userId: req.user?._id || null,
+        isGuest: !req.user,
+        customerEmail: req.user?.email || guestEmail || paymentDetails.payer?.email_address,
         items: cart.items.map(item => ({
           productId: item.productId,
           productName: item.productName || 'Product',
@@ -473,11 +592,7 @@ export const capturePayPalPayment = async (req, res) => {
           country: shippingInfo.address?.country_code || 'GB',
           phoneNumber: req.user?.phone || ''
         },
-        shippingMethod: {
-          id: new mongoose.Types.ObjectId(), // Default shipping method
-          name: 'Standard Shipping',
-          cost: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0)
-        },
+        shippingMethod: shippingMethodData,
         // Fraud detection metadata
         fraudDetection: {
           riskLevel: fraudAssessment.riskLevel,
@@ -487,13 +602,12 @@ export const capturePayPalPayment = async (req, res) => {
         }
       };
 
-
       const order = new Order(orderData);
-      
+
       // Generate order number
       const orderCount = await Order.countDocuments({});
       order.orderNumber = `ORD${Date.now()}${(orderCount + 1).toString().padStart(4, '0')}`;
-      
+
       await order.save({ session });
 
       // Send order confirmation email
@@ -505,15 +619,19 @@ export const capturePayPalPayment = async (req, res) => {
         logError(emailError, { context: 'order_confirmation_email', orderId: order._id });
       }
 
-      // Clear the cart after successful order creation
-      await cart.clearCart({ session });
+      // Clear the cart — persisted via save() so the empty cart survives
+      // (Cart#clearCart only mutates in memory and is never saved).
+      cart.items = [];
+      cart.totalItems = 0;
+      cart.totalAmount = 0;
+      await cart.save({ session });
 
       return order;
     });
 
     // Fetch the created order for response
-    const newOrder = await Order.findOne({ 
-      'paymentDetails.paypalOrderId': paypalOrderId 
+    const newOrder = await Order.findOne({
+      'paymentDetails.paypalOrderId': paypalOrderId
     }).lean();
 
     res.json({
@@ -522,17 +640,18 @@ export const capturePayPalPayment = async (req, res) => {
         orderId: newOrder?._id,
         orderNumber: newOrder?.orderNumber,
         amount: parseFloat(purchaseUnit.amount.value),
+        customerEmail: newOrder?.customerEmail,
         paymentMethod: 'paypal',
-        paymentDetails: captureResponse.result,
         status: 'captured'
       }
     });
 
   } catch (error) {
     logError(error, { context: 'paypal_payment_capture', orderId: req.params.orderId });
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
-      error: error.message || 'Server error occurred while capturing PayPal payment'
+      error: error.message || 'Server error occurred while capturing PayPal payment',
+      ...(error.paypalOrderId ? { data: { paypalOrderId: error.paypalOrderId } } : {})
     });
   } finally {
     await session.endSession();
@@ -573,38 +692,41 @@ export const handlePayPalWebhook = async (req, res) => {
 
 // Helper functions for PayPal webhook events
 const handlePaymentCaptureCompleted = async (webhookEvent) => {
+  let orderId;
   try {
-    const resource = webhookEvent.resource;
-    const orderId = resource.supplementary_data?.related_ids?.order_id;
-    
+    const resource = webhookEvent?.resource;
+    orderId = resource?.supplementary_data?.related_ids?.order_id;
+
     logPaymentEvent('paypal_payment_captured', { orderId });
-    
+
     // TODO: Update order status in database
     // This will be implemented when we have Order model updates
-    
+
   } catch (error) {
     logError(error, { context: 'paypal_capture_completed_handler', orderId });
   }
 };
 
 const handlePaymentCaptureDenied = async (webhookEvent) => {
+  let orderId;
   try {
-    const resource = webhookEvent.resource;
-    const orderId = resource.supplementary_data?.related_ids?.order_id;
-    
+    const resource = webhookEvent?.resource;
+    orderId = resource?.supplementary_data?.related_ids?.order_id;
+
     logPaymentEvent('paypal_payment_denied', { orderId });
-    
+
     // TODO: Update order status in database
-    
+
   } catch (error) {
     logError(error, { context: 'paypal_capture_denied_handler', orderId });
   }
 };
 
 const handleOrderApproved = async (webhookEvent) => {
+  let orderId;
   try {
-    const resource = webhookEvent.resource;
-    const orderId = resource.id;
+    const resource = webhookEvent?.resource;
+    orderId = resource?.id;
 
     logPaymentEvent('paypal_order_approved', { orderId });
 

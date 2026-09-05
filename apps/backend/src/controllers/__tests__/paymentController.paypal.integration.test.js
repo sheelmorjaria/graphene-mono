@@ -3,6 +3,7 @@ import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
 import paymentRoutes from '../../routes/payment.js';
 import User from '../../models/User.js';
 import Cart from '../../models/Cart.js';
@@ -27,6 +28,7 @@ beforeAll(async () => {
 
   app = express();
   app.use(express.json());
+  app.use(cookieParser()); // guest checkout reads req.cookies.cartSessionId
   app.use('/api/payment', paymentRoutes);
 });
 
@@ -241,6 +243,147 @@ describe('PayPal Payment Integration', () => {
   });
 
   describe('POST /api/payment/paypal/capture', () => {
+    it('should complete a guest purchase end-to-end (order, stock, cart)', async () => {
+      const { Client } = await import('@paypal/paypal-server-sdk');
+
+      // Guest cart bound to a session cookie (replaces the seeded user cart)
+      const guestCart = await Cart.create({
+        sessionId: 'guest-session-int-1',
+        items: [{
+          productId: testProduct._id,
+          variationId: testProduct.variations[0]._id.toString(),
+          productName: testProduct.name,
+          productSlug: testProduct.slug,
+          quantity: 1,
+          unitPrice: 499.99,
+          subtotal: 499.99
+        }],
+        totalAmount: 499.99,
+        totalItems: 1
+      });
+
+      const captureResult = {
+        result: {
+          id: 'GUEST-PP-ORDER-1',
+          status: 'COMPLETED',
+          payer: { email_address: 'payer@paypal.example' },
+          purchase_units: [{
+            custom_id: JSON.stringify({
+              c: guestCart._id.toString(),
+              s: testShippingMethod._id.toString()
+            }),
+            amount: {
+              currency_code: 'GBP',
+              value: '509.98',
+              breakdown: {
+                item_total: { value: '499.99' },
+                shipping: { value: '9.99' },
+                tax_total: { value: '0.00' }
+              }
+            },
+            shipping: {
+              name: { full_name: 'Jane Guest' },
+              address: {
+                address_line_1: '1 Main St',
+                admin_area_2: 'London',
+                admin_area_1: 'ENG',
+                postal_code: 'W1 1AA',
+                country_code: 'GB'
+              }
+            },
+            payments: { captures: [{ id: 'GUEST-CAPTURE-1' }] }
+          }]
+        }
+      };
+      // Plain async fns are enough — the controller just awaits the calls.
+      // NOTE: the implementation MUST be a regular function — `new Client()`
+      // rejects arrow implementations ("not a constructor").
+      Client.mockImplementation(function () {
+        return {
+          ordersController: {
+            ordersCreate: async () => ({}),
+            ordersCapture: async () => captureResult
+          },
+          paymentsController: {}
+        };
+      });
+
+      const response = await request(app)
+        .post('/api/payment/paypal/capture')
+        .set('Cookie', ['cartSessionId=guest-session-int-1'])
+        .send({
+          paypalOrderId: 'GUEST-PP-ORDER-1',
+          payerId: 'GUEST-PAYER-1',
+          customerEmail: 'guest@example.com'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.status).toBe('captured');
+      expect(response.body.data.customerEmail).toBe('guest@example.com');
+      expect(response.body.data).not.toHaveProperty('paymentDetails');
+
+      // Order persisted with guest fields
+      const order = await Order.findOne({ 'paymentDetails.paypalOrderId': 'GUEST-PP-ORDER-1' });
+      expect(order).toBeTruthy();
+      expect(order.isGuest).toBe(true);
+      expect(order.userId).toBeNull();
+      expect(order.customerEmail).toBe('guest@example.com');
+      expect(order.paymentDetails.paypalPayerEmail).toBe('payer@paypal.example');
+      expect(order.shippingMethod.name).toBe('Standard Shipping'); // resolved via custom_id
+      expect(order.shippingMethod.id.toString()).toBe(testShippingMethod._id.toString());
+
+      // Stock decremented on the matched variation
+      const product = await Product.findById(testProduct._id);
+      expect(product.variations[0].stockQuantity).toBe(9);
+
+      // Cart actually cleared in the database
+      const cartAfter = await Cart.findById(guestCart._id);
+      expect(cartAfter.items).toHaveLength(0);
+      expect(cartAfter.totalItems).toBe(0);
+
+      // Idempotent re-capture returns the existing order
+      const retry = await request(app)
+        .post('/api/payment/paypal/capture')
+        .set('Cookie', ['cartSessionId=guest-session-int-1'])
+        .send({
+          paypalOrderId: 'GUEST-PP-ORDER-1',
+          payerId: 'GUEST-PAYER-1',
+          customerEmail: 'guest@example.com'
+        });
+
+      expect(retry.status).toBe(200);
+      expect(retry.body.data.status).toBe('already_captured');
+      expect(retry.body.data.orderId).toBe(order._id.toString());
+      const orderCount = await Order.countDocuments({ 'paymentDetails.paypalOrderId': 'GUEST-PP-ORDER-1' });
+      expect(orderCount).toBe(1);
+    });
+
+    it('rejects a guest capture without an email BEFORE capturing', async () => {
+      const { Client } = await import('@paypal/paypal-server-sdk');
+      let captureCalled = false;
+      Client.mockImplementation(function () {
+        return {
+          ordersController: {
+            ordersCreate: async () => ({}),
+            ordersCapture: async () => {
+              captureCalled = true;
+              return { result: { status: 'COMPLETED' } };
+            }
+          },
+          paymentsController: {}
+        };
+      });
+
+      const response = await request(app)
+        .post('/api/payment/paypal/capture')
+        .send({ paypalOrderId: 'GUEST-NO-EMAIL-1' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Email is required for guest checkout');
+      expect(captureCalled).toBe(false);
+    });
+
     it('should reject request without PayPal order ID', async () => {
       const response = await request(app)
         .post('/api/payment/paypal/capture')
@@ -253,6 +396,13 @@ describe('PayPal Payment Integration', () => {
     });
 
     it('should fail when PayPal API is not available', async () => {
+      // Deterministic: other tests in this file leave a working Client mock,
+      // so force unavailability via env rather than relying on mock state.
+      const savedId = process.env.PAYPAL_CLIENT_ID;
+      const savedSecret = process.env.PAYPAL_CLIENT_SECRET;
+      delete process.env.PAYPAL_CLIENT_ID;
+      delete process.env.PAYPAL_CLIENT_SECRET;
+
       const response = await request(app)
         .post('/api/payment/paypal/capture')
         .set('Authorization', `Bearer ${userToken}`)
@@ -260,6 +410,9 @@ describe('PayPal Payment Integration', () => {
           paypalOrderId: 'PAYPAL_ORDER_123',
           payerId: 'PAYER123'
         });
+
+      process.env.PAYPAL_CLIENT_ID = savedId;
+      process.env.PAYPAL_CLIENT_SECRET = savedSecret;
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);

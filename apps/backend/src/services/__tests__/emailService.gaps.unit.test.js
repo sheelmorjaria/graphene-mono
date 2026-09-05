@@ -68,7 +68,7 @@ const fullOrder = () => ({
   orderNumber: 'ORD-001',
   customerEmail: 'customer@example.com',
   orderDate: new Date('2026-01-01'),
-  orderTotal: 699.99,
+  totalAmount: 699.99,
   items: [{
     productName: 'GrapheneOS Pixel 8',
     quantity: 1,
@@ -329,6 +329,8 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       const order = {
         _id: 'order123',
         orderNumber: 'ORD-001',
+        customerEmail: 'user@example.com',
+        shippingAddress: { fullName: 'Test Customer' },
         userId: { firstName: 'Test', lastName: 'Customer', email: 'user@example.com' }
       };
       const refundEntry = {
@@ -354,6 +356,8 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       const order = {
         _id: 'order123',
         orderNumber: 'ORD-001',
+        customerEmail: 'user@example.com',
+        shippingAddress: { fullName: 'Test Customer' },
         userId: { firstName: 'Test', lastName: 'Customer', email: 'user@example.com' }
       };
       const result = await emailService.sendRefundConfirmationEmail(order, {

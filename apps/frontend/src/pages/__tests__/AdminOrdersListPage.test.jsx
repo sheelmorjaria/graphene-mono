@@ -80,12 +80,22 @@ const mockOrdersResponse = {
           lastName: 'Smith',
           email: 'jane@test.com'
         }
+      },
+      {
+        _id: 'order3',
+        orderNumber: 'ORD-003',
+        status: 'processing',
+        totalAmount: 549.99,
+        createdAt: '2024-01-22T09:15:00Z',
+        customer: null,
+        customerEmail: 'guestshopper@example.com',
+        isGuest: true
       }
     ],
     pagination: {
       currentPage: 1,
       totalPages: 1,
-      totalOrders: 2,
+      totalOrders: 3,
       hasNextPage: false,
       hasPrevPage: false,
       limit: 20
@@ -190,10 +200,18 @@ describe('AdminOrdersListPage', () => {
 
     it('should show View Details links', () => {
       const viewDetailsLinks = screen.getAllByText('View Details');
-      expect(viewDetailsLinks).toHaveLength(2);
-      
+      expect(viewDetailsLinks).toHaveLength(3);
+
       expect(viewDetailsLinks[0].closest('a')).toHaveAttribute('href', '/admin/orders/order1');
       expect(viewDetailsLinks[1].closest('a')).toHaveAttribute('href', '/admin/orders/order2');
+    });
+
+    it('should show guest orders with their email and a Guest badge', () => {
+      expect(screen.getByText('ORD-003')).toBeInTheDocument();
+      expect(screen.getByText('Guest Customer')).toBeInTheDocument();
+      expect(screen.getByText('guestshopper@example.com')).toBeInTheDocument();
+      expect(screen.getByText('Guest')).toBeInTheDocument();
+      expect(screen.queryByText('Unknown Customer')).not.toBeInTheDocument();
     });
 
     it('should format status badges correctly', () => {

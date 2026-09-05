@@ -118,7 +118,7 @@ describe('Email Service - Comprehensive Tests', () => {
       customerEmail: 'customer@example.com',
       customerName: 'Test Customer',
       orderDate: new Date(),
-      orderTotal: 699.99,
+      totalAmount: 699.99,
       items: [{
         productName: 'GrapheneOS Pixel 8',
         quantity: 1,
@@ -140,18 +140,16 @@ describe('Email Service - Comprehensive Tests', () => {
       carrier: 'Royal Mail'
     };
 
-    it('should send order confirmation email', async () => {
+    it('should send order confirmation email successfully', async () => {
       const result = await emailService.sendOrderConfirmationEmail(mockOrder);
-      expect(result).toBeDefined();
-      expect(result.success).toBeDefined();
-      expect(typeof result.success).toBe('boolean');
+      // The service swallows internal errors and returns { success: false },
+      // so asserting truthiness is what proves the template actually built.
+      expect(result.success).toBe(true);
     });
 
-    it('should send order cancellation email', async () => {
+    it('should send order cancellation email successfully', async () => {
       const result = await emailService.sendOrderCancellationEmail(mockOrder);
-      expect(result).toBeDefined();
-      expect(result.success).toBeDefined();
-      expect(typeof result.success).toBe('boolean');
+      expect(result.success).toBe(true);
     });
 
     it('should send order shipped email', async () => {
@@ -245,6 +243,8 @@ describe('Email Service - Comprehensive Tests', () => {
     });
 
     it('should send refund confirmation email', async () => {
+      const sendSpy = vi.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true, messageId: 'x' });
+
       const orderWithRefundInfo = {
         ...mockOrder,
         userId: {
@@ -257,14 +257,42 @@ describe('Email Service - Comprehensive Tests', () => {
       const refundEntry = {
         refundId: 'REF123',
         amount: 699.99,
-        processedAt: new Date(),
+        date: new Date(), // schema field; the service falls back to processedAt
         reason: 'Customer requested cancellation'
       };
 
       const result = await emailService.sendRefundConfirmationEmail(orderWithRefundInfo, refundEntry);
-      expect(result).toBeDefined();
-      expect(result.success).toBeDefined();
-      expect(typeof result.success).toBe('boolean');
+      expect(result.success).toBe(true);
+      // Recipient is the order's customerEmail (works with lean orders and
+      // guest orders where userId is null)
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'customer@example.com' })
+      );
+    });
+
+    it('should send refund confirmation email for guest orders (no userId)', async () => {
+      const sendSpy = vi.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true, messageId: 'x' });
+
+      const guestOrder = {
+        ...mockOrder,
+        userId: null,
+        isGuest: true
+      };
+
+      const refundEntry = {
+        refundId: 'REF-GUEST-1',
+        amount: 99.99,
+        date: new Date('2026-09-01'),
+        reason: 'Damaged in transit'
+      };
+
+      const result = await emailService.sendRefundConfirmationEmail(guestOrder, refundEntry);
+
+      // Must not throw on userId.firstName (previously broke every refund email)
+      expect(result.success).toBe(true);
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'customer@example.com' })
+      );
     });
   });
 

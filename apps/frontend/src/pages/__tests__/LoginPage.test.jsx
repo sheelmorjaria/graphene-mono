@@ -2,14 +2,18 @@ import React from 'react';
 import { render, screen, waitFor, userEvent } from '../../test/test-utils';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import LoginPage from '../LoginPage';
+// The shared test-utils mock of cartService provides mergeGuestCart
+import { mergeGuestCart } from '../../services/cartService';
 
-// Mock useNavigate
+// Mock useNavigate + useLocation (login returns to location.state.from)
 const mockNavigate = vi.fn();
+const locationStateRef = { current: null };
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({ state: locationStateRef.current })
   };
 });
 
@@ -42,6 +46,9 @@ describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLogin.mockClear();
+    // clearAllMocks strips the shared mock's implementation — restore it
+    vi.mocked(mergeGuestCart).mockResolvedValue({ success: true });
+    locationStateRef.current = null;
     document.title = 'Test';
   });
 
@@ -153,6 +160,45 @@ describe('LoginPage', () => {
       });
 
       expect(mockNavigate).toHaveBeenCalledWith('/products');
+    });
+
+    it('merges the guest cart into the account on successful login', async () => {
+      loginUser.mockResolvedValue({
+        success: true,
+        data: {
+          token: 'mock-jwt-token',
+          user: { id: '123', email: 'john.doe@example.com', firstName: 'John', lastName: 'Doe' }
+        }
+      });
+
+      renderLoginPage();
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+      await waitFor(() => {
+        expect(mergeGuestCart).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('returns the user to the page they came from (state.from)', async () => {
+      locationStateRef.current = { from: '/checkout' };
+      loginUser.mockResolvedValue({
+        success: true,
+        data: {
+          token: 'mock-jwt-token',
+          user: { id: '123', email: 'john.doe@example.com', firstName: 'John', lastName: 'Doe' }
+        }
+      });
+
+      renderLoginPage();
+      await userEvent.type(screen.getByLabelText(/email address/i), validCredentials.email);
+      await userEvent.type(screen.getByLabelText(/password/i), validCredentials.password);
+      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/checkout');
+      });
     });
 
     it('should handle login errors', async () => {

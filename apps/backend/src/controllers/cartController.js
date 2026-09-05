@@ -429,3 +429,38 @@ export const clearCart = async (req, res) => {
     });
   }
 };
+// Merge the caller's guest cart (cartSessionId cookie) into their user cart.
+// Called by the frontend immediately after login/register, BEFORE the auth
+// state flips (which triggers a user-cart reload — the merged cart is what
+// gets loaded).
+export const mergeGuestCartOnLogin = async (req, res) => {
+  try {
+    const sessionId = req.cookies?.cartSessionId;
+
+    // No user (shouldn't happen behind optionalAuth at the frontend call
+    // time, but be safe) or no guest session — nothing to merge.
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required to merge a guest cart'
+      });
+    }
+
+    if (!sessionId) {
+      return res.json({ success: true, data: { merged: false, cart: null } });
+    }
+
+    const cart = await Cart.mergeGuestCart(req.user._id, sessionId);
+
+    // The session is consumed — drop the cookie.
+    res.clearCookie('cartSessionId');
+
+    return res.json({ success: true, data: { merged: true, cart } });
+  } catch (error) {
+    console.error('Merge guest cart error:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error occurred while merging guest cart'
+    });
+  }
+};
