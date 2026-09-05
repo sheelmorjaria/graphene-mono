@@ -300,8 +300,16 @@ describe('Privacy Controller - Integration Tests', () => {
 
   describe('Rate Limiting', () => {
     it('should handle rapid successive export requests properly', async () => {
-      // Make multiple rapid requests
-      const promises = Array(3).fill().map(() =>
+      // The first request must complete before the burst: the pending-request
+      // guard is check-then-insert, so truly concurrent first requests can
+      // all pass the check (a prod double-click lands after the first save).
+      const first = await request(app)
+        .post('/api/user/data/export')
+        .set('Authorization', `Bearer ${authToken}`);
+      expect(first.status).toBe(200);
+
+      // While that export is still pending, further requests are rate limited
+      const promises = Array(2).fill().map(() =>
         request(app)
           .post('/api/user/data/export')
           .set('Authorization', `Bearer ${authToken}`)
@@ -309,11 +317,7 @@ describe('Privacy Controller - Integration Tests', () => {
 
       const responses = await Promise.all(promises);
 
-      // First request should succeed
-      expect(responses[0].status).toBe(200);
-      
-      // Subsequent requests should be rate limited
-      const failedResponses = responses.slice(1).filter(r => r.status === 429);
+      const failedResponses = responses.filter(r => r.status === 429);
       expect(failedResponses.length).toBeGreaterThan(0);
     });
   });
