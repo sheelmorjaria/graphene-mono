@@ -8,6 +8,20 @@ import emailService from '../../services/emailService.js';
 import mongoose from 'mongoose';
 
 // Mock all dependencies
+// PayPal SDK (cancelOrder refunds captured payments via the gateway when
+// cancelling a paid order). Regular fn — `new Client()` rejects arrows.
+const paypalCancel = vi.hoisted(() => ({
+  refundCapturedPayment: vi.fn().mockResolvedValue({
+    result: { id: 'PP-CANCEL-REFUND-1', status: 'COMPLETED' }
+  })
+}));
+vi.mock('@paypal/paypal-server-sdk', () => ({
+  Client: vi.fn().mockImplementation(function () {
+    return { paymentsController: { refundCapturedPayment: paypalCancel.refundCapturedPayment } };
+  }),
+  Environment: { Sandbox: 'sandbox', Production: 'production' }
+}));
+
 vi.mock('../../models/Order.js');
 vi.mock('../../models/Cart.js');
 vi.mock('../../models/Product.js');
@@ -30,6 +44,12 @@ describe('User Order Controller - Unit Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // PayPal client env (cancelOrder gateway refund path)
+    process.env.PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'test-client-id';
+    process.env.PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || 'test-client-secret';
+    paypalCancel.refundCapturedPayment.mockResolvedValue({
+      result: { id: 'PP-CANCEL-REFUND-1', status: 'COMPLETED' }
+    });
 
     mockUser = {
       _id: '123456789012345678901234',
@@ -397,6 +417,128 @@ describe('User Order Controller - Unit Tests', () => {
         success: false,
         error: 'Order not found'
       });
+    });
+
+    it('does not touch the gateway when payment was not completed', async () => {
+      req.params.orderId = '111111111111111111111111';
+      const mockOrder = {
+        _id: '111111111111111111111111',
+        orderNumber: 'ORD001',
+        status: 'pending',
+        paymentStatus: 'pending',
+        items: [],
+        save: vi.fn().mockResolvedValue(true)
+      };
+      Order.findOne = vi.fn().mockReturnValue({ session: vi.fn().mockResolvedValue(mockOrder) });
+
+      await cancelOrder(req, res);
+
+      expect(paypalCancel.refundCapturedPayment).not.toHaveBeenCalled();
+      const call = res.json.mock.calls[0][0];
+      expect(call.data.refund).toBeNull();
+    });
+
+    it('refunds the captured payment via the gateway on cancel of a paid order', async () => {
+      req.params.orderId = '111111111111111111111111';
+      const mockOrder = {
+        _id: '111111111111111111111111',
+        orderNumber: 'ORD001',
+        status: 'processing',
+        paymentStatus: 'completed',
+        totalAmount: 129.99,
+        totalRefundedAmount: 0,
+        refundHistory: [],
+        statusHistory: [],
+        items: [],
+        save: vi.fn().mockResolvedValue(true)
+      };
+      // controller reads paymentDetails for the capture ID
+      Object.defineProperty(mockOrder, 'paymentDetails', {
+        value: { paypalOrderId: 'PP-1', paypalTransactionId: 'CAP-1' },
+        enumerable: true,
+        writable: true
+      });
+      Order.findOne = vi.fn().mockReturnValue({ session: vi.fn().mockResolvedValue(mockOrder) });
+
+      await cancelOrder(req, res);
+
+      expect(paypalCancel.refundCapturedPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          captureId: 'CAP-1',
+          body: { amount: { value: '129.99', currency_code: 'GBP' } }
+        })
+      );
+      const call = res.json.mock.calls[0][0];
+      expect(call.success).toBe(true);
+      expect(call.data.refund).toMatchObject({
+        refundId: 'PP-CANCEL-REFUND-1',
+        status: 'succeeded'
+      });
+      // Order ledger reflects the real refund
+      expect(mockOrder.refundStatus).toBe('fully_refunded');
+      expect(mockOrder.paymentStatus).toBe('refunded');
+      expect(mockOrder.totalRefundedAmount).toBe(129.99);
+      expect(mockOrder.refundHistory).toHaveLength(1);
+      expect(mockOrder.refundHistory[0].refundId).toBe('PP-CANCEL-REFUND-1');
+    });
+
+    it('leaves the order cancellable (502, nothing changed) when the gateway rejects', async () => {
+      paypalCancel.refundCapturedPayment.mockRejectedValue(new Error('Capture refunded already'));
+      req.params.orderId = '111111111111111111111111';
+      const mockOrder = {
+        _id: '111111111111111111111111',
+        orderNumber: 'ORD001',
+        status: 'processing',
+        paymentStatus: 'completed',
+        totalAmount: 50,
+        refundHistory: [],
+        items: [],
+        save: vi.fn().mockResolvedValue(true)
+      };
+      Object.defineProperty(mockOrder, 'paymentDetails', {
+        value: { paypalOrderId: 'PP-1', paypalTransactionId: 'CAP-1' },
+        enumerable: true,
+        writable: true
+      });
+      Order.findOne = vi.fn().mockReturnValue({ session: vi.fn().mockResolvedValue(mockOrder) });
+
+      await cancelOrder(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(502);
+      const call = res.json.mock.calls[0][0];
+      expect(call.success).toBe(false);
+      expect(call.error).toContain('PayPal refund failed');
+      // Order untouched — still cancellable for retry
+      expect(mockOrder.status).toBe('processing');
+      expect(mockOrder.save).not.toHaveBeenCalled();
+    });
+
+    it('cancels with a manual-refund note when a paid order has no capture ID', async () => {
+      req.params.orderId = '111111111111111111111111';
+      const mockOrder = {
+        _id: '111111111111111111111111',
+        orderNumber: 'ORD001',
+        status: 'pending',
+        paymentStatus: 'completed',
+        totalAmount: 50,
+        refundHistory: [],
+        items: [],
+        save: vi.fn().mockResolvedValue(true)
+      };
+      Object.defineProperty(mockOrder, 'paymentDetails', {
+        value: { transactionId: 'LEGACY-1' },
+        enumerable: true,
+        writable: true
+      });
+      Order.findOne = vi.fn().mockReturnValue({ session: vi.fn().mockResolvedValue(mockOrder) });
+
+      await cancelOrder(req, res);
+
+      expect(paypalCancel.refundCapturedPayment).not.toHaveBeenCalled();
+      const call = res.json.mock.calls[0][0];
+      expect(call.success).toBe(true);
+      expect(mockOrder.status).toBe('cancelled');
+      expect(call.data.refund).toMatchObject({ status: 'manual_required' });
     });
   });
 
