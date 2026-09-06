@@ -55,10 +55,13 @@ const FAQPage = () => {
                 current inventory includes:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Google Pixel 9 Series (Pixel 9, 9 Pro, 9 Pro Fold)</li>
-                <li>Google Pixel 8 Series (Pixel 8, 8 Pro)</li>
-                <li>Google Pixel 7 Series (Pixel 7, 7 Pro)</li>
-                <li>Google Pixel 6 Series (Pixel 6 and 6 Pro, refurbished)</li>
+                <li>Google Pixel 10 Series (Pixel 10, 10 Pro, 10 Pro XL, 10 Pro Fold, 10a)</li>
+                <li>Google Pixel 9 Series (Pixel 9, 9 Pro, 9 Pro XL)</li>
+                <li>Google Pixel 9 Pro Fold (256GB and 512GB)</li>
+                <li>Google Pixel Fold (original, 256GB and 512GB)</li>
+                <li>Google Pixel 8 Series (Pixel 8, 8 Pro, 8a)</li>
+                <li>Google Pixel 7 Series (Pixel 7, 7 Pro, 7a)</li>
+                <li>Google Pixel 6 Series (Pixel 6, 6 Pro, 6a — refurbished)</li>
               </ul>
               <p className="text-text-muted">
                 All devices are sourced from reputable suppliers and thoroughly tested before sale.
