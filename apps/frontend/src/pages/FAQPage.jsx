@@ -55,13 +55,26 @@ const FAQPage = () => {
                 current inventory includes:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Google Pixel 9 Series (Pixel 9, 9 Pro, 9 Pro XL, 9 Pro Fold)</li>
-                <li>Google Pixel 8 Series (Pixel 8, 8 Pro, 8a)</li>
-                <li>Google Pixel 7 Series (Pixel 7, 7 Pro, 7a)</li>
-                <li>Older models available while supplies last</li>
+                <li>Google Pixel 9 Series (Pixel 9, 9 Pro, 9 Pro Fold)</li>
+                <li>Google Pixel 8 Series (Pixel 8, 8 Pro)</li>
+                <li>Google Pixel 7 Series (Pixel 7, 7 Pro)</li>
+                <li>Google Pixel 6 Series (Pixel 6 and 6 Pro, refurbished)</li>
               </ul>
               <p className="text-text-muted">
                 All devices are sourced from reputable suppliers and thoroughly tested before sale.
+                Availability of specific models varies — see our{' '}
+                <Link to="/products" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  product catalogue
+                </Link>{' '}
+                for live stock and pricing.
+              </p>
+              <p className="text-text-muted">
+                Already own a Pixel? Our{' '}
+                <Link to="/flash-service" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  flashing service
+                </Link>{' '}
+                covers a wider range of models (Pixel 6 through the Pixel 10 family) — we flash
+                your own device so you don't need to buy new.
               </p>
             </div>
           )
@@ -131,15 +144,14 @@ const FAQPage = () => {
           q: 'How long does delivery take?',
           a: (
             <div className="space-y-3 text-text-secondary">
-              <p>Delivery times vary by location:</p>
+              <p>Delivery times and costs by destination:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li><strong className="text-cyan-400">UK:</strong> 3-5 days (standard), 2-3 days (express)</li>
-                <li><strong className="text-cyan-400">Europe:</strong> 7-14 working days</li>
-                <li><strong className="text-cyan-400">USA/Canada:</strong> 10-15 working days</li>
-                <li><strong className="text-cyan-400">Rest of World:</strong> 14-21 working days</li>
+                <li><strong className="text-cyan-400">UK:</strong> Next working day via Royal Mail Special Delivery (£20.45, fully insured)</li>
+                <li><strong className="text-cyan-400">Europe:</strong> 3-5 days via Royal International Tracked (£13.95)</li>
+                <li><strong className="text-cyan-400">Rest of World:</strong> 6-7 days via Royal International Tracked (£13.95)</li>
               </ul>
               <p className="text-text-muted">
-                Processing time is 1-2 business days before shipping. See our{' '}
+                Orders are processed within 2-3 business days after payment confirmation (orders placed on weekends or holidays are processed the next business day), so allow for this in addition to the delivery time above. See our{' '}
                 <Link to="/shipping" className="text-cyan-400 hover:text-matrix-400 transition-colors">
                   Shipping Information
                 </Link>{' '}
@@ -153,14 +165,17 @@ const FAQPage = () => {
           a: (
             <div className="space-y-3 text-text-secondary">
               <p>
-                Yes, we ship worldwide! International orders are shipped via tracked and insured services.
+                Yes, we ship worldwide via Royal International Tracked (£13.95) — fully tracked,
+                3-5 days within Europe or 6-7 days to the rest of the world.
               </p>
               <p>
                 Please note that international customers are responsible for any customs duties,
-                import taxes, or other fees that may apply.
+                import taxes, or other fees that may apply. Customs processing may also add 1-5
+                days to delivery times.
               </p>
               <p className="text-text-muted">
-                We cannot ship to countries under UK/US sanctions.
+                We cannot ship to countries under UK/US sanctions, PO Boxes, APO/FPO addresses,
+                or freight forwarders.
               </p>
             </div>
           )
