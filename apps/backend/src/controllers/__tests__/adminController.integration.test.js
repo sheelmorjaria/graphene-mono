@@ -421,6 +421,12 @@ describe('Admin Controller', () => {
         totalAmount: 110,
         paymentStatus: 'completed',
         status: 'processing',
+        // issueRefund now refunds via the PayPal gateway — the order needs a
+        // capture ID (the harness SDK mock's refundCapturedPayment intercepts)
+        paymentDetails: {
+          paypalOrderId: 'PP-REFUND-ORDER-1',
+          paypalTransactionId: 'PP-REFUND-CAPTURE-1'
+        },
         shippingAddress: {
           fullName: 'John Doe',
           addressLine1: '123 Test St',

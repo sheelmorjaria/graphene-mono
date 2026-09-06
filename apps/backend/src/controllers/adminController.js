@@ -6,6 +6,7 @@ import Product from '../models/Product.js';
 import ReturnRequest from '../models/ReturnRequest.js';
 import Category from '../models/Category.js';
 import emailService from '../services/emailService.js';
+import { getPayPalClient } from './paymentController.js';
 
 // Admin login
 export const adminLogin = async (req, res) => {
@@ -878,17 +879,71 @@ export const issueRefund = async (req, res) => {
       });
     }
 
-    // Generate refund ID (in a real system, this would come from payment gateway)
-    const refundId = `refund_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Refund the money at the gateway BEFORE recording anything — the ledger
+    // must never claim a refund that didn't happen at PayPal.
+    const captureId = order.paymentDetails?.paypalTransactionId
+      || order.paymentDetails?.paypalPaymentId;
 
-    // Add refund to history
+    if (!captureId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No PayPal capture found for this order. Issue the refund manually in the PayPal dashboard, then record it against the order.'
+      });
+    }
+
+    const paypalClient = getPayPalClient();
+    if (!paypalClient) {
+      return res.status(502).json({
+        success: false,
+        error: 'PayPal refund processing is not available. Nothing has been refunded — try again shortly.'
+      });
+    }
+
+    // paypalRequestId is PayPal's server-side idempotency key: a retry of
+    // this attempt (e.g. the response was lost in transit) returns the same
+    // refund instead of refunding the customer twice.
+    const refundRequestId = `refund_${order._id}_${Date.now()}`;
+
+    let gatewayRefund;
+    try {
+      const response = await paypalClient.paymentsController.refundCapturedPayment({
+        captureId,
+        paypalRequestId: refundRequestId,
+        body: {
+          amount: {
+            value: refundAmount.toFixed(2),
+            currency_code: 'GBP'
+          }
+        }
+      });
+      // Tolerate both response shapes ({ result } vs bare model) for mock parity
+      gatewayRefund = response?.result ?? response ?? {};
+    } catch (paypalError) {
+      console.error('PayPal refund failed:', paypalError.message);
+      await session.abortTransaction();
+      return res.status(502).json({
+        success: false,
+        error: 'PayPal refund failed — nothing was refunded or recorded here. Verify the refund status in the PayPal dashboard before retrying.',
+        data: { orderId: order._id }
+      });
+    }
+
+    if (gatewayRefund.status !== 'COMPLETED' && gatewayRefund.status !== 'PENDING') {
+      await session.abortTransaction();
+      return res.status(502).json({
+        success: false,
+        error: `PayPal refund returned unexpected status "${gatewayRefund.status}" — nothing was recorded. Verify in the PayPal dashboard.`,
+        data: { orderId: order._id }
+      });
+    }
+
     const refundEntry = {
-      refundId: refundId,
+      refundId: gatewayRefund.id || refundRequestId,
       amount: refundAmount,
       date: new Date(),
       reason: refundReason.trim(),
       adminUserId: adminId,
-      status: 'succeeded' // In real system, this would be 'pending' initially
+      status: gatewayRefund.status === 'PENDING' ? 'pending' : 'succeeded'
     };
 
     order.refundHistory.push(refundEntry);

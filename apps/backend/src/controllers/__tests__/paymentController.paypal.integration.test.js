@@ -80,7 +80,16 @@ beforeEach(async () => {
       min: 3,
       max: 5
     },
-    isActive: true
+    isActive: true,
+    // create-order validates eligibility via calculateCost — give the method
+    // criteria that accept the test address and cart value
+    criteria: {
+      supportedCountries: ['GB', 'UK'],
+      minOrderValue: 0,
+      maxOrderValue: 100000,
+      minWeight: 0,
+      maxWeight: 100000
+    }
   });
 
   testCart = await Cart.create({
@@ -147,7 +156,7 @@ describe('PayPal Payment Integration', () => {
         city: 'Test City',
         stateProvince: 'Test State',
         postalCode: '12345',
-        country: 'UK'
+        country: 'GB'
       },
       shippingMethodId: null // Will be set in beforeEach
     };
@@ -171,18 +180,19 @@ describe('PayPal Payment Integration', () => {
       //   }
       // };
 
-      // Note: In a real test, you'd mock the PayPal API call
-      // For now, this will fail due to missing PayPal credentials
       const response = await request(app)
         .post('/api/payment/paypal/create-order')
         .set('Authorization', `Bearer ${userToken}`)
         .send(validOrderData);
 
-      // Since PayPal API is not properly initialized in test environment,
-      // we expect a 500 error for PayPal API unavailability
-      expect(response.status).toBe(500);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('PayPal payment processing is not available');
+      // The harness mocks the PayPal SDK client, so a valid request now
+      // creates the order end-to-end (it previously 500'd because the old
+      // arrow Client mock made `new Client()` throw).
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.paypalOrderId).toBe('mock-paypal-order-id');
+      expect(response.body.data.approvalUrl).toContain('mock-approval-url');
+      expect(response.body.data.orderSummary.orderTotal).toBeCloseTo(509.98); // 499.99 cart + 9.99 shipping
     });
 
     it('should reject request without shipping address', async () => {
@@ -194,9 +204,6 @@ describe('PayPal Payment Integration', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .send(invalidData);
 
-      // The controller validates the PayPal client before input; in the test
-      // sandbox the client is unavailable, so the request is rejected (400 or
-      // 500) rather than reaching the shipping-validation branch.
       expect([400, 500]).toContain(response.status);
       expect(response.body.success).toBe(false);
     });
@@ -225,8 +232,6 @@ describe('PayPal Payment Integration', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .send(invalidData);
 
-      // See note above: PayPal client is unavailable in the sandbox, so the
-      // request is rejected before the shipping-method lookup runs.
       expect([400, 500]).toContain(response.status);
       expect(response.body.success).toBe(false);
     });

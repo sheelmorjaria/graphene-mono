@@ -3,6 +3,20 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 
 // ---- Mocks ---------------------------------------------------------------
+// PayPal SDK mock (issueRefund refunds via the gateway). Regular function —
+// `new Client()` rejects arrow implementations.
+const paypalGaps = vi.hoisted(() => ({
+  refundCapturedPayment: vi.fn().mockResolvedValue({
+    result: { id: 'PP-REFUND-GAPS-1', status: 'COMPLETED' }
+  })
+}));
+vi.mock('@paypal/paypal-server-sdk', () => ({
+  Client: vi.fn().mockImplementation(function () {
+    return { paymentsController: { refundCapturedPayment: paypalGaps.refundCapturedPayment } };
+  }),
+  Environment: { Sandbox: 'sandbox', Production: 'production' }
+}));
+
 vi.mock('../../models/User.js', () => ({
   default: Object.assign(vi.fn(), {
     findById: vi.fn(),
@@ -107,6 +121,9 @@ describe('Admin Controller - additional coverage gaps', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // PayPal client env (issueRefund gateway path)
+    process.env.PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'test-client-id';
+    process.env.PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || 'test-client-secret';
 
     req = { params: {}, query: {}, body: {}, user: { _id: 'admin123', userId: 'admin123' } };
     res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
@@ -377,6 +394,7 @@ describe('Admin Controller - additional coverage gaps', () => {
       const order = {
         paymentStatus: 'completed', totalAmount: 100, totalRefundedAmount: 0,
         refundHistory: [], statusHistory: [], status: 'processing',
+        paymentDetails: { paypalOrderId: 'PP-1', paypalTransactionId: 'CAP-1' },
         getMaxRefundableAmount: () => 100,
         save: vi.fn().mockResolvedValue({})
       };
@@ -392,6 +410,7 @@ describe('Admin Controller - additional coverage gaps', () => {
       const order = {
         paymentStatus: 'completed', totalAmount: 100, totalRefundedAmount: 0,
         refundHistory: [], statusHistory: [], status: 'processing',
+        paymentDetails: { paypalOrderId: 'PP-1', paypalTransactionId: 'CAP-1' },
         getMaxRefundableAmount: () => 100,
         save: vi.fn().mockResolvedValue({})
       };
