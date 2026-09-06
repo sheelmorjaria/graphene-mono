@@ -592,8 +592,9 @@ class EmailService {
           <h3>Refund Information</h3>
           <div class="detail-row">
             <span class="detail-label">Refund Amount:</span>
-            <span class="detail-value success">£${refundDetails.amount.toFixed(2)}</span>
+            <span class="detail-value success">£${(refundDetails.amount || 0).toFixed(2)}</span>
           </div>
+          ${refundDetails.refundId ? `
           <div class="detail-row">
             <span class="detail-label">Refund ID:</span>
             <span class="detail-value">${refundDetails.refundId}</span>
@@ -602,6 +603,12 @@ class EmailService {
             <span class="detail-label">Processing Time:</span>
             <span class="detail-value">5-10 business days</span>
           </div>
+          ` : `
+          <div class="detail-row">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value">Your refund is being processed by our support team — we will contact you shortly.</span>
+          </div>
+          `}
         </div>
       ` : '';
 
@@ -753,6 +760,66 @@ class EmailService {
 
     } catch (error) {
       logError(error, { context: 'order_delivered_email', orderId: order._id });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send generic order status update email (processing/awaiting_shipment/
+  // cancelled/returned — shipped and delivered have dedicated emails above).
+  async sendOrderStatusUpdateEmail(order, newStatus, oldStatus = 'unknown') {
+    try {
+      const statusMessages = {
+        processing: 'We are currently preparing your order. You will receive another email once it ships.',
+        awaiting_shipment: 'Your order has been prepared and is awaiting dispatch. You will receive tracking details once it ships.',
+        cancelled: 'Your order has been cancelled. If you believe you were charged in error or have any questions about a refund, please contact our support team.',
+        returned: 'Your return has been recorded against this order. Our team will be in touch if any further information is needed.'
+      };
+
+      const statusMessage = statusMessages[newStatus] ||
+        `The status of your order has been updated to "${newStatus}".`;
+
+      const content = `
+        <p>${statusMessage}</p>
+
+        <div class="order-details">
+          <h3>Order Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value highlight">${order.orderNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Previous Status:</span>
+            <span class="detail-value">${oldStatus}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Current Status:</span>
+            <span class="detail-value highlight">${newStatus}</span>
+          </div>
+          ${order.trackingNumber ? `
+          <div class="detail-row">
+            <span class="detail-label">Tracking Number:</span>
+            <span class="detail-value">${order.trackingNumber}</span>
+          </div>
+          ` : ''}
+        </div>
+
+        <p>If you have any questions, just reply to this email or contact our support team.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Order Status Update',
+        content,
+        order.shippingAddress?.fullName || order.customer?.firstName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: order.customerEmail || order.customer?.email,
+        subject: `Order Status Update - ${order.orderNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'order_status_update_email', orderId: order._id });
       return { success: false, error: error.message };
     }
   }

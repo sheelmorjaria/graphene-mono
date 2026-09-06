@@ -294,6 +294,41 @@ describe('Email Service - Comprehensive Tests', () => {
         expect.objectContaining({ to: 'customer@example.com' })
       );
     });
+
+    it('should send a status update email for cancelled orders (method previously missing)', async () => {
+      const sendSpy = vi.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true, messageId: 'x' });
+
+      const result = await emailService.sendOrderStatusUpdateEmail(mockOrder, 'cancelled', 'processing');
+
+      expect(result.success).toBe(true);
+      expect(sendSpy).toHaveBeenCalledTimes(1);
+      const call = sendSpy.mock.calls[0][0];
+      expect(call.to).toBe('customer@example.com');
+      expect(call.subject).toBe('Order Status Update - ORD-001');
+      expect(call.htmlContent).toContain('cancelled');
+    });
+
+    it('should include the old and new status for generic status changes', async () => {
+      const sendSpy = vi.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true, messageId: 'x' });
+
+      await emailService.sendOrderStatusUpdateEmail(mockOrder, 'awaiting_shipment', 'processing');
+
+      const call = sendSpy.mock.calls[0][0];
+      expect(call.htmlContent).toContain('awaiting_shipment');
+      expect(call.htmlContent).toContain('processing');
+    });
+
+    it('should work for guest orders (userId null) and greet by shipping name', async () => {
+      const sendSpy = vi.spyOn(emailService, 'sendEmail').mockResolvedValue({ success: true, messageId: 'x' });
+
+      const guestOrder = { ...mockOrder, userId: null, isGuest: true };
+      const result = await emailService.sendOrderStatusUpdateEmail(guestOrder, 'returned', 'delivered');
+
+      expect(result.success).toBe(true);
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'customer@example.com' })
+      );
+    });
   });
 
   describe('Account Status Email Methods', () => {
