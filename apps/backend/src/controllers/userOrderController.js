@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import ShippingMethod from '../models/ShippingMethod.js';
 import emailService from '../services/emailService.js';
 import mongoose from 'mongoose';
+import { getPayPalClient } from './paymentController.js';
 
 // Get user's order history with pagination
 export const getUserOrders = async (req, res) => {
@@ -555,6 +556,93 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
+    // Refund a captured payment BEFORE cancelling — the order must never end
+    // up cancelled with the customer's money still held and nothing real
+    // recorded (the old code fabricated a 'PAYPAL-REFUND-...' + 'pending'
+    // status that even failed schema validation, so nothing was ever recorded).
+    let refundDetails = null;
+    if (order.paymentStatus === 'completed') {
+      const captureId = order.paymentDetails?.paypalTransactionId
+        || order.paymentDetails?.paypalPaymentId;
+
+      if (!captureId) {
+        // Legacy/manual payment record: cancel, but be explicit that the
+        // refund is NOT automated — support must handle it.
+        console.warn(`Cancel with unrefundable payment — manual refund required: order ${order.orderNumber}`);
+        refundDetails = {
+          status: 'manual_required',
+          amount: order.totalAmount,
+          note: 'No PayPal capture on this order — refund must be issued manually by support.'
+        };
+      } else {
+        const paypalClient = getPayPalClient();
+        if (!paypalClient) {
+          await session.abortTransaction();
+          return res.status(502).json({
+            success: false,
+            error: 'PayPal refund processing is not available. Your order has NOT been cancelled — please try again shortly.'
+          });
+        }
+
+        // Server-side idempotency: a retry of this cancellation attempt
+        // returns the same refund instead of refunding the customer twice.
+        const refundRequestId = `refund_${order._id}_cancel_${Date.now()}`;
+
+        let gatewayRefund;
+        try {
+          const response = await paypalClient.paymentsController.refundCapturedPayment({
+            captureId,
+            paypalRequestId: refundRequestId,
+            body: {
+              amount: {
+                value: order.totalAmount.toFixed(2),
+                currency_code: 'GBP'
+              }
+            }
+          });
+          // Tolerate both response shapes ({ result } vs bare model) for mock parity
+          gatewayRefund = response?.result ?? response ?? {};
+        } catch (paypalError) {
+          console.error('PayPal refund during cancellation failed:', paypalError.message);
+          await session.abortTransaction();
+          return res.status(502).json({
+            success: false,
+            error: 'PayPal refund failed — your order has NOT been cancelled and nothing was refunded. Please try again or contact support.'
+          });
+        }
+
+        if (gatewayRefund.status !== 'COMPLETED' && gatewayRefund.status !== 'PENDING') {
+          await session.abortTransaction();
+          return res.status(502).json({
+            success: false,
+            error: `PayPal refund returned unexpected status "${gatewayRefund.status}" — your order has NOT been cancelled. Please contact support.`
+          });
+        }
+
+        const succeeded = gatewayRefund.status === 'COMPLETED';
+        refundDetails = {
+          refundId: gatewayRefund.id || refundRequestId,
+          amount: order.totalAmount,
+          status: succeeded ? 'succeeded' : 'pending',
+          reason: 'requested_by_customer'
+        };
+
+        // Record the REAL refund on the order ledger
+        order.refundHistory = order.refundHistory || [];
+        order.refundHistory.push({
+          refundId: refundDetails.refundId,
+          amount: order.totalAmount,
+          reason: 'requested_by_customer',
+          status: refundDetails.status
+        });
+        order.totalRefundedAmount = (order.totalRefundedAmount || 0) + order.totalAmount;
+        order.refundStatus = 'fully_refunded';
+        if (succeeded) {
+          order.paymentStatus = 'refunded';
+        }
+      }
+    }
+
     // Update order status to cancelled
     order.status = 'cancelled';
     if (process.env.NODE_ENV === 'test') {
@@ -588,40 +676,6 @@ export const cancelOrder = async (req, res) => {
             { session }
           );
         }
-      }
-    }
-
-    // Initiate refund if payment was processed
-    let refundDetails = null;
-    if (order.paymentStatus === 'completed' && order.paymentDetails?.paypalOrderId) {
-      try {
-        // PayPal refund would be handled through PayPal SDK
-        const refund = {
-          id: `PAYPAL-REFUND-${Date.now()}`,
-          amount: order.totalAmount,
-          status: 'pending',
-          reason: 'requested_by_customer'
-        };
-        
-        refundDetails = {
-          refundId: refund.id,
-          amount: refund.amount,
-          status: refund.status
-        };
-
-        // Update order with refund information
-        order.refundId = refund.id;
-        order.refundStatus = refund.status;
-        if (process.env.NODE_ENV === 'test') {
-          // In test environment, save without session to avoid MongoDB session issues
-          await order.save();
-        } else {
-          await order.save({ session });
-        }
-      } catch (paypalError) {
-        console.error('PayPal refund error:', paypalError);
-        // Don't fail the entire cancellation if refund fails
-        refundDetails = { error: 'Refund initiation failed' };
       }
     }
 

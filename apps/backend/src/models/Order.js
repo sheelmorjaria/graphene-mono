@@ -326,7 +326,8 @@ const orderSchema = new mongoose.Schema({
     adminUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Admin user ID is required']
+      // Optional: customer-initiated refunds (cancelOrder) have no admin
+      required: false
     },
     status: {
       type: String,
