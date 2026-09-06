@@ -85,7 +85,6 @@ const FAQPage = () => {
             <div className="space-y-3 text-text-secondary">
               <p>We offer devices in various conditions to suit different budgets:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li><strong className="text-cyan-400">New:</strong> Brand new, sealed in box</li>
                 <li><strong className="text-cyan-400">Excellent:</strong> Like new, no visible signs of use</li>
                 <li><strong className="text-cyan-400">Good:</strong> Minimal signs of use, fully functional</li>
                 <li><strong className="text-cyan-400">Fair:</strong> Visible wear but fully functional with good battery</li>
