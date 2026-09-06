@@ -158,31 +158,35 @@ vi.mock('../services/emailService.js', () => ({
 
 // Mock PayPal SDK to prevent client initialization issues
 vi.mock('@paypal/paypal-server-sdk', () => ({
-  Client: vi.fn().mockImplementation(() => ({
-    ordersController: {
-      ordersCreate: vi.fn().mockResolvedValue({
-        result: {
-          id: 'mock-paypal-order-id',
-          status: 'CREATED',
-          links: [{ rel: 'approve', href: 'https://sandbox.paypal.com/mock-approval-url' }]
-        }
-      }),
-      ordersCapture: vi.fn().mockResolvedValue({
-        result: {
-          id: 'mock-capture-id',
-          status: 'COMPLETED'
-        }
-      })
-    },
-    paymentsController: {
-      capturesRefund: vi.fn().mockResolvedValue({
-        result: {
-          id: 'mock-refund-id',
-          status: 'COMPLETED'
-        }
-      })
-    }
-  })),
+  // Regular function — `new Client()` rejects arrow implementations
+  Client: vi.fn().mockImplementation(function () {
+    return {
+      ordersController: {
+        ordersCreate: vi.fn().mockResolvedValue({
+          result: {
+            id: 'mock-paypal-order-id',
+            status: 'CREATED',
+            links: [{ rel: 'approve', href: 'https://sandbox.paypal.com/mock-approval-url' }]
+          }
+        }),
+        ordersCapture: vi.fn().mockResolvedValue({
+          result: {
+            id: 'mock-capture-id',
+            status: 'COMPLETED'
+          }
+        })
+      },
+      paymentsController: {
+      // Real SDK method name (matched to paymentsController.refundCapturedPayment)
+        refundCapturedPayment: vi.fn().mockResolvedValue({
+          result: {
+            id: 'mock-refund-id',
+            status: 'COMPLETED'
+          }
+        })
+      }
+    };
+  }),
   Environment: {
     Sandbox: 'sandbox',
     Production: 'production'

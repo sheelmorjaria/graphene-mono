@@ -35,6 +35,19 @@ const mockOrder = {
   isRefundEligible: mockIsRefundEligible
 };
 
+// Mock the PayPal server SDK (getPayPalClient lives in paymentController,
+// imported by adminController). Implementation must be a regular function —
+// `new Client()` rejects arrow implementations.
+const paypal = vi.hoisted(() => ({
+  refundCapturedPayment: vi.fn()
+}));
+vi.mock('@paypal/paypal-server-sdk', () => ({
+  Client: vi.fn().mockImplementation(function () {
+    return { paymentsController: { refundCapturedPayment: paypal.refundCapturedPayment } };
+  }),
+  Environment: { Sandbox: 'sandbox', Production: 'production' }
+}));
+
 // Mock email service (prepared for testing)
 const mockSendRefundConfirmationEmail = vi.fn();
 // const mockEmailService = { sendRefundConfirmationEmail: mockSendRefundConfirmationEmail };
@@ -84,6 +97,13 @@ describe('Admin Controller - issueRefund', () => {
       json: vi.fn()
     };
     
+    // PayPal client env + gateway default (tests override per-case)
+    process.env.PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'test-client-id';
+    process.env.PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || 'test-client-secret';
+    paypal.refundCapturedPayment.mockResolvedValue({
+      result: { id: 'PAYPAL-REFUND-1', status: 'COMPLETED' }
+    });
+
     // Default mongoose session mock setup
     mockSession.startTransaction.mockResolvedValue();
     mockSession.commitTransaction.mockResolvedValue();
@@ -228,6 +248,10 @@ describe('Admin Controller - issueRefund', () => {
         totalRefundedAmount: 0,
         refundHistory: [],
         statusHistory: [],
+        paymentDetails: {
+          paypalOrderId: 'PP-ORDER-1',
+          paypalTransactionId: 'CAPTURE-1'
+        },
         getMaxRefundableAmount: vi.fn().mockReturnValue(100),
         save: vi.fn().mockResolvedValue()
       };
@@ -320,6 +344,133 @@ describe('Admin Controller - issueRefund', () => {
         message: 'Refund of £50.00 processed successfully',
         data: expect.any(Object)
       });
+    });
+  });
+
+
+  describe('PayPal Gateway Integration', () => {
+    beforeEach(() => {
+      mongoose.Types.ObjectId.isValid = vi.fn().mockReturnValue(true);
+
+      const mockOrderDoc = {
+        _id: '507f1f77bcf86cd799439011',
+        paymentStatus: 'completed',
+        status: 'processing',
+        refundStatus: 'none',
+        totalAmount: 100,
+        totalRefundedAmount: 0,
+        refundHistory: [],
+        statusHistory: [],
+        paymentDetails: {
+          paypalOrderId: 'PP-ORDER-1',
+          paypalTransactionId: 'CAPTURE-1'
+        },
+        getMaxRefundableAmount: vi.fn().mockReturnValue(100),
+        save: vi.fn().mockResolvedValue()
+      };
+
+      const mockPopulatedOrder = { ...mockOrderDoc };
+      mockFindById.mockImplementation(() => createMockQueryChain(mockOrderDoc, mockPopulatedOrder));
+      vi.spyOn(Order, 'findById').mockImplementation(mockFindById);
+    });
+
+    it('refunds via the PayPal gateway and records the gateway refund ID', async () => {
+      paypal.refundCapturedPayment.mockResolvedValue({
+        result: { id: 'PAYPAL-REFUND-GW-9', status: 'COMPLETED' }
+      });
+
+      await issueRefund(req, res);
+
+      expect(paypal.refundCapturedPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          captureId: 'CAPTURE-1',
+          body: {
+            amount: { value: '50.00', currency_code: 'GBP' }
+          }
+        })
+      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      // The recorded entry must carry the gateway's refund ID + succeeded status
+      const refund = res.json.mock.calls[0][0].data.refund;
+      expect(refund.refundId).toBe('PAYPAL-REFUND-GW-9');
+      expect(refund.status).toBe('succeeded');
+    });
+
+    it('passes an idempotency key (paypalRequestId) to the gateway', async () => {
+      paypal.refundCapturedPayment.mockResolvedValue({
+        result: { id: 'PAYPAL-REFUND-2', status: 'COMPLETED' }
+      });
+
+      await issueRefund(req, res);
+
+      const call = paypal.refundCapturedPayment.mock.calls[0][0];
+      expect(call.paypalRequestId).toEqual(expect.any(String));
+      expect(call.paypalRequestId.length).toBeGreaterThan(10);
+    });
+
+    it('records a PENDING gateway refund as pending, not succeeded', async () => {
+      paypal.refundCapturedPayment.mockResolvedValue({
+        result: { id: 'PAYPAL-REFUND-PENDING', status: 'PENDING' }
+      });
+
+      await issueRefund(req, res);
+
+      const refund = res.json.mock.calls[0][0].data.refund;
+      expect(refund.status).toBe('pending');
+    });
+
+    it('returns 502 and records NOTHING when the gateway rejects the refund', async () => {
+      paypal.refundCapturedPayment.mockRejectedValue(new Error('Capture already fully refunded'));
+
+      await issueRefund(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(502);
+      const orderDoc = mockFindById.mock.results[0]?.value;
+      // The order document must not have a refund recorded
+      const savedOrder = res.json.mock.calls[0][0];
+      expect(savedOrder.success).toBe(false);
+      expect(savedOrder.error).toContain('PayPal refund failed');
+    });
+
+    it('returns 400 with a manual-refund hint when the order has no PayPal capture', async () => {
+      // Rebuild the order without paymentDetails capture IDs
+      const mockOrderDoc = {
+        _id: '507f1f77bcf86cd799439011',
+        paymentStatus: 'completed',
+        refundStatus: 'none',
+        totalAmount: 100,
+        totalRefundedAmount: 0,
+        refundHistory: [],
+        statusHistory: [],
+        paymentDetails: { transactionId: 'LEGACY-123' },
+        getMaxRefundableAmount: vi.fn().mockReturnValue(100),
+        save: vi.fn().mockResolvedValue()
+      };
+      mockFindById.mockImplementation(() => createMockQueryChain(mockOrderDoc, mockOrderDoc));
+      vi.spyOn(Order, 'findById').mockImplementation(mockFindById);
+
+      await issueRefund(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json.mock.calls[0][0].error).toMatch(/manually/i);
+      expect(paypal.refundCapturedPayment).not.toHaveBeenCalled();
+    });
+
+    it('returns 502 when the PayPal client is unavailable', async () => {
+      const savedId = process.env.PAYPAL_CLIENT_ID;
+      const savedSecret = process.env.PAYPAL_CLIENT_SECRET;
+      delete process.env.PAYPAL_CLIENT_ID;
+      delete process.env.PAYPAL_CLIENT_SECRET;
+
+      try {
+        await issueRefund(req, res);
+      } finally {
+        process.env.PAYPAL_CLIENT_ID = savedId;
+        process.env.PAYPAL_CLIENT_SECRET = savedSecret;
+      }
+
+      expect(res.status).toHaveBeenCalledWith(502);
+      expect(paypal.refundCapturedPayment).not.toHaveBeenCalled();
     });
   });
 

@@ -9,7 +9,7 @@ import { validateFraudDetectionCookie, assessOrderFraudRisk } from '../services/
 import emailService from '../services/emailService.js';
 
 // Helper function to get PayPal client dynamically (for better testability)
-const getPayPalClient = () => {
+export const getPayPalClient = () => {
   const paypalClientId = process.env.PAYPAL_CLIENT_ID;
   const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
   
