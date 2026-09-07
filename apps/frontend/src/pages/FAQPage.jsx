@@ -191,11 +191,13 @@ const FAQPage = () => {
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Order confirmation email with order details</li>
-                <li>Shipping confirmation with tracking number</li>
-                <li>Real-time tracking updates via email</li>
+                <li>Shipping confirmation email with your tracking number</li>
+                <li>Email updates as your order progresses (shipped, delivered, and other status changes)</li>
               </ul>
               <p className="text-text-muted">
-                You can also track your order from your{' '}
+                For live parcel updates, use your tracking number on the Royal Mail website —
+                tracking is provided by Royal Mail, so their site has the most up-to-date
+                scan information. You can also see your order's status on your{' '}
                 <Link to="/orders" className="text-cyan-400 hover:text-matrix-400 transition-colors">
                   order history
                 </Link>{' '}
@@ -235,7 +237,7 @@ const FAQPage = () => {
           a: (
             <div className="space-y-3 text-text-secondary">
               <p>
-                We offer a <strong className="text-cyan-400">14-day return policy</strong> for most items.
+                We offer a <strong className="text-cyan-400">28-day return policy</strong> for most items.
                 To be eligible for a return, the item must be:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
@@ -259,7 +261,6 @@ const FAQPage = () => {
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Hardware malfunctions under normal use</li>
                 <li>Component failures not caused by damage</li>
-                <li>Battery defects (below 80% capacity within 12 months)</li>
               </ul>
               <p className="text-text-muted">
                 The warranty does not cover physical damage, water exposure, software modifications after purchase, or unauthorized repairs.
