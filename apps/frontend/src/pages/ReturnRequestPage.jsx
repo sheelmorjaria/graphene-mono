@@ -66,10 +66,10 @@ const ReturnRequestPage = () => {
       // Check return window
       const deliveryDate = new Date(orderData.deliveryDate);
       const returnWindowEnd = new Date(deliveryDate);
-      returnWindowEnd.setDate(returnWindowEnd.getDate() + 30);
-      
+      returnWindowEnd.setDate(returnWindowEnd.getDate() + 28);
+
       if (new Date() > returnWindowEnd) {
-        setError('The 30-day return window has expired for this order.');
+        setError('The 28-day return window has expired for this order.');
         return;
       }
 

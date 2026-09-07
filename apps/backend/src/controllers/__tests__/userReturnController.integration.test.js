@@ -343,7 +343,7 @@ describe('User Return Controller', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('30-day return window has expired');
+      expect(response.body.error).toContain('28-day return window has expired');
     });
 
     it('should return 400 if a return request already exists for the order', async () => {

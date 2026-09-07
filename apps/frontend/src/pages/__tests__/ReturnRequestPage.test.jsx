@@ -108,7 +108,7 @@ describe('ReturnRequestPage', () => {
     });
   });
 
-  it('shows an error when the 30-day return window has expired', async () => {
+  it('shows an error when the 28-day return window has expired', async () => {
     orderService.getUserOrderDetails.mockResolvedValue({
       data: {
         order: buildDeliveredOrder({
@@ -120,7 +120,7 @@ describe('ReturnRequestPage', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText('The 30-day return window has expired for this order.')).toBeInTheDocument();
+      expect(screen.getByText('The 28-day return window has expired for this order.')).toBeInTheDocument();
     });
   });
 

@@ -142,7 +142,7 @@ const RefundPolicyPage = () => {
           <ul className="list-disc list-inside space-y-1 ml-4">
             <li>Item is returned with missing accessories or packaging</li>
             <li>Item shows signs of use beyond normal inspection</li>
-            <li>Return is initiated after the 14-day period</li>
+            <li>Return is initiated after the 28-day period</li>
             <li>Item cannot be resold as new</li>
           </ul>
           <p>Partial refund amounts will be determined based on the condition of the returned item and its resale value.</p>

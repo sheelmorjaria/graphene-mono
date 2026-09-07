@@ -198,7 +198,7 @@ export const submitReturnRequest = async (req, res) => {
     }
 
     // Check return window
-    const returnWindow = 30;
+    const returnWindow = 28;
     const deliveryDate = new Date(order.deliveryDate);
     const returnWindowEnd = new Date(deliveryDate);
     returnWindowEnd.setDate(returnWindowEnd.getDate() + returnWindow);
@@ -206,7 +206,7 @@ export const submitReturnRequest = async (req, res) => {
     if (new Date() > returnWindowEnd) {
       return res.status(400).json({
         success: false,
-        error: 'The 30-day return window has expired for this order'
+        error: 'The 28-day return window has expired for this order'
       });
     }
 

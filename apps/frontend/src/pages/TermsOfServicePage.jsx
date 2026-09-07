@@ -176,7 +176,7 @@ const TermsOfServicePage = () => {
                 for detailed information.
               </p>
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
-                <li>14-day return period for most items</li>
+                <li>28-day return period for most items</li>
                 <li>Items must be in original condition</li>
                 <li>Return shipping costs may apply</li>
               </ul>
