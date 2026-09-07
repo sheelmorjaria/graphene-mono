@@ -138,12 +138,41 @@ const CartSummary = () => {
 };
 
 const PaymentSection = () => {
-  const { nextStep, canProceedToReview, isGuestCheckout } = useCheckout();
+  const {
+    nextStep,
+    canProceedToReview,
+    isGuestCheckout,
+    guestEmail,
+    shippingAddress,
+    shippingMethod,
+    paymentMethod,
+    useSameAsShipping,
+    billingAddress
+  } = useCheckout();
   const [_validationState, setValidationState] = useState({ isValid: false, error: null });
 
   const handleValidationChange = (state) => {
     setValidationState(state);
   };
+
+  // Mirror of canProceedToReview's conditions, surfaced to the user so a
+  // disabled button always says WHY it's disabled.
+  const missingRequirements = [];
+  if (isGuestCheckout && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail || '')) {
+    missingRequirements.push('a valid email address');
+  }
+  if (!shippingAddress) {
+    missingRequirements.push('a shipping address');
+  }
+  if (!shippingMethod) {
+    missingRequirements.push('a shipping method');
+  }
+  if (!paymentMethod) {
+    missingRequirements.push('a payment method');
+  }
+  if (!useSameAsShipping && !billingAddress) {
+    missingRequirements.push('a billing address');
+  }
 
   return (
     <div
@@ -183,7 +212,15 @@ const PaymentSection = () => {
           onValidationChange={handleValidationChange}
         />
 
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-end mt-6 items-center gap-4">
+          {!canProceedToReview && missingRequirements.length > 0 && (
+            <p
+              data-testid="checkout-missing-requirements"
+              className="text-sm text-text-muted text-right"
+            >
+              Still needed: {missingRequirements.join(', ')}
+            </p>
+          )}
           <button
             onClick={nextStep}
             disabled={!canProceedToReview}
@@ -207,7 +244,6 @@ const ReviewSection = () => {
     checkoutState,
     shippingAddress,
     billingAddress,
-    shippingMethod,
     paymentMethod,
     orderSummary,
     prevStep,
