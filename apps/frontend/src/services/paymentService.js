@@ -1,4 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// MUST resolve the URL the same way as cartService (utils/apiConfig) — a
+// divergent base sends cart traffic and payment traffic to different
+// origins, so the cart cookie set by one is invisible to the other and
+// checkout fails with "Cart is empty" / "No cart session found".
+import { API_BASE_URL } from '../utils/apiConfig';
+
+// Cart lookups key on the cartSessionId cookie (guests) or the user id from
+// the Bearer token (logged in) — send the token when present, like cartService.
+const getAuthToken = () => localStorage.getItem('authToken');
+
+const authHeaders = () => {
+  const token = getAuthToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
 
 // Helper function to format currency
 export const formatCurrency = (amount) => {
@@ -15,9 +32,7 @@ export const getPaymentMethods = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/payments/methods`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders(),
       credentials: 'include'
     });
 
@@ -71,9 +86,7 @@ export const createPayPalOrder = async (checkoutData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/payments/paypal/create-order`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders(),
       credentials: 'include',
       body: JSON.stringify(checkoutData)
     });
@@ -97,9 +110,7 @@ export const capturePayPalPayment = async ({ paypalOrderId, payerId, customerEma
   try {
     const response = await fetch(`${API_BASE_URL}/payments/paypal/capture`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders(),
       credentials: 'include',
       body: JSON.stringify({
         paypalOrderId,
