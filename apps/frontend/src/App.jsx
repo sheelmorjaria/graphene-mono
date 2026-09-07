@@ -180,6 +180,7 @@ const AuthenticatedUserMenu = () => {
 
 const Header = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const logout = useLogout();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
 
@@ -402,8 +403,6 @@ const Header = () => {
                       <li>
                         <button
                           onClick={async () => {
-                            const { useLogout } = await import('./contexts/AuthContext');
-                            const logout = useLogout();
                             await logout();
                             setIsMobileMenuOpen(false);
                           }}
