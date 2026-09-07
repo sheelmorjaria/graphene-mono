@@ -415,16 +415,8 @@ describe('ShippingAddressSection', () => {
   });
 
   describe('Continue Button', () => {
-    it('should disable continue button when no address is selected', () => {
-      renderWithProviders();
-
-      const continueButton = screen.getByText('Continue to Payment');
-      expect(continueButton).toBeDisabled();
-    });
-
-    it('should enable continue button when address is selected', () => {
+    it('does not render a continue button — review advancement is owned by the Payment Method section', () => {
       renderWithProviders({
-        canProceedToPayment: true,
         checkoutState: {
           ...mockCheckoutContext.checkoutState,
           shippingAddress: mockAddresses[0],
@@ -432,24 +424,7 @@ describe('ShippingAddressSection', () => {
         }
       });
 
-      const continueButton = screen.getByText('Continue to Payment');
-      expect(continueButton).not.toBeDisabled();
-    });
-
-    it('should call nextStep when continue button is clicked', async () => {
-      renderWithProviders({
-        canProceedToPayment: true,
-        checkoutState: {
-          ...mockCheckoutContext.checkoutState,
-          shippingAddress: mockAddresses[0],
-          shippingMethod: { id: 'standard', name: 'Standard', cost: 5 }
-        }
-      });
-
-      const continueButton = screen.getByText('Continue to Payment');
-      await userEvent.click(continueButton);
-
-      expect(mockNextStep).toHaveBeenCalled();
+      expect(screen.queryByText('Continue to Payment')).not.toBeInTheDocument();
     });
   });
 });
