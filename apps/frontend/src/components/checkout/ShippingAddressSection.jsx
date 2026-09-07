@@ -65,8 +65,6 @@ const ShippingAddressSection = () => {
     addressesLoading,
     addressesError,
     setShippingAddress,
-    nextStep,
-    canProceedToPayment,
     refreshAddresses,
     isGuestCheckout
   } = useCheckout();
@@ -184,12 +182,6 @@ const ShippingAddressSection = () => {
     setShowEditForm(false);
     setEditingAddress(null);
     setFormError('');
-  };
-
-  const handleContinueToPayment = () => {
-    if (canProceedToPayment) {
-      nextStep();
-    }
   };
 
   // Show add/edit form
@@ -310,20 +302,8 @@ const ShippingAddressSection = () => {
             </div>
           )}
 
-          {/* Continue button */}
-          <div className="flex justify-end mt-6">
-            <button
-              onClick={handleContinueToPayment}
-              disabled={!canProceedToPayment || !checkoutState.shippingMethod}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                canProceedToPayment && checkoutState.shippingMethod
-                  ? 'bg-cyan-400 text-white hover:bg-cyan-500'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              Continue to Payment
-            </button>
-          </div>
+          {/* Advancing to review is owned by the "Continue to Review" button in
+              the Payment Method section — no duplicate continue button here. */}
         </>
       )}
     </div>
