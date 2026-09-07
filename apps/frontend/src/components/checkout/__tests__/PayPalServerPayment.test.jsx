@@ -162,4 +162,39 @@ describe('PayPalServerPayment', () => {
 
     expect(screen.getByTestId('payment-error')).toHaveTextContent('Cart is empty');
   });
+
+  it('keeps the specific create/capture error — onError must not overwrite it', async () => {
+    mockCreatePayPalOrder.mockRejectedValue(
+      new Error('PayPal payment processing is not available')
+    );
+
+    render(<PayPalServerPayment orderSummary={orderSummary} />);
+
+    await act(async () => {
+      // createOrder rejects; PayPalButtons then calls onError with the same
+      // rejection — simulate that sequence
+      await buttonPropsRef.current.createOrder().catch(() => {});
+      await buttonPropsRef.current.onError(new Error('Popup failure'));
+    });
+
+    // The backend's specific message survives; the generic one never replaces it
+    expect(screen.getByTestId('payment-error')).toHaveTextContent(
+      'PayPal payment processing is not available'
+    );
+    expect(screen.getByTestId('payment-error')).not.toHaveTextContent(
+      'choose a different payment method'
+    );
+  });
+
+  it('shows the generic message via onError when no specific error was set', async () => {
+    render(<PayPalServerPayment orderSummary={orderSummary} />);
+
+    await act(async () => {
+      await buttonPropsRef.current.onError(new Error('SDK blew up'));
+    });
+
+    expect(screen.getByTestId('payment-error')).toHaveTextContent(
+      'choose a different payment method'
+    );
+  });
 });

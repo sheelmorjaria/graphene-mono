@@ -88,7 +88,14 @@ const PayPalServerPayment = ({ orderSummary, onSuccess, onError, onCancel }) => 
 
   const handlePayPalError = (err) => {
     console.error('PayPal payment error:', err);
-    setError('Payment failed. Please try again or choose a different payment method.');
+    // createOrder/onApprove already set a SPECIFIC error (e.g. the backend's
+    // "PayPal payment processing is not available") before rethrowing to
+    // trigger onError — keep that message instead of overwriting it with a
+    // generic one that hides the real cause.
+    setError((current) =>
+      current ||
+      'Payment failed. Please try again or choose a different payment method.'
+    );
     setIsProcessing(false);
     if (onError) {
       onError(err);
