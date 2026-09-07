@@ -574,7 +574,7 @@ describe('User Order Controller - Unit Tests', () => {
           orderId: '111111111111111111111111',
           orderNumber: 'ORD001',
           deliveryDate: mockOrder.deliveryDate,
-          returnWindow: 30,
+          returnWindow: 28,
           eligibleItems: expect.arrayContaining([
             expect.objectContaining({
               productId: '444444444444444444444444',

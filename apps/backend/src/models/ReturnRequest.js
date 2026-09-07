@@ -232,7 +232,7 @@ const returnRequestSchema = new mongoose.Schema({
   // Additional metadata
   returnWindow: {
     type: Number,
-    default: 30, // 30 days return window
+    default: 28, // 28 days return window
     min: 1,
     max: 365
   },
