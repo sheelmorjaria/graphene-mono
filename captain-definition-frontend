@@ -8,6 +8,7 @@
     "WORKDIR /app",
     "RUN npm install --legacy-peer-deps",
     "ARG VITE_API_BASE_URL",
+    "ARG VITE_PAYPAL_CLIENT_ID",
     "ARG VITE_APP_TITLE",
     "ARG VITE_COMPANY_NAME",
     "ARG VITE_SUPPORT_EMAIL",
@@ -16,6 +17,7 @@
     "ARG VITE_ENABLE_MONERO_PAYMENTS",
     "ARG VITE_ENABLE_DEV_TOOLS",
     "ENV VITE_API_BASE_URL=$VITE_API_BASE_URL",
+    "ENV VITE_PAYPAL_CLIENT_ID=$VITE_PAYPAL_CLIENT_ID",
     "ENV VITE_APP_TITLE=$VITE_APP_TITLE",
     "ENV VITE_COMPANY_NAME=$VITE_COMPANY_NAME",
     "ENV VITE_SUPPORT_EMAIL=$VITE_SUPPORT_EMAIL",
@@ -38,6 +40,12 @@
       "id": "VITE_API_BASE_URL",
       "description": "Backend API URL (use backend CapRover URL or /api for same domain)",
       "defaultValue": "/api",
+      "advanced": false
+    },
+    {
+      "id": "VITE_PAYPAL_CLIENT_ID",
+      "description": "PayPal client ID for the JS SDK \u2014 MUST be the same PayPal app as the backend's PAYPAL_CLIENT_ID (baked at build time)",
+      "defaultValue": "",
       "advanced": false
     },
     {
