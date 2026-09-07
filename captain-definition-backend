@@ -16,7 +16,7 @@
     "USER nodejs",
     "EXPOSE 5000",
     "ENTRYPOINT [\"/sbin/tini\", \"--\"]",
-    "CMD [\"sh\", \"-c\", \"echo '🚀 Starting backend container...' && node --version && npm --version && echo '📁 Starting server...' && ls -la && node server.js\"]"
+    "CMD [\"sh\", \"-c\", \"echo '\ud83d\ude80 Starting backend container...' && node --version && npm --version && echo '\ud83d\udcc1 Starting server...' && ls -la && node server.js\"]"
   ],
   "containerHttpPort": 5000,
   "healthCheckPath": "/health",
@@ -113,6 +113,18 @@
       "id": "FRONTEND_URL",
       "description": "Frontend URL for CORS",
       "defaultValue": "https://graphene-security.com",
+      "advanced": true
+    },
+    {
+      "id": "PAYPAL_ENVIRONMENT",
+      "description": "PayPal environment: 'live' for production, 'sandbox' for testing",
+      "defaultValue": "live",
+      "advanced": true
+    },
+    {
+      "id": "PAYPAL_WEBHOOK_ID",
+      "description": "PayPal webhook ID (for webhook signature verification)",
+      "defaultValue": "",
       "advanced": true
     }
   ]
