@@ -39,3 +39,4 @@ public/images/products/*:Zone.Identifier
 
 # Markdown files (as per original gitignore)
 *.md
+logo.png~*
