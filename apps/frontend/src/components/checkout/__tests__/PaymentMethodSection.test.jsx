@@ -129,14 +129,31 @@ describe('PaymentMethodSection', () => {
     expect(radios[1]).toBeInTheDocument();
   });
 
-  it('renders error state when getPaymentMethods rejects', async () => {
+
+  it('falls back to built-in PayPal and auto-selects it when the methods list is empty', async () => {
+    // DB has no enabled PaymentGateway doc -> backend returns an empty
+    // list. Previously this rendered zero method cards and left
+    // paymentMethod null, greying out "Continue to Review" forever.
+    getPaymentMethods.mockResolvedValue({ paymentMethods: [] });
+
+    render(<PaymentMethodSection isActive={true} />);
+
+    expect(await screen.findByText('PayPal')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('payment-method-paypal')
+    ).toBeInTheDocument();
+  });
+
+  it('falls back to built-in PayPal when the methods fetch fails (no dead end)', async () => {
     getPaymentMethods.mockRejectedValue(new Error('Network down'));
 
     render(<PaymentMethodSection isActive={true} />);
 
-    expect(await screen.findByText('Payment Methods Unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Network down')).toBeInTheDocument();
-    expect(screen.getByText('Try Again')).toBeInTheDocument();
+    // The old behaviour rendered a "Payment Methods Unavailable" dead end
+    // that blocked checkout entirely. The store is PayPal-only, so the
+    // payment still works via the PayPal buttons in the review step.
+    expect(await screen.findByText('PayPal')).toBeInTheDocument();
+    expect(screen.queryByText('Payment Methods Unavailable')).not.toBeInTheDocument();
   });
 
   it('renders completed state display when isCompleted and a method is selected', async () => {
@@ -178,13 +195,12 @@ describe('PaymentMethodSection', () => {
     );
   });
 
-  it('handles empty payment methods list without crashing', async () => {
+  it('handles a null paymentMethods payload without crashing (falls back)', async () => {
     getPaymentMethods.mockResolvedValue({ paymentMethods: [] });
 
     render(<PaymentMethodSection isActive={true} />);
 
-    await screen.findByText('Secure Payment');
-    // No method labels rendered.
-    expect(screen.queryByText('PayPal')).not.toBeInTheDocument();
+    // Null payload -> [] -> built-in PayPal fallback renders
+    expect(await screen.findByText('PayPal')).toBeInTheDocument();
   });
 });

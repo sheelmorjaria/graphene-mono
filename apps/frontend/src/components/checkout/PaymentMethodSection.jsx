@@ -14,31 +14,50 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
 
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Load payment methods
   useEffect(() => {
+    // The store is PayPal-only (Order schema allows only paymentMethod.type
+    // 'paypal'), so checkout must never dead-end when the DB-driven methods
+    // list is empty or the fetch fails — fall back to built-in PayPal. The
+    // actual payment still runs through the server-side PayPal flow in the
+    // review step.
+    const BUILTIN_PAYPAL = {
+      id: 'paypal',
+      type: 'paypal',
+      name: 'PayPal',
+      description: 'Pay with your PayPal account'
+    };
+
     const loadPaymentData = async () => {
+      let methods = [];
+
       try {
         setLoading(true);
-        
+
         // Load available payment methods
-        const methods = await getPaymentMethods();
-        setAvailablePaymentMethods(methods.paymentMethods || []);
-        
+        const response = await getPaymentMethods();
+        methods = response?.paymentMethods || [];
+
+        if (methods.length === 0) {
+          // No enabled PaymentGateway records in the DB
+          methods = [BUILTIN_PAYPAL];
+        }
+      } catch (err) {
+        console.error('Error loading payment data:', err);
+        // Methods list is cosmetic — PayPal still works via the review step
+        methods = [BUILTIN_PAYPAL];
+      } finally {
+        setAvailablePaymentMethods(methods);
+        setLoading(false);
+
         // Set default payment method to PayPal if none selected
-        if (!paymentMethod && methods.paymentMethods?.length > 0) {
-          const paypalMethod = methods.paymentMethods.find(method => method.type === 'paypal');
+        if (!paymentMethod) {
+          const paypalMethod = methods.find(method => method.type === 'paypal');
           if (paypalMethod) {
             setPaymentMethod(paypalMethod);
           }
         }
-        
-      } catch (err) {
-        console.error('Error loading payment data:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -79,23 +98,6 @@ const PaymentMethodSection = ({ isActive, isCompleted, onValidationChange }) => 
             <div className="h-10 bg-gray-200 rounded"></div>
             <div className="h-20 bg-gray-200 rounded"></div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-red-200">
-        <div className="text-red-600">
-          <h3 className="font-medium mb-2">Payment Methods Unavailable</h3>
-          <p className="text-sm">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-3 text-sm text-red-600 hover:text-red-800 underline"
-          >
-            Try Again
-          </button>
         </div>
       </div>
     );
