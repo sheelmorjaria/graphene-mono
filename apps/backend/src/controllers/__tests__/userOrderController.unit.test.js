@@ -473,7 +473,7 @@ describe('User Order Controller - Unit Tests', () => {
       expect(paypalCancel.refundCapturedPayment).toHaveBeenCalledWith(
         expect.objectContaining({
           captureId: 'CAP-1',
-          body: { amount: { value: '129.99', currency_code: 'GBP' } }
+          body: { amount: { value: '129.99', currencyCode: 'GBP' } }
         })
       );
       const call = res.json.mock.calls[0][0];

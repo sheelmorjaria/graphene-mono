@@ -243,55 +243,57 @@ export const createPayPalOrder = async (req, res) => {
     const shippingCost = calculation.cost;
     const orderTotal = cartTotal + shippingCost;
 
-    // Create PayPal order request
+    // Create PayPal order request. SDK v1.x validates camelCase JS objects
+    // (the SDK serializes to snake_case on the wire) — snake_case keys here
+    // fail with ArgumentsValidationError before the request ever leaves.
     const orderRequest = {
       intent: 'CAPTURE',
-      purchase_units: [{
+      purchaseUnits: [{
         // Round-trips cart + shipping method to capture (create is stateless).
         // PayPal caps custom_id at 127 chars; compact keys keep it ~60.
-        custom_id: JSON.stringify({ c: cart._id.toString(), s: shippingMethodId }),
+        customId: JSON.stringify({ c: cart._id.toString(), s: shippingMethodId }),
         amount: {
-          currency_code: 'GBP',
+          currencyCode: 'GBP',
           value: orderTotal.toFixed(2),
           breakdown: {
-            item_total: {
-              currency_code: 'GBP',
+            itemTotal: {
+              currencyCode: 'GBP',
               value: cartTotal.toFixed(2)
             },
             shipping: {
-              currency_code: 'GBP',
+              currencyCode: 'GBP',
               value: shippingCost.toFixed(2)
             }
           }
         },
         items: cartItems.map(item => ({
           name: item.name,
-          unit_amount: {
-            currency_code: 'GBP',
+          unitAmount: {
+            currencyCode: 'GBP',
             value: item.unitPrice.toFixed(2)
           },
           quantity: item.quantity.toString()
         })),
         shipping: {
           name: {
-            full_name: `${shippingAddress.firstName} ${shippingAddress.lastName}`
+            fullName: `${shippingAddress.firstName} ${shippingAddress.lastName}`
           },
           address: {
-            address_line_1: shippingAddress.addressLine1,
-            address_line_2: shippingAddress.addressLine2 || '',
-            admin_area_2: shippingAddress.city,
-            admin_area_1: shippingAddress.stateProvince,
-            postal_code: shippingAddress.postalCode,
-            country_code: shippingAddress.country
+            addressLine1: shippingAddress.addressLine1,
+            addressLine2: shippingAddress.addressLine2 || '',
+            adminArea2: shippingAddress.city,
+            adminArea1: shippingAddress.stateProvince,
+            postalCode: shippingAddress.postalCode,
+            countryCode: shippingAddress.country
           }
         }
       }],
-      application_context: {
-        brand_name: 'Graphene Security',
-        landing_page: 'NO_PREFERENCE',
-        user_action: 'PAY_NOW',
-        return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout/success`,
-        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout`
+      applicationContext: {
+        brandName: 'Graphene Security',
+        landingPage: 'NO_PREFERENCE',
+        userAction: 'PAY_NOW',
+        returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout/success`,
+        cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/checkout`
       }
     };
 
@@ -435,9 +437,9 @@ export const capturePayPalPayment = async (req, res) => {
       });
     }
 
-    // Extract payment details
+    // Extract payment details (SDK v1.x deserializes responses to camelCase)
     const paymentDetails = captureResponse.result;
-    const purchaseUnit = paymentDetails.purchase_units?.[0];
+    const purchaseUnit = paymentDetails.purchaseUnits?.[0];
     const capture = purchaseUnit?.payments?.captures?.[0];
 
     if (!capture) {
@@ -451,9 +453,9 @@ export const capturePayPalPayment = async (req, res) => {
     const fraudData = validateFraudDetectionCookie(req);
     const orderAmount = parseFloat(purchaseUnit.amount.value);
     const shippingAddress = {
-      addressLine1: purchaseUnit?.shipping?.address?.address_line_1,
-      city: purchaseUnit?.shipping?.address?.admin_area_2,
-      postalCode: purchaseUnit?.shipping?.address?.postal_code
+      addressLine1: purchaseUnit?.shipping?.address?.addressLine1,
+      city: purchaseUnit?.shipping?.address?.adminArea2,
+      postalCode: purchaseUnit?.shipping?.address?.postalCode
     };
 
     const fraudAssessment = assessOrderFraudRisk(fraudData, {
@@ -479,7 +481,7 @@ export const capturePayPalPayment = async (req, res) => {
     // ({ c: cartId, s: shippingMethodId }). Tolerant of pre-deploy orders.
     let checkoutRef = null;
     try {
-      checkoutRef = JSON.parse(purchaseUnit?.custom_id || '');
+      checkoutRef = JSON.parse(purchaseUnit?.customId || '');
     } catch {
       checkoutRef = null;
     }
@@ -491,7 +493,7 @@ export const capturePayPalPayment = async (req, res) => {
         paypalOrderId,
         expectedCartId: checkoutRef.c,
         actualCartId: cart._id?.toString(),
-        payerEmail: paymentDetails.payer?.email_address,
+        payerEmail: paymentDetails.payer?.emailAddress,
         amount: orderAmount
       });
       return res.status(409).json({
@@ -564,7 +566,7 @@ export const capturePayPalPayment = async (req, res) => {
       const orderData = {
         userId: req.user?._id || null,
         isGuest: !req.user,
-        customerEmail: req.user?.email || guestEmail || paymentDetails.payer?.email_address,
+        customerEmail: req.user?.email || guestEmail || paymentDetails.payer?.emailAddress,
         items: cart.items.map(item => ({
           productId: item.productId,
           productName: item.productName || 'Product',
@@ -573,7 +575,7 @@ export const capturePayPalPayment = async (req, res) => {
           unitPrice: item.unitPrice || item.price,
           totalPrice: (item.unitPrice || item.price) * item.quantity
         })),
-        subtotal: parseFloat(purchaseUnit.amount.breakdown?.item_total?.value || 0),
+        subtotal: parseFloat(purchaseUnit.amount.breakdown?.itemTotal?.value || 0),
         shipping: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0),
         tax: parseFloat(purchaseUnit.amount.breakdown?.tax_total?.value || 0),
         totalAmount: parseFloat(purchaseUnit.amount.value),
@@ -586,29 +588,29 @@ export const capturePayPalPayment = async (req, res) => {
           paypalPaymentId: capture.id,
           paypalPayerId: payerId,
           paypalTransactionId: capture.id,
-          paypalPayerEmail: paymentDetails.payer?.email_address,
+          paypalPayerEmail: paymentDetails.payer?.emailAddress,
           transactionId: capture.id
         },
         paymentStatus: 'completed',
         status: 'processing',
         shippingAddress: {
-          fullName: shippingInfo.name?.full_name || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim() || 'Customer',
-          addressLine1: shippingInfo.address?.address_line_1 || 'Address Line 1',
-          addressLine2: shippingInfo.address?.address_line_2 || '',
-          city: shippingInfo.address?.admin_area_2 || 'City',
-          stateProvince: shippingInfo.address?.admin_area_1 || 'State',
-          postalCode: shippingInfo.address?.postal_code || '00000',
-          country: shippingInfo.address?.country_code || 'GB',
+          fullName: shippingInfo.name?.fullName || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim() || 'Customer',
+          addressLine1: shippingInfo.address?.addressLine1 || 'Address Line 1',
+          addressLine2: shippingInfo.address?.addressLine2 || '',
+          city: shippingInfo.address?.adminArea2 || 'City',
+          stateProvince: shippingInfo.address?.adminArea1 || 'State',
+          postalCode: shippingInfo.address?.postalCode || '00000',
+          country: shippingInfo.address?.countryCode || 'GB',
           phoneNumber: req.user?.phone || ''
         },
         billingAddress: {
-          fullName: shippingInfo.name?.full_name || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim() || 'Customer',
-          addressLine1: shippingInfo.address?.address_line_1 || 'Address Line 1',
-          addressLine2: shippingInfo.address?.address_line_2 || '',
-          city: shippingInfo.address?.admin_area_2 || 'City',
-          stateProvince: shippingInfo.address?.admin_area_1 || 'State',
-          postalCode: shippingInfo.address?.postal_code || '00000',
-          country: shippingInfo.address?.country_code || 'GB',
+          fullName: shippingInfo.name?.fullName || `${req.user?.firstName || ''} ${req.user?.lastName || ''}`.trim() || 'Customer',
+          addressLine1: shippingInfo.address?.addressLine1 || 'Address Line 1',
+          addressLine2: shippingInfo.address?.addressLine2 || '',
+          city: shippingInfo.address?.adminArea2 || 'City',
+          stateProvince: shippingInfo.address?.adminArea1 || 'State',
+          postalCode: shippingInfo.address?.postalCode || '00000',
+          country: shippingInfo.address?.countryCode || 'GB',
           phoneNumber: req.user?.phone || ''
         },
         shippingMethod: shippingMethodData,

@@ -596,7 +596,7 @@ export const cancelOrder = async (req, res) => {
             body: {
               amount: {
                 value: order.totalAmount.toFixed(2),
-                currency_code: 'GBP'
+                currencyCode: 'GBP'
               }
             }
           });

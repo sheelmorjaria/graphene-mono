@@ -271,29 +271,29 @@ describe('PayPal Payment Integration', () => {
         result: {
           id: 'GUEST-PP-ORDER-1',
           status: 'COMPLETED',
-          payer: { email_address: 'payer@paypal.example' },
-          purchase_units: [{
-            custom_id: JSON.stringify({
+          payer: { emailAddress: 'payer@paypal.example' },
+          purchaseUnits: [{
+            customId: JSON.stringify({
               c: guestCart._id.toString(),
               s: testShippingMethod._id.toString()
             }),
             amount: {
-              currency_code: 'GBP',
+              currencyCode: 'GBP',
               value: '509.98',
               breakdown: {
-                item_total: { value: '499.99' },
+                itemTotal: { value: '499.99' },
                 shipping: { value: '9.99' },
-                tax_total: { value: '0.00' }
+                taxTotal: { value: '0.00' }
               }
             },
             shipping: {
-              name: { full_name: 'Jane Guest' },
+              name: { fullName: 'Jane Guest' },
               address: {
-                address_line_1: '1 Main St',
-                admin_area_2: 'London',
-                admin_area_1: 'ENG',
-                postal_code: 'W1 1AA',
-                country_code: 'GB'
+                addressLine1: '1 Main St',
+                adminArea2: 'London',
+                adminArea1: 'ENG',
+                postalCode: 'W1 1AA',
+                countryCode: 'GB'
               }
             },
             payments: { captures: [{ id: 'GUEST-CAPTURE-1' }] }
@@ -440,7 +440,7 @@ describe('PayPal Payment Integration', () => {
         resource: {
           id: 'CAPTURE123',
           amount: {
-            currency_code: 'GBP',
+            currencyCode: 'GBP',
             value: '509.98'
           },
           supplementary_data: {
