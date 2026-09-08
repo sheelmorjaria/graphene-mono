@@ -42,8 +42,15 @@ const paypal = vi.hoisted(() => ({
   refundCapturedPayment: vi.fn()
 }));
 vi.mock('@paypal/paypal-server-sdk', () => ({
+  // SDK v1.x layout: controllers are standalone classes constructed with the Client.
   Client: vi.fn().mockImplementation(function () {
-    return { paymentsController: { refundCapturedPayment: paypal.refundCapturedPayment } };
+    return {};
+  }),
+  PaymentsController: vi.fn().mockImplementation(function () {
+    return { refundCapturedPayment: paypal.refundCapturedPayment };
+  }),
+  OrdersController: vi.fn().mockImplementation(function () {
+    return {};
   }),
   Environment: { Sandbox: 'sandbox', Production: 'production' }
 }));
