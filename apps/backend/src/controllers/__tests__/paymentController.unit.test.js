@@ -634,6 +634,35 @@ describe('paymentController - unit tests', () => {
       expect(call.data.status).toBe('captured');
     });
 
+    it('completes when the purchase unit omits amount (money on the capture)', async () => {
+      // Real sandbox capture observed 2026-09-08: purchaseUnits[0] carried
+      // payments.captures[] but NO amount — reading purchaseUnit.amount.value
+      // 500'd AFTER PayPal had taken the money. The capture resource itself
+      // always carries the captured amount; fall back to it.
+      setupCaptureHappyPath();
+      captureOrder.mockResolvedValue(buildCaptureResponse({
+        purchaseUnits: [
+          {
+            shipping: {
+              name: { fullName: 'Jane Doe' },
+              address: { addressLine1: '1 Main St', adminArea2: 'London', countryCode: 'GB' }
+            },
+            payments: {
+              captures: [{ id: 'CAPTURE-1', amount: { currencyCode: 'GBP', value: '205.97' } }]
+            }
+          }
+        ]
+      }));
+      req.body = { paypalOrderId: 'PAYPAL-ORDER-1', payerId: 'PAYER1' };
+
+      await capturePayPalPayment(req, res);
+
+      expect(res.status).not.toHaveBeenCalledWith(500);
+      const call = res.json.mock.calls[0][0];
+      expect(call.success).toBe(true);
+      expect(call.data.orderId).toBe('order1');
+    });
+
     it('returns 400 when paypalOrderId is missing', async () => {
       req.body = { payerId: 'PAYER1' };
       await capturePayPalPayment(req, res);
