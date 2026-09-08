@@ -392,7 +392,7 @@ describe('Admin Controller - issueRefund', () => {
         expect.objectContaining({
           captureId: 'CAPTURE-1',
           body: {
-            amount: { value: '50.00', currency_code: 'GBP' }
+            amount: { value: '50.00', currencyCode: 'GBP' }
           }
         })
       );

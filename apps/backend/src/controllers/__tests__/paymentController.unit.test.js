@@ -371,7 +371,7 @@ describe('paymentController - unit tests', () => {
 
       expect(createOrder).toHaveBeenCalledTimes(1);
       const request = createOrder.mock.calls[0][0].body || createOrder.mock.calls[0][0];
-      const customId = request.purchase_units[0].custom_id;
+      const customId = request.purchaseUnits[0].customId;
 
       // PayPal caps custom_id at 127 characters
       expect(customId.length).toBeLessThanOrEqual(127);
@@ -545,26 +545,26 @@ describe('paymentController - unit tests', () => {
     const buildCaptureResponse = (overrides = {}) => ({
       result: {
         status: 'COMPLETED',
-        payer: { email_address: 'payer@example.com' },
-        purchase_units: [
+        payer: { emailAddress: 'payer@example.com' },
+        purchaseUnits: [
           {
             amount: {
-              currency_code: 'GBP',
+              currencyCode: 'GBP',
               value: '205.97',
               breakdown: {
-                item_total: { value: '199.98' },
+                itemTotal: { value: '199.98' },
                 shipping: { value: '5.99' },
                 tax_total: { value: '0.00' }
               }
             },
             shipping: {
-              name: { full_name: 'Jane Doe' },
+              name: { fullName: 'Jane Doe' },
               address: {
-                address_line_1: '1 Main St',
-                admin_area_2: 'London',
-                admin_area_1: 'ENG',
-                postal_code: 'W1 1AA',
-                country_code: 'GB'
+                addressLine1: '1 Main St',
+                adminArea2: 'London',
+                adminArea1: 'ENG',
+                postalCode: 'W1 1AA',
+                countryCode: 'GB'
               }
             },
             payments: {
@@ -701,7 +701,7 @@ describe('paymentController - unit tests', () => {
     it('returns 400 when capture status is not COMPLETED', async () => {
       setupPreCaptureCart();
       captureOrder.mockResolvedValue({
-        result: { status: 'PENDING', purchase_units: [] }
+        result: { status: 'PENDING', purchaseUnits: [] }
       });
       req.body = { paypalOrderId: 'PAYPAL-ORDER-1' };
 
@@ -719,7 +719,7 @@ describe('paymentController - unit tests', () => {
       captureOrder.mockResolvedValue({
         result: {
           status: 'COMPLETED',
-          purchase_units: [
+          purchaseUnits: [
             {
               amount: { value: '205.97' },
               payments: { captures: [] }
@@ -922,7 +922,7 @@ describe('paymentController - unit tests', () => {
     describe('custom_id handling', () => {
       const setupCaptureWithCustomId = (customId) => {
         const response = buildCaptureResponse();
-        response.result.purchase_units[0].custom_id = customId;
+        response.result.purchaseUnits[0].customId = customId;
         captureOrder.mockResolvedValue(response);
         validateFraudDetectionCookie.mockReturnValue({ ip: '1.2.3.4', deviceFingerprint: 'abc' });
         assessOrderFraudRisk.mockReturnValue({ riskLevel: 'low', indicators: [] });

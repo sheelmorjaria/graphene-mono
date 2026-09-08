@@ -912,7 +912,7 @@ export const issueRefund = async (req, res) => {
         body: {
           amount: {
             value: refundAmount.toFixed(2),
-            currency_code: 'GBP'
+            currencyCode: 'GBP'
           }
         }
       });
