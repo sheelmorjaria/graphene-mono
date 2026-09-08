@@ -667,9 +667,11 @@ describe('PayPal Payment Flow E2E Tests', () => {
           payerId: 'PP_NETWORK_PAYER_456'
         });
 
-      expect(captureResponse.status).toBe(500);
+      // Dummy creds → the real SDK's capture call fails (auth/network) and the
+      // controller maps that pre-money failure to a graceful 503.
+      expect([500, 503]).toContain(captureResponse.status);
       expect(captureResponse.body.success).toBe(false);
-      expect(['PayPal payment processing is not available', 'Cannot read properties of undefined (reading \'ordersCapture\')']).toContain(captureResponse.body.error);
+      expect(['PayPal payment processing is not available', 'PayPal service is temporarily unavailable. Please try again later or use an alternative payment method.']).toContain(captureResponse.body.error);
     });
 
     it('rejects a guest capture without an email before touching PayPal', async () => {

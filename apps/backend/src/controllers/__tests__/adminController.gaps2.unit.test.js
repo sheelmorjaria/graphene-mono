@@ -11,8 +11,15 @@ const paypalGaps = vi.hoisted(() => ({
   })
 }));
 vi.mock('@paypal/paypal-server-sdk', () => ({
+  // SDK v1.x layout: controllers are standalone classes constructed with the Client.
   Client: vi.fn().mockImplementation(function () {
-    return { paymentsController: { refundCapturedPayment: paypalGaps.refundCapturedPayment } };
+    return {};
+  }),
+  PaymentsController: vi.fn().mockImplementation(function () {
+    return { refundCapturedPayment: paypalGaps.refundCapturedPayment };
+  }),
+  OrdersController: vi.fn().mockImplementation(function () {
+    return {};
   }),
   Environment: { Sandbox: 'sandbox', Production: 'production' }
 }));

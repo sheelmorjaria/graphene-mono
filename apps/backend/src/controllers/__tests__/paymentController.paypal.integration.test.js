@@ -301,15 +301,13 @@ describe('PayPal Payment Integration', () => {
         }
       };
       // Plain async fns are enough — the controller just awaits the calls.
-      // NOTE: the implementation MUST be a regular function — `new Client()`
+      // NOTE: the implementation MUST be a regular function — `new OrdersController()`
       // rejects arrow implementations ("not a constructor").
-      Client.mockImplementation(function () {
+      const { OrdersController } = await import('@paypal/paypal-server-sdk');
+      OrdersController.mockImplementation(function () {
         return {
-          ordersController: {
-            ordersCreate: async () => ({}),
-            ordersCapture: async () => captureResult
-          },
-          paymentsController: {}
+          createOrder: async () => ({}),
+          captureOrder: async () => captureResult
         };
       });
 
@@ -365,18 +363,15 @@ describe('PayPal Payment Integration', () => {
     });
 
     it('rejects a guest capture without an email BEFORE capturing', async () => {
-      const { Client } = await import('@paypal/paypal-server-sdk');
+      const { OrdersController } = await import('@paypal/paypal-server-sdk');
       let captureCalled = false;
-      Client.mockImplementation(function () {
+      OrdersController.mockImplementation(function () {
         return {
-          ordersController: {
-            ordersCreate: async () => ({}),
-            ordersCapture: async () => {
-              captureCalled = true;
-              return { result: { status: 'COMPLETED' } };
-            }
-          },
-          paymentsController: {}
+          createOrder: async () => ({}),
+          captureOrder: async () => {
+            captureCalled = true;
+            return { result: { status: 'COMPLETED' } };
+          }
         };
       });
 

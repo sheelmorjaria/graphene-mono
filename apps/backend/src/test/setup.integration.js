@@ -158,33 +158,38 @@ vi.mock('../services/emailService.js', () => ({
 
 // Mock PayPal SDK to prevent client initialization issues
 vi.mock('@paypal/paypal-server-sdk', () => ({
-  // Regular function — `new Client()` rejects arrow implementations
+  // SDK v1.x layout (see getPayPalClient): Client is a plain transport and
+  // controllers are standalone classes constructed with the client. Regular
+  // functions — `new X()` rejects arrow implementations.
   Client: vi.fn().mockImplementation(function () {
+    return {};
+  }),
+  OrdersController: vi.fn().mockImplementation(function () {
     return {
-      ordersController: {
-        ordersCreate: vi.fn().mockResolvedValue({
-          result: {
-            id: 'mock-paypal-order-id',
-            status: 'CREATED',
-            links: [{ rel: 'approve', href: 'https://sandbox.paypal.com/mock-approval-url' }]
-          }
-        }),
-        ordersCapture: vi.fn().mockResolvedValue({
-          result: {
-            id: 'mock-capture-id',
-            status: 'COMPLETED'
-          }
-        })
-      },
-      paymentsController: {
+      createOrder: vi.fn().mockResolvedValue({
+        result: {
+          id: 'mock-paypal-order-id',
+          status: 'CREATED',
+          links: [{ rel: 'approve', href: 'https://sandbox.paypal.com/mock-approval-url' }]
+        }
+      }),
+      captureOrder: vi.fn().mockResolvedValue({
+        result: {
+          id: 'mock-capture-id',
+          status: 'COMPLETED'
+        }
+      })
+    };
+  }),
+  PaymentsController: vi.fn().mockImplementation(function () {
+    return {
       // Real SDK method name (matched to paymentsController.refundCapturedPayment)
-        refundCapturedPayment: vi.fn().mockResolvedValue({
-          result: {
-            id: 'mock-refund-id',
-            status: 'COMPLETED'
-          }
-        })
-      }
+      refundCapturedPayment: vi.fn().mockResolvedValue({
+        result: {
+          id: 'mock-refund-id',
+          status: 'COMPLETED'
+        }
+      })
     };
   }),
   Environment: {

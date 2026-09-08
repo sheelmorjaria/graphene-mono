@@ -5,19 +5,25 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 // factory and the rest of the test file. Build the client lazily inside the
 // Client factory to avoid TDZ self-references.
 const paypal = vi.hoisted(() => ({
-  ordersCreate: vi.fn(),
-  ordersCapture: vi.fn()
+  createOrder: vi.fn(),
+  captureOrder: vi.fn()
 }));
 
 vi.mock('@paypal/paypal-server-sdk', () => ({
-  // Must use a real `function` so `new Client(...)` is detected by vitest.
+  // Must use real `function`s so `new Client(...)` / `new OrdersController(...)`
+  // are detected by vitest. Mirrors the SDK v1.x layout: Client is a plain
+  // transport; controllers are standalone classes constructed with the client.
   Client: vi.fn(function () {
+    return {};
+  }),
+  OrdersController: vi.fn(function () {
     return {
-      ordersController: {
-        ordersCreate: paypal.ordersCreate,
-        ordersCapture: paypal.ordersCapture
-      }
+      createOrder: paypal.createOrder,
+      captureOrder: paypal.captureOrder
     };
+  }),
+  PaymentsController: vi.fn(function () {
+    return {};
   }),
   Environment: {
     Sandbox: 'sandbox',
@@ -25,7 +31,7 @@ vi.mock('@paypal/paypal-server-sdk', () => ({
   }
 }));
 
-const { ordersCreate, ordersCapture } = paypal;
+const { createOrder, captureOrder } = paypal;
 
 // --- Mock models ---
 vi.mock('../../models/Cart.js', () => {
@@ -313,7 +319,7 @@ describe('paymentController - unit tests', () => {
       // controller does `await ShippingMethod.findOne({...})`. Provide a thenable.
       ShippingMethod.findOne.mockResolvedValue(shippingMethod);
 
-      ordersCreate.mockResolvedValue({
+      createOrder.mockResolvedValue({
         result: {
           id: 'PAYPAL-ORDER-1',
           links: [
@@ -332,7 +338,7 @@ describe('paymentController - unit tests', () => {
 
       await createPayPalOrder(req, res);
 
-      expect(ordersCreate).toHaveBeenCalledTimes(1);
+      expect(createOrder).toHaveBeenCalledTimes(1);
       const call = res.json.mock.calls[0][0];
       expect(call.success).toBe(true);
       expect(call.data.paypalOrderId).toBe('PAYPAL-ORDER-1');
@@ -363,8 +369,8 @@ describe('paymentController - unit tests', () => {
 
       await createPayPalOrder(req, res);
 
-      expect(ordersCreate).toHaveBeenCalledTimes(1);
-      const request = ordersCreate.mock.calls[0][0].body || ordersCreate.mock.calls[0][0];
+      expect(createOrder).toHaveBeenCalledTimes(1);
+      const request = createOrder.mock.calls[0][0].body || createOrder.mock.calls[0][0];
       const customId = request.purchase_units[0].custom_id;
 
       // PayPal caps custom_id at 127 characters
@@ -506,9 +512,9 @@ describe('paymentController - unit tests', () => {
       });
     });
 
-    it('returns 503 when PayPal ordersCreate throws', async () => {
+    it('returns 503 when PayPal createOrder throws', async () => {
       setupHappyPath();
-      ordersCreate.mockRejectedValue(new Error('PayPal down'));
+      createOrder.mockRejectedValue(new Error('PayPal down'));
 
       req.body = { shippingAddress, shippingMethodId: 'ship1' };
       await createPayPalOrder(req, res);
@@ -575,7 +581,7 @@ describe('paymentController - unit tests', () => {
     });
 
     const setupCaptureHappyPath = () => {
-      ordersCapture.mockResolvedValue(buildCaptureResponse());
+      captureOrder.mockResolvedValue(buildCaptureResponse());
       validateFraudDetectionCookie.mockReturnValue({ ip: '1.2.3.4', deviceFingerprint: 'abc' });
       assessOrderFraudRisk.mockReturnValue({ riskLevel: 'low', indicators: [] });
 
@@ -619,7 +625,7 @@ describe('paymentController - unit tests', () => {
 
       await capturePayPalPayment(req, res);
 
-      expect(ordersCapture).toHaveBeenCalledWith({ id: 'PAYPAL-ORDER-1' });
+      expect(captureOrder).toHaveBeenCalledWith({ id: 'PAYPAL-ORDER-1' });
       expect(emailService.sendOrderConfirmationEmail).toHaveBeenCalled();
       const call = res.json.mock.calls[0][0];
       expect(call.success).toBe(true);
@@ -678,9 +684,23 @@ describe('paymentController - unit tests', () => {
       });
     });
 
+    it('returns 503 when PayPal captureOrder throws', async () => {
+      // Pre-money SDK failure (network/401): must surface as a graceful 503,
+      // not an unhandled TypeError with SDK internals leaking to the client.
+      setupPreCaptureCart();
+      captureOrder.mockRejectedValue(new Error('PayPal capture down'));
+
+      req.body = { paypalOrderId: 'PAYPAL-ORDER-1' };
+      await capturePayPalPayment(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(503);
+      expect(res.json.mock.calls[0][0].success).toBe(false);
+      expect(res.json.mock.calls[0][0].error).toContain('temporarily unavailable');
+    });
+
     it('returns 400 when capture status is not COMPLETED', async () => {
       setupPreCaptureCart();
-      ordersCapture.mockResolvedValue({
+      captureOrder.mockResolvedValue({
         result: { status: 'PENDING', purchase_units: [] }
       });
       req.body = { paypalOrderId: 'PAYPAL-ORDER-1' };
@@ -696,7 +716,7 @@ describe('paymentController - unit tests', () => {
 
     it('returns 400 when capture info not found in purchase unit', async () => {
       setupPreCaptureCart();
-      ordersCapture.mockResolvedValue({
+      captureOrder.mockResolvedValue({
         result: {
           status: 'COMPLETED',
           purchase_units: [
@@ -720,7 +740,7 @@ describe('paymentController - unit tests', () => {
 
     it('blocks high-risk orders with 403', async () => {
       setupPreCaptureCart();
-      ordersCapture.mockResolvedValue(buildCaptureResponse());
+      captureOrder.mockResolvedValue(buildCaptureResponse());
       validateFraudDetectionCookie.mockReturnValue({ ip: '9.9.9.9' });
       assessOrderFraudRisk.mockReturnValue({
         riskLevel: 'high',
@@ -748,7 +768,7 @@ describe('paymentController - unit tests', () => {
       await capturePayPalPayment(req, res);
 
       // Must fail BEFORE PayPal takes money
-      expect(ordersCapture).not.toHaveBeenCalled();
+      expect(captureOrder).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json.mock.calls[0][0].error).toBe('No cart session found');
     });
@@ -761,7 +781,7 @@ describe('paymentController - unit tests', () => {
 
       await capturePayPalPayment(req, res);
 
-      expect(ordersCapture).not.toHaveBeenCalled();
+      expect(captureOrder).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json.mock.calls[0][0].error).toBe('Cart is empty');
     });
@@ -769,7 +789,7 @@ describe('paymentController - unit tests', () => {
     // ---------- guest checkout ----------
     describe('guest checkout', () => {
       const setupGuest = ({ captureOverrides } = {}) => {
-        ordersCapture.mockResolvedValue(
+        captureOrder.mockResolvedValue(
           captureOverrides ? buildCaptureResponse(captureOverrides) : buildCaptureResponse()
         );
         validateFraudDetectionCookie.mockReturnValue({ ip: '1.2.3.4', deviceFingerprint: 'abc' });
@@ -816,7 +836,7 @@ describe('paymentController - unit tests', () => {
 
         await capturePayPalPayment(req, res);
 
-        expect(ordersCapture).not.toHaveBeenCalled();
+        expect(captureOrder).not.toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
           success: false,
@@ -830,7 +850,7 @@ describe('paymentController - unit tests', () => {
 
         await capturePayPalPayment(req, res);
 
-        expect(ordersCapture).not.toHaveBeenCalled();
+        expect(captureOrder).not.toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
           success: false,
@@ -889,7 +909,7 @@ describe('paymentController - unit tests', () => {
 
         await capturePayPalPayment(req, res);
 
-        expect(ordersCapture).not.toHaveBeenCalled();
+        expect(captureOrder).not.toHaveBeenCalled();
         expect(res.status).not.toHaveBeenCalledWith(500);
         const call = res.json.mock.calls[0][0];
         expect(call.success).toBe(true);
@@ -903,7 +923,7 @@ describe('paymentController - unit tests', () => {
       const setupCaptureWithCustomId = (customId) => {
         const response = buildCaptureResponse();
         response.result.purchase_units[0].custom_id = customId;
-        ordersCapture.mockResolvedValue(response);
+        captureOrder.mockResolvedValue(response);
         validateFraudDetectionCookie.mockReturnValue({ ip: '1.2.3.4', deviceFingerprint: 'abc' });
         assessOrderFraudRisk.mockReturnValue({ riskLevel: 'low', indicators: [] });
 
@@ -986,14 +1006,14 @@ describe('paymentController - unit tests', () => {
       expect(call.data.paypalOrderId).toBe('PAYPAL-ORDER-1');
     });
 
-    it('returns 500 when ordersCapture throws', async () => {
-      ordersCapture.mockRejectedValue(new Error('capture failed'));
+    it('returns 503 (not a raw 500 with SDK internals) when captureOrder throws', async () => {
+      captureOrder.mockRejectedValue(new Error('capture failed'));
       req.body = { paypalOrderId: 'PAYPAL-ORDER-1' };
 
       await capturePayPalPayment(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json.mock.calls[0][0].error).toBe('capture failed');
+      expect(res.status).toHaveBeenCalledWith(503);
+      expect(res.json.mock.calls[0][0].error).toContain('temporarily unavailable');
     });
   });
 

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Client, Environment } from '@paypal/paypal-server-sdk';
+import { Client, Environment, OrdersController, PaymentsController } from '@paypal/paypal-server-sdk';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
@@ -20,13 +20,21 @@ export const getPayPalClient = () => {
   try {
     const paypalEnvironment = process.env.PAYPAL_ENVIRONMENT || 'sandbox';
     const environment = paypalEnvironment === 'live' ? Environment.Production : Environment.Sandbox;
-    return new Client({
+    const client = new Client({
       clientCredentialsAuthCredentials: {
         oAuthClientId: paypalClientId,
         oAuthClientSecret: paypalClientSecret
       },
       environment: environment
     });
+    // SDK v1.x exposes controllers as standalone classes constructed with the
+    // client — the v0.x `client.ordersController` property no longer exists
+    // (prod 503: "Cannot read properties of undefined (reading 'ordersCreate')").
+    return {
+      client,
+      ordersController: new OrdersController(client),
+      paymentsController: new PaymentsController(client)
+    };
   } catch (error) {
     logError(error, { context: 'paypal_client_initialization' });
     return null;
@@ -291,7 +299,7 @@ export const createPayPalOrder = async (req, res) => {
     let paypalOrder;
     try {
       const ordersController = paypalClient.ordersController;
-      paypalOrder = await ordersController.ordersCreate({
+      paypalOrder = await ordersController.createOrder({
         body: orderRequest
       });
     } catch (paypalError) {
@@ -403,11 +411,22 @@ export const capturePayPalPayment = async (req, res) => {
       });
     }
 
-    // Capture the PayPal payment
+    // Capture the PayPal payment. This call moves the money — a throw here is
+    // pre-money (auth/network failure), so surface a graceful 503 instead of
+    // leaking raw SDK errors to the client.
     const ordersController = paypalClient.ordersController;
-    const captureResponse = await ordersController.ordersCapture({
-      id: paypalOrderId
-    });
+    let captureResponse;
+    try {
+      captureResponse = await ordersController.captureOrder({
+        id: paypalOrderId
+      });
+    } catch (paypalError) {
+      logError(paypalError, { context: 'paypal_api_error', paypalOrderId });
+      return res.status(503).json({
+        success: false,
+        error: 'PayPal service is temporarily unavailable. Please try again later or use an alternative payment method.'
+      });
+    }
 
     if (captureResponse.result.status !== 'COMPLETED') {
       return res.status(400).json({
