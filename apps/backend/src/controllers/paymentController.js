@@ -449,9 +449,14 @@ export const capturePayPalPayment = async (req, res) => {
       });
     }
 
+    // Resolve the captured amount. PayPal omits purchase_units[].amount on some
+    // capture responses (seen in sandbox 2026-09-08 — crashed with 500 AFTER
+    // the money moved); the capture resource itself always carries it.
+    const unitAmount = purchaseUnit?.amount;
+    const orderAmount = parseFloat(unitAmount?.value ?? capture.amount?.value ?? 0);
+
     // Fraud detection check
     const fraudData = validateFraudDetectionCookie(req);
-    const orderAmount = parseFloat(purchaseUnit.amount.value);
     const shippingAddress = {
       addressLine1: purchaseUnit?.shipping?.address?.addressLine1,
       city: purchaseUnit?.shipping?.address?.adminArea2,
@@ -505,7 +510,7 @@ export const capturePayPalPayment = async (req, res) => {
 
     // Resolve the real shipping method chosen at create time; fall back to a
     // default when custom_id is absent/unparseable (legacy PayPal orders).
-    const breakdownShipping = parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0);
+    const breakdownShipping = parseFloat(unitAmount?.breakdown?.shipping?.value || 0);
     let shippingMethodData = {
       id: new mongoose.Types.ObjectId(),
       name: 'Standard Shipping',
@@ -575,10 +580,10 @@ export const capturePayPalPayment = async (req, res) => {
           unitPrice: item.unitPrice || item.price,
           totalPrice: (item.unitPrice || item.price) * item.quantity
         })),
-        subtotal: parseFloat(purchaseUnit.amount.breakdown?.itemTotal?.value || 0),
-        shipping: parseFloat(purchaseUnit.amount.breakdown?.shipping?.value || 0),
-        tax: parseFloat(purchaseUnit.amount.breakdown?.tax_total?.value || 0),
-        totalAmount: parseFloat(purchaseUnit.amount.value),
+        subtotal: parseFloat(unitAmount?.breakdown?.itemTotal?.value || 0),
+        shipping: parseFloat(unitAmount?.breakdown?.shipping?.value || 0),
+        tax: parseFloat(unitAmount?.breakdown?.taxTotal?.value || 0),
+        totalAmount: orderAmount,
         paymentMethod: {
           type: 'paypal',
           name: 'PayPal'
@@ -660,7 +665,7 @@ export const capturePayPalPayment = async (req, res) => {
       data: {
         orderId: newOrder?._id,
         orderNumber: newOrder?.orderNumber,
-        amount: parseFloat(purchaseUnit.amount.value),
+        amount: orderAmount,
         customerEmail: newOrder?.customerEmail,
         paymentMethod: 'paypal',
         status: 'captured'
