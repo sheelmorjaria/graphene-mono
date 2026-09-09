@@ -18,7 +18,8 @@
     "test:watch": "vitest --watch",
     "test:run": "vitest run",
     "type-check": "echo 'Frontend uses JavaScript (JSX), no TypeScript type checking needed'",
-    "clean": "rm -rf dist node_modules .vite"
+    "clean": "rm -rf dist node_modules .vite",
+    "prerender": "node scripts/prerender.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -60,6 +61,7 @@
     "jsdom": "^25.0.1",
     "magic-string": "^0.30.18",
     "postcss": "^8.5.4",
+    "puppeteer-core": "^24.43.1",
     "rollup": "^4.50.0",
     "tailwindcss": "^4.1.8",
     "vite": "^6.3.5",

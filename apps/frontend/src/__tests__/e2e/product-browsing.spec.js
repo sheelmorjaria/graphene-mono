@@ -9,7 +9,7 @@ test.describe('Product Browsing', () => {
 
   test.describe('Product Listing', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('/#/products');
+      await page.goto('/products');
     });
 
     test('should display the product listing page', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Product Browsing', () => {
 
   test.describe('Product Filtering', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('/#/products');
+      await page.goto('/products');
     });
 
     test('should filter by condition', async ({ page }) => {
@@ -105,7 +105,7 @@ test.describe('Product Browsing', () => {
 
   test.describe('Product Search', () => {
     test('should search for products', async ({ page }) => {
-      await page.goto('/#/products');
+      await page.goto('/products');
 
       // Override the products route to handle search
       page.route('**/api/products**', (route) => {
@@ -136,7 +136,7 @@ test.describe('Product Browsing', () => {
 
   test.describe('Product Detail', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto(`/#/products/${testProductDetail.slug}`);
+      await page.goto(`/products/${testProductDetail.slug}`);
     });
 
     test('should display product name and description', async ({ page }) => {
@@ -193,14 +193,14 @@ test.describe('Product Browsing', () => {
   test.describe('Responsive Layout', () => {
     test('should display products on mobile viewport', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
-      await page.goto('/#/products');
+      await page.goto('/products');
 
       await expect(page.getByText(testProducts[0].name)).toBeVisible({ timeout: 10000 });
     });
 
     test('should have accessible product grid on desktop', async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto('/#/products');
+      await page.goto('/products');
 
       await expect(page.getByText(testProducts[0].name)).toBeVisible({ timeout: 10000 });
       await expect(page.getByText(testProducts[1].name)).toBeVisible();
