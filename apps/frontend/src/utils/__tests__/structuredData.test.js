@@ -63,6 +63,14 @@ describe('generateProductStructuredData', () => {
     expect(schema.brand).toEqual({ '@type': 'Brand', name: 'Google' });
     expect(schema.offers.seller.name).toBe('Graphene Security');
   });
+
+  it('falls back to shortDescription when description is absent', () => {
+    const schema = generateProductStructuredData(buildProduct({
+      description: undefined,
+      shortDescription: 'Pixel 7A with GrapheneOS pre-installed'
+    }));
+    expect(schema.description).toBe('Pixel 7A with GrapheneOS pre-installed');
+  });
 });
 
 describe('generateOrganizationStructuredData', () => {
