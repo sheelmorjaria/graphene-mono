@@ -6,7 +6,7 @@ test.describe('Profile Management', () => {
     test('should display user profile information', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       await expect(page.locator('#firstName')).toBeVisible({ timeout: 10000 });
       await expect(page.locator('#lastName')).toBeVisible();
@@ -16,7 +16,7 @@ test.describe('Profile Management', () => {
     test('should pre-fill profile fields with user data', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       await expect(page.locator('#firstName')).toBeVisible({ timeout: 10000 });
     });
@@ -24,7 +24,7 @@ test.describe('Profile Management', () => {
     test('should show email field as disabled/read-only', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       const emailField = page.locator('#email');
       await expect(emailField).toBeVisible({ timeout: 10000 });
@@ -34,7 +34,7 @@ test.describe('Profile Management', () => {
     test('should show save changes button', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible({ timeout: 10000 });
     });
@@ -44,7 +44,7 @@ test.describe('Profile Management', () => {
     test('should update first name and last name', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       await expect(page.locator('#firstName')).toBeVisible({ timeout: 10000 });
       await page.locator('#firstName').fill('Updated');
@@ -64,7 +64,7 @@ test.describe('Profile Management', () => {
     test('should update phone number', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       const phoneField = page.locator('#phone');
       if (await phoneField.isVisible().catch(() => false)) {
@@ -79,7 +79,7 @@ test.describe('Profile Management', () => {
     test('should navigate to change password section', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       const changePasswordBtn = page.getByRole('button', { name: /change password/i });
       if (await changePasswordBtn.isVisible().catch(() => false)) {
@@ -93,7 +93,7 @@ test.describe('Profile Management', () => {
     test('should successfully change password', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
 
       const changePasswordBtn = page.getByRole('button', { name: /change password/i });
       if (await changePasswordBtn.isVisible().catch(() => false)) {
@@ -124,7 +124,7 @@ test.describe('Profile Management', () => {
   test.describe('Protected Route', () => {
     test('should redirect to login if not authenticated', async ({ page }) => {
       await mockApiRoutes(page);
-      await page.goto('/#/profile');
+      await page.goto('/profile');
       await expect(page).toHaveURL(/\/login/, { timeout: 5000 });
     });
   });

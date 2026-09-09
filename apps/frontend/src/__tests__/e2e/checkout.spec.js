@@ -6,7 +6,7 @@ test.describe('Checkout Flow', () => {
   test.describe('Checkout Page Access', () => {
     test('should show login required when not authenticated', async ({ page }) => {
       await mockApiRoutes(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
       await expect(page.getByText(/login required/i)).toBeVisible({ timeout: 5000 });
     });
   });
@@ -15,7 +15,7 @@ test.describe('Checkout Flow', () => {
     test('should display cart summary on checkout page', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       // Wait for auth to resolve
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
@@ -24,7 +24,7 @@ test.describe('Checkout Flow', () => {
     test('should display order total', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
     });
@@ -34,7 +34,7 @@ test.describe('Checkout Flow', () => {
     test('should display checkout form', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
       const checkoutForm = page.getByTestId('checkout-form').or(page.locator('form').first());
@@ -44,7 +44,7 @@ test.describe('Checkout Flow', () => {
     test('should validate required shipping address fields', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
 
@@ -58,7 +58,7 @@ test.describe('Checkout Flow', () => {
     test('should fill in shipping address fields', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
 
@@ -95,7 +95,7 @@ test.describe('Checkout Flow', () => {
     test('should display available payment methods', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
 
@@ -106,7 +106,7 @@ test.describe('Checkout Flow', () => {
     test('should show PayPal option', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
 
@@ -119,7 +119,7 @@ test.describe('Checkout Flow', () => {
     test('should show checkout button', async ({ page }) => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
-      await page.goto('/#/checkout');
+      await page.goto('/checkout');
 
       await expect(page.getByText(/login required/i)).not.toBeVisible({ timeout: 10000 });
 
@@ -135,7 +135,7 @@ test.describe('Checkout Flow', () => {
       await mockApiRoutes(page);
       await setAuthTokens(page);
 
-      await page.goto('/#/order-confirmation/order-001');
+      await page.goto('/order-confirmation/order-001');
 
       await expect(page.getByText(/order.*confirm|thank you/i).first()).toBeVisible({ timeout: 5000 });
     });

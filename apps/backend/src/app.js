@@ -11,6 +11,7 @@ import { metrics } from './config/monitoring.js';
 import { globalSanitization } from './middleware/validation.js';
 
 // Import routes
+import { getSitemap } from './controllers/sitemapController.js';
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
@@ -174,6 +175,10 @@ app.use('/uploads', express.static('uploads', {
 }));
 
 // Health check endpoints (accessible before API routes)
+// Dynamic sitemap from the live catalog (real product slugs); the frontend
+// server proxies www.graphene-security.com/sitemap.xml to this endpoint.
+app.get('/sitemap.xml', getSitemap);
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',

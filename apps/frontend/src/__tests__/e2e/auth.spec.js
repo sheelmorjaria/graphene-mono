@@ -9,7 +9,7 @@ test.describe('Authentication', () => {
 
   test.describe('Registration', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('/#/register');
+      await page.goto('/register');
     });
 
     test('should display the registration form with all required fields', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('Authentication', () => {
 
   test.describe('Login', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('/#/login');
+      await page.goto('/login');
     });
 
     test('should display the login form with email and password fields', async ({ page }) => {
@@ -132,7 +132,7 @@ test.describe('Authentication', () => {
   test.describe('Logout', () => {
     test('should clear auth state on logout', async ({ page }) => {
       // Login first
-      await page.goto('/#/login');
+      await page.goto('/login');
       await page.getByTestId('email-input').fill(testUser.email);
       await page.getByTestId('password-input').fill(testUser.password);
       await page.getByTestId('login-button').click();
@@ -153,7 +153,7 @@ test.describe('Authentication', () => {
       });
 
       // Navigate away and back to trigger auth re-check
-      await page.goto('/#/login');
+      await page.goto('/login');
 
       const tokenAfter = await page.evaluate(() => localStorage.getItem('authToken'));
       expect(tokenAfter).toBeNull();

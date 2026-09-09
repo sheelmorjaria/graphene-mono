@@ -51,6 +51,27 @@ const server = createServer((req, res) => {
   const host = req.headers.host;
   console.log(`${req.method} ${req.url} - Host: ${host}`);
 
+  // Dynamic sitemap: proxy to the backend's catalog-driven endpoint so
+  // www.graphene-security.com/sitemap.xml always lists real product slugs.
+  if (req.url === '/sitemap.xml' || req.url === '/sitemap.xml/') {
+    const sitemapUrl = process.env.SITEMAP_BACKEND_URL || 'https://api.graphene-security.com/sitemap.xml';
+    fetch(sitemapUrl)
+      .then((upstream) => {
+        if (!upstream.ok) throw new Error(`backend sitemap ${upstream.status}`);
+        res.writeHead(200, {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600'
+        });
+        upstream.body.pipe(res);
+      })
+      .catch((error) => {
+        console.error('Sitemap proxy failed:', error.message);
+        res.writeHead(502, { 'Content-Type': 'application/xml; charset=utf-8' });
+        res.end('<?xml version="1.0" encoding="UTF-8"?><error>sitemap temporarily unavailable</error>');
+      });
+    return;
+  }
+
   // Redirect www to non-www
   if (host && host.startsWith('www.')) {
     const nonWwwHost = host.replace('www.', '');
@@ -75,9 +96,21 @@ const server = createServer((req, res) => {
 
     // Handle all routes with SPA - serve index.html for all non-static files
     if (req.url === '/' || !req.url.includes('.')) {
-      // Serve React app for all clean URLs (SPA routing)
-      filePath = join(__dirname, 'dist', 'index.html');
-      console.log(`Serving SPA for route: ${req.url}`);
+      // Prefer a build-time prerendered page (real HTML for crawlers incl.
+      // AI bots that don't run JavaScript); fall back to the SPA shell.
+      const routePath = req.url.split('?')[0].replace(/\/+$/, '') || '/';
+      const distRoot = join(__dirname, 'dist');
+      const candidate = routePath === '/'
+        ? join(distRoot, 'index.html')
+        : join(distRoot, routePath, 'index.html');
+      // Guard against path traversal: candidate must stay inside dist/
+      if (candidate.startsWith(distRoot) && fileExists(candidate)) {
+        filePath = candidate;
+        console.log(`Serving prerendered page: ${req.url}`);
+      } else {
+        filePath = join(__dirname, 'dist', 'index.html');
+        console.log(`Serving SPA for route: ${req.url}`);
+      }
     } else {
       // Static file with extension
       filePath = join(__dirname, 'dist', req.url);
