@@ -1,10 +1,22 @@
 import { API_BASE_URL } from '../utils/apiConfig';
 
+// The API's rate limiter responds with a PLAIN-TEXT body ("Too many requests
+// from this IP…"), so a bare response.json() throws SyntaxError and hides the
+// real problem from the login form. Parse defensively.
+const parseResponseBody = async (response) => {
+  const raw = await response.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { error: raw || `Request failed with status ${response.status}` };
+  }
+};
+
 // Admin login
 export const adminLogin = async (credentials) => {
   try {
     console.log('🔵 AdminService login attempt');
-    
+
     const response = await fetch(`${API_BASE_URL}/admin/login`, {
       method: 'POST',
       headers: {
@@ -17,8 +29,8 @@ export const adminLogin = async (credentials) => {
     });
 
     console.log('🔵 AdminService response status:', response.status);
-    
-    const data = await response.json();
+
+    const data = await parseResponseBody(response);
     console.log('🔵 AdminService response data:', data);
 
     if (!response.ok) {

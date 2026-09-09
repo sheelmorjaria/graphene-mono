@@ -121,10 +121,14 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Rate limiting (after CORS so preflight requests get proper headers)
+// Rate limiting (after CORS so preflight requests get proper headers).
+// 300/15min: SPA page loads fire 3-6 API calls each and the admin dashboard
+// is API-heavy, so 100 was throttling legitimate sessions (seen in prod
+// 2026-09-09). Tunable via RATE_LIMIT_MAX without a code change; strict
+// per-route limiters (auth: 5/15min, password reset: 3/hour) still apply.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 300,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers

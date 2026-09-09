@@ -59,7 +59,8 @@ describe('adminService', () => {
 
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResponse
+        json: async () => mockResponse,
+        text: async () => JSON.stringify(mockResponse)
       });
 
       const credentials = { email: 'admin@example.com', password: 'password123' };
@@ -87,7 +88,8 @@ describe('adminService', () => {
 
       fetch.mockResolvedValueOnce({
         ok: false,
-        json: async () => mockErrorResponse
+        json: async () => mockErrorResponse,
+        text: async () => JSON.stringify(mockErrorResponse)
       });
 
       const credentials = { email: 'admin@example.com', password: 'wrongpassword' };
