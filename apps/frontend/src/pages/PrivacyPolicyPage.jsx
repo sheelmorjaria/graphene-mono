@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import SEOWrapper from '../components/SEO/SEOWrapper';
+import { generateWebPageStructuredData } from '../utils/structuredData';
 import { Link } from 'react-router-dom';
 
 const PrivacyPolicyPage = () => {
@@ -8,6 +10,21 @@ const PrivacyPolicyPage = () => {
   }, []);
 
   return (
+    <SEOWrapper
+      title="Privacy Policy"
+      description="How Graphene Security handles, stores and protects your personal data."
+      canonical="/privacy"
+      structuredData={[
+        generateWebPageStructuredData({
+          name: 'Privacy Policy',
+          description: 'How Graphene Security handles, stores and protects your personal data.',
+          path: '/privacy',
+          type: 'WebPage',
+          breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Privacy Policy', url: '/privacy' }]
+        })
+      ]}
+    >
+    <>
     <div className="min-h-screen px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -270,6 +287,8 @@ const PrivacyPolicyPage = () => {
         </div>
       </div>
     </div>
+    </>
+    </SEOWrapper>
   );
 };
 

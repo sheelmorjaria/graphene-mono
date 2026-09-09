@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import SEOWrapper from '../components/SEO/SEOWrapper';
+import { generateWebPageStructuredData } from '../utils/structuredData';
 import { Link } from 'react-router-dom';
 
 const TermsOfServicePage = () => {
@@ -8,6 +10,21 @@ const TermsOfServicePage = () => {
   }, []);
 
   return (
+    <SEOWrapper
+      title="Terms of Service"
+      description="Terms and conditions for buying GrapheneOS phones and flashing services from Graphene Security."
+      canonical="/terms"
+      structuredData={[
+        generateWebPageStructuredData({
+          name: 'Terms of Service',
+          description: 'Terms and conditions for buying GrapheneOS phones and flashing services from Graphene Security.',
+          path: '/terms',
+          type: 'WebPage',
+          breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Terms of Service', url: '/terms' }]
+        })
+      ]}
+    >
+    <>
     <div className="min-h-screen px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -354,6 +371,8 @@ const TermsOfServicePage = () => {
         </div>
       </div>
     </div>
+    </>
+    </SEOWrapper>
   );
 };
 

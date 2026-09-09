@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import SEOWrapper from '../components/SEO/SEOWrapper';
+import { generateWebPageStructuredData } from '../utils/structuredData';
 
 const ShippingInformationPage = () => {
   useEffect(() => {
@@ -7,6 +9,21 @@ const ShippingInformationPage = () => {
   }, []);
 
   return (
+    <SEOWrapper
+      title="Shipping Information"
+      description="UK delivery times, Royal Mail shipping options and order preparation lead times for GrapheneOS phones."
+      canonical="/shipping"
+      structuredData={[
+        generateWebPageStructuredData({
+          name: 'Shipping Information',
+          description: 'UK delivery times, Royal Mail shipping options and order preparation lead times for GrapheneOS phones.',
+          path: '/shipping',
+          type: 'WebPage',
+          breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Shipping Information', url: '/shipping' }]
+        })
+      ]}
+    >
+    <>
     <div className="min-h-screen px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -298,6 +315,8 @@ const ShippingInformationPage = () => {
         </div>
       </div>
     </div>
+    </>
+    </SEOWrapper>
   );
 };
 

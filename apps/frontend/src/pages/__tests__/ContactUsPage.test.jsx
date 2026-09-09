@@ -1,4 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ContactUsPage from '../ContactUsPage';
 import { AuthStateContext, AuthDispatchContext } from '../../contexts/AuthContext';
@@ -38,9 +40,13 @@ const AuthStateWrapper = ({ children, isAuthenticated = false, user = null }) =>
 
 const renderContactUsPage = (authProps = {}) => {
   return render(
-    <AuthStateWrapper {...authProps}>
-      <ContactUsPage />
-    </AuthStateWrapper>
+    <HelmetProvider>
+      <MemoryRouter>
+        <AuthStateWrapper {...authProps}>
+          <ContactUsPage />
+        </AuthStateWrapper>
+      </MemoryRouter>
+    </HelmetProvider>
   );
 };
 

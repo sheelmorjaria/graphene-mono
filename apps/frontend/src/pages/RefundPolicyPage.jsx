@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import SEOWrapper from '../components/SEO/SEOWrapper';
+import { generateWebPageStructuredData } from '../utils/structuredData';
 import { Link } from 'react-router-dom';
 
 const RefundPolicyPage = () => {
@@ -217,6 +219,21 @@ const RefundPolicyPage = () => {
   ];
 
   return (
+    <SEOWrapper
+      title="Refund Policy"
+      description="28-day returns policy for GrapheneOS phones: how to request a return, refunds and exclusions."
+      canonical="/refunds"
+      structuredData={[
+        generateWebPageStructuredData({
+          name: 'Refund Policy',
+          description: '28-day returns policy for GrapheneOS phones: how to request a return, refunds and exclusions.',
+          path: '/refunds',
+          type: 'WebPage',
+          breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Refund Policy', url: '/refunds' }]
+        })
+      ]}
+    >
+    <>
     <div className="min-h-screen px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -340,6 +357,8 @@ const RefundPolicyPage = () => {
         </div>
       </div>
     </div>
+    </>
+    </SEOWrapper>
   );
 };
 
