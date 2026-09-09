@@ -257,7 +257,7 @@ describe('Product Details Integration Tests', () => {
       expect(document.title).toContain('GrapheneOS Pixel 9 Pro');
     });
 
-    expect(document.title).toBe('GrapheneOS Pixel 9 Pro - Graphene Security');
+    expect(document.title).toBe('Buy GrapheneOS Pixel 9 Pro | De-Googled & UK Delivery - Graphene Security');
   });
 
   it('should render breadcrumb navigation correctly', async () => {

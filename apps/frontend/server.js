@@ -72,6 +72,14 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // IndexNow key verification: engines fetch /<key>.txt to prove we own the
+  // site before honouring pings from the backend (same INDEXNOW_KEY env).
+  if (process.env.INDEXNOW_KEY && req.url === `/${process.env.INDEXNOW_KEY}.txt`) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(process.env.INDEXNOW_KEY);
+    return;
+  }
+
   // Redirect www to non-www
   if (host && host.startsWith('www.')) {
     const nonWwwHost = host.replace('www.', '');
@@ -127,9 +135,22 @@ const server = createServer((req, res) => {
     const content = readFileSync(filePath);
     const mimeType = getMimeType(filePath);
 
+    // Cache policy: HTML must revalidate on every load (a stale index.html
+    // pins visitors to an old bundle for max-age after each deploy — seen in
+    // prod 2026-09-09 when the old HashRouter build kept serving from cache).
+    // Content-hashed /assets/* are immutable; everything else caches 1h.
+    const isHtml = mimeType === 'text/html';
+    const isHashedAsset = req.url.startsWith('/assets/');
+    const cacheControl = isHtml
+      ? 'no-cache'
+      : isHashedAsset
+        ? 'public, max-age=31536000, immutable'
+        : 'public, max-age=3600';
+
     res.writeHead(200, {
       'Content-Type': mimeType,
-      'Cache-Control': 'public, max-age=3600' // 1 hour cache
+      'Cache-Control': cacheControl,
+      'Last-Modified': statSync(filePath).mtime.toUTCString()
     });
     res.end(content);
 

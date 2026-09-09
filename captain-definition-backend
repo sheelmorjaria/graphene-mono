@@ -122,6 +122,12 @@
       "advanced": true
     },
     {
+      "id": "INDEXNOW_KEY",
+      "description": "IndexNow key (8-128 chars). Set the SAME value on the frontend app — the backend pings search engines on product changes, the frontend serves /<key>.txt for verification. Leave empty to disable.",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
       "id": "PAYPAL_WEBHOOK_ID",
       "description": "PayPal webhook ID (for webhook signature verification)",
       "defaultValue": "",

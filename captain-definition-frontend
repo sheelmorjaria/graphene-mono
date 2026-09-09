@@ -52,6 +52,12 @@
       "advanced": false
     },
     {
+      "id": "INDEXNOW_KEY",
+      "description": "IndexNow key (runtime, not baked): server.js serves /<key>.txt for search-engine verification. Set the SAME value on the backend app. Leave empty to disable.",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
       "id": "VITE_APP_TITLE",
       "description": "Application title",
       "defaultValue": "GrapheneOS Store",

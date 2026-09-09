@@ -1,0 +1,42 @@
+# Graphene Security
+
+> UK retailer selling Google Pixel phones with GrapheneOS pre-installed.
+> Privacy-focused smartphones, custom-prepared per order. Prices in GBP.
+
+Graphene Security sells de-googled Google Pixel smartphones (Pixel 6 through
+Pixel 10 series, Pixel Fold and Pixel 9 Pro Fold) with GrapheneOS — the
+privacy and security hardened mobile operating system — installed and
+verified before shipping.
+
+## Key facts
+
+- Currency: GBP (£)
+- Payment: PayPal (guest checkout available — no account required)
+- Preparation: each phone is custom-flashed and security-checked on demand
+- Shipping: UK delivery, typically 3-5 days after preparation
+- Returns: 28 days from delivery
+- Support: support@graphene-security.com
+
+## Popular pages
+
+- [All GrapheneOS phones](https://graphene-security.com/products): full catalog with prices and stock
+- [Shipping information](https://graphene-security.com/shipping): delivery times and options
+- [Returns and refunds](https://graphene-security.com/refunds): 28-day return policy
+- [FAQ](https://graphene-security.com/faq): GrapheneOS, devices, payment, delivery and returns questions answered
+- [Flashing service](https://graphene-security.com/flash-service): send us your own Pixel to flash
+- [Contact](https://graphene-security.com/contact-us): support and enquiries
+
+## About GrapheneOS
+
+GrapheneOS is a privacy and security focused mobile operating system based on
+the Android Open Source Project, offering hardened exploit mitigations,
+enhanced permission controls, no pre-installed Google services, and optional
+sandboxed Google Play compatibility. The official project site is
+https://grapheneos.org — Graphene Security is an independent UK retailer of
+devices pre-installed with it.
+
+## Machine-readable data
+
+- Sitemap: https://graphene-security.com/sitemap.xml
+- Product catalog API (public, JSON): https://api.graphene-security.com/api/products
+- Product pages embed schema.org Product JSON-LD (price in GBP, availability)

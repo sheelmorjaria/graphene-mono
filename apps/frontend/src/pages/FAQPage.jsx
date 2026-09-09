@@ -1,5 +1,45 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SEOWrapper from '../components/SEO/SEOWrapper';
+import { generateFAQStructuredData } from '../utils/structuredData';
+
+// Plain-text twins of the visible FAQ answers (which render as JSX) for the
+// FAQPage JSON-LD — AI engines lift these verbatim, so they must stay
+// consistent with the rendered copy.
+const structuredFaqs = [
+  {
+    question: 'What is GrapheneOS?',
+    answer: 'GrapheneOS is a privacy and security focused mobile operating system based on the Android Open Source Project. It adds hardened security features, enhanced privacy controls, no pre-installed Google apps or services, regular security updates, and optional sandboxed Google Play compatibility.'
+  },
+  {
+    question: 'Which devices do you sell?',
+    answer: 'We sell Google Pixel phones with GrapheneOS pre-installed, including the Pixel 6 through Pixel 10 series, Pixel Fold, and Pixel 9 Pro Fold, in a range of conditions, colours, and storage options. All prices are in GBP.'
+  },
+  {
+    question: 'Do I need an account to buy a phone?',
+    answer: 'No. Guest checkout is available — you provide an email address for your order confirmation and pay securely via PayPal without creating an account.'
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer: 'We accept PayPal, which also supports card payments. All transactions are processed over an SSL encrypted checkout.'
+  },
+  {
+    question: 'How long does delivery take?',
+    answer: 'All GrapheneOS phones are custom-prepared upon order to ensure maximum security and privacy. Standard shipping takes 3-5 days after preparation. See our shipping information page for details.'
+  },
+  {
+    question: 'What is your returns policy?',
+    answer: 'You can return your order within 28 days of delivery. See our refund policy page for full terms and how to request a return.'
+  },
+  {
+    question: 'Are the phones locked to a carrier?',
+    answer: 'No. All devices are factory unlocked and compatible with UK and international carriers. Contact us if you have questions about carrier compatibility.'
+  },
+  {
+    question: 'How do I track my order?',
+    answer: 'After your order ships, you receive a shipping confirmation email containing your tracking number. You can also view tracking from your account order history if you checked out while logged in.'
+  }
+];
 
 const FAQPage = () => {
   const [expandedCategory, setExpandedCategory] = useState(null);
@@ -481,6 +521,13 @@ const FAQPage = () => {
   })).filter(category => category.questions.length > 0);
 
   return (
+    <SEOWrapper
+      title="FAQ - GrapheneOS Phones, Shipping, Returns & Payment"
+      description="Answers to common questions about buying GrapheneOS phones in the UK: devices, guest checkout, PayPal payments, 3-5 day custom preparation, 28-day returns and carrier compatibility."
+      keywords={['GrapheneOS FAQ', 'GrapheneOS phone UK', 'de-googled phone', 'privacy phone shipping', 'GrapheneOS returns']}
+      canonical="/faq"
+      structuredData={[generateFAQStructuredData(structuredFaqs)]}
+    >
     <div className="min-h-screen px-4 py-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -644,6 +691,7 @@ const FAQPage = () => {
         </div>
       </div>
     </div>
+    </SEOWrapper>
   );
 };
 
