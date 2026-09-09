@@ -22,7 +22,7 @@ export const generateProductStructuredData = (product) => {
     "@type": "Product",
     "name": product.name,
     "image": product.images?.map(img => `${SITE_URL}${img}`) || [],
-    "description": product.description,
+    "description": product.description || product.shortDescription,
     "sku": product._id,
     "brand": {
       "@type": "Brand",
