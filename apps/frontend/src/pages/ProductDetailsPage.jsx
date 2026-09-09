@@ -223,6 +223,22 @@ const ProductDetailsPage = () => {
                 </p>
               )}
 
+              {/* At-a-glance buying facts — plain, quotable sentences that AI
+                  engines can lift verbatim (GEO). Keep in sync with the
+                  shipping/refund policy pages. */}
+              <div className="mb-6 rounded-lg border border-border-subtle bg-bg-elevated p-4" data-testid="buying-facts">
+                <h2 className="mb-2 font-mono text-xs uppercase tracking-wider text-text-muted">
+                  Buying from Graphene Security
+                </h2>
+                <p className="text-sm leading-relaxed text-text-secondary">
+                  {product.name} ships from the UK with GrapheneOS pre-installed and verified.
+                  Lead time is 3&ndash;5 working days &mdash; every device is custom-flashed to order.
+                  Returns accepted within 28 days of delivery.
+                  Pay securely via PayPal guest checkout &mdash; no account required.
+                </p>
+              </div>
+
+
               {/* Price Display */}
               <div className="flex items-center gap-4 mb-6">
                 {selectedVariation ? (
@@ -301,6 +317,7 @@ const ProductDetailsPage = () => {
                     stockStatus={selectedVariation.stockStatus}
                     onAddToCart={handleAddToCart}
                     showQuantitySelector={true}
+                    productName={product.name}
                   />
                 ) : (
                   <div className="space-y-3">

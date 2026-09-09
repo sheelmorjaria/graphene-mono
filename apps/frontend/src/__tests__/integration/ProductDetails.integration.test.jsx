@@ -459,4 +459,21 @@ describe('Product Details Integration Tests', () => {
 
     expect(screen.getByText('Timeout')).toBeInTheDocument();
   });
+
+  it('renders quotable GEO buying facts (lead time, returns, guest checkout)', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockApiResponse
+    });
+
+    renderIntegrationTest('/products/grapheneos-pixel-9-pro');
+    await waitFor(() => {
+      expect(screen.getByTestId('buying-facts')).toBeInTheDocument();
+    });
+    const text = screen.getByTestId('buying-facts').textContent;
+    expect(text).toContain('3–5 working days');
+    expect(text).toContain('28 days');
+    expect(text).toContain('no account required');
+    expect(text).toContain('UK');
+  });
 });

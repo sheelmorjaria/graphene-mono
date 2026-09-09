@@ -294,3 +294,23 @@ describe('AddToCartButton', () => {
     expect(screen.getByRole('button', { name: /sold out/i })).toBeInTheDocument();
   });
 });
+describe('AddToCartButton accessibility (agent + screen-reader ready)', () => {
+  it('labels the button with the product name when provided', () => {
+    render(
+      <AddToCartButton
+        productId="p1"
+        variationId="v1"
+        stockStatus="in_stock"
+        productName="GrapheneOS Pixel 9 Pro XL"
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Add GrapheneOS Pixel 9 Pro XL to cart' })).toBeInTheDocument();
+  });
+
+  it('falls back to the plain button text without a product name', () => {
+    render(<AddToCartButton productId="p1" variationId="v1" stockStatus="in_stock" />);
+
+    expect(screen.getByRole('button', { name: /add to cart/i })).toBeInTheDocument();
+  });
+});
