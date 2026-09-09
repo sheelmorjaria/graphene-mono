@@ -21,54 +21,40 @@ const ProductListPage = () => {
     priceRange: { min: '', max: '' }
   });
 
-
-  useEffect(() => {
+  // Fetch the whole catalog (backend caps limit at 100): the series sections
+  // must cover every device — a 12-per-page window split "Pixel 9 Pro XL"
+  // onto page 2, leaving its series incomplete on page 1.
+  const buildFetchParams = (page = 1) => {
     const category = searchParams.get('category');
-    const params = {
+    return {
+      page,
+      limit: 100,
       sort: currentSort,
       ...(category && { category }),
       ...(filters.condition && { condition: filters.condition }),
       ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
       ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
     };
-    fetchProducts(params);
+  };
+
+  useEffect(() => {
+    fetchProducts(buildFetchParams());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchProducts, currentSort, filters, searchParams]);
 
   const handleRetry = () => {
-    const category = searchParams.get('category');
-    const params = {
-      sort: currentSort,
-      ...(category && { category }),
-      ...(filters.condition && { condition: filters.condition }),
-      ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
-      ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
-    };
-    fetchProducts(params);
+    fetchProducts(buildFetchParams());
   };
 
   const handlePageChange = (newPage) => {
-    const category = searchParams.get('category');
-    const params = {
-      page: newPage,
-      sort: currentSort,
-      ...(category && { category }),
-      ...(filters.condition && { condition: filters.condition }),
-      ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
-      ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
-    };
-    fetchProducts(params);
+    fetchProducts(buildFetchParams(newPage));
   };
 
   const handleSortChange = (newSort) => {
     setCurrentSort(newSort);
-    const category = searchParams.get('category');
     const params = {
-      sort: newSort,
-      page: 1,
-      ...(category && { category }),
-      ...(filters.condition && { condition: filters.condition }),
-      ...(filters.priceRange.min && { minPrice: filters.priceRange.min }),
-      ...(filters.priceRange.max && { maxPrice: filters.priceRange.max })
+      ...buildFetchParams(1),
+      sort: newSort
     };
     fetchProducts(params);
   };

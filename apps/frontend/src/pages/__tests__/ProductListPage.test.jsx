@@ -192,7 +192,7 @@ describe('ProductListPage', () => {
     render(<ProductListPage />);
 
     expect(mockFetchProducts).toHaveBeenCalledTimes(1);
-    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'price-low' });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 1, limit: 100, sort: 'price-low' });
   });
 
   it('should have responsive grid layout', () => {
@@ -273,7 +273,7 @@ describe('ProductListPage', () => {
     tryAgainButton.click();
 
     expect(mockFetchProducts).toHaveBeenCalledTimes(2); // Once on mount, once on retry
-    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'price-low' });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 1, limit: 100, sort: 'price-low' });
   });
 
   it('should be accessible with proper ARIA labels', () => {
@@ -336,7 +336,7 @@ describe('ProductListPage', () => {
     const nextButton = screen.getByText('Next');
     nextButton.click();
 
-    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 2, sort: 'price-low' });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 2, limit: 100, sort: 'price-low' });
   });
 
   it('should call fetchProducts with sort parameter when sort changes', () => {
@@ -357,7 +357,7 @@ describe('ProductListPage', () => {
     sortSelect.value = 'price-low';
     sortSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
-    expect(mockFetchProducts).toHaveBeenCalledWith({ sort: 'price-low', page: 1 });
+    expect(mockFetchProducts).toHaveBeenCalledWith({ page: 1, limit: 100, sort: 'price-low' });
   });
 
   it('should show sort options with initial sort value', () => {
@@ -397,6 +397,8 @@ describe('ProductListPage', () => {
     conditionSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
     expect(mockFetchProducts).toHaveBeenCalledWith({
+      page: 1,
+      limit: 100,
       sort: 'price-low',
       condition: 'excellent'
     });

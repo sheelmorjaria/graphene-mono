@@ -13,7 +13,10 @@ const AddToCartButton = ({
   showQuantitySelector = false,
   maxQuantity = 10,
   buttonText = 'Add to Cart',
-  outOfStockText = 'Out of Stock'
+  outOfStockText = 'Out of Stock',
+  // Names the product in the button's aria-label — screen readers and AI
+  // browsing agents get an unambiguous action target per device.
+  productName = null
 }) => {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [localShowSuccess, setLocalShowSuccess] = useState(showSuccess);
@@ -165,6 +168,7 @@ const AddToCartButton = ({
         onKeyDown={handleKeyPress}
         disabled={isOutOfStock || disabled || isLoading}
         aria-describedby={stockDescriptionId}
+        aria-label={productName ? `Add ${productName} to cart` : undefined}
         className={getButtonClasses()}
       >
         {getIcon()}
