@@ -6,6 +6,7 @@ import Product from '../models/Product.js';
 import ReturnRequest from '../models/ReturnRequest.js';
 import Category from '../models/Category.js';
 import emailService from '../services/emailService.js';
+import { notifyIndexNow } from '../services/indexNowService.js';
 import { getPayPalClient } from './paymentController.js';
 
 // Admin login
@@ -1813,6 +1814,9 @@ export const createProduct = async (req, res) => {
     // Populate category for response
     await product.populate('category', 'name slug');
 
+    // Let search engines know a new product page exists (fire-and-forget)
+    notifyIndexNow([`/products/${product.slug}`]);
+
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
@@ -1992,6 +1996,9 @@ export const updateProduct = async (req, res) => {
 
     // Audit log (basic implementation)
     console.log(`Product ${productId} updated by admin user ${req.user.userId} at ${new Date()}`);
+
+    // Price/stock may have changed — refresh search engine caches (fire-and-forget)
+    notifyIndexNow([`/products/${updatedProduct.slug}`]);
 
     res.json({
       success: true,
@@ -2740,6 +2747,9 @@ export const deleteProduct = async (req, res) => {
 
     // Audit log
     console.log(`Product ${productId} (${product.name}) archived by admin user ${req.user.userId} at ${new Date()}`);
+
+    // Refresh search engine caches for the archived page (fire-and-forget)
+    notifyIndexNow([`/products/${product.slug}`]);
 
     res.json({
       success: true,

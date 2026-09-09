@@ -145,7 +145,7 @@ const ProductDetailsPage = () => {
   return (
     <>
       <SEOWrapper
-        title={product.name}
+        title={`Buy ${product.name} | De-Googled & UK Delivery`}
         description={product.shortDescription || product.description?.substring(0, 160)}
         keywords={[product.name, 'GrapheneOS', 'Google Pixel', 'privacy phone', 'secure smartphone', 'degoogled phone']}
         image={product.images?.[0]}
