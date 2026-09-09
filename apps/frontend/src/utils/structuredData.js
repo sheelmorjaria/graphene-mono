@@ -53,7 +53,9 @@ export const generateProductStructuredData = (product) => {
 export const generateOrganizationStructuredData = () => {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    // OnlineStore is a schema.org subtype of Organization — the most specific
+    // entity for an e-commerce business.
+    "@type": "OnlineStore",
     "name": "Graphene Security",
     "url": SITE_URL,
     "logo": `${SITE_URL}/logo.png`,
@@ -120,5 +122,39 @@ export const generateFAQStructuredData = (faqs) => {
         "text": faq.answer
       }
     }))
+  };
+};
+
+// ItemList for catalog/list pages: tells engines this page enumerates these
+// products, in this order, at these URLs.
+export const generateItemListStructuredData = (products) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": (products || []).map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${SITE_URL}/products/${product.slug}`,
+      name: product.name
+    }))
+  };
+};
+
+// WebPage (or a subtype like ContactPage) tying every content page into the
+// site graph: canonical URL, the site it belongs to, and its breadcrumb
+// position — the "sections of the site" structure engines read.
+export const generateWebPageStructuredData = ({ name, description, path, type = 'WebPage', breadcrumbs }) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": type,
+    name,
+    ...(description ? { description } : {}),
+    url: `${SITE_URL}${path}`,
+    isPartOf: {
+      "@type": "WebSite",
+      url: SITE_URL,
+      name: "Graphene Security"
+    },
+    ...(breadcrumbs ? { breadcrumb: generateBreadcrumbStructuredData(breadcrumbs) } : {})
   };
 };

@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   generateProductStructuredData,
   generateOrganizationStructuredData,
-  generateFAQStructuredData
+  generateFAQStructuredData,
+  generateItemListStructuredData,
+  generateWebPageStructuredData
 } from '../structuredData.js';
 
 // These schemas are baked into the prerendered HTML that AI crawlers read —
@@ -79,6 +81,12 @@ describe('generateOrganizationStructuredData', () => {
     expect(schema.url).toBe('https://graphene-security.com');
   });
 
+  it('is typed as an OnlineStore (specific entity for e-commerce)', () => {
+    const schema = generateOrganizationStructuredData();
+    const types = Array.isArray(schema['@type']) ? schema['@type'] : [schema['@type']];
+    expect(types).toContain('OnlineStore');
+  });
+
   it('never claims the GrapheneOS project\'s social identities via sameAs', () => {
     // The store is a reseller, not the OS project: sameAs listing
     // twitter.com/grapheneos conflates two different entities.
@@ -111,5 +119,46 @@ describe('generateFAQStructuredData', () => {
         text: 'A privacy and security focused mobile OS based on Android.'
       }
     });
+  });
+});
+
+describe('generateItemListStructuredData', () => {
+  it('emits an ItemList with positioned product URLs for the catalog page', () => {
+    const schema = generateItemListStructuredData([
+      { name: 'GrapheneOS Pixel 7A', slug: 'grapheneos-pixel-7a' },
+      { name: 'GrapheneOS Pixel 10', slug: 'grapheneos-pixel-10' }
+    ]);
+
+    expect(schema['@type']).toBe('ItemList');
+    expect(schema.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, url: 'https://graphene-security.com/products/grapheneos-pixel-7a', name: 'GrapheneOS Pixel 7A' },
+      { '@type': 'ListItem', position: 2, url: 'https://graphene-security.com/products/grapheneos-pixel-10', name: 'GrapheneOS Pixel 10' }
+    ]);
+  });
+
+  it('handles an empty list', () => {
+    expect(generateItemListStructuredData([]).itemListElement).toEqual([]);
+  });
+});
+
+describe('generateWebPageStructuredData', () => {
+  it('ties a content page into the site graph (url, isPartOf, breadcrumb)', () => {
+    const schema = generateWebPageStructuredData({
+      name: 'Shipping Information',
+      description: 'UK delivery times and options',
+      path: '/shipping',
+      breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Shipping', url: '/shipping' }]
+    });
+
+    expect(schema['@type']).toBe('WebPage');
+    expect(schema.url).toBe('https://graphene-security.com/shipping');
+    expect(schema.isPartOf['@type']).toBe('WebSite');
+    expect(schema.breadcrumb['@type']).toBe('BreadcrumbList');
+    expect(schema.breadcrumb.itemListElement[1].item).toBe('https://graphene-security.com/shipping');
+  });
+
+  it('supports specific page types like ContactPage', () => {
+    const schema = generateWebPageStructuredData({ name: 'Contact Us', path: '/contact-us', type: 'ContactPage' });
+    expect(schema['@type']).toBe('ContactPage');
   });
 });

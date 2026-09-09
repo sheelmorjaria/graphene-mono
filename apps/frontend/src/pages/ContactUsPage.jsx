@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import SEOWrapper from '../components/SEO/SEOWrapper';
+import { generateWebPageStructuredData } from '../utils/structuredData';
 import { useAuth } from "../contexts/AuthContext";
 import { submitContactForm } from "../services/supportService";
 
@@ -174,6 +176,21 @@ const ContactUsPage = () => {
   }
 
   return (
+    <SEOWrapper
+      title="Contact Us"
+      description="Contact Graphene Security for order support, device advice and flashing service questions."
+      canonical="/contact-us"
+      structuredData={[
+        generateWebPageStructuredData({
+          name: 'Contact Us',
+          description: 'Contact Graphene Security for order support, device advice and flashing service questions.',
+          path: '/contact-us',
+          type: 'ContactPage',
+          breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Contact Us', url: '/contact-us' }]
+        })
+      ]}
+    >
+    <>
     <div className="min-h-screen px-4 py-12">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -378,6 +395,8 @@ const ContactUsPage = () => {
         </div>
       </div>
     </div>
+    </>
+    </SEOWrapper>
   );
 };
 

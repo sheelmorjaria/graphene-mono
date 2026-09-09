@@ -6,6 +6,11 @@ import Pagination from '../components/Pagination';
 import SortOptions from '../components/SortOptions';
 import FilterSidebar from '../components/FilterSidebar';
 import SEOWrapper from '../components/SEO/SEOWrapper';
+import { groupProductsBySeries } from '../utils/productSections';
+import {
+  generateItemListStructuredData,
+  generateWebPageStructuredData
+} from '../utils/structuredData';
 
 const ProductListPage = () => {
   const { products, pagination, loading, error, fetchProducts } = useProducts();
@@ -158,12 +163,27 @@ const ProductListPage = () => {
 
   const productCountText = pagination.total === 1 ? '1 product found' : `${pagination.total} products found`;
 
+  // Semantic sections: series headings + anchors (search engines read these
+  // as site organisation; users get a jumpable catalog).
+  const seriesGroups = groupProductsBySeries(products);
+  const showSections = seriesGroups.length > 1;
+
   return (
     <>
       <SEOWrapper
         title="GrapheneOS Smartphones - Privacy-Focused Phones"
         description="Buy Google Pixel phones pre-installed with GrapheneOS. Secure, private smartphones with PayPal payment options. Royal Mail Special Delivery next-day insured shipping across the UK."
         keywords={['GrapheneOS', 'GrapheneOS smartphones', 'Google Pixel', 'privacy phone', 'secure smartphone', 'buy GrapheneOS Pixel', 'degoogled phone']}
+        canonical="/products"
+        structuredData={[
+          generateWebPageStructuredData({
+            name: 'GrapheneOS Smartphones',
+            description: 'Google Pixel phones pre-installed with GrapheneOS, grouped by series.',
+            path: '/products',
+            breadcrumbs: [{ name: 'Home', url: '/' }, { name: 'Products', url: '/products' }]
+          }),
+          generateItemListStructuredData(products)
+        ]}
         additionalMeta={[
           { name: 'keywords', content: 'GrapheneOS phones, privacy smartphones, secure phones, Google Pixel GrapheneOS' },
           { property: 'og:type', content: 'website' }
@@ -275,13 +295,38 @@ const ProductListPage = () => {
               <SortOptions currentSort={currentSort} onSortChange={handleSortChange} />
             </div>
 
-            {/* Products Grid */}
-            <section aria-label="Product listings">
-              <div className="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+            {/* Series sections TOC — jump links to each device family */}
+            {showSections && (
+              <nav aria-label="Device series" className="mb-6 flex flex-wrap gap-2" data-testid="series-toc">
+                {seriesGroups.map((group) => (
+                  <a
+                    key={group.key}
+                    href={`#series-${group.key}`}
+                    className="rounded-full border border-border-cyan px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-text-secondary transition-colors hover:border-cyan-400 hover:text-cyan-400"
+                  >
+                    {group.label} ({group.products.length})
+                  </a>
                 ))}
-              </div>
+              </nav>
+            )}
+
+            {/* Products Grid — grouped into series sections */}
+            <section aria-label="Product listings">
+              {seriesGroups.map((group) => (
+                <div key={group.key} id={`series-${group.key}`} className="mb-10 scroll-mt-24">
+                  {showSections && (
+                    <h2 className="font-heading mb-4 text-xl font-bold uppercase tracking-wider text-text-primary">
+                      {group.label}
+                      <span className="ml-2 font-mono text-xs text-text-muted">{group.products.length} models</span>
+                    </h2>
+                  )}
+                  <div className="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {group.products.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </section>
 
             {/* Pagination */}
