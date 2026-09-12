@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getFlashOrderInstructions } from '../services/flashOrderService';
+import { getFlashOrderInstructions, getFlashOrderSummary } from '../services/flashOrderService';
 import SEOWrapper from '../components/SEO/SEOWrapper';
+import FlashOrderPayPalPayment from '../components/checkout/FlashOrderPayPalPayment';
 
 const FlashOrderSuccessPage = () => {
   const [searchParams] = useSearchParams();
@@ -9,8 +10,33 @@ const FlashOrderSuccessPage = () => {
   const [instructions, setInstructions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pendingSummary, setPendingSummary] = useState(null);
 
   const orderId = searchParams.get('orderId');
+
+  const fetchInstructions = useCallback(async () => {
+    try {
+      const data = await getFlashOrderInstructions(orderId);
+      setInstructions(data);
+      setError('');
+      setLoading(false);
+    } catch (err) {
+      if (err.message.includes('complete payment') || err.message.includes('403')) {
+        // Order awaiting payment — fetch the summary so the customer can
+        // actually PAY here instead of hitting a dead end.
+        setError('Please complete your payment to access shipping instructions.');
+        try {
+          const summary = await getFlashOrderSummary(orderId);
+          setPendingSummary(summary);
+        } catch {
+          // Summary is cosmetic (shows the amount); the pay button works without it
+        }
+      } else {
+        setError(err.message || 'Failed to fetch order instructions.');
+      }
+      setLoading(false);
+    }
+  }, [orderId]);
 
   useEffect(() => {
     if (!orderId) {
@@ -19,23 +45,15 @@ const FlashOrderSuccessPage = () => {
       return;
     }
 
-    const fetchInstructions = async () => {
-      try {
-        const data = await getFlashOrderInstructions(orderId);
-        setInstructions(data);
-        setLoading(false);
-      } catch (err) {
-        if (err.message.includes('complete payment') || err.message.includes('403')) {
-          setError('Please complete your payment to access shipping instructions.');
-        } else {
-          setError(err.message || 'Failed to fetch order instructions.');
-        }
-        setLoading(false);
-      }
-    };
-
     fetchInstructions();
-  }, [orderId]);
+  }, [orderId, fetchInstructions]);
+
+  const handlePaymentSuccess = () => {
+    // Payment captured — reload instructions (now unlocked)
+    setLoading(true);
+    setPendingSummary(null);
+    fetchInstructions();
+  };
 
   const handleGoHome = () => {
     navigate('/products');
@@ -66,12 +84,32 @@ const FlashOrderSuccessPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-display font-bold text-text-primary mb-4">
+            <h1 className="text-2xl font-display font-bold text-text-primary mb-2">
               Order Pending
             </h1>
             <p className="text-text-secondary mb-6">
               {error || 'Please complete your payment to access shipping instructions.'}
             </p>
+
+            {/* The missing step: actually take the payment here. After capture,
+                the shipping instructions unlock automatically. */}
+            {pendingSummary ? (
+              <div className="mb-6 text-left">
+                <p className="text-sm text-text-muted font-mono mb-2">
+                  Order {pendingSummary.orderNumber} — {pendingSummary.pixelModel}
+                </p>
+                <FlashOrderPayPalPayment
+                  orderId={orderId}
+                  amount={pendingSummary.totalPrice}
+                  onSuccess={handlePaymentSuccess}
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-text-muted mb-6">
+                Payment can be completed by reopening your order link after payment is processed.
+              </p>
+            )}
+
             <button
               onClick={handleGoHome}
               className="px-6 py-3 bg-gradient-to-r from-cyan-400 to-matrix-400 text-text-on-accent font-heading font-bold text-sm uppercase tracking-wider rounded-lg hover:shadow-glow-cyan transition-all duration-200"

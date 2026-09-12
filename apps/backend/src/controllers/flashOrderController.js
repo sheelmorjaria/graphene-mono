@@ -1,4 +1,5 @@
 import FlashOrder from '../models/FlashOrder.js';
+import { getPayPalClient } from './paymentController.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
 
 // Supported Pixel models
@@ -304,5 +305,168 @@ export const getFlashOrderInstructions = async (req, res) => {
       success: false,
       error: 'Server error occurred while fetching instructions'
     });
+  }
+};
+
+
+/**
+ * GET /api/flash-orders/:id/summary
+ * Lightweight public summary (by unguessable order id, same auth level as the
+ * rest of this flow) for the payment step — never includes PO Box details.
+ */
+export const getFlashOrderSummary = async (req, res) => {
+  try {
+    const order = await FlashOrder.findById(req.params.id)
+      .select('orderNumber pixelModel shippingRegion basePrice returnShipping totalPrice paymentStatus orderStatus createdAt');
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Flash order not found' });
+    }
+
+    res.json({ success: true, data: order });
+  } catch (error) {
+    logError(error, { context: 'flash_order_summary' });
+    res.status(500).json({ success: false, error: 'Server error occurred while fetching flash order' });
+  }
+};
+
+/**
+ * POST /api/flash-orders/:id/paypal/create-order
+ * Server-side PayPal order for the flash service total (mirrors the checkout
+ * flow — the client never handles amounts).
+ */
+export const createFlashOrderPayPalOrder = async (req, res) => {
+  try {
+    const order = await FlashOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Flash order not found' });
+    }
+    if (order.paymentStatus === 'Completed') {
+      return res.status(400).json({ success: false, error: 'This order is already paid' });
+    }
+
+    const paypalClient = getPayPalClient();
+    if (!paypalClient) {
+      return res.status(500).json({ success: false, error: 'PayPal payment processing is not available' });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://graphene-security.com';
+    const orderRequest = {
+      intent: 'CAPTURE',
+      purchaseUnits: [{
+        customId: String(order._id),
+        description: `GrapheneOS Flashing Service - ${order.orderNumber}`,
+        amount: {
+          currencyCode: 'GBP',
+          value: order.totalPrice.toFixed(2)
+        }
+      }],
+      applicationContext: {
+        brandName: 'Graphene Security',
+        userAction: 'PAY_NOW',
+        returnUrl: `${frontendUrl}/flash-order/success?orderId=${order._id}`,
+        cancelUrl: `${frontendUrl}/flash-service`
+      }
+    };
+
+    let paypalOrder;
+    try {
+      paypalOrder = await paypalClient.ordersController.createOrder({ body: orderRequest });
+    } catch (paypalError) {
+      logError(paypalError, { context: 'flash_paypal_create_error', orderRequest });
+      return res.status(503).json({
+        success: false,
+        error: 'PayPal service is temporarily unavailable. Please try again later or use an alternative payment method.'
+      });
+    }
+
+    order.paymentDetails.paypalOrderId = paypalOrder.result.id;
+    order.paymentStatus = 'Pending';
+    order.statusHistory.push({ status: 'Pending', note: 'PayPal order created' });
+    await order.save();
+
+    logPaymentEvent('flash_paypal_order_created', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      paypalOrderId: paypalOrder.result.id,
+      amount: order.totalPrice
+    });
+
+    res.json({ success: true, data: { paypalOrderId: paypalOrder.result.id } });
+  } catch (error) {
+    logError(error, { context: 'flash_paypal_create' });
+    res.status(500).json({ success: false, error: 'Server error occurred while creating PayPal order' });
+  }
+};
+
+/**
+ * POST /api/flash-orders/:id/paypal/capture
+ * Captures the approved PayPal order and unlocks the shipping instructions.
+ * Idempotent: re-capturing a paid order returns already_paid.
+ */
+export const captureFlashOrderPayPalOrder = async (req, res) => {
+  try {
+    const { paypalOrderId, payerId } = req.body;
+    if (!paypalOrderId) {
+      return res.status(400).json({ success: false, error: 'PayPal order ID is required' });
+    }
+
+    const order = await FlashOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Flash order not found' });
+    }
+
+    if (order.paymentStatus === 'Completed') {
+      return res.json({ success: true, data: { status: 'already_paid', orderNumber: order.orderNumber } });
+    }
+
+    if (order.paymentDetails.paypalOrderId !== paypalOrderId) {
+      return res.status(400).json({
+        success: false,
+        error: 'PayPal order does not match this flash order. Please restart the payment.'
+      });
+    }
+
+    const paypalClient = getPayPalClient();
+    if (!paypalClient) {
+      return res.status(500).json({ success: false, error: 'PayPal payment processing is not available' });
+    }
+
+    let captureResponse;
+    try {
+      captureResponse = await paypalClient.ordersController.captureOrder({ id: paypalOrderId });
+    } catch (paypalError) {
+      logError(paypalError, { context: 'flash_paypal_capture_error', paypalOrderId });
+      return res.status(503).json({
+        success: false,
+        error: 'PayPal service is temporarily unavailable. Please try again later or use an alternative payment method.'
+      });
+    }
+
+    if (captureResponse.result.status !== 'COMPLETED') {
+      return res.status(400).json({ success: false, error: 'PayPal payment capture failed' });
+    }
+
+    const capture = captureResponse.result.purchaseUnits?.[0]?.payments?.captures?.[0];
+    order.paymentStatus = 'Completed';
+    order.orderStatus = 'Paid';
+    order.paymentDetails.paypalPaymentId = capture?.id || captureResponse.result.id;
+    order.paymentDetails.paypalTransactionId = capture?.id || captureResponse.result.id;
+    if (payerId) order.paymentDetails.paypalPayerId = payerId;
+    order.paymentDetails.paypalPayerEmail = captureResponse.result.payer?.emailAddress;
+    order.statusHistory.push({ status: 'Paid', note: 'PayPal payment captured' });
+    await order.save();
+
+    logPaymentEvent('flash_payment_completed', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      paypalOrderId,
+      amount: order.totalPrice
+    });
+
+    res.json({ success: true, data: { status: 'captured', orderNumber: order.orderNumber } });
+  } catch (error) {
+    logError(error, { context: 'flash_paypal_capture' });
+    res.status(500).json({ success: false, error: 'Server error occurred while capturing PayPal payment' });
   }
 };

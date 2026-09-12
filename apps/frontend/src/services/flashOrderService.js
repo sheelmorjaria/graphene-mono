@@ -126,3 +126,58 @@ export const formatFlashOrderCurrency = (amount) => {
     maximumFractionDigits: 2
   }).format(amount);
 };
+
+/**
+ * Get a public summary of a Flash Order (for the payment step)
+ * @param {string} orderId - The Flash Order ID
+ * @returns {Promise<Object>} { orderNumber, totalPrice, paymentStatus, ... }
+ */
+export const getFlashOrderSummary = async (orderId) => {
+  const response = await fetch(`${API_BASE_URL}/flash-orders/${orderId}/summary`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include'
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to fetch flash order summary');
+  }
+  return data.data;
+};
+
+/**
+ * Create a server-side PayPal order for a flash order
+ * @param {string} orderId - The Flash Order ID
+ * @returns {Promise<Object>} { paypalOrderId }
+ */
+export const createFlashOrderPayPalPayment = async (orderId) => {
+  const response = await fetch(`${API_BASE_URL}/flash-orders/${orderId}/paypal/create-order`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include'
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to create PayPal order');
+  }
+  return data.data;
+};
+
+/**
+ * Capture the approved PayPal payment for a flash order
+ * @param {string} orderId - The Flash Order ID
+ * @param {Object} params - { paypalOrderId, payerId }
+ */
+export const captureFlashOrderPayPalPayment = async (orderId, { paypalOrderId, payerId }) => {
+  const response = await fetch(`${API_BASE_URL}/flash-orders/${orderId}/paypal/capture`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ paypalOrderId, payerId })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to capture PayPal payment');
+  }
+  return data.data;
+};

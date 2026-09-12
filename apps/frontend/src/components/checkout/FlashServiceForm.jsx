@@ -267,6 +267,20 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
           </div>
 
           <div>
+            <label htmlFor="addressLine2" className="block text-sm font-heading font-semibold text-text-primary uppercase tracking-wider mb-2">
+              Address Line 2 <span className="text-text-muted normal-case">(optional)</span>
+            </label>
+            <input
+              type="text"
+              id="addressLine2"
+              value={formData.returnAddress.addressLine2}
+              onChange={(e) => handleAddressChange('addressLine2', e.target.value)}
+              className="w-full px-4 py-3 bg-bg-elevated border border-border-subtle rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
+              placeholder="Flat, suite, unit, building"
+            />
+          </div>
+
+          <div>
             <label htmlFor="city" className="block text-sm font-heading font-semibold text-text-primary uppercase tracking-wider mb-2">
               City
             </label>

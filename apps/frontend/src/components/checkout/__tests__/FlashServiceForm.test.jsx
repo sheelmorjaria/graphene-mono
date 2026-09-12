@@ -209,6 +209,38 @@ describe('FlashServiceForm Component', () => {
       factoryResetConfirmed: true
     };
 
+
+    it('renders an optional Address Line 2 field and submits its value', async () => {
+      const mockOnSuccess = vi.fn();
+      render(<FlashServiceForm onSuccess={mockOnSuccess} />);
+
+      // Field is present, optional (form submits fine without it — covered by
+      // the previous test), and included in the payload when filled.
+      const line2 = screen.getByLabelText(/address line 2/i);
+      expect(line2).toBeInTheDocument();
+
+      await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await userEvent.selectOptions(screen.getByLabelText(/pixel model/i), 'Pixel 8 Pro');
+      await userEvent.type(screen.getByLabelText(/full name/i), 'Test User');
+      await userEvent.type(screen.getByLabelText(/address line 1/i), '123 Test Street');
+      await userEvent.type(line2, 'Flat 4B');
+      await userEvent.type(screen.getByLabelText(/city/i), 'London');
+      await userEvent.type(screen.getByLabelText(/state\/province/i), 'England');
+      await userEvent.type(screen.getByLabelText(/postal code/i), 'E1 6AN');
+      await userEvent.type(screen.getByLabelText(/phone number/i), '+44 20 7946 0958');
+      await userEvent.click(screen.getByLabelText(/factory reset/i));
+
+      await userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+
+      await waitFor(() => {
+        expect(createFlashOrder).toHaveBeenCalledWith(
+          expect.objectContaining({
+            returnAddress: expect.objectContaining({ addressLine2: 'Flat 4B' })
+          })
+        );
+      });
+    });
+
     it('should submit form with valid data and call onSuccess', async () => {
       const mockResponse = {
         orderId: 'order-123',
