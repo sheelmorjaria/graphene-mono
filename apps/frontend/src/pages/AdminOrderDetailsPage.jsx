@@ -594,30 +594,38 @@ const AdminOrderDetailsPage = () => {
 
           {/* Right Column - Customer & Order Info */}
           <div className="space-y-6">
-            {/* Customer Information */}
-            {order?.customer && (
+            {/* Customer Information — guests have no populated user; fall back
+                to the order's own name/email so the card never disappears. */}
+            {(order?.customer || order?.customerEmail || order?.shippingAddress?.fullName) && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
+                  <h2 className="text-lg font-medium text-gray-900">
+                    Customer Information
+                    {order?.isGuest && (
+                      <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">Guest</span>
+                    )}
+                  </h2>
                 </div>
                 <div className="px-6 py-4 space-y-3">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Name</p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {order.customer.firstName} {order.customer.lastName}
+                      {order.customer?.firstName
+                        ? `${order.customer.firstName} ${order.customer.lastName ?? ''}`.trim()
+                        : order.shippingAddress?.fullName || '—'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Email</p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {order.customer.email}
+                      {order.customer?.email || order.customerEmail || '—'}
                     </p>
                   </div>
-                  {order.customer.phone && (
+                  {(order.customer?.phone || order.shippingAddress?.phoneNumber) && (
                     <div>
                       <p className="text-sm font-medium text-gray-500">Phone</p>
                       <p className="mt-1 text-sm text-gray-900">
-                        {order.customer.phone}
+                        {order.customer?.phone || order.shippingAddress?.phoneNumber}
                       </p>
                     </div>
                   )}
@@ -738,7 +746,7 @@ const AdminOrderDetailsPage = () => {
                       {order.shippingMethod.name}
                     </p>
                     <p className="mt-1 text-sm text-gray-500">
-                      {formatCurrency(order.shippingCost)}
+                      {formatCurrency(Number.isFinite(order.shippingMethod?.cost) ? order.shippingMethod.cost : order.shipping || 0)}
                     </p>
                   </div>
                 )}
@@ -771,16 +779,16 @@ const AdminOrderDetailsPage = () => {
               <div className="px-6 py-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal</span>
-                  <span className="text-gray-900">{formatCurrency(order?.subtotalAmount)}</span>
+                  <span className="text-gray-900">{formatCurrency(Number.isFinite(order?.subtotal) ? order.subtotal : 0)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Shipping</span>
-                  <span className="text-gray-900">{formatCurrency(order?.shippingCost || 0)}</span>
+                  <span className="text-gray-900">{formatCurrency(Number.isFinite(order?.shipping) ? order.shipping : 0)}</span>
                 </div>
-                {order?.taxAmount > 0 && (
+                {(order?.tax || 0) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Tax</span>
-                    <span className="text-gray-900">{formatCurrency(order.taxAmount)}</span>
+                    <span className="text-gray-900">{formatCurrency(order.tax)}</span>
                   </div>
                 )}
                 <div className="border-t border-gray-200 pt-2">

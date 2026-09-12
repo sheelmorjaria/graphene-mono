@@ -6,7 +6,8 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 // Client factory to avoid TDZ self-references.
 const paypal = vi.hoisted(() => ({
   createOrder: vi.fn(),
-  captureOrder: vi.fn()
+  captureOrder: vi.fn(),
+  getOrder: vi.fn()
 }));
 
 vi.mock('@paypal/paypal-server-sdk', () => ({
@@ -19,7 +20,8 @@ vi.mock('@paypal/paypal-server-sdk', () => ({
   OrdersController: vi.fn(function () {
     return {
       createOrder: paypal.createOrder,
-      captureOrder: paypal.captureOrder
+      captureOrder: paypal.captureOrder,
+      getOrder: paypal.getOrder
     };
   }),
   PaymentsController: vi.fn(function () {
@@ -31,7 +33,7 @@ vi.mock('@paypal/paypal-server-sdk', () => ({
   }
 }));
 
-const { createOrder, captureOrder } = paypal;
+const { createOrder, captureOrder, getOrder } = paypal;
 
 // --- Mock models ---
 vi.mock('../../models/Cart.js', () => {
@@ -50,10 +52,13 @@ vi.mock('../../models/Product.js', () => ({
 
 vi.mock('../../models/Order.js', () => {
   // Constructor that supports `new Order(data)` with a save() returning this.
+  // Records instances so tests can assert on the persisted order data.
   function OrderMock(data) {
     Object.assign(this, data);
+    OrderMock.instances.push(this);
     this.save = vi.fn().mockResolvedValue(this);
   }
+  OrderMock.instances = [];
   OrderMock.findOne = vi.fn();
   OrderMock.exists = vi.fn();
   OrderMock.countDocuments = vi.fn();
@@ -1044,6 +1049,59 @@ describe('paymentController - unit tests', () => {
       expect(res.status).toHaveBeenCalledWith(503);
       expect(res.json.mock.calls[0][0].error).toContain('temporarily unavailable');
     });
+
+      const orderWithFullDetails = {
+        result: {
+          purchaseUnits: [{
+            amount: {
+              breakdown: {
+                itemTotal: { value: '620.00' },
+                shipping: { value: '20.45' }
+              }
+            },
+            shipping: {
+              name: { fullName: 'Sheel Morjaria' },
+              address: { addressLine1: '70 James Court', adminArea2: 'London', postalCode: 'NW95GD', countryCode: 'GB' }
+            }
+          }]
+        }
+      };
+
+      it('uses the PayPal order (getOrder) breakdown and shipping address', async () => {
+        setupCaptureHappyPath();
+        // Capture response omits purchaseUnits[].amount AND .shipping (seen live).
+        captureOrder.mockResolvedValue(buildCaptureResponse({
+          purchaseUnits: [{ payments: { captures: [{ id: 'CAPTURE-1', amount: { currencyCode: 'GBP', value: '640.45' } }] } }]
+        }));
+        getOrder.mockResolvedValue(orderWithFullDetails);
+        req.body = { paypalOrderId: 'PAYPAL-ORDER-1', payerId: 'PAYER1' };
+
+        await capturePayPalPayment(req, res);
+
+        const saved = Order.instances[Order.instances.length - 1];
+        expect(saved.subtotal).toBe(620);
+        expect(saved.shipping).toBeCloseTo(20.45);
+        expect(saved.shippingAddress.fullName).toBe('Sheel Morjaria');
+        expect(saved.shippingAddress.addressLine1).toBe('70 James Court');
+        expect(saved.shippingMethod.cost).toBeCloseTo(20.45);
+      });
+
+      it('falls back to cart math when getOrder is unavailable', async () => {
+        setupCaptureHappyPath();
+        captureOrder.mockResolvedValue(buildCaptureResponse({
+          purchaseUnits: [{ payments: { captures: [{ id: 'CAPTURE-1', amount: { currencyCode: 'GBP', value: '205.97' } }] } }]
+        }));
+        getOrder.mockRejectedValue(new Error('paypal down'));
+        req.body = { paypalOrderId: 'PAYPAL-ORDER-1', payerId: 'PAYER1' };
+
+        await capturePayPalPayment(req, res);
+
+        const saved = Order.instances[Order.instances.length - 1];
+        // Cart fixture: 2 x 99.99 = 199.98; shipping = 205.97 - 199.98
+        expect(saved.subtotal).toBeCloseTo(199.98);
+        expect(saved.shipping).toBeCloseTo(5.99);
+        expect(saved.shippingMethod.cost).toBeCloseTo(5.99);
+      });
   });
 
   // ---------- handlePayPalWebhook ----------

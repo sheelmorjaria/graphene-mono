@@ -200,6 +200,13 @@ const OrderDetailsPage = () => {
               <p className="order-date mt-1">
                 Placed on {order.formattedDate}
               </p>
+              {(order.shippingAddress?.fullName || order.customerEmail) && (
+                <p className="order-date mt-1 text-gray-600">
+                  {order.shippingAddress?.fullName}
+                  {order.shippingAddress?.fullName && order.customerEmail ? ' · ' : ''}
+                  {order.customerEmail && <a href={`mailto:${order.customerEmail}`} className="hover:underline">{order.customerEmail}</a>}
+                </p>
+              )}
             </div>
             <div className="mt-4 sm:mt-0">
               <span 
@@ -276,7 +283,7 @@ const OrderDetailsPage = () => {
                           <div className="text-sm text-gray-900 mt-1">{order.shippingMethod.name}</div>
                         </div>
                         <div className="shipping-cost">
-                          {formatCurrency(order.shippingMethod.cost)}
+                          {formatCurrency(Number.isFinite(order.shippingMethod?.cost) ? order.shippingMethod.cost : 0)}
                         </div>
                       </div>
                       {order.shippingMethod.estimatedDelivery && (
@@ -450,15 +457,15 @@ const OrderDetailsPage = () => {
               <div className="space-y-3">
                 <div className="order-summary-line">
                   <span className="order-summary-label">Subtotal</span>
-                  <span className="order-summary-value">{formatCurrency(order.subtotal)}</span>
+                  <span className="order-summary-value">{formatCurrency(Number.isFinite(order.subtotal) ? order.subtotal : 0)}</span>
                 </div>
                 <div className="order-summary-line">
                   <span className="order-summary-label">Shipping</span>
-                  <span className="order-summary-value">{formatCurrency(order.shipping)}</span>
+                  <span className="order-summary-value">{formatCurrency(Number.isFinite(order.shipping) ? order.shipping : 0)}</span>
                 </div>
                 <div className="order-summary-line">
                   <span className="order-summary-label">Tax</span>
-                  <span className="order-summary-value">{formatCurrency(order.tax)}</span>
+                  <span className="order-summary-value">{formatCurrency(Number.isFinite(order.tax) ? order.tax : 0)}</span>
                 </div>
                 <div className="order-summary-total">
                   <div className="order-summary-line">

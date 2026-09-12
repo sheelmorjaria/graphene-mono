@@ -508,13 +508,44 @@ export const capturePayPalPayment = async (req, res) => {
       });
     }
 
+    // PayPal's capture response can omit purchaseUnits[].amount AND .shipping
+    // (seen live 2026-09-12: totals saved as NaN/0, addresses as placeholders).
+    // The PayPal ORDER — what we sent at create — is authoritative: fetch it
+    // once for the breakdown + shipping address; fall back to cart math.
+    let breakdownUnit = unitAmount?.breakdown || null;
+    let shippingInfo = purchaseUnit?.shipping && purchaseUnit.shipping.address
+      ? purchaseUnit.shipping
+      : {};
+    if (!breakdownUnit || !shippingInfo.address) {
+      try {
+        const orderDetails = await ordersController.getOrder({ id: paypalOrderId });
+        const detailUnit = orderDetails?.result?.purchaseUnits?.[0];
+        breakdownUnit = breakdownUnit || detailUnit?.amount?.breakdown || null;
+        if (!shippingInfo.address && detailUnit?.shipping) {
+          shippingInfo = detailUnit.shipping;
+        }
+      } catch (orderFetchError) {
+        logError(orderFetchError, { context: 'paypal_get_order_after_capture', paypalOrderId });
+      }
+    }
+
+    // Cart math backstop: subtotal is pure server truth; shipping is the rest.
+    const cartSubtotal = cart.items.reduce(
+      (sum, item) => sum + (item.unitPrice || item.price) * item.quantity, 0
+    );
+    const resolvedSubtotal = breakdownUnit?.itemTotal?.value
+      ? parseFloat(breakdownUnit.itemTotal.value)
+      : cartSubtotal;
+    const resolvedShipping = breakdownUnit?.shipping?.value
+      ? parseFloat(breakdownUnit.shipping.value)
+      : Math.max(0, orderAmount - resolvedSubtotal);
+
     // Resolve the real shipping method chosen at create time; fall back to a
     // default when custom_id is absent/unparseable (legacy PayPal orders).
-    const breakdownShipping = parseFloat(unitAmount?.breakdown?.shipping?.value || 0);
     let shippingMethodData = {
       id: new mongoose.Types.ObjectId(),
       name: 'Standard Shipping',
-      cost: breakdownShipping
+      cost: resolvedShipping
     };
     if (checkoutRef?.s) {
       try {
@@ -524,7 +555,7 @@ export const capturePayPalPayment = async (req, res) => {
           shippingMethodData = {
             id: method._id,
             name: method.name,
-            cost: breakdownShipping,
+            cost: resolvedShipping,
             ...(method.estimatedDeliveryDays ? {
               estimatedDelivery: `${method.estimatedDeliveryDays.min}-${method.estimatedDeliveryDays.max} business days`
             } : {})
@@ -562,8 +593,8 @@ export const capturePayPalPayment = async (req, res) => {
         }
       }
 
-      // Get shipping info from PayPal response
-      const shippingInfo = purchaseUnit?.shipping || {};
+      // shippingInfo (and the resolved totals) come from the getOrder-aware
+      // resolution above — the capture response alone can omit them.
 
       // Create order in database. Email precedence: account email (always
       // right for logged-in users) > guest-entered email (the address the
@@ -580,9 +611,9 @@ export const capturePayPalPayment = async (req, res) => {
           unitPrice: item.unitPrice || item.price,
           totalPrice: (item.unitPrice || item.price) * item.quantity
         })),
-        subtotal: parseFloat(unitAmount?.breakdown?.itemTotal?.value || 0),
-        shipping: parseFloat(unitAmount?.breakdown?.shipping?.value || 0),
-        tax: parseFloat(unitAmount?.breakdown?.taxTotal?.value || 0),
+        subtotal: resolvedSubtotal,
+        shipping: resolvedShipping,
+        tax: parseFloat(breakdownUnit?.taxTotal?.value || 0),
         totalAmount: orderAmount,
         paymentMethod: {
           type: 'paypal',
