@@ -17,16 +17,21 @@ beforeAll(async () => {
   app.get('/sitemap.xml', getSitemap);
 });
 
-const buildProduct = (overrides = {}) => ({
-  name: 'GrapheneOS Pixel 7A',
-  slug: 'grapheneos-pixel-7a',
-  sku: 'PIX-7A',
-  baseModel: '7A',
-  isActive: true,
-  status: 'active',
-  variations: [{ condition: 'good', color: 'Black', storage: '128GB', price: 265, stockQuantity: 1, stockStatus: 'in_stock', sku: 'PIX-7A-V1' }],
-  ...overrides
-});
+const buildProduct = (overrides = {}) => {
+  const sku = overrides.sku || 'PIX-7A';
+  return {
+    name: 'GrapheneOS Pixel 7A',
+    slug: 'grapheneos-pixel-7a',
+    sku,
+    baseModel: '7A',
+    isActive: true,
+    status: 'active',
+    // Variation SKUs must be unique across products (unique index on
+    // variations.sku) — derive from the product SKU.
+    variations: [{ condition: 'good', color: 'Black', storage: '128GB', price: 265, stockQuantity: 1, stockStatus: 'in_stock', sku: `${sku}-V1` }],
+    ...overrides
+  };
+};
 
 describe('GET /sitemap.xml', () => {
   it('returns valid XML with content-type and cache headers', async () => {
