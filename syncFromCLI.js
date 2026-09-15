@@ -1,4 +1,5 @@
 import { exec } from "child_process";
+import fs from "fs";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
@@ -415,14 +416,50 @@ const extractConditionFromName = (name) => {
   return null;
 };
 
-const extractModelInfo = (name) => {
+// Exported for the parser regression tests (node --test syncFromCLI.parser.test.js)
+export const extractModelInfo = (name) => {
   if (!name) return null;
 
   // Remove condition letter (A, B, or C) and category from the name for parsing
   const nameWithoutCondition = name
     .replace(/\s+[ABC](?:\s*\[.*?\])?$/, "") // Remove condition + optional category
     .replace(/\s*\[.*?\]$/, ""); // Remove remaining category if any
-  
+
+  // Numbered Pro Fold models ("Pixel 9 Pro Fold", "Pixel 10 Pro Fold") must
+  // be matched BEFORE both fold handling below and the general regex: the
+  // general regex captures "Pro" as the variant and dumps "Fold 256GB …"
+  // into the color field, which both leaves the real fold variations
+  // unrepriced AND mis-keys fold quotes onto the non-fold "9 Pro"/"10 Pro"
+  // products (prod incident 2026-09-15).
+  const proFoldName = nameWithoutCondition.replace(/(?:[,\s]*Unlocked)?[,\s]*$/i, "");
+  const proFoldMatch = proFoldName.match(
+    /(?:Google\s+)?Pixel\s+(\d+a?)\s+Pro\s+Fold\s*(?:(\d+(?:GB|TB))\+)?(\d+(?:GB|TB))?[,\s-]*(.*)$/i
+  );
+
+  if (proFoldMatch) {
+    const [_, number, ram, storage, color] = proFoldMatch;
+    let actualStorage = storage || ram || "256GB"; // Pro Folds start at 256GB
+    let actualColor = (color || "").trim();
+
+    // Storage embedded in the color field (same fallback as the general path)
+    const colorStorageMatch = actualColor.match(/(\d+(?:GB|TB))\s+(.+)|(.+)\s+(\d+(?:GB|TB))/i);
+    if (colorStorageMatch) {
+      if (colorStorageMatch[1] && colorStorageMatch[2]) {
+        actualStorage = colorStorageMatch[1];
+        actualColor = colorStorageMatch[2].trim();
+      } else if (colorStorageMatch[3] && colorStorageMatch[4]) {
+        actualColor = colorStorageMatch[3].trim();
+        actualStorage = colorStorageMatch[4];
+      }
+    }
+
+    return {
+      modelName: `Pixel ${number} Pro Fold`,
+      storage: actualStorage,
+      color: cleanColorForMatch(actualColor) || "Unknown",
+    };
+  }
+
   // Check for Pixel Fold specifically first
   const foldMatch = nameWithoutCondition.match(
     /(?:Google\s+)?Pixel\s+Fold\s*(\d+GB)?\s*[,-]?\s*([^,]+)?/i
@@ -951,6 +988,24 @@ const cleanColorForMatch = (color) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+// Match a variation (bare baseModel + color) to a product image shipped in
+// apps/frontend/public/images/products/. Files there are named as the
+// model+color concatenation ("10profoldmoonstone.jpg",
+// "6Prostormyblack.webp"); original-Pixel-Fold files carry a "pixel" prefix
+// ("pixelfoldobsidian.webp"). Matching is case-insensitive with whitespace
+// stripped; multi-word colors collapse ("Rose Quartz" → "rosequartz").
+// Exported for the parser regression tests.
+export const findVariationImage = (baseModel, color, files) => {
+  const model = (baseModel || '').toLowerCase().replace(/\s+/g, '');
+  const colorKey = (color || '').toLowerCase().replace(/\s+/g, '');
+  if (!model || !colorKey) return null;
+
+  const candidates = [`pixel${model}${colorKey}`, `${model}${colorKey}`];
+  const stem = (f) => f.toLowerCase().replace(/\.[^.]+$/, '');
+  const hit = files.find((f) => candidates.includes(stem(f)));
+  return hit ? `/images/products/${hit}` : null;
+};
+
 // Prices-only sync: fetches supplier (CeX/webuy) prices from the CLI and
 // updates the PRICE of EXISTING variations (supplier price + £120 markup —
 // same formula as the full sync). Never creates products or variations.
@@ -959,13 +1014,30 @@ const cleanColorForMatch = (color) =>
 //   node syncFromCLI.js prices --confirm                     (apply changes)
 const DEFAULT_PRICE_QUERIES = [
   'PIXEL',
+  // One query per model family is NOT enough: CeX returns only ~50 rows per
+  // query and sub-families (e.g. 10a under 'PIXEL 10') get truncated
+  // nondeterministically between runs. A truncated family then loses its
+  // quotes and the stock reconciliation wrongly marks those variations out
+  // of stock (prod incident 2026-09-15: 10a collapsed to 1 in-stock
+  // variation). Query every stocked model explicitly so each DB baseModel
+  // has a dedicated, untruncated quote set.
   'PIXEL 6',
+  'PIXEL 6 PRO',
   'PIXEL 7',
+  'PIXEL 7 PRO',
   'PIXEL 8',
+  'PIXEL 8 PRO',
   'PIXEL 9',
+  'PIXEL 9 PRO',
+  'PIXEL 9 PRO XL',
   'PIXEL 9A',
   'PIXEL 10',
-  'PIXEL FOLD'
+  'PIXEL 10 PRO',
+  'PIXEL 10 PRO XL',
+  'PIXEL 10A',
+  'PIXEL FOLD',
+  'PIXEL 9 PRO FOLD',
+  'PIXEL 10 PRO FOLD'
 ];
 
 export const syncPricesOnly = async (searchQuery = DEFAULT_PRICE_QUERIES, apply = false) => {
@@ -1133,6 +1205,152 @@ export const syncPricesOnly = async (searchQuery = DEFAULT_PRICE_QUERIES, apply 
   }
 };
 
+// Image assignment: variations created by the syncs ship with the
+// placeholder image. This command auto-assigns the real product photo from
+// apps/frontend/public/images/products/ by matching model+color to the
+// filename (see findVariationImage). Never overwrites an existing real
+// image unless --migrate-uploads is passed, in which case images pointing
+// at the backend's EPHEMERAL /app/uploads (lost on every backend redeploy)
+// are repointed to the repo-shipped file when one matches. Dry-run by
+// default; --confirm applies.
+//
+//   node syncFromCLI.js images [--migrate-uploads] [--dry-run]   (dry-run is the DEFAULT)
+//   node syncFromCLI.js images --migrate-uploads --confirm       (apply changes)
+//
+// New photos are sourced from the Windows Pictures folder automatically
+// (override with --source <dir>): any <model><color>.webp|jpg|png file there
+// that the repo lacks is copied in, so the workflow is just "drop the file in
+// Pictures → run images --confirm → deploy".
+export const assignVariationImages = async (apply = false, migrateUploads = false) => {
+  let connection = null;
+
+  try {
+    const imageDir = path.join(__dirname, 'apps/frontend/public/images/products');
+    let files = fs
+      .readdirSync(imageDir)
+      .filter((f) => /\.(webp|jpe?g|png)$/i.test(f))
+      .sort();
+
+    const sourceArg = process.argv.indexOf('--source');
+    const sourceDir = sourceArg !== -1 && process.argv[sourceArg + 1]
+      ? process.argv[sourceArg + 1]
+      : (fs.existsSync('/mnt/c/Users/sheel/Pictures') ? '/mnt/c/Users/sheel/Pictures' : null);
+
+    if (sourceDir && fs.existsSync(sourceDir)) {
+      const sourceFiles = fs.readdirSync(sourceDir).filter((f) => /\.(webp|jpe?g|png)$/i.test(f));
+      const missing = sourceFiles.filter((f) => !files.includes(f));
+      for (const f of missing) {
+        if (apply) {
+          fs.copyFileSync(path.join(sourceDir, f), path.join(imageDir, f));
+          console.log(`📥 Copied ${f} from ${sourceDir}`);
+        } else {
+          console.log(`📥 Would copy ${f} from ${sourceDir}`);
+        }
+      }
+      if (missing.length > 0) {
+        files = (apply ? fs.readdirSync(imageDir) : [...files, ...missing])
+          .filter((f) => /\.(webp|jpe?g|png)$/i.test(f))
+          .sort();
+      }
+    }
+
+    console.log(`🖼️  ${files.length} product image file(s) available\n`);
+
+    connection = await connectDB();
+    if (!Product) throw new Error('Product model not initialized');
+
+    const allProducts = await Product.find({}).select('name baseModel variations');
+    const assignments = [];
+    const migrations = [];
+    const unmatchable = [];
+    const uploadsKept = [];
+
+    for (const product of allProducts) {
+      for (const variation of product.variations || []) {
+        const label = `${variation.condition}/${variation.color}/${variation.storage}`;
+        const usesUploads = (variation.images || []).some((img) => img && img.includes('/uploads/'));
+
+        if (migrateUploads && usesUploads) {
+          const image = findVariationImage(product.baseModel, variation.color, files);
+          if (image) {
+            migrations.push({ sku: variation.sku, label, from: variation.images[0], to: image, doc: product, variation });
+          } else {
+            uploadsKept.push(`${product.name} — ${label} (${variation.sku})`);
+          }
+          continue;
+        }
+
+        const hasRealImage = (variation.images || []).some(
+          (img) => img && !img.includes('placeholder')
+        );
+        if (hasRealImage) continue;
+
+        const image = findVariationImage(product.baseModel, variation.color, files);
+        if (image) {
+          assignments.push({
+            product: product.name,
+            sku: variation.sku,
+            label,
+            image,
+            doc: product,
+            variation,
+          });
+        } else {
+          unmatchable.push(`${product.name} — ${label} (${variation.sku})`);
+        }
+      }
+    }
+
+    console.log(`🖼️  Variations without a real image: ${assignments.length + unmatchable.length}`);
+    for (const a of assignments) {
+      console.log(`   ✅ ${a.sku} (${a.label}) → ${a.image}`);
+    }
+    if (unmatchable.length > 0) {
+      console.log(`\n⚠️  No image file matches ${unmatchable.length} variation(s) — add a file named <model><color>.webp|jpg|png:`);
+      unmatchable.forEach((u) => console.log(`   - ${u}`));
+    }
+
+    if (migrateUploads) {
+      console.log(`\n🔁 /uploads (ephemeral) → repo image migrations: ${migrations.length}`);
+      for (const m of migrations) {
+        console.log(`   ${m.sku} (${m.label})`);
+        console.log(`      ${m.from}`);
+        console.log(`      → ${m.to}`);
+      }
+      if (uploadsKept.length > 0) {
+        console.log(`\n⚠️  ${uploadsKept.length} /uploads variation(s) have NO repo file match — left untouched:`);
+        uploadsKept.forEach((u) => console.log(`   - ${u}`));
+      }
+    }
+
+    if (!apply) {
+      console.log(`\n🧪 DRY RUN — ${assignments.length} assignment(s) and ${migrations.length} migration(s) would be applied. Re-run with --confirm to apply.`);
+      return { changes: assignments.length + migrations.length, unmatchable: unmatchable.length, uploadsKept: uploadsKept.length };
+    }
+
+    for (const a of assignments) {
+      a.variation.images = [a.image];
+      await a.doc.save();
+    }
+    for (const m of migrations) {
+      m.variation.images = [m.to];
+      await m.doc.save();
+    }
+    console.log(`\n✅ Applied ${assignments.length} image assignment(s) and ${migrations.length} migration(s).`);
+    console.log('ℹ️  Newly added image files ship with the next frontend deploy.');
+    return { updated: assignments.length + migrations.length, unmatchable: unmatchable.length, uploadsKept: uploadsKept.length };
+
+  } catch (error) {
+    console.error('❌ Image assignment error:', error.message);
+    throw error;
+  } finally {
+    if (connection && mongoose.connection.readyState === 1) {
+      await mongoose.connection.close().catch(() => {});
+      console.log('MongoDB connection closed');
+    }
+  }
+};
+
 // Check if this file is being run directly
 const isMainModule = () => {
   // Get the current file path
@@ -1163,6 +1381,18 @@ if (isMainModule()) {
       })
       .catch((error) => {
         console.error("\n❌ Prices command failed:", error.message);
+        process.exit(1);
+      });
+  } else if (command === "images") {
+    const apply = process.argv.includes('--confirm');
+    const migrateUploads = process.argv.includes('--migrate-uploads');
+    assignVariationImages(apply, migrateUploads)
+      .then((r) => {
+        console.log(`\n${apply ? '✅' : '🧪'} Images command completed — updated: ${r.updated ?? 0}, changes: ${r.changes ?? 0}, no match: ${r.unmatchable ?? 0}, uploads kept: ${r.uploadsKept ?? 0}`);
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error("\n❌ Images command failed:", error.message);
         process.exit(1);
       });
   } else if (command === "test") {
