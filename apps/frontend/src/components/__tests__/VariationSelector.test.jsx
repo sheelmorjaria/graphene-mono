@@ -309,3 +309,42 @@ describe('VariationSelector', () => {
     });
   });
 });
+  describe('storage default selection (multi-storage products)', () => {
+    const storageMock = vi.fn();
+
+    // Regression: with multiple storages none was auto-selected, so after
+    // picking condition+color the preview fell back to the FIRST matching
+    // variation — a concrete SKU/price the customer never chose (prod report:
+    // Fair+Obsidian previewed 128GB £360; the 256GB £445 went unseen).
+    const storageVariations = [
+      { _id: 's1', condition: 'fair', color: 'Obsidian', storage: '128GB', price: 360, stockStatus: 'in_stock', stockQuantity: 10, sku: 'PIX-128-OBS-C', images: [] },
+      { _id: 's2', condition: 'fair', color: 'Obsidian', storage: '256GB', price: 445, stockStatus: 'in_stock', stockQuantity: 10, sku: 'PIX-256-OBS-C', images: [] }
+    ];
+
+    it('resolves the preview to the default (smallest) storage once condition and color are chosen', async () => {
+      render(<VariationSelector variations={storageVariations} onVariationSelect={storageMock} />);
+
+      fireEvent.click(screen.getByText('Fair'));
+      fireEvent.click(screen.getByText('Obsidian'));
+
+      await waitFor(() => {
+        expect(storageMock).toHaveBeenLastCalledWith(
+          expect.objectContaining({ storage: '128GB', sku: 'PIX-128-OBS-C' })
+        );
+      });
+    });
+
+    it('updates the preview when the customer switches storage', async () => {
+      render(<VariationSelector variations={storageVariations} onVariationSelect={storageMock} />);
+
+      fireEvent.click(screen.getByText('Fair'));
+      fireEvent.click(screen.getByText('Obsidian'));
+      fireEvent.click(screen.getByText('256GB'));
+
+      await waitFor(() => {
+        expect(storageMock).toHaveBeenLastCalledWith(
+          expect.objectContaining({ storage: '256GB', price: 445, sku: 'PIX-256-OBS-C' })
+        );
+      });
+    });
+  });
