@@ -10,6 +10,10 @@ import User from '../../models/User.js';
 import Product from '../../models/Product.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 import Cart from '../../models/Cart.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 // PayPal Performance Tests
 describe('PayPal Performance Tests', () => {

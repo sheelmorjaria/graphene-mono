@@ -128,6 +128,12 @@
       "advanced": true
     },
     {
+      "id": "PAYPAL_FLASH_WEBHOOK_ID",
+      "description": "Webhook ID of the FLASH ORDERS subscription (developer.paypal.com -> app -> webhooks -> /api/flash-orders/paypal-webhook). Each subscription has its own ID. Required for flash webhooks to verify.",
+      "defaultValue": "",
+      "advanced": true
+    },
+    {
       "id": "PAYPAL_WEBHOOK_ID",
       "description": "PayPal webhook ID (for webhook signature verification)",
       "defaultValue": "",

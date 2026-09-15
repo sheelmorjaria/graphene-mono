@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import '../../test/setup.js';
 import request from 'supertest';
 import express from 'express';
@@ -11,6 +12,10 @@ import Product from '../../models/Product.js';
 import Order from '../../models/Order.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 import PaymentGateway from '../../models/PaymentGateway.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 let app;
 let userToken;

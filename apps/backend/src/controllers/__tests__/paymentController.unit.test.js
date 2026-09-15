@@ -32,6 +32,9 @@ vi.mock('@paypal/paypal-server-sdk', () => ({
     Production: 'live'
   }
 }));
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
 
 const { createOrder, captureOrder, getOrder } = paypal;
 

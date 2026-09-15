@@ -3,6 +3,10 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import FlashOrder from '../../models/FlashOrder.js';
 import app from '../../app.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 describe('FlashOrder API Endpoints', () => {
   let validOrderData;

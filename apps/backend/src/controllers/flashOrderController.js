@@ -1,5 +1,6 @@
 import FlashOrder from '../models/FlashOrder.js';
 import { getPayPalClient } from './paymentController.js';
+import { verifyPayPalWebhookSignature } from '../services/paypalWebhookVerificationService.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
 
 // Supported Pixel models
@@ -145,6 +146,13 @@ export const createFlashOrder = async (req, res) => {
  */
 export const handleFlashOrderWebhook = async (req, res) => {
   try {
+    // Signature verification fails CLOSED (mirrors the main payment webhook).
+    const verification = await verifyPayPalWebhookSignature({ headers: req.headers, event: req.body, webhookId: process.env.PAYPAL_FLASH_WEBHOOK_ID });
+    if (!verification.verified) {
+      logError(new Error(verification.reason), { context: 'flash_webhook_signature_rejected' });
+      return res.status(401).json({ error: 'Webhook signature verification failed' });
+    }
+
     const webhookEvent = req.body;
     const eventType = webhookEvent.event_type;
 

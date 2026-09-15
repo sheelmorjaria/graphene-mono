@@ -6,6 +6,10 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import paymentRoutes from '../../routes/payment.js';
 import Order from '../../models/Order.js';
 import User from '../../models/User.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 // PayPal Webhook Security Tests
 describe('PayPal Webhook Security Tests', () => {

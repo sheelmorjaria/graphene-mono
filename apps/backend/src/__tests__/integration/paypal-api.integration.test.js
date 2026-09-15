@@ -10,6 +10,10 @@ import Product from '../../models/Product.js';
 import Category from '../../models/Category.js';
 import ShippingMethod from '../../models/ShippingMethod.js';
 import PaymentGateway from '../../models/PaymentGateway.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 // Fixed price used for the main test product (real Product schema stores
 // price/stock inside variations[], there is no top-level price field).
