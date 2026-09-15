@@ -433,7 +433,7 @@ const extractModelInfo = (name) => {
     return {
       modelName: "Pixel Fold",
       storage: storage || "256GB", // Fold typically comes with 256GB
-      color: color ? color.trim() : "Unknown",
+      color: cleanColorForMatch(color) || "Unknown",
     };
   }
 
@@ -479,7 +479,10 @@ const extractModelInfo = (name) => {
   return {
     modelName: modelName.trim(),
     storage: actualStorage,
-    color: actualColor,
+    // Clean color at the source (trailing commas / parenthesised RAM) so the
+    // variation duplicate-check matches existing clean DB variations instead
+    // of creating "Obsidian," twins of "Obsidian".
+    color: cleanColorForMatch(actualColor) || "Unknown",
   };
 };
 
