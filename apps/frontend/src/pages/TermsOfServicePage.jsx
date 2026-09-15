@@ -33,7 +33,7 @@ const TermsOfServicePage = () => {
             Terms of Service
           </h1>
           <p className="text-text-secondary">
-            Last updated: January 2026
+            Last updated: September 2026
           </p>
         </div>
 
@@ -162,7 +162,7 @@ const TermsOfServicePage = () => {
                 and external factors beyond our control.
               </p>
               <ul className="list-disc list-inside space-y-2 text-text-secondary">
-                <li>UK delivery: Typically 4-5 days</li>
+                <li>UK delivery: Typically 3-5 days</li>
                 <li>International delivery: Times vary by destination</li>
                 <li>Risk of loss transfers to you upon delivery</li>
                 <li>Signature may be required for delivery</li>

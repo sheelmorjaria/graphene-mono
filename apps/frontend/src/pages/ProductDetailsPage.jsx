@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import useProductDetails from '../hooks/useProductDetails';
 import ImageGallery from '../components/ImageGallery';
@@ -10,6 +10,7 @@ import { generateProductStructuredData, generateBreadcrumbStructuredData } from 
 
 const ProductDetailsPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { product, loading, error, refetch } = useProductDetails(slug);
   const { addToCart } = useCart();
   const [selectedVariation, setSelectedVariation] = useState(null);
@@ -43,6 +44,9 @@ const ProductDetailsPage = () => {
       const result = await addToCart(productId, quantity, variationId);
       if (result.success) {
         console.log('Product added to cart successfully:', result.addedItem);
+        // Streamlined purchase: show the cart immediately so the customer can
+        // check out or return to shopping for more items.
+        navigate('/cart');
       } else {
         console.error('Failed to add to cart:', result.error);
       }

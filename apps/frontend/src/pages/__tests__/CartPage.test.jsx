@@ -127,6 +127,8 @@ describe('CartPage', () => {
     expect(
       screen.getByRole('button', { name: /proceed to checkout/i })
     ).toBeInTheDocument();
+    // Return-to-shopping alongside checkout: add more items without losing the cart
+    expect(screen.getAllByRole('link', { name: /continue shopping/i }).length).toBeGreaterThan(0);
   });
 
   it('increases quantity via the + button and calls updateCartItem', async () => {
