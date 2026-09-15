@@ -54,7 +54,34 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Total price is required'],
     min: [0, 'Total price cannot be negative']
-  }
+  },
+  // Physical units allocated to this line (IMEI tracking). Snapshot at
+  // allocation time — the tamper-proof record for the shipped email and
+  // return verification, independent of later Device edits.
+  devices: [{
+    deviceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Device',
+      required: [true, 'Device ID is required']
+    },
+    imei: {
+      type: String,
+      required: [true, 'IMEI is required'],
+      trim: true
+    },
+    serialNumber: {
+      type: String,
+      trim: true
+    },
+    assignedAt: {
+      type: Date,
+      default: Date.now
+    },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }]
 });
 
 const shippingAddressSchema = new mongoose.Schema({
@@ -336,6 +363,12 @@ const orderSchema = new mongoose.Schema({
         message: 'Refund status must be one of: pending, succeeded, failed, canceled'
       },
       default: 'pending'
+    },
+    // Audit flag: this refund was issued despite a failed IMEI verification
+    // (admin explicitly overrode the device-mismatch refund block)
+    deviceVerificationOverride: {
+      type: Boolean,
+      default: false
     }
   }],
   orderDate: {
@@ -379,8 +412,11 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: [true, 'Status is required'],
       enum: {
-        values: ['pending', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
-        message: 'Status must be one of: pending, processing, shipped, out_for_delivery, delivered, cancelled, returned'
+        // Mirrors the order.status enum — 'awaiting_shipment' was missing
+        // here, so transitioning an order to it threw a ValidationError
+        // inside the admin status-update transaction.
+        values: ['pending', 'processing', 'awaiting_shipment', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
+        message: 'Status must be one of: pending, processing, awaiting_shipment, shipped, out_for_delivery, delivered, cancelled, returned'
       }
     },
     timestamp: {

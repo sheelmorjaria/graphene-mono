@@ -337,13 +337,203 @@ export const issueRefund = async (orderId, refundData) => {
         window.location.href = '/admin/login';
         return;
       }
-      
-      throw new Error(data.error || 'Failed to process refund');
+
+      // Carry the error payload (e.g. the 409 device-verification block
+      // returns { blocked, quarantinedDevices, mismatchedReturns }) so the
+      // UI can offer the explicit override flow.
+      const error = new Error(data.error || 'Failed to process refund');
+      error.status = response.status;
+      error.data = data.data;
+      throw error;
     }
 
     return data;
   } catch (error) {
     console.error('Issue refund error:', error);
+    throw error;
+  }
+};
+
+// ---------------- Device management (IMEI tracking) ----------------
+
+// List devices with optional filters (status, imei, orderId, productId, page, limit)
+export const getAllDevices = async (filters = {}) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, value);
+      }
+    });
+
+    const response = await fetch(`${API_BASE_URL}/admin/devices?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await parseResponseBody(response);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+        return;
+      }
+      throw new Error(data.error || 'Failed to fetch devices');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get devices error:', error);
+    throw error;
+  }
+};
+
+// Receive a device into stock (scan IMEI at goods-in)
+export const receiveDevice = async (deviceData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/devices`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(deviceData)
+    });
+
+    const data = await parseResponseBody(response);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+        return;
+      }
+      throw new Error(data.error || 'Failed to receive device');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Receive device error:', error);
+    throw error;
+  }
+};
+
+// Allocate a scanned IMEI to an order item (JIT one-scan flow — creates the
+// device from the order item when it doesn't exist yet)
+export const allocateDevice = async ({ imei, orderId, orderItemId, serialNumber }) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/devices/allocate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ imei, orderId, orderItemId, serialNumber })
+    });
+
+    const data = await parseResponseBody(response);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+        return;
+      }
+      throw new Error(data.error || 'Failed to allocate device');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Allocate device error:', error);
+    throw error;
+  }
+};
+
+// Release an allocated device back to stock
+export const releaseDevice = async (deviceId, reason) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/devices/${deviceId}/release`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    const data = await parseResponseBody(response);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+        return;
+      }
+      throw new Error(data.error || 'Failed to release device');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Release device error:', error);
+    throw error;
+  }
+};
+
+// Scan a returned device's IMEI against what was shipped (return verification)
+export const verifyReturnDevice = async (returnRequestId, imei) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/returns/${returnRequestId}/verify-device`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ imei })
+    });
+
+    const data = await parseResponseBody(response);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/admin/login';
+        return;
+      }
+      throw new Error(data.error || 'Failed to verify device');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Verify return device error:', error);
     throw error;
   }
 };

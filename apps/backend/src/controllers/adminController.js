@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import ReturnRequest from '../models/ReturnRequest.js';
+import Device from '../models/Device.js';
 import Category from '../models/Category.js';
 import emailService from '../services/emailService.js';
 import { notifyIndexNow } from '../services/indexNowService.js';
@@ -756,6 +757,24 @@ export const updateOrderStatus = async (req, res) => {
         notes: `Status changed from ${oldStatus} to ${newStatus} by admin`
       });
 
+      // Device lifecycle (IMEI tracking): advance allocated devices when the
+      // order ships; release them back to stock on cancellation. Only
+      // 'allocated' devices are released — shipped units are physically with
+      // the customer and must not return to sellable stock.
+      if (newStatus === 'shipped') {
+        await Device.updateMany(
+          { orderId: order._id, status: 'allocated' },
+          { status: 'shipped', shippedAt: new Date() },
+          { session }
+        );
+      } else if (newStatus === 'cancelled') {
+        await Device.updateMany(
+          { orderId: order._id, status: 'allocated' },
+          { status: 'in_stock', orderId: null, orderItemId: null, orderNumber: null, allocatedAt: null, allocatedBy: null },
+          { session }
+        );
+      }
+
       // Save the order
       await order.save({ session });
     });
@@ -882,6 +901,24 @@ export const issueRefund = async (req, res) => {
       });
     }
 
+    // Device-verification refund block (return-fraud prevention): refuse the
+    // refund when any device shipped on this order is quarantined or any of
+    // its return requests recorded an IMEI mismatch — unless the admin
+    // explicitly overrides with body.overrideDeviceMismatch.
+    const [quarantinedDevices, mismatchedReturns] = await Promise.all([
+      Device.countDocuments({ orderId: order._id, status: 'quarantined' }),
+      ReturnRequest.countDocuments({ orderId: order._id, 'deviceVerification.status': 'mismatch' })
+    ]);
+    const deviceBlocked = quarantinedDevices > 0 || mismatchedReturns > 0;
+    if (deviceBlocked && req.body.overrideDeviceMismatch !== true) {
+      await session.abortTransaction();
+      return res.status(409).json({
+        success: false,
+        error: 'Refund blocked: failed IMEI device verification on this order (quarantined devices or return mismatches). Review the return verification scans, then retry with an explicit override if you choose to proceed.',
+        data: { blocked: true, quarantinedDevices, mismatchedReturns }
+      });
+    }
+
     // Refund the money at the gateway BEFORE recording anything — the ledger
     // must never claim a refund that didn't happen at PayPal.
     const captureId = order.paymentDetails?.paypalTransactionId
@@ -946,10 +983,23 @@ export const issueRefund = async (req, res) => {
       date: new Date(),
       reason: refundReason.trim(),
       adminUserId: adminId,
-      status: gatewayRefund.status === 'PENDING' ? 'pending' : 'succeeded'
+      status: gatewayRefund.status === 'PENDING' ? 'pending' : 'succeeded',
+      deviceVerificationOverride: deviceBlocked && req.body.overrideDeviceMismatch === true
     };
 
     order.refundHistory.push(refundEntry);
+
+    // Audit trail when the admin pushed the refund through despite a failed
+    // IMEI verification (works for partial refunds too — the fully-refunded
+    // branch below has its own history entry)
+    if (refundEntry.deviceVerificationOverride) {
+      order.statusHistory.push({
+        status: order.status,
+        timestamp: new Date(),
+        updatedBy: adminId,
+        notes: `[device-verification override] Refund issued despite failed IMEI verification (quarantined devices: ${quarantinedDevices}, mismatched returns: ${mismatchedReturns})`
+      });
+    }
 
     // Update refund status and amount
     const newTotalRefunded = (order.totalRefundedAmount || 0) + refundAmount;
@@ -1286,6 +1336,7 @@ export const getReturnRequestById = async (req, res) => {
           adminNotes: 1,
           refundId: 1,
           refundStatus: 1,
+          deviceVerification: 1,
           returnWindow: 1,
           isWithinReturnWindow: 1,
           createdAt: 1,

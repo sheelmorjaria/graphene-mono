@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { getOrderById, isAdminAuthenticated, formatCurrency, updateOrderStatus, issueRefund } from '../services/adminService';
+import { getOrderById, isAdminAuthenticated, formatCurrency, updateOrderStatus, issueRefund, allocateDevice, releaseDevice } from '../services/adminService';
 
 const AdminOrderDetailsPage = () => {
   const [order, setOrder] = useState(null);
@@ -16,6 +16,14 @@ const AdminOrderDetailsPage = () => {
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [refundLoading, setRefundLoading] = useState(false);
+  // Device-verification refund block (populated when the backend answers 409)
+  const [refundBlock, setRefundBlock] = useState(null);
+  const [overrideConfirmed, setOverrideConfirmed] = useState(false);
+  // Per-item IMEI scan state (JIT allocation)
+  const [scanImeis, setScanImeis] = useState({});
+  const [deviceBusyItem, setDeviceBusyItem] = useState(null);
+  const [deviceError, setDeviceError] = useState('');
+  const [deviceSuccess, setDeviceSuccess] = useState('');
   const { orderId } = useParams();
   const navigate = useNavigate();
 
@@ -165,41 +173,56 @@ const AdminOrderDetailsPage = () => {
     try {
       setRefundLoading(true);
       setError('');
-      
+
       const refundAmountNum = parseFloat(refundAmount);
       if (isNaN(refundAmountNum) || refundAmountNum <= 0) {
         setError('Please enter a valid refund amount');
         return;
       }
-      
+
       if (!refundReason.trim()) {
         setError('Please provide a reason for the refund');
         return;
       }
-      
+
       const maxRefundable = order.totalAmount - (order.totalRefundedAmount || 0);
-      
+
       if (refundAmountNum > maxRefundable) {
         setError(`Refund amount cannot exceed ${formatCurrency(maxRefundable)}`);
         return;
       }
-      
+
       const refundData = {
         refundAmount: refundAmountNum,
         refundReason: refundReason.trim()
       };
-      
+
+      // Refunds blocked by failed IMEI verification need an explicit,
+      // confirmed override before the money moves.
+      if (refundBlock && overrideConfirmed) {
+        refundData.overrideDeviceMismatch = true;
+      }
+
       await issueRefund(orderId, refundData);
-      
+
       // Close modal and reset form
       setShowRefundModal(false);
       setRefundAmount('');
       setRefundReason('');
-      
+      setRefundBlock(null);
+      setOverrideConfirmed(false);
+
       // Reload order details to show updated refund info
       await loadOrderDetails();
     } catch (err) {
-      setError(err.message || 'Failed to process refund');
+      if (err.status === 409 && err.data?.blocked) {
+        // Device-verification block — surface it inside the modal with the
+        // override flow rather than a generic error
+        setRefundBlock(err.data);
+        setError(err.message || 'Refund blocked: failed IMEI device verification');
+      } else {
+        setError(err.message || 'Failed to process refund');
+      }
     } finally {
       setRefundLoading(false);
     }
@@ -210,6 +233,46 @@ const AdminOrderDetailsPage = () => {
     setRefundAmount('');
     setRefundReason('');
     setError('');
+    setRefundBlock(null);
+    setOverrideConfirmed(false);
+  };
+
+  // ---------------- Devices / IMEIs (JIT allocation) ----------------
+
+  const handleAllocate = async (item) => {
+    const imei = (scanImeis[item._id] || '').trim();
+    if (!/^\d{15}$/.test(imei)) {
+      setDeviceError('IMEI must be exactly 15 digits');
+      return;
+    }
+    try {
+      setDeviceBusyItem(item._id);
+      setDeviceError('');
+      const response = await allocateDevice({ imei, orderId, orderItemId: String(item._id) });
+      setDeviceSuccess(
+        `IMEI ${imei} allocated (${response.data.itemAllocation.allocated}/${response.data.itemAllocation.required} units on this line)`
+      );
+      setScanImeis((s) => ({ ...s, [item._id]: '' }));
+      await loadOrderDetails();
+    } catch (err) {
+      setDeviceError(err.message || 'Failed to allocate device');
+    } finally {
+      setDeviceBusyItem(null);
+    }
+  };
+
+  const handleRelease = async (device) => {
+    try {
+      setDeviceBusyItem(device.deviceId);
+      setDeviceError('');
+      await releaseDevice(device.deviceId, 'Released from admin order page');
+      setDeviceSuccess(`IMEI ${device.imei} released back to stock`);
+      await loadOrderDetails();
+    } catch (err) {
+      setDeviceError(err.message || 'Failed to release device');
+    } finally {
+      setDeviceBusyItem(null);
+    }
   };
 
   if (loading) {
@@ -540,6 +603,89 @@ const AdminOrderDetailsPage = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Devices / IMEIs (JIT allocation — scan the unit being flashed) */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6" data-testid="devices-card">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Devices / IMEIs</h2>
+
+              {deviceError && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" data-testid="device-error">
+                  {deviceError}
+                </div>
+              )}
+              {deviceSuccess && (
+                <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm" data-testid="device-success">
+                  {deviceSuccess}
+                </div>
+              )}
+
+              {(order?.items || []).map((item) => {
+                const allocated = (item.devices || []).length;
+                const required = item.quantity || 0;
+                return (
+                  <div key={item._id} className="border-t border-gray-200 py-4 first:border-t-0" data-testid={`device-item-${item._id}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{item.productName}</p>
+                        <p className="text-xs text-gray-500">
+                          {item.condition ? `${item.condition} · ` : ''}{item.color || ''}{item.color && item.storage ? ' · ' : ''}{item.storage || ''}
+                        </p>
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${allocated >= required ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {allocated} of {required} allocated
+                      </span>
+                    </div>
+
+                    {allocated > 0 && (
+                      <ul className="mb-2 space-y-1">
+                        {(item.devices || []).map((device) => (
+                          <li key={String(device.deviceId)} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
+                            <span className="font-mono text-sm text-gray-800">
+                              {device.imei}
+                              {device.serialNumber ? <span className="text-gray-400 ml-2">SN {device.serialNumber}</span> : null}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRelease(device)}
+                              disabled={deviceBusyItem === device.deviceId || allocated >= required ? false : false}
+                              className="text-xs text-red-600 hover:text-red-500 disabled:opacity-50"
+                              data-testid={`release-device-${device.imei}`}
+                            >
+                              {deviceBusyItem === device.deviceId ? 'Releasing…' : 'Release'}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {allocated < required && (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          autoFocus
+                          placeholder="Scan IMEI (15 digits)"
+                          value={scanImeis[item._id] || ''}
+                          onChange={(e) => setScanImeis((s) => ({ ...s, [item._id]: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAllocate(item); } }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          data-testid={`allocate-input-${item._id}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAllocate(item)}
+                          disabled={deviceBusyItem === item._id}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
+                          data-testid={`allocate-button-${item._id}`}
+                        >
+                          {deviceBusyItem === item._id ? 'Allocating…' : 'Allocate'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Order History/Status Log */}
@@ -916,12 +1062,32 @@ const AdminOrderDetailsPage = () => {
                     <p className="text-sm text-red-800">{error}</p>
                   </div>
                 )}
+
+                {refundBlock && (
+                  <div className="bg-red-50 border border-red-300 rounded-md p-3" data-testid="refund-block-warning">
+                    <p className="text-sm font-semibold text-red-800 mb-1">Refund blocked — IMEI verification failed</p>
+                    <p className="text-xs text-red-700 mb-2">
+                      Quarantined devices: {refundBlock.quarantinedDevices ?? '?'} · Mismatched returns: {refundBlock.mismatchedReturns ?? '?'}.
+                      The IMEI(s) received back do not match what was shipped on this order. Check the return's verification scans before proceeding.
+                    </p>
+                    <label className="flex items-start gap-2 text-xs text-red-800">
+                      <input
+                        type="checkbox"
+                        checked={overrideConfirmed}
+                        onChange={(e) => setOverrideConfirmed(e.target.checked)}
+                        className="mt-0.5"
+                        data-testid="override-confirm-checkbox"
+                      />
+                      <span>I have reviewed the verification scans and take responsibility for refunding despite the mismatch.</span>
+                    </label>
+                  </div>
+                )}
               </div>
-              
+
               <div className="items-center px-4 py-3 mt-6 text-center">
                 <button
                   onClick={handleRefund}
-                  disabled={refundLoading || !refundAmount || !refundReason}
+                  disabled={refundLoading || !refundAmount || !refundReason || (refundBlock && !overrideConfirmed)}
                   className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                 >
                   {refundLoading ? 'Processing...' : 'Refund'}

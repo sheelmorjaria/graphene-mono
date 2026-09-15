@@ -219,7 +219,7 @@ describe('Email Service - Comprehensive Tests', () => {
       items: [{
         productName: 'GrapheneOS Pixel 8',
         quantity: 1,
-        refundAmount: 699.99
+        totalRefundAmount: 699.99
       }],
       totalRefundAmount: 699.99,
       requestDate: new Date()

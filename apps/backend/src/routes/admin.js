@@ -1,5 +1,6 @@
 import express from 'express';
 import { adminLogin, getDashboardMetrics, getAdminProfile, getAllOrders, getOrderById, updateOrderStatus, issueRefund, getAllReturnRequests, getReturnRequestById, updateReturnRequestStatus, getCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getAllUsers, getUserById, updateUserStatus, getSalesReport, getProductPerformanceReport, getCustomerReport, getInventoryReport } from '../controllers/adminController.js';
+import { getAllDevices, getDeviceById, receiveDevice, allocateDeviceToOrder, releaseDevice, verifyReturnDevice } from '../controllers/deviceController.js';
 import { getProducts, getProductById, createProduct, updateProduct, deleteProduct, updateVariationStock, exportProductsToCSV } from '../controllers/adminProductController.js';
 import { 
   getDeliveryStats, 
@@ -54,6 +55,16 @@ router.post('/orders/:orderId/refund', issueRefund);
 router.get('/returns', getAllReturnRequests);
 router.get('/returns/:returnRequestId', getReturnRequestById);
 router.put('/returns/:returnRequestId/status', updateReturnRequestStatus);
+// IMEI verification of returned devices (return-fraud prevention)
+router.post('/returns/:returnRequestId/verify-device', verifyReturnDevice);
+
+// Device management (IMEI tracking). '/devices/allocate' MUST stay above
+// the '/devices/:deviceId' param route.
+router.get('/devices', getAllDevices);
+router.post('/devices', receiveDevice);
+router.post('/devices/allocate', allocateDeviceToOrder);
+router.get('/devices/:deviceId', getDeviceById);
+router.post('/devices/:deviceId/release', releaseDevice);
 
 // Products management
 router.get('/products/export/csv', exportProductsToCSV);

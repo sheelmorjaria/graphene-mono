@@ -21,6 +21,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminOrdersListPage from './pages/AdminOrdersListPage';
 import AdminOrderDetailsPage from './pages/AdminOrderDetailsPage';
 import AdminReturnsListPage from './pages/AdminReturnsListPage';
+import AdminDevicesPage from './pages/AdminDevicesPage';
 import AdminReturnDetailsPage from './pages/AdminReturnDetailsPage';
 import AdminProductsListPage from './pages/AdminProductsListPage';
 import AdminProductFormPage from './pages/AdminProductFormPage';
@@ -583,6 +584,11 @@ export const AppRoutes = () => {
           <Route path="/admin/returns" element={
             <AdminRoute>
               <AdminReturnsListPage />
+            </AdminRoute>
+          } />
+          <Route path="/admin/devices" element={
+            <AdminRoute>
+              <AdminDevicesPage />
             </AdminRoute>
           } />
           <Route path="/admin/returns/:returnRequestId" element={
