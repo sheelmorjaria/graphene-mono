@@ -362,6 +362,24 @@ const AdminDashboardPage = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Link
+                  to="/admin/devices"
+                  className="group relative bg-bg-card p-6 rounded-lg border border-border-subtle hover:border-matrix-400/50 hover:shadow-glow-matrix transition-all duration-300 block"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-matrix-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    <div className="flex items-center mb-4">
+                      <div className="p-3 bg-matrix-subtle text-matrix-400 rounded-lg border border-matrix-400/30">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <h3 className="ml-4 text-lg font-heading font-semibold text-text-primary uppercase tracking-wider">Device Management</h3>
+                    </div>
+                    <p className="text-text-secondary text-sm font-mono">IMEI tracking — receive, allocate, verify returns</p>
+                  </div>
+                </Link>
+
+                <Link
                   to="/admin/orders"
                   className="group relative bg-bg-card p-6 rounded-lg border border-border-subtle hover:border-cyan-400/50 hover:shadow-glow-cyan transition-all duration-300 block"
                 >

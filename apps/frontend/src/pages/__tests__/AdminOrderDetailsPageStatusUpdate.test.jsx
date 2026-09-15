@@ -10,7 +10,10 @@ vi.mock('../../services/adminService', () => ({
   getOrderById: vi.fn(),
   isAdminAuthenticated: vi.fn(),
   formatCurrency: vi.fn((amount) => `£${amount}`),
-  updateOrderStatus: vi.fn()
+  updateOrderStatus: vi.fn(),
+  issueRefund: vi.fn(),
+  allocateDevice: vi.fn(),
+  releaseDevice: vi.fn()
 }));
 
 // Mock react-router-dom

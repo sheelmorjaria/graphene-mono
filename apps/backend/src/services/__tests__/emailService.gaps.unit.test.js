@@ -294,7 +294,7 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
         productName: 'GrapheneOS Pixel 8',
         quantity: 1,
         reason: 'Defective',
-        refundAmount: 699.99
+        totalRefundAmount: 699.99
       }],
       totalRefundAmount: 699.99,
       requestDate: new Date('2026-01-03')
@@ -317,9 +317,141 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       expect(call.htmlContent).toContain('Defective');
     });
 
+    it('renders per-item refund amounts without NaN (regression: items carry totalRefundAmount, not refundAmount)', async () => {
+      const result = await emailService.sendReturnRequestConfirmationEmail(baseReturn(), baseOrderForReturn());
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.htmlContent).toContain('£699.99');
+      expect(call.htmlContent).not.toContain('NaN');
+    });
+
     it('returns failure when returnRequest is null (throws on .map)', async () => {
       const result = await emailService.sendReturnRequestConfirmationEmail(null, baseOrderForReturn());
       expect(result.success).toBe(false);
+    });
+  });
+
+  // ---------------- sendOrderShippedEmail (IMEI section) ----------------
+  describe('sendOrderShippedEmail device IMEIs', () => {
+    const baseShippedOrder = (items) => ({
+      _id: 'order123',
+      orderNumber: 'ORD-SHIP-1',
+      customerEmail: 'customer@example.com',
+      trackingNumber: 'TRK-9',
+      trackingUrl: 'https://track.example.com/TRK-9',
+      shippingAddress: { fullName: 'Test Customer' },
+      shippingMethod: { name: 'Standard Shipping', estimatedDelivery: '3-5 business days' },
+      items
+    });
+
+    it('lists per-product IMEIs when devices were allocated (lean-safe raw reads)', async () => {
+      const order = baseShippedOrder([{
+        productName: 'GrapheneOS Pixel 9 Pro',
+        quantity: 1,
+        devices: [{ imei: '123456789012345', serialNumber: 'SN-9' }]
+      }]);
+      const result = await emailService.sendOrderShippedEmail(order);
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.htmlContent).toContain('123456789012345');
+      expect(call.htmlContent).toContain('GrapheneOS Pixel 9 Pro');
+    });
+
+    it('omits the IMEI section entirely when no devices are allocated', async () => {
+      const order = baseShippedOrder([{ productName: 'GrapheneOS Pixel 9 Pro', quantity: 1 }]);
+      const result = await emailService.sendOrderShippedEmail(order);
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.htmlContent).not.toContain('IMEI');
+    });
+
+    it('is undefined-safe for legacy orders with no items array', async () => {
+      const result = await emailService.sendOrderShippedEmail(baseShippedOrder(undefined));
+
+      expect(result.success).toBe(true);
+      expect(sendEmailSpy.mock.calls[0][0].htmlContent).not.toContain('IMEI');
+    });
+  });
+
+  // ---------------- sendReturnApprovedEmail ----------------
+  // Called by adminController.updateReturnRequestStatus on approval — this
+  // method did not exist (silently threw), so approval emails never sent.
+  describe('sendReturnApprovedEmail', () => {
+    const baseApprovedReturn = () => ({
+      returnRequestNumber: '20260915001',
+      userId: { firstName: 'Test', lastName: 'Customer', email: 'customer@example.com' },
+      orderId: { orderNumber: 'ORD-001' },
+      items: [{ productName: 'GrapheneOS Pixel 8', quantity: 1 }],
+      totalRefundAmount: 699.99,
+      returnShippingAddress: {
+        companyName: 'Graphene Security Returns',
+        addressLine1: '123 Return Processing Center',
+        city: 'London',
+        postalCode: 'SW1A 1AA',
+        country: 'GB'
+      }
+    });
+
+    it('sends approval with return shipping instructions to the customer', async () => {
+      const result = await emailService.sendReturnApprovedEmail(baseApprovedReturn());
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.to).toBe('customer@example.com');
+      expect(call.subject).toContain('20260915001');
+      expect(call.htmlContent).toContain('Graphene Security Returns');
+      expect(call.htmlContent).toContain('London');
+      expect(call.htmlContent).toContain('SW1A 1AA');
+    });
+
+    it('returns failure without sending when there is no customer email (unpopulated userId)', async () => {
+      const rr = baseApprovedReturn();
+      rr.userId = null;
+      const result = await emailService.sendReturnApprovedEmail(rr);
+
+      expect(result.success).toBe(false);
+      expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // ---------------- sendReturnRejectedEmail ----------------
+  describe('sendReturnRejectedEmail', () => {
+    it('sends rejection including the reason', async () => {
+      const rr = {
+        returnRequestNumber: '20260915002',
+        userId: { firstName: 'Test', lastName: 'Customer', email: 'customer@example.com' },
+        orderId: { orderNumber: 'ORD-002' }
+      };
+      const result = await emailService.sendReturnRejectedEmail(rr, 'Outside the 28-day return window');
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.to).toBe('customer@example.com');
+      expect(call.subject).toContain('20260915002');
+      expect(call.htmlContent).toContain('Outside the 28-day return window');
+    });
+  });
+
+  // ---------------- sendReturnRefundedEmail ----------------
+  describe('sendReturnRefundedEmail', () => {
+    it('sends refund confirmation with the formatted refund amount and timeline', async () => {
+      const rr = {
+        returnRequestNumber: '20260915003',
+        userId: { firstName: 'Test', lastName: 'Customer', email: 'customer@example.com' },
+        orderId: { orderNumber: 'ORD-003' },
+        totalRefundAmount: 499.5
+      };
+      const result = await emailService.sendReturnRefundedEmail(rr);
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.to).toBe('customer@example.com');
+      expect(call.subject).toContain('20260915003');
+      expect(call.htmlContent).toContain('£499.50');
+      expect(call.htmlContent).toContain('5-10 business days');
     });
   });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getReturnRequestById, updateReturnRequestStatus, formatCurrency } from '../services/adminService';
+import { getReturnRequestById, updateReturnRequestStatus, formatCurrency, verifyReturnDevice, getOrderById } from '../services/adminService';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const AdminReturnDetailsPage = () => {
@@ -14,6 +14,13 @@ const AdminReturnDetailsPage = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  // Device verification (IMEI) — scan the returned phone and compare against
+  // what was shipped on the original order
+  const [expectedImeis, setExpectedImeis] = useState([]);
+  const [scanImei, setScanImei] = useState('');
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [verifyError, setVerifyError] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const statusOptions = [
     { value: 'pending_review', label: 'Pending Review' },
@@ -45,6 +52,48 @@ const AdminReturnDetailsPage = () => {
       fetchReturnRequestDetails();
     }
   }, [returnRequestId]);
+
+  // Derive the shipped IMEIs from the original order so the admin can see
+  // what to expect before scanning (the return projection itself carries no
+  // device data).
+  useEffect(() => {
+    const loadExpectedImeis = async () => {
+      const orderId = returnRequest?.order?._id;
+      if (!orderId) return;
+      try {
+        const response = await getOrderById(orderId);
+        const imeis = (response.data.order?.items || []).flatMap((item) =>
+          (item.devices || []).map((d) => d.imei)
+        );
+        setExpectedImeis(imeis);
+      } catch {
+        // Non-fatal — verification still works via scan results
+      }
+    };
+    loadExpectedImeis();
+  }, [returnRequest?.order?._id]);
+
+  const handleVerifyDevice = async () => {
+    const imei = scanImei.trim();
+    if (!/^\d{15}$/.test(imei)) {
+      setVerifyError('IMEI must be exactly 15 digits');
+      return;
+    }
+    try {
+      setVerifyLoading(true);
+      setVerifyError('');
+      setVerifyResult(null);
+      const response = await verifyReturnDevice(returnRequestId, imei);
+      setVerifyResult(response.data);
+      setScanImei('');
+      // Refresh so status chip + scan history reflect the new scan
+      await fetchReturnRequestDetails();
+    } catch (err) {
+      setVerifyError(err.message || 'Failed to verify device');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
 
   const handleStatusUpdate = async () => {
     if (!selectedStatus) return;
@@ -314,6 +363,115 @@ const AdminReturnDetailsPage = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+
+          {/* Device Verification (IMEI) — scan the returned phone */}
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg" data-testid="device-verification-card">
+            <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">Device Verification (IMEI)</h3>
+              {returnRequest.deviceVerification?.status && (
+                <span
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    returnRequest.deviceVerification.status === 'verified' ? 'bg-green-100 text-green-800'
+                    : returnRequest.deviceVerification.status === 'mismatch' ? 'bg-red-100 text-red-800'
+                    : returnRequest.deviceVerification.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-gray-100 text-gray-800'
+                  }`}
+                  data-testid="verification-status"
+                >
+                  {returnRequest.deviceVerification.status.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+            <div className="border-t border-gray-200 px-4 py-5 sm:px-6 space-y-4">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">IMEI(s) shipped on this order:</p>
+                {expectedImeis.length > 0 ? (
+                  <p className="font-mono text-sm text-gray-900" data-testid="expected-imeis">
+                    {expectedImeis.join(', ')}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400" data-testid="no-expected-imeis">
+                    No devices were IMEI-tracked on this order (legacy order — any scan will record a mismatch).
+                  </p>
+                )}
+              </div>
+
+              {returnRequest.deviceVerification?.status === 'mismatch' && (
+                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm" data-testid="refund-blocked-banner">
+                  ⚠ IMEI mismatch recorded — refunds for this order are BLOCKED until an admin explicitly overrides on the order page.
+                </div>
+              )}
+
+              {verifyResult && (
+                <div
+                  className={`px-4 py-3 rounded-lg text-sm border ${
+                    verifyResult.result === 'match'
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : 'bg-red-50 border-red-200 text-red-800'
+                  }`}
+                  data-testid="verify-result"
+                >
+                  <p className="font-semibold mb-1">
+                    {verifyResult.result === 'match' ? '✓ IMEI MATCH' : '⚠ IMEI MISMATCH'}
+                  </p>
+                  <p>{verifyResult.message}</p>
+                  {verifyResult.expectedImeis?.length > 0 && (
+                    <p className="mt-1 font-mono text-xs">Expected: {verifyResult.expectedImeis.join(', ')}</p>
+                  )}
+                </div>
+              )}
+
+              {verifyError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" data-testid="verify-error">
+                  {verifyError}
+                </div>
+              )}
+
+              {returnRequest.deviceVerification?.status !== 'verified' && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Scan returned device IMEI (15 digits)"
+                    value={scanImei}
+                    onChange={(e) => setScanImei(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleVerifyDevice(); } }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    data-testid="verify-imei-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyDevice}
+                    disabled={verifyLoading}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    data-testid="verify-imei-button"
+                  >
+                    {verifyLoading ? 'Verifying…' : 'Verify'}
+                  </button>
+                </div>
+              )}
+
+              {returnRequest.deviceVerification?.scans?.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Scan history:</p>
+                  <ul className="space-y-1" data-testid="scan-history">
+                    {returnRequest.deviceVerification.scans.map((scan, index) => (
+                      <li key={index} className="flex items-center gap-2 text-sm">
+                        <span className={scan.match ? 'text-green-600' : 'text-red-600'}>
+                          {scan.match ? '✓' : '✗'}
+                        </span>
+                        <span className="font-mono text-gray-800">{scan.scannedImei}</span>
+                        <span className="text-xs text-gray-400">
+                          {scan.scannedAt ? new Date(scan.scannedAt).toLocaleString() : ''}
+                          {scan.deviceId ? '' : ' · unknown device'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 

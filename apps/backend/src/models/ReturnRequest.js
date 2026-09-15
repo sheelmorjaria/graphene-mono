@@ -216,6 +216,53 @@ const returnRequestSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+
+  // IMEI verification of returned devices (return-fraud prevention).
+  // Admin scans the returned phone's IMEI; match/mismatch vs what was
+  // shipped is recorded. 'mismatch' is one of the two refund-block signals.
+  deviceVerification: {
+    status: {
+      type: String,
+      enum: {
+        values: ['not_started', 'in_progress', 'verified', 'mismatch'],
+        message: 'deviceVerification status must be one of: not_started, in_progress, verified, mismatch'
+      },
+      default: 'not_started',
+      index: true
+    },
+    scans: [{
+      scannedImei: {
+        type: String,
+        required: [true, 'Scanned IMEI is required'],
+        trim: true
+      },
+      // Null when the scanned IMEI is unknown to the whole system — the
+      // strongest fraud signal (device never shipped by us)
+      deviceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Device',
+        default: null
+      },
+      match: {
+        type: Boolean,
+        default: false
+      },
+      expectedImeis: [{
+        type: String
+      }],
+      scannedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      scannedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    completedAt: {
+      type: Date
+    }
+  },
   
   // Refund information
   refundId: {

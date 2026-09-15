@@ -677,9 +677,27 @@ class EmailService {
         </div>
       ` : '';
 
+      // IMEI section (return-fraud paper trail): raw field reads — the call
+      // site passes .lean() docs, so toJSON transforms don't apply. Rendered
+      // only when devices were allocated; legacy orders see no change.
+      const imeiLines = (order.items || [])
+        .flatMap((item) => (item.devices || []).map((d) => ({ productName: item.productName, imei: d.imei })));
+      const imeiSection = imeiLines.length > 0 ? `
+        <div class="order-details">
+          <h3>Your Device IMEI(s)</h3>
+          <p>For your records and any warranty or support needs, these are the exact device IMEIs shipped with this order. Please keep this email.</p>
+          ${imeiLines.map((line) => `
+          <div class="detail-row">
+            <span class="detail-label">${line.productName}:</span>
+            <span class="detail-value highlight">${line.imei}</span>
+          </div>
+          `).join('')}
+        </div>
+      ` : '';
+
       const content = `
         <p>Great news! Your order has been shipped and is on its way to you.</p>
-        
+
         <div class="order-details">
           <h3>Order Details</h3>
           <div class="detail-row">
@@ -697,6 +715,8 @@ class EmailService {
         </div>
 
         ${trackingSection}
+
+        ${imeiSection}
 
         <p>Your GrapheneOS device has been carefully prepared and is now en route. You'll receive another notification when it's delivered.</p>
       `;
@@ -944,7 +964,7 @@ class EmailService {
           <strong>${item.productName}</strong><br>
           Quantity: ${item.quantity}<br>
           Reason: ${item.reason}<br>
-          Refund Amount: £${item.refundAmount.toFixed(2)}
+          Refund Amount: £${item.totalRefundAmount.toFixed(2)}
         </div>
       `).join('');
 
@@ -998,6 +1018,183 @@ class EmailService {
 
     } catch (error) {
       logError(error, { context: 'return_request_email', orderId: order._id });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send return APPROVED email (with return shipping instructions).
+  // Called by adminController.updateReturnRequestStatus when a return is
+  // approved — the return request comes .lean() with userId populated
+  // (firstName/lastName/email) and orderId populated (orderNumber).
+  async sendReturnApprovedEmail(returnRequest) {
+    try {
+      const customerEmail = returnRequest?.userId?.email;
+      if (!customerEmail) {
+        return { success: false, error: 'No customer email available on return request' };
+      }
+
+      const itemsHtml = (returnRequest.items || []).map(item => `
+        <div class="item">
+          <strong>${item.productName}</strong><br>
+          Quantity: ${item.quantity}
+        </div>
+      `).join('');
+
+      const address = returnRequest.returnShippingAddress || {};
+      const addressLines = [
+        address.companyName,
+        address.addressLine1,
+        address.addressLine2,
+        [address.city, address.stateProvince, address.postalCode].filter(Boolean).join(' '),
+        address.country
+      ].filter(Boolean).join('<br>');
+
+      const content = `
+        <p>Good news — your return request has been approved.</p>
+
+        <div class="order-details">
+          <h3>Return Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Return Number:</span>
+            <span class="detail-value highlight">${returnRequest.returnRequestNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Original Order:</span>
+            <span class="detail-value">${returnRequest.orderId?.orderNumber || ''}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Total Refund Amount:</span>
+            <span class="detail-value success">£${(returnRequest.totalRefundAmount ?? 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="order-details">
+          <h3>Items to Return</h3>
+          <div class="items-list">
+            ${itemsHtml}
+          </div>
+        </div>
+
+        <div class="order-details">
+          <h3>Return Shipping Instructions</h3>
+          <p>Please send the items listed above to:</p>
+          <p>${addressLines}</p>
+          <p>Include your return number (${returnRequest.returnRequestNumber}) with the parcel so we can match it to your return quickly. We recommend using a tracked service — we cannot be responsible for parcels lost in transit to us.</p>
+        </div>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Return Approved',
+        content,
+        `${returnRequest.userId.firstName || ''} ${returnRequest.userId.lastName || ''}`.trim() || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: customerEmail,
+        subject: `Return Approved - ${returnRequest.returnRequestNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'return_approved_email' });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send return REJECTED email with the admin's rejection reason
+  async sendReturnRejectedEmail(returnRequest, rejectionReason) {
+    try {
+      const customerEmail = returnRequest?.userId?.email;
+      if (!customerEmail) {
+        return { success: false, error: 'No customer email available on return request' };
+      }
+
+      const content = `
+        <p>We have reviewed your return request and unfortunately it cannot be accepted.</p>
+
+        <div class="order-details">
+          <h3>Return Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Return Number:</span>
+            <span class="detail-value highlight">${returnRequest.returnRequestNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Original Order:</span>
+            <span class="detail-value">${returnRequest.orderId?.orderNumber || ''}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Reason:</span>
+            <span class="detail-value">${rejectionReason || 'Your return does not meet our return policy criteria'}</span>
+          </div>
+        </div>
+
+        <p>If you believe this decision is incorrect, please contact our support team with your return number and original order number.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Return Request Update',
+        content,
+        `${returnRequest.userId.firstName || ''} ${returnRequest.userId.lastName || ''}`.trim() || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: customerEmail,
+        subject: `Return Request Update - ${returnRequest.returnRequestNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'return_rejected_email' });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send return REFUNDED email (refund for an approved, received return)
+  async sendReturnRefundedEmail(returnRequest) {
+    try {
+      const customerEmail = returnRequest?.userId?.email;
+      if (!customerEmail) {
+        return { success: false, error: 'No customer email available on return request' };
+      }
+
+      const content = `
+        <p>Your return has been processed and your refund is on its way.</p>
+
+        <div class="order-details">
+          <h3>Refund Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Return Number:</span>
+            <span class="detail-value highlight">${returnRequest.returnRequestNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Original Order:</span>
+            <span class="detail-value">${returnRequest.orderId?.orderNumber || ''}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Refund Amount:</span>
+            <span class="detail-value success">£${(returnRequest.totalRefundAmount ?? 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <p>The refund will appear in your original payment method within 5-10 business days.</p>
+
+        <p>Thank you for shopping with us.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Return Refunded',
+        content,
+        `${returnRequest.userId.firstName || ''} ${returnRequest.userId.lastName || ''}`.trim() || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: customerEmail,
+        subject: `Refund Processed - ${returnRequest.returnRequestNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'return_refunded_email' });
       return { success: false, error: error.message };
     }
   }
