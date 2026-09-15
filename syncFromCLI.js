@@ -692,8 +692,10 @@ const getConditionLabel = (condition) => {
   return labels[condition] || "Good";
 };
 
-// Main sync function
-export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false) => {
+// Main sync function. noCreate=true adds missing VARIATIONS to EXISTING
+// products but never creates a new product (the catalog is curated by the
+// owner — e.g. Pixel 6A is deliberately not stocked).
+export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false, noCreate = false) => {
   let connection = null;
 
   try {
@@ -860,6 +862,9 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false) =
           if (!dryRun) await existingProduct.save();
           console.log(`🔄 ${dryRun ? 'Would update' : 'Updated'} existing product: ${baseModel} (${variationsAdded} variation(s) staged)`);
           skipped++;
+        } else if (noCreate) {
+          console.log(`⏭️  ${dryRun ? 'Would add' : 'Skipping'} ${baseModel}: not in catalog (--no-create) — ${productVariations.length} CeX quote(s) unused`);
+          continue;
         } else {
           // Create new product with all variations
           const firstProduct = productVariations[0];
@@ -1025,8 +1030,10 @@ const DEFAULT_PRICE_QUERIES = [
   'PIXEL 6 PRO',
   'PIXEL 7',
   'PIXEL 7 PRO',
+  'PIXEL 7A',
   'PIXEL 8',
   'PIXEL 8 PRO',
+  'PIXEL 8A',
   'PIXEL 9',
   'PIXEL 9 PRO',
   'PIXEL 9 PRO XL',
@@ -1432,7 +1439,7 @@ if (isMainModule()) {
         process.exit(1);
       });
   } else {
-    syncAndroidPhones(searchQuery, isDryRun)
+    syncAndroidPhones(searchQuery, isDryRun, process.argv.includes('--no-create'))
       .then(() => {
         console.log(`\n${isDryRun ? '🧪 DRY RUN completed — nothing was written.' : '✅ Sync completed successfully!'}`);
         process.exit(0);
