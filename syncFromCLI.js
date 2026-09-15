@@ -648,7 +648,7 @@ const getConditionLabel = (condition) => {
 };
 
 // Main sync function
-export const syncAndroidPhones = async (searchQuery = 'PIXEL') => {
+export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false) => {
   let connection = null;
 
   try {
@@ -732,8 +732,12 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL') => {
       return { created: 0, skipped: filteredCount, failed: 0 };
     }
 
+    if (dryRun) {
+      console.log('\n🧪 DRY RUN — no products will be created, updated, or deleted.\n');
+    }
+
     // Clear existing products if requested
-    if (process.argv.includes('--clear')) {
+    if (!dryRun && process.argv.includes('--clear')) {
       console.log("\n🗑️  Clearing existing products...");
       const deleteResult = await Product.deleteMany({});
       console.log(`✅ Deleted ${deleteResult.deletedCount} existing products`);
@@ -765,7 +769,11 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL') => {
     for (const [baseModel, productVariations] of productGroups) {
       try {
         // Check if product already exists by base model
-        const existingProduct = await Product.findOne({ baseModel });
+        // DB baseModels are bare ("6", "7 Pro"); the parser emits "Pixel 6".
+        // Match either so existing products are UPDATED, never duplicated.
+        const existingProduct = await Product.findOne({
+          baseModel: { $in: [baseModel, baseModel.replace(/^Pixel\s+/i, '')] }
+        });
 
         if (existingProduct) {
           // Add new variations to existing product
@@ -794,13 +802,13 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL') => {
                 images: ["/images/placeholder.png"]
               };
 
-              existingProduct.variations.push(newVariation);
+              if (!dryRun) existingProduct.variations.push(newVariation);
               variationsAdded++;
             }
           }
 
-          await existingProduct.save();
-          console.log(`🔄 Updated existing product: ${baseModel} (added ${productVariations.length} variations)`);
+          if (!dryRun) await existingProduct.save();
+          console.log(`🔄 ${dryRun ? 'Would update' : 'Updated'} existing product: ${baseModel} (${variationsAdded} variation(s) staged)`);
           skipped++;
         } else {
           // Create new product with all variations
@@ -857,8 +865,8 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL') => {
             isActive: true
           });
 
-          await product.save();
-          console.log(`✅ Created: ${baseModel} with ${variations.length} variations`);
+          if (!dryRun) await product.save();
+          console.log(`${dryRun ? '🧪 Would create' : '✅ Created'}: ${baseModel} with ${variations.length} variations`);
           created++;
           variationsAdded += variations.length;
         }
@@ -1114,9 +1122,9 @@ if (isMainModule()) {
         process.exit(1);
       });
   } else {
-    syncAndroidPhones(searchQuery)
+    syncAndroidPhones(searchQuery, isDryRun)
       .then(() => {
-        console.log("\n✅ Sync completed successfully!");
+        console.log(`\n${isDryRun ? '🧪 DRY RUN completed — nothing was written.' : '✅ Sync completed successfully!'}`);
         process.exit(0);
       })
       .catch((error) => {
