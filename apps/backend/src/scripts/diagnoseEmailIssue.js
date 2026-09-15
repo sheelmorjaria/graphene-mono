@@ -124,7 +124,7 @@ const diagnoseEmailIssue = async () => {
       console.log('   • FROM_NAME=Graphene Security');
     }
     if (!envStatus.SUPPORT_EMAIL.isSet) {
-      console.log('   • SUPPORT_EMAIL=support@graphene-security.com (where contact forms are sent)');
+      console.log('   • SUPPORT_EMAIL=contact@graphene-security.com (where contact forms are sent)');
     }
 
     console.log(`\n${colors.cyan}📖 Steps to configure AWS SES:${colors.reset}`);

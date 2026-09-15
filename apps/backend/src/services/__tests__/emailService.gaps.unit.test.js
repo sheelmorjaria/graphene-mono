@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Set environment variables before ANY imports
-process.env.SUPPORT_EMAIL = 'support@graphene-security.com';
+process.env.SUPPORT_EMAIL = 'contact@graphene-security.com';
 process.env.FROM_EMAIL = 'noreply@graphene-security.com';
 process.env.FROM_NAME = 'Graphene Security';
 process.env.FRONTEND_URL = 'https://graphene-security.com';
