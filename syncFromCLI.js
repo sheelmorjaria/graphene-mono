@@ -544,6 +544,11 @@ const createProduct = async (productData, adminUser) => {
 const shouldExcludeProduct = (productName) => {
   if (!productName) return false;
   
+  // Pixel 6A is not stocked by this store (owner decision 2026-09-15)
+  if (/Pixel\s+6A/i.test(productName)) {
+    return true;
+  }
+
   // Check if it's a Final Fantasy game
   if (productName.includes('Final Fantasy') && productName.includes('Pixel Remaster')) {
     return true;
@@ -749,12 +754,17 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false) =
 
     for (const productData of modernProducts) {
       const modelInfo = extractModelInfo(productData.name);
-      const baseModel = modelInfo?.modelName || 'Unknown Pixel';
-      
-      if (!productGroups.has(baseModel)) {
-        productGroups.set(baseModel, []);
+      // Skip items the parser can't identify rather than creating an
+      // "Unknown Pixel" placeholder product (rotating stock names).
+      if (!modelInfo) {
+        console.log(`   ⏭️  Skipping unparseable item: "${productData.name}"`);
+        continue;
       }
-      productGroups.get(baseModel).push(productData);
+
+      if (!productGroups.has(modelInfo.modelName)) {
+        productGroups.set(modelInfo.modelName, []);
+      }
+      productGroups.get(modelInfo.modelName).push(productData);
     }
 
     console.log(`📊 Found ${productGroups.size} unique base models`);
