@@ -47,12 +47,15 @@ const VariationSelector = ({ variations, onVariationSelect }) => {
     return [...new Set(filtered.map(v => v[propertyName]).filter(Boolean))];
   };
 
-  // Auto-select single storage option
+  // Auto-select a storage option. With MULTIPLE storages, leaving none
+  // selected made the preview fall back to the first matching variation —
+  // showing a concrete SKU/price the customer never chose (prod report:
+  // Fair+Obsidian previewed 128GB £360 while 256GB £445 went unseen).
   useEffect(() => {
-    if (storages.length === 1 && !selectedStorage) {
-      setSelectedStorage(storages[0]);
+    if (storages.length > 0 && !selectedStorage) {
+      setSelectedStorage(sortedStorages[0]);
     }
-  }, [storages, selectedStorage]);
+  }, [storages, selectedStorage, sortedStorages]);
 
   // Update selection based on phone variations
   useEffect(() => {

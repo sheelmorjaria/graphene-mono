@@ -1027,21 +1027,48 @@ export const syncPricesOnly = async (searchQuery = DEFAULT_PRICE_QUERIES, apply 
     const warnings = [];
     const pending = [];
 
+    // Stock reconciliation (JIT model: availability = CeX availability).
+    // A variation with NO current CeX quote is not purchasable → out of stock.
+    // Guard: only apply when the product has at least one quoted variation, so
+    // a query-list gap can never wipe an entire product's stock.
+    const stockChanges = [];
     for (const product of allProducts) {
       let dirty = false;
+      let quotedCount = 0;
       for (const variation of product.variations || []) {
         const key = [cleanBaseModelForMatch(product.baseModel), variation.condition, cleanColorForMatch(variation.color), variation.storage].join('|');
         const target = wanted.get(key);
         if (!target) continue;
+        quotedCount++;
 
         const oldPrice = variation.price;
-        if (Math.abs((oldPrice || 0) - target.price) < 0.005) continue;
-
-        pending.push({ product: product.name, sku: variation.sku, key, oldPrice, newPrice: target.price, doc: product, variation });
-        if (variation.salePrice && variation.salePrice >= target.price) {
-          warnings.push(`${variation.sku}: salePrice £${variation.salePrice} ≥ new price £${target.price.toFixed(2)} — sale is now redundant`);
+        const priceChanges = Math.abs((oldPrice || 0) - target.price) >= 0.005;
+        if (priceChanges) {
+          pending.push({ product: product.name, sku: variation.sku, key, oldPrice, newPrice: target.price, doc: product, variation });
+          if (variation.salePrice && variation.salePrice >= target.price) {
+            warnings.push(`${variation.sku}: salePrice £${variation.salePrice} ≥ new price £${target.price.toFixed(2)} — sale is now redundant`);
+          }
+          dirty = true;
         }
-        dirty = true;
+
+        // Back in stock: quoted again after being marked out
+        if (variation.stockStatus === 'out_of_stock') {
+          stockChanges.push({ product: product.name, sku: variation.sku, to: 'in_stock', doc: product, variation });
+          dirty = true;
+        }
+      }
+
+      if (quotedCount > 0) {
+        const quotedKeys = new Set((product.variations || [])
+          .filter(v => wanted.has([cleanBaseModelForMatch(product.baseModel), v.condition, cleanColorForMatch(v.color), v.storage].join('|')))
+          .map(v => [cleanBaseModelForMatch(product.baseModel), v.condition, cleanColorForMatch(v.color), v.storage].join('|')));
+        for (const variation of product.variations || []) {
+          const key = [cleanBaseModelForMatch(product.baseModel), variation.condition, cleanColorForMatch(variation.color), variation.storage].join('|');
+          if (!quotedKeys.has(key) && variation.stockStatus !== 'out_of_stock') {
+            stockChanges.push({ product: product.name, sku: variation.sku, to: 'out_of_stock', doc: product, variation });
+            dirty = true;
+          }
+        }
       }
       if (dirty) product._pricesDirty = true; // marker only; saves happen on apply
     }
@@ -1070,16 +1097,28 @@ export const syncPricesOnly = async (searchQuery = DEFAULT_PRICE_QUERIES, apply 
       warnings.forEach((w) => console.log(`   ${w}`));
     }
 
+    if (stockChanges.length > 0) {
+      console.log(`\n📦 Stock changes (${stockChanges.length}):`);
+      for (const c of stockChanges) {
+        console.log(`   ${c.to === 'out_of_stock' ? '🚫 OUT of stock' : '✅ back in stock'}: ${c.sku} (${c.product})`);
+      }
+    }
+
     if (!apply) {
-      console.log(`\n🧪 DRY RUN — ${pending.length} price(s) would change. Re-run with --confirm to apply.`);
-      return { updated: 0, changes: pending.length, unmatched: unmatched.length };
+      console.log(`\n🧪 DRY RUN — ${pending.length} price(s) and ${stockChanges.length} stock status(es) would change. Re-run with --confirm to apply.`);
+      return { updated: 0, changes: pending.length, stockChanges: stockChanges.length, unmatched: unmatched.length };
     }
 
     for (const p of pending) {
       p.variation.price = p.newPrice;
       await p.doc.save();
     }
-    console.log(`\n✅ Applied ${pending.length} price update(s).`);
+    for (const c of stockChanges) {
+      c.variation.stockStatus = c.to;
+      c.variation.stockQuantity = c.to === 'out_of_stock' ? 0 : Math.max(c.variation.stockQuantity || 0, 10);
+      await c.doc.save();
+    }
+    console.log(`\n✅ Applied ${pending.length} price update(s) and ${stockChanges.length} stock status change(s).`);
     console.log('ℹ️  Note: these updates bypass the admin API, so IndexNow pings did NOT fire — search engines will pick up new prices on their next crawl.');
     return { updated: pending.length, unmatched: unmatched.length };
 
