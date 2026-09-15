@@ -916,6 +916,137 @@ export const testConnection = async () => {
   }
 };
 
+// Normalize a color for variation matching: the CLI names carry trailing
+// commas ("Stormy Black, Unlocked") and parenthesised RAM ("(12GB+128GB)
+// Obsidian,") while DB colors are clean ("Stormy Black").
+// DB baseModels are bare ("6", "7A", "9 Pro XL"); the CLI parser emits
+// "Pixel 6" etc. Normalize both to bare for matching.
+const cleanBaseModelForMatch = (bm) => (bm || '').replace(/^Pixel\s+/i, '').trim();
+
+const cleanColorForMatch = (color) =>
+  (color || '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/[,;]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// Prices-only sync: fetches supplier (CeX/webuy) prices from the CLI and
+// updates the PRICE of EXISTING variations (supplier price + £120 markup —
+// same formula as the full sync). Never creates products or variations.
+//
+//   node syncFromCLI.js prices [--query PIXEL] [--dry-run]   (dry-run is the DEFAULT)
+//   node syncFromCLI.js prices --confirm                     (apply changes)
+export const syncPricesOnly = async (searchQuery = 'PIXEL', apply = false) => {
+  let connection = null;
+
+  try {
+    // Parse CLI output first (no DB needed if the fetch fails)
+    const cliOutput = await syncFromCLI(searchQuery);
+    let products = [];
+    try {
+      products = JSON.parse(cliOutput);
+    } catch {
+      products = parseTextOutput(cliOutput);
+    }
+    if (!Array.isArray(products) || products.length === 0) {
+      console.log('⚠️  No products parsed from CLI output');
+      return { updated: 0, unchanged: 0, unmatched: 0 };
+    }
+
+    const modern = products.filter((p) => !shouldExcludeProduct(p.name));
+    console.log(`📥 Parsed ${products.length} items, ${modern.length} after filtering\n`);
+
+    // Map CLI items to variation keys (first occurrence wins on duplicates)
+    const wanted = new Map();
+    for (const item of modern) {
+      const modelInfo = extractModelInfo(item.name);
+      if (!modelInfo) continue;
+      const condition = extractConditionFromName(item.name);
+      const key = [
+        cleanBaseModelForMatch(modelInfo.modelName),
+        condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
+        cleanColorForMatch(modelInfo.color),
+        modelInfo.storage
+      ].join('|');
+      if (!wanted.has(key)) {
+        wanted.set(key, { ...modelInfo, condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent', price: item.price + 120.0 });
+      }
+    }
+
+    connection = await connectDB();
+    if (!Product) throw new Error('Product model not initialized');
+
+    const allProducts = await Product.find({}).select('name baseModel variations');
+    const warnings = [];
+    const pending = [];
+
+    for (const product of allProducts) {
+      let dirty = false;
+      for (const variation of product.variations || []) {
+        const key = [cleanBaseModelForMatch(product.baseModel), variation.condition, cleanColorForMatch(variation.color), variation.storage].join('|');
+        const target = wanted.get(key);
+        if (!target) continue;
+
+        const oldPrice = variation.price;
+        if (Math.abs((oldPrice || 0) - target.price) < 0.005) continue;
+
+        pending.push({ product: product.name, sku: variation.sku, key, oldPrice, newPrice: target.price, doc: product, variation });
+        if (variation.salePrice && variation.salePrice >= target.price) {
+          warnings.push(`${variation.sku}: salePrice £${variation.salePrice} ≥ new price £${target.price.toFixed(2)} — sale is now redundant`);
+        }
+        dirty = true;
+      }
+      if (dirty) product._pricesDirty = true; // marker only; saves happen on apply
+    }
+
+    // Report matched CLI items that found no DB variation
+    const dbKeys = new Set();
+    for (const product of allProducts) {
+      for (const v of product.variations || []) {
+        dbKeys.add([cleanBaseModelForMatch(product.baseModel), v.condition, cleanColorForMatch(v.color), v.storage].join('|'));
+      }
+    }
+    const unmatched = [...wanted.keys()].filter((k) => !dbKeys.has(k));
+
+    console.log(`📊 Price changes (${pending.length}):`);
+    for (const p of pending) {
+      const arrow = p.newPrice > p.oldPrice ? '↑' : '↓';
+      console.log(`  ${arrow} ${p.product} ${p.key.replace(/[^a-zA-Z0-9 |]/g, '')}`);
+      console.log(`     £${(p.oldPrice ?? 0).toFixed(2)} → £${p.newPrice.toFixed(2)}  (${p.sku})`);
+    }
+    console.log(`\n🔎 CLI items with no matching DB variation: ${unmatched.length}`);
+    unmatched.slice(0, 10).forEach((k) => console.log(`   - ${k.replace(/\|/g, ' / ')}`));
+    if (unmatched.length > 10) console.log(`   ... and ${unmatched.length - 10} more`);
+
+    if (warnings.length > 0) {
+      console.log(`\n⚠️  Warnings:`);
+      warnings.forEach((w) => console.log(`   ${w}`));
+    }
+
+    if (!apply) {
+      console.log(`\n🧪 DRY RUN — ${pending.length} price(s) would change. Re-run with --confirm to apply.`);
+      return { updated: 0, changes: pending.length, unmatched: unmatched.length };
+    }
+
+    for (const p of pending) {
+      p.variation.price = p.newPrice;
+      await p.doc.save();
+    }
+    console.log(`\n✅ Applied ${pending.length} price update(s).`);
+    console.log('ℹ️  Note: these updates bypass the admin API, so IndexNow pings did NOT fire — search engines will pick up new prices on their next crawl.');
+    return { updated: pending.length, unmatched: unmatched.length };
+
+  } catch (error) {
+    console.error('❌ Price sync error:', error.message);
+    throw error;
+  } finally {
+    if (connection && mongoose.connection.readyState === 1) {
+      await mongoose.connection.close().catch(() => {});
+      console.log('MongoDB connection closed');
+    }
+  }
+};
+
 // Check if this file is being run directly
 const isMainModule = () => {
   // Get the current file path
@@ -935,7 +1066,18 @@ if (isMainModule()) {
   const queryIndex = process.argv.indexOf('--query');
   const searchQuery = queryIndex !== -1 && process.argv[queryIndex + 1] ? process.argv[queryIndex + 1] : 'PIXEL';
 
-  if (command === "test") {
+  if (command === "prices") {
+    const apply = process.argv.includes('--confirm');
+    syncPricesOnly(searchQuery, apply)
+      .then((r) => {
+        console.log(`\n${apply ? '✅' : '🧪'} Prices command completed — updated: ${r.updated ?? 0}, changes: ${r.changes ?? r.updated ?? 0}, unmatched: ${r.unmatched ?? 0}`);
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error("\n❌ Prices command failed:", error.message);
+        process.exit(1);
+      });
+  } else if (command === "test") {
     testConnection().then(() => process.exit(0));
   } else if (command === "debug-all") {
     debugAllProducts()
