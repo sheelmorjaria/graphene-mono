@@ -27,6 +27,21 @@ vi.mock('../../components/ImageGallery', () => ({
   )
 }));
 
+// Mock cartService: successful adds + an empty cart fetch (CartContext is real)
+vi.mock('../../services/cartService', () => ({
+  getCart: vi.fn().mockResolvedValue({
+    items: [{ productId: 'product-123', productName: 'GrapheneOS Pixel 9 Pro', productSlug: 'grapheneos-pixel-9-pro', quantity: 1, unitPrice: 899.99, subtotal: 899.99 }],
+    totalItems: 1,
+    totalAmount: 899.99
+  }),
+  addToCart: vi.fn().mockResolvedValue({ success: true, addedItem: { productId: 'product-123', quantity: 1 } }),
+  updateCartItem: vi.fn(),
+  removeFromCart: vi.fn(),
+  clearCart: vi.fn(),
+  mergeGuestCart: vi.fn(),
+  formatCurrency: vi.fn((amount) => `£${Number(amount).toFixed(2)}`)
+}));
+
 // Mock the AddToCartButton component
 vi.mock('../../components/AddToCartButton', () => ({
   default: ({ productId, variationId, stockStatus, onAddToCart }) => (
@@ -315,6 +330,27 @@ describe('Product Details Integration Tests', () => {
     });
 
     consoleSpy.mockRestore();
+  });
+
+  it('navigates straight to the cart after a successful add', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockApiResponse
+    });
+
+    renderIntegrationTest('/products/grapheneos-pixel-9-pro');
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'GrapheneOS Pixel 9 Pro' })).toBeInTheDocument();
+    });
+
+    await selectVariation();
+    await userEvent.click(screen.getByTestId('add-to-cart'));
+
+    // The cart page takes over (TestCartProvider serves an empty cart, so the
+    // empty-cart state renders — with its Continue Shopping link)
+    expect(await screen.findByRole('heading', { name: /your cart is empty/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toBeInTheDocument();
   });
 
   it('should display different stock statuses correctly', async () => {

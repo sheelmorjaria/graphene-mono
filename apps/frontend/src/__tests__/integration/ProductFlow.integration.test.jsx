@@ -344,11 +344,10 @@ describe('Product Flow Integration Tests', () => {
     // A variation must be selected before the Add to Cart button is active
     await selectVariation();
 
-    // Choose a quantity of 3
+    // Choose a quantity of 3 — this mock fires onAddToCart on change, and the
+    // streamlined flow now lands the customer straight on the cart page
     const quantitySelect = screen.getByLabelText(/quantity/i);
     await userEvent.selectOptions(quantitySelect, '3');
-
-    await userEvent.click(screen.getByTestId('add-to-cart'));
 
     // handleAddToCart logs the call details (real addToCart runs via CartContext)
     await waitFor(() => {
@@ -358,6 +357,11 @@ describe('Product Flow Integration Tests', () => {
         variationId: 'var-1'
       });
     });
+
+    // Cart shows immediately after the add (TestCartProvider serves an empty
+    // cart, so the empty state renders with its Continue Shopping link)
+    expect(await screen.findByText(/your cart is empty/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /continue shopping/i })).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });

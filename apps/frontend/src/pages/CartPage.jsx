@@ -432,6 +432,13 @@ const CartPage = () => {
                   </svg>
                 </button>
 
+                <Link to="/products" className="btn btn-secondary w-full mt-3">
+                  Continue Shopping
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                  </svg>
+                </Link>
+
                 <Link
                   to="/products"
                   className="block w-full text-center text-cyan-400 hover:text-matrix-400 py-3 mt-3 font-mono text-sm transition-colors"
