@@ -1069,7 +1069,7 @@ class EmailService {
           email: user.email,
           disabledDate: new Date().toLocaleDateString(),
           adminEmail: adminUser ? adminUser.email : 'system@graphene-security.com',
-          supportEmail: 'support@graphene-security.com'
+          supportEmail: 'contact@graphene-security.com'
         }
       };
 
@@ -1143,7 +1143,7 @@ class EmailService {
           email: user.email,
           reEnabledDate: new Date().toLocaleDateString(),
           adminEmail: adminUser ? adminUser.email : 'system@graphene-security.com',
-          supportEmail: 'support@graphene-security.com',
+          supportEmail: 'contact@graphene-security.com',
           loginUrl: loginUrl
         }
       };
@@ -1347,7 +1347,7 @@ class EmailService {
           <p>In accordance with legal requirements, some order and transaction data may be retained for tax and legal compliance purposes. However, all personally identifiable information will be removed or anonymized.</p>
         </div>
 
-        <p>If you did not request this deletion or have changed your mind, please contact our support team immediately at ${process.env.SUPPORT_EMAIL || 'support@graphene-security.com'}.</p>
+        <p>If you did not request this deletion or have changed your mind, please contact our support team immediately at ${process.env.SUPPORT_EMAIL || 'contact@graphene-security.com'}.</p>
       `;
 
       const htmlContent = this.generateEmailTemplate(
@@ -1411,7 +1411,7 @@ class EmailService {
           </ul>
         </div>
 
-        <p>If you have any concerns about your account security, please contact our support team at ${process.env.SUPPORT_EMAIL || 'support@graphene-security.com'}.</p>
+        <p>If you have any concerns about your account security, please contact our support team at ${process.env.SUPPORT_EMAIL || 'contact@graphene-security.com'}.</p>
       `;
 
       const htmlContent = this.generateEmailTemplate(

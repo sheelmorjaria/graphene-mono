@@ -72,7 +72,7 @@
     {
       "id": "VITE_SUPPORT_EMAIL",
       "description": "Support email address",
-      "defaultValue": "support@graphene-security.com",
+      "defaultValue": "contact@graphene-security.com",
       "advanced": false
     },
     {

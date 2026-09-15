@@ -64,7 +64,7 @@ export const generateOrganizationStructuredData = () => {
       "@type": "ContactPoint",
       "contactType": "customer service",
       "url": `${SITE_URL}/contact-us`,
-      "email": "support@graphene-security.com",
+      "email": "contact@graphene-security.com",
       "availableLanguage": ["en"]
     },
     // Deliberately NOT linking twitter.com/grapheneos or github.com/GrapheneOS:

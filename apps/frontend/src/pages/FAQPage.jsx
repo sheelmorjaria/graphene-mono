@@ -259,8 +259,8 @@ const FAQPage = () => {
               </p>
               <p>
                 To cancel or modify an order, contact us as soon as possible at{' '}
-                <a href="mailto:support@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                  support@graphene-security.com
+                <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  contact@graphene-security.com
                 </a>.
               </p>
             </div>
@@ -371,8 +371,8 @@ const FAQPage = () => {
             <div className="space-y-3 text-text-secondary">
               <p>
                 Yes! We offer competitive pricing for bulk orders. Please contact us at{' '}
-                <a href="mailto:bulk@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                  bulk@graphene-security.com
+                <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  contact@graphene-security.com
                 </a>{' '}
                 with details about:
               </p>
@@ -441,8 +441,8 @@ const FAQPage = () => {
               </ul>
               <p>
                 Contact us at{' '}
-                <a href="mailto:support@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
-                  support@graphene-security.com
+                <a href="mailto:contact@graphene-security.com" className="text-cyan-400 hover:text-matrix-400 transition-colors">
+                  contact@graphene-security.com
                 </a>.
               </p>
             </div>

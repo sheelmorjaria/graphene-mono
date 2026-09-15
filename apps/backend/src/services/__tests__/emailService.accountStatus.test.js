@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // Set environment variables before ANY imports
 process.env.EMAIL_SERVICE = 'ses';
 process.env.AWS_REGION = 'us-east-1';
-process.env.SUPPORT_EMAIL = 'support@graphene-security.com';
+process.env.SUPPORT_EMAIL = 'contact@graphene-security.com';
 process.env.FROM_EMAIL = 'noreply@graphene-security.com';
 process.env.FROM_NAME = 'Graphene Security';
 
