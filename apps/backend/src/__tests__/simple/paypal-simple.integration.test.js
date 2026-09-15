@@ -4,6 +4,10 @@ import express from 'express';
 import paymentRoutes from '../../routes/payment.js';
 import User from '../../models/User.js';
 import PaymentGateway from '../../models/PaymentGateway.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 // Simple PayPal Tests.
 // These run against the shared in-memory integration DB (the harness owns the

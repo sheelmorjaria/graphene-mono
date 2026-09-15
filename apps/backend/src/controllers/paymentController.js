@@ -7,6 +7,7 @@ import PaymentGateway from '../models/PaymentGateway.js';
 import logger, { logError, logPaymentEvent } from '../utils/logger.js';
 import { validateFraudDetectionCookie, assessOrderFraudRisk } from '../services/fraudDetectionService.js';
 import emailService from '../services/emailService.js';
+import { verifyPayPalWebhookSignature } from '../services/paypalWebhookVerificationService.js';
 
 // Helper function to get PayPal client dynamically (for better testability)
 export const getPayPalClient = () => {
@@ -718,6 +719,14 @@ export const capturePayPalPayment = async (req, res) => {
 // PayPal webhook handler
 export const handlePayPalWebhook = async (req, res) => {
   try {
+    // Signature verification fails CLOSED: a forged "payment completed"
+    // event must never mark an order paid.
+    const verification = await verifyPayPalWebhookSignature({ headers: req.headers, event: req.body, webhookId: process.env.PAYPAL_WEBHOOK_ID });
+    if (!verification.verified) {
+      logError(new Error(verification.reason), { context: 'paypal_webhook_signature_rejected' });
+      return res.status(401).json({ error: 'Webhook signature verification failed' });
+    }
+
     const webhookEvent = req.body;
     const eventType = webhookEvent.event_type;
 

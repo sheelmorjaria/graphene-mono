@@ -1,8 +1,13 @@
+import { vi } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../app.js';
 import FlashOrder from '../../models/FlashOrder.js';
 import { createValidFlashOrderData } from '../../test/helpers/testData.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 describe('Flash Order Security Tests', () => {
   beforeAll(async () => {

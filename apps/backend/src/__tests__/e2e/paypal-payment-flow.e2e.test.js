@@ -13,6 +13,10 @@ import ShippingMethod from '../../models/ShippingMethod.js';
 import Cart from '../../models/Cart.js';
 import PaymentGateway from '../../models/PaymentGateway.js';
 import { generateSKU } from '../../test/helpers/testData.js';
+vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
+  verifyPayPalWebhookSignature: vi.fn().mockResolvedValue({ verified: true })
+}));
+
 
 // PayPal End-to-End Payment Flow Tests
 describe('PayPal Payment Flow E2E Tests', () => {
