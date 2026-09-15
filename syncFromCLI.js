@@ -957,17 +957,43 @@ const cleanColorForMatch = (color) =>
 //
 //   node syncFromCLI.js prices [--query PIXEL] [--dry-run]   (dry-run is the DEFAULT)
 //   node syncFromCLI.js prices --confirm                     (apply changes)
-export const syncPricesOnly = async (searchQuery = 'PIXEL', apply = false) => {
+const DEFAULT_PRICE_QUERIES = [
+  'PIXEL',
+  'PIXEL 6',
+  'PIXEL 7',
+  'PIXEL 8',
+  'PIXEL 9',
+  'PIXEL 9A',
+  'PIXEL 10',
+  'PIXEL FOLD'
+];
+
+export const syncPricesOnly = async (searchQuery = DEFAULT_PRICE_QUERIES, apply = false) => {
   let connection = null;
 
   try {
-    // Parse CLI output first (no DB needed if the fetch fails)
-    const cliOutput = await syncFromCLI(searchQuery);
+    // Parse CLI output first (no DB needed if the fetch fails). A single
+    // 'PIXEL' query returns only CeX's top ~50 rows and misses most
+    // variations — run one query per model family and merge (dedupe by name).
+    const queries = Array.isArray(searchQuery)
+      ? searchQuery
+      : String(searchQuery).split(',').map((q) => q.trim()).filter(Boolean);
     let products = [];
-    try {
-      products = JSON.parse(cliOutput);
-    } catch {
-      products = parseTextOutput(cliOutput);
+    const seenNames = new Set();
+    for (const q of queries) {
+      const cliOutput = await syncFromCLI(q);
+      let parsed = [];
+      try {
+        parsed = JSON.parse(cliOutput);
+      } catch {
+        parsed = parseTextOutput(cliOutput);
+      }
+      for (const item of parsed) {
+        if (!seenNames.has(item.name)) {
+          seenNames.add(item.name);
+          products.push(item);
+        }
+      }
     }
     if (!Array.isArray(products) || products.length === 0) {
       console.log('⚠️  No products parsed from CLI output');
@@ -1085,11 +1111,13 @@ if (isMainModule()) {
   
   // Check for search query parameter
   const queryIndex = process.argv.indexOf('--query');
-  const searchQuery = queryIndex !== -1 && process.argv[queryIndex + 1] ? process.argv[queryIndex + 1] : 'PIXEL';
+  const searchQuery = queryIndex !== -1 && process.argv[queryIndex + 1]
+    ? process.argv[queryIndex + 1]
+    : (command === 'prices' ? null : 'PIXEL');
 
   if (command === "prices") {
     const apply = process.argv.includes('--confirm');
-    syncPricesOnly(searchQuery, apply)
+    syncPricesOnly(searchQuery || DEFAULT_PRICE_QUERIES, apply)
       .then((r) => {
         console.log(`\n${apply ? '✅' : '🧪'} Prices command completed — updated: ${r.updated ?? 0}, changes: ${r.changes ?? r.updated ?? 0}, unmatched: ${r.unmatched ?? 0}`);
         process.exit(0);
