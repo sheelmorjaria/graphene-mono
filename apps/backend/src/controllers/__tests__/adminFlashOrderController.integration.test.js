@@ -34,7 +34,7 @@ describe('Admin Flash Order Controller (integration)', () => {
         addressLine1: '1 Test Street',
         city: 'London',
         stateProvince: 'England',
-        postalCode: 'E1 6AN',
+        postalCode: 'NW9 1TX',
         country: 'GB',
         phoneNumber: '+44 20 7946 0958'
       },
@@ -247,9 +247,9 @@ describe('Admin Flash Order Controller (integration)', () => {
       const reloaded = await FlashOrder.findById(order1._id).lean();
       expect(reloaded.poBoxAddress).toEqual(
         expect.objectContaining({
-          street: 'PO Box 12345',
+          street: 'PO Box 81688',
           city: 'London',
-          postalCode: 'E1 6AN',
+          postalCode: 'NW9 1TX',
           country: 'United Kingdom'
         })
       );

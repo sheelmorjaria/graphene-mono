@@ -23,7 +23,7 @@ const seedOrder = async (overrides = {}) => {
       addressLine1: '1 Main St',
       city: 'London',
       stateProvince: 'England',
-      postalCode: 'E1 6AN',
+      postalCode: 'NW9 1TX',
       country: 'GB',
       phoneNumber: '+44 20 7946 0958'
     },

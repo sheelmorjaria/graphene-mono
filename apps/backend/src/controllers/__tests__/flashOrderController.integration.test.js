@@ -21,7 +21,7 @@ describe('FlashOrder API Endpoints', () => {
         addressLine1: '123 Test Street',
         city: 'London',
         stateProvince: 'England',
-        postalCode: 'E1 6AN',
+        postalCode: 'NW9 1TX',
         country: 'GB',
         phoneNumber: '+44 20 7946 0958'
       },
@@ -243,9 +243,9 @@ describe('FlashOrder API Endpoints', () => {
         paymentStatus: 'Completed',
         orderStatus: 'Paid',
         poBoxAddress: {
-          street: 'PO Box 12345',
+          street: 'PO Box 81688',
           city: 'London',
-          postalCode: 'E1 6AN',
+          postalCode: 'NW9 1TX',
           country: 'United Kingdom',
           instructions: 'Include your order number on the package'
         }
@@ -258,7 +258,7 @@ describe('FlashOrder API Endpoints', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.orderNumber).toBeDefined();
       expect(response.body.data.poBoxAddress).toBeDefined();
-      expect(response.body.data.poBoxAddress.street).toBe('PO Box 12345');
+      expect(response.body.data.poBoxAddress.street).toBe('PO Box 81688');
       expect(response.body.data.poBoxAddress.city).toBe('London');
       expect(response.body.data.instructions).toContain('order number');
     });

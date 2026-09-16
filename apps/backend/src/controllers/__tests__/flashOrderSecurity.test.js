@@ -37,7 +37,7 @@ describe('Flash Order Security Tests', () => {
           addressLine1: '123 Test St',
           city: 'London',
           stateProvince: 'England',
-          postalCode: 'E1 6AN',
+          postalCode: 'NW9 1TX',
           country: 'GB'
         },
         factoryResetConfirmed: true
@@ -145,9 +145,9 @@ describe('Flash Order Security Tests', () => {
       order.paymentStatus = 'Completed';
       order.orderStatus = 'Paid';
       order.poBoxAddress = {
-        street: 'PO Box 12345',
+        street: 'PO Box 81688',
         city: 'London',
-        postalCode: 'E1 6AN',
+        postalCode: 'NW9 1TX',
         country: 'United Kingdom',
         instructions: 'Include your order number on the package.'
       };

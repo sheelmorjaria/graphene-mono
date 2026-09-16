@@ -1,5 +1,6 @@
 import FlashOrder from '../models/FlashOrder.js';
 import logger, { logError } from '../utils/logger.js';
+import { PO_BOX_ADDRESS } from './flashOrderController.js';
 
 /**
  * Get all Flash Orders (admin only)
@@ -171,13 +172,7 @@ export const updateFlashOrderStatus = async (req, res) => {
 
     // Auto-populate PO Box when order is paid
     if (orderStatus === 'Paid' && paymentStatus === 'Completed' && !order.poBoxAddress) {
-      order.poBoxAddress = {
-        street: 'PO Box 12345',
-        city: 'London',
-        postalCode: 'E1 6AN',
-        country: 'United Kingdom',
-        instructions: 'Include your order number on the package. Wrap device in bubble wrap and use a sturdy box.'
-      };
+      order.poBoxAddress = PO_BOX_ADDRESS;
     }
 
     await order.save();

@@ -15,7 +15,7 @@ describe('FlashOrder Model', () => {
         addressLine1: '123 Test Street',
         city: 'London',
         stateProvince: 'England',
-        postalCode: 'E1 6AN',
+        postalCode: 'NW9 1TX',
         country: 'GB',
         phoneNumber: '+44 20 7946 0958'
       },
@@ -96,7 +96,7 @@ describe('FlashOrder Model', () => {
           addressLine1: '123 Test Street',
           city: 'London',
           stateProvince: 'England',
-          postalCode: 'E1 6AN',
+          postalCode: 'NW9 1TX',
           phoneNumber: '+44 20 7946 0958'
         }
       };
@@ -248,9 +248,9 @@ describe('FlashOrder Model', () => {
       await order.save();
 
       const poBoxData = {
-        street: 'PO Box 12345',
+        street: 'PO Box 81688',
         city: 'London',
-        postalCode: 'E1 6AN',
+        postalCode: 'NW9 1TX',
         country: 'United Kingdom',
         instructions: 'Include your order number on the package'
       };
