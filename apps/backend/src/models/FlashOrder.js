@@ -111,6 +111,8 @@ const flashOrderSchema = new mongoose.Schema({
   // PO Box address - ONLY revealed after payment
   poBoxAddress: {
     type: {
+      recipientName: { type: String, trim: true },
+      poBoxName: { type: String, trim: true },
       street: { type: String, trim: true },
       city: { type: String, trim: true },
       postalCode: { type: String, trim: true },

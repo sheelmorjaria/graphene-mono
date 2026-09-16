@@ -176,7 +176,7 @@ describe('Admin Flash Order Controller - Coverage Gap Unit Tests', () => {
       await updateFlashOrderStatus(req, res);
 
       expect(order.poBoxAddress).toBeDefined();
-      expect(order.poBoxAddress.street).toBe('PO Box 12345');
+      expect(order.poBoxAddress.street).toBe('PO Box 81688');
     });
 
     test('does not overwrite existing poBoxAddress', async () => {

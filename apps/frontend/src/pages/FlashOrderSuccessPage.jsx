@@ -181,7 +181,13 @@ const FlashOrderSuccessPage = () => {
                 Send Your Device To:
               </h3>
               <div className="space-y-1 text-text-primary">
-                <p className="font-semibold">{instructions.poBoxAddress.street}</p>
+                {instructions.poBoxAddress.recipientName && (
+                  <p className="font-semibold">{instructions.poBoxAddress.recipientName}</p>
+                )}
+                {instructions.poBoxAddress.poBoxName && (
+                  <p>{instructions.poBoxAddress.poBoxName}</p>
+                )}
+                <p className={instructions.poBoxAddress.recipientName ? '' : 'font-semibold'}>{instructions.poBoxAddress.street}</p>
                 <p>{instructions.poBoxAddress.city}</p>
                 <p>{instructions.poBoxAddress.postalCode}</p>
                 <p>{instructions.poBoxAddress.country}</p>

@@ -289,7 +289,13 @@ const AdminFlashOrderDetailsPage = () => {
                 PO Box Address
               </h2>
               <div className="space-y-1 text-text-primary bg-bg-elevated p-4 rounded-lg">
-                <p className="font-semibold">{order.poBoxAddress.street}</p>
+                {order.poBoxAddress.recipientName && (
+                  <p className="font-semibold">{order.poBoxAddress.recipientName}</p>
+                )}
+                {order.poBoxAddress.poBoxName && (
+                  <p>{order.poBoxAddress.poBoxName}</p>
+                )}
+                <p className={order.poBoxAddress.recipientName ? '' : 'font-semibold'}>{order.poBoxAddress.street}</p>
                 <p>{order.poBoxAddress.city}</p>
                 <p>{order.poBoxAddress.postalCode}</p>
                 <p>{order.poBoxAddress.country}</p>

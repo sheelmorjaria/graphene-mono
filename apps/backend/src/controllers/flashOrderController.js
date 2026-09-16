@@ -24,12 +24,17 @@ const SHIPPING_RATES = {
 };
 const round2 = (n) => Math.round(n * 100) / 100;
 
-// PO Box address (revealed only after payment)
-const PO_BOX_ADDRESS = {
-  street: 'PO Box 12345',
-  city: 'London',
-  postalCode: 'E1 6AN',
-  country: 'United Kingdom',
+// PO Box address (revealed only after payment). Env-overridable so the
+// address can be changed in CapRover without a redeploy; code fallback is
+// the live PO Box. Exported — adminFlashOrderController stamps the same
+// object when it marks an order Paid.
+export const PO_BOX_ADDRESS = {
+  recipientName: process.env.FLASH_PO_BOX_RECIPIENT || 'Mr Sheel Morjaria',
+  poBoxName: process.env.FLASH_PO_BOX_NAME || 'Security',
+  street: process.env.FLASH_PO_BOX_NUMBER || 'PO Box 81688',
+  city: process.env.FLASH_PO_BOX_CITY || 'London',
+  postalCode: process.env.FLASH_PO_BOX_POSTCODE || 'NW9 1TX',
+  country: process.env.FLASH_PO_BOX_COUNTRY || 'United Kingdom',
   instructions: 'Include your order number on the package. Wrap device in bubble wrap and use a sturdy box.'
 };
 
