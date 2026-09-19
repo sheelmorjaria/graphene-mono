@@ -77,6 +77,7 @@ const RefundPolicyPage = () => {
             <li>Refunds are issued to your PayPal account — PayPal is our only payment method, so your refund returns the way you paid</li>
             <li>You will receive an email confirmation</li>
           </ul>
+        </div>
       )
     },
     {
