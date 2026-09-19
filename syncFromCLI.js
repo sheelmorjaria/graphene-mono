@@ -718,7 +718,7 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false, n
       admin = new User({
         firstName: "Admin",
         lastName: "User",
-        email: "admin@grapheneosstore.com",
+        email: "admin@graphene-security.com",
         password: "changeme123", // Will be hashed by pre-save middleware
         role: 'admin',
       });
@@ -730,7 +730,7 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false, n
       admin = new User({
         firstName: "Admin",
         lastName: "User",
-        email: "admin@grapheneosstore.com",
+        email: "admin@graphene-security.com",
         password: "changeme123", // Will be hashed by pre-save middleware
         role: 'admin',
       });
