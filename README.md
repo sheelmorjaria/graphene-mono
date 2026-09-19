@@ -293,7 +293,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔒 Security
 
-For security concerns, please email security@grapheneos-store.com
+For security concerns, please email contact@graphene-security.com
 
 ---
 
