@@ -21,7 +21,7 @@ const RefundPolicyPage = () => {
       icon: '⏱',
       content: (
         <div className="space-y-4 text-text-secondary">
-          <p>You may return most products within <strong className="text-cyan-400">14 calendar days</strong> from the date of delivery.</p>
+          <p>You may return most products within <strong className="text-cyan-400">28 days</strong> from the date of delivery.</p>
           <p>To be eligible for a return, your item must be:</p>
           <ul className="list-disc list-inside space-y-1 ml-4">
             <li>In the same condition as received</li>
