@@ -258,7 +258,7 @@ const RefundPolicyPage = () => {
           <h2 className="font-heading text-xl font-bold text-text-primary mb-4">Key Points at a Glance</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-cyan-subtle border border-cyan rounded-lg p-4 text-center">
-              <p className="text-3xl font-bold text-cyan-400 mb-1">14</p>
+              <p className="text-3xl font-bold text-cyan-400 mb-1">28</p>
               <p className="text-sm text-text-secondary">Day Return Period</p>
             </div>
             <div className="bg-matrix-subtle border border-matrix rounded-lg p-4 text-center">
