@@ -228,7 +228,9 @@ const TermsOfServicePage = () => {
                 cannot be flashed, your refund is the amount paid minus return shipping.
               </p>
               <p>
-                <strong className="text-text-primary">Verified boot and app compatibility.</strong> {BANKING}
+                <strong className="text-text-primary">Verified boot and app compatibility.</strong> GrapheneOS alters
+                the device's verified boot state. Certain high-security banking apps may not function on the flashed
+                device. We are not responsible for software incompatibility post-flash.
               </p>
               <p>
                 <strong className="text-text-primary">Liability.</strong> We take full responsibility if our flashing
