@@ -28,8 +28,6 @@
     "@tailwindcss/postcss": "^4.1.8",
     "@tailwindcss/vite": "^4.1.8",
     "@testing-library/dom": "^10.4.0",
-    "@vitest/coverage-v8": "^4.1.8",
-    "@vitest/ui": "4.1.8",
     "prop-types": "^15.8.1",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
@@ -52,6 +50,8 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.5.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/ui": "^4.1.11",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.9",
     "eslint": "^9.25.0",
@@ -61,10 +61,10 @@
     "jsdom": "^25.0.1",
     "magic-string": "^0.30.18",
     "postcss": "^8.5.4",
-    "puppeteer-core": "^24.43.1",
+    "puppeteer-core": "^25.11.0",
     "rollup": "^4.50.0",
     "tailwindcss": "^4.1.8",
     "vite": "^6.3.5",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   }
 }
