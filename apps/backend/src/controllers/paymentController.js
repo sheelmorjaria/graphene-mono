@@ -604,13 +604,48 @@ export const capturePayPalPayment = async (req, res) => {
         userId: req.user?._id || null,
         isGuest: !req.user,
         customerEmail: req.user?.email || guestEmail || paymentDetails.payer?.emailAddress,
-        items: cart.items.map(item => ({
-          productId: item.productId,
-          productName: item.productName || 'Product',
-          productSlug: item.productSlug || 'product',
-          quantity: item.quantity,
-          unitPrice: item.unitPrice || item.price,
-          totalPrice: (item.unitPrice || item.price) * item.quantity
+        // Enrich items from the product catalog (authoritative variation
+        // data) so orders carry sku/condition/color/storage/image like the
+        // placeOrder path does — cart items alone don't reliably have them,
+        // and the admin Items Ordered table + refunds depend on these fields.
+        items: await Promise.all(cart.items.map(async (item) => {
+          const base = {
+            productId: item.productId,
+            productName: item.productName || 'Product',
+            productSlug: item.productSlug || 'product',
+            productImage: item.productImage || null,
+            variationId: item.variationId ? String(item.variationId) : undefined,
+            sku: item.sku || undefined,
+            condition: item.condition || undefined,
+            color: item.color || undefined,
+            storage: item.storage || undefined,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || item.price,
+            totalPrice: (item.unitPrice || item.price) * item.quantity
+          };
+          try {
+            const product = await Product.findById(item.productId).select('name slug images variations');
+            const variation = product && (item.variationId
+              ? product.variations.find(v => v._id.toString() === String(item.variationId))
+              : product.variations.find(v =>
+                  (!base.condition || v.condition === base.condition) &&
+                  (!base.color || v.color === base.color)
+                ) || product.variations[0]);
+            if (variation) {
+              base.variationId = String(variation._id);
+              base.sku = variation.sku;
+              base.condition = variation.condition;
+              base.color = variation.color;
+              base.storage = variation.storage;
+              if (!base.productImage) {
+                base.productImage = variation.images?.[0] || product.images?.[0] || null;
+              }
+            }
+          } catch {
+            // Catalog lookup is best-effort enrichment; the cart-supplied
+            // fields above remain if it fails.
+          }
+          return base;
         })),
         subtotal: resolvedSubtotal,
         shipping: resolvedShipping,
