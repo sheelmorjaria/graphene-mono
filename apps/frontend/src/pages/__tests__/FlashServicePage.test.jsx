@@ -62,11 +62,12 @@ describe('FlashServicePage — device requirements', () => {
     expect(policy).toHaveTextContent(/banking apps may not/i);
   });
 
-  it('lists the OEM Unlocking requirement alongside carrier/blacklist checks', () => {
+  it('does not surface developer-level flashing details in the requirements', () => {
     renderComponent();
 
     const requirements = screen.getByTestId('device-requirements');
-    expect(requirements).toHaveTextContent(/OEM Unlocking/i);
-    expect(requirements).toHaveTextContent(/Developer Options/i);
+    expect(requirements).toHaveTextContent(/carrier unlocked/i);
+    expect(requirements).not.toHaveTextContent(/OEM Unlocking/i);
+    expect(requirements).not.toHaveTextContent(/Developer Options/i);
   });
 });

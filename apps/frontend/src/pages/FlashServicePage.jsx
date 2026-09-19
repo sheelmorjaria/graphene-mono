@@ -91,14 +91,6 @@ const FlashServicePage = () => {
                   returned unflashed at the sender's expense and no refund of the service fee can be made.
                 </span>
               </li>
-              <li className="flex items-start gap-2">
-                <span className="text-yellow-400 mt-0.5">•</span>
-                <span>
-                  Ensure <strong className="text-text-primary">'OEM Unlocking'</strong> is available in your device's
-                  Developer Options before sending it — carrier-locked devices often have it disabled, and the bootloader
-                  cannot be unlocked without it.
-                </span>
-              </li>
             </ul>
           </div>
         )}
@@ -117,7 +109,7 @@ const FlashServicePage = () => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-cyan-400 mt-0.5">✓</span>
-                <span>If we <strong className="text-text-primary">cannot flash your device</strong> (for example it arrives carrier-locked with OEM Unlocking unavailable), you are refunded in full minus return shipping, and your device is returned to you at no charge.</span>
+                <span>If we <strong className="text-text-primary">cannot flash your device</strong> (for example if it arrives carrier-locked), you are refunded in full minus return shipping, and your device is returned to you at no charge.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-yellow-400 mt-0.5">!</span>

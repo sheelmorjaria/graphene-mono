@@ -224,8 +224,8 @@ const TermsOfServicePage = () => {
               </p>
               <p>
                 <strong className="text-text-primary">Pre-qualification.</strong> You must ensure your device is
-                carrier-unlocked and that 'OEM Unlocking' is available in Developer Options before sending it. If the
-                device cannot be flashed due to carrier locks, your refund is the amount paid minus return shipping.
+                carrier-unlocked (SIM-free) before sending it — carrier-locked devices cannot be flashed. If the device
+                cannot be flashed, your refund is the amount paid minus return shipping.
               </p>
               <p>
                 <strong className="text-text-primary">Verified boot and app compatibility.</strong> {BANKING}
