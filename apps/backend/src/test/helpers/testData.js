@@ -128,6 +128,7 @@ export const createValidFlashOrderData = (overrides = {}) => {
       phoneNumber: '+44 20 7946 0958'
     },
     factoryResetConfirmed: true,
+    serviceConsentConfirmed: true,
     basePrice: 119.99,
     returnShipping: 20.45,
     ...overrides

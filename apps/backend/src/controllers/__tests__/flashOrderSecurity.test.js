@@ -40,7 +40,8 @@ describe('Flash Order Security Tests', () => {
           postalCode: 'NW9 1TX',
           country: 'GB'
         },
-        factoryResetConfirmed: true
+        factoryResetConfirmed: true,
+    serviceConsentConfirmed: true
       };
 
       const response = await request(app)

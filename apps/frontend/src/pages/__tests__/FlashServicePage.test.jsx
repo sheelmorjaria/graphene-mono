@@ -49,4 +49,24 @@ describe('FlashServicePage — device requirements', () => {
     renderComponent();
     expect(screen.getByTestId('flash-service-form')).toBeInTheDocument();
   });
+
+  it('shows the flash-service refund policy and the banking disclaimer', () => {
+    renderComponent();
+
+    const policy = screen.getByTestId('refund-policy');
+    expect(policy).toHaveTextContent(/before flashing begins/i);
+    expect(policy).toHaveTextContent(/cannot flash your device/i);
+    expect(policy).toHaveTextContent(/minus return shipping/i);
+    expect(policy).toHaveTextContent(/non-refundable/i);
+    expect(policy).toHaveTextContent(/verified boot state/i);
+    expect(policy).toHaveTextContent(/banking apps may not/i);
+  });
+
+  it('lists the OEM Unlocking requirement alongside carrier/blacklist checks', () => {
+    renderComponent();
+
+    const requirements = screen.getByTestId('device-requirements');
+    expect(requirements).toHaveTextContent(/OEM Unlocking/i);
+    expect(requirements).toHaveTextContent(/Developer Options/i);
+  });
 });

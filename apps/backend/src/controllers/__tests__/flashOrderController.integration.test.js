@@ -25,7 +25,8 @@ describe('FlashOrder API Endpoints', () => {
         country: 'GB',
         phoneNumber: '+44 20 7946 0958'
       },
-      factoryResetConfirmed: true
+      factoryResetConfirmed: true,
+    serviceConsentConfirmed: true
     };
   });
 
@@ -280,6 +281,75 @@ describe('FlashOrder API Endpoints', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
+  });
+
+
+  // UK CCR 2013 consent gate — the order cannot be created without the
+  // customer expressly consenting to the service beginning and losing the
+  // cancel-right once flashing completes.
+  describe('service consent confirmation', () => {
+    it('rejects order creation without serviceConsentConfirmed', async () => {
+      const response = await request(app)
+        .post('/api/flash-orders')
+        .send({ ...validOrderData, serviceConsentConfirmed: false });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/lose the right to cancel/i);
+    });
+
+    it('creates the order when consent is given', async () => {
+      const response = await request(app)
+        .post('/api/flash-orders')
+        .send(validOrderData);
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.orderNumber).toMatch(/^FLO-/);
+    });
+  });
+
+
+  // Refund guard: a retried/delayed capture webhook must never resurrect a
+  // refunded order back to Paid/Completed.
+  it('ignores CAPTURE.COMPLETED for an already-refunded order', async () => {
+    const createResponse = await request(app)
+      .post('/api/flash-orders')
+      .send(validOrderData);
+    const orderId = createResponse.body.data.orderId;
+
+    // Pay + then refund (simulate the refund finalisation directly)
+    await FlashOrder.updateOne(
+      { _id: orderId },
+      {
+        paymentStatus: 'Refunded',
+        orderStatus: 'Refunded',
+        poBoxAddress: undefined,
+        'paymentDetails.paypalTransactionId': 'CAPTURE-REFUNDED-1'
+      }
+    );
+
+    const webhookPayload = {
+      event_type: 'PAYMENT.CAPTURE.COMPLETED',
+      resource: {
+        id: 'CAPTURE-REFUNDED-1',
+        amount: { value: '140.44', currency_code: 'GBP' },
+        custom_id: orderId.toString(),
+        supplementary_data: { related_ids: { order_id: 'PO-WH-1' } }
+      }
+    };
+
+    const res = await request(app)
+      .post('/api/flash-orders/paypal-webhook')
+      .send(webhookPayload)
+      .set('paypal-transmission-id', 'WEBHOOK-R1')
+      .set('paypal-cert-id', 'CERT-1')
+      .set('paypal-auth-algo', 'SHA256withRSA')
+      .set('paypal-cert-link', 'https://paypal.com/cert');
+
+    expect(res.status).toBe(200);
+
+    const after = await FlashOrder.findById(orderId);
+    expect(after.paymentStatus).toBe('Refunded');
+    expect(after.orderStatus).toBe('Refunded');
   });
 
   describe('Security & Validation', () => {

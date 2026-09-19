@@ -3,13 +3,19 @@ import {
   getAllFlashOrders,
   getFlashOrderById,
   updateFlashOrderStatus,
-  getFlashOrderStats
+  getFlashOrderStats,
+  refundFlashOrder
 } from '../controllers/adminFlashOrderController.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Note: Admin authentication is handled at the app level via /api/admin prefix
-// Individual routes can add additional middleware if needed
+// SECURITY: this router is mounted at /api/admin/flash-orders OUTSIDE the
+// main admin router, so it never inherited the app-level authenticate +
+// requireRole guard — every route below was publicly reachable (customer
+// PII in flash orders). Same middleware as routes/admin.js.
+router.use(authenticate);
+router.use(requireRole('admin'));
 
 // Get all Flash Orders with filtering and pagination
 // GET /api/admin/flash-orders
@@ -26,5 +32,9 @@ router.get('/:id', getFlashOrderById);
 // Update Flash Order status
 // PATCH /api/admin/flash-orders/:id/status
 router.patch('/:id/status', updateFlashOrderStatus);
+
+// Refund a Flash Order (tiered policy — blocked once flashing has begun)
+// POST /api/admin/flash-orders/:id/refund
+router.post('/:id/refund', refundFlashOrder);
 
 export default router;

@@ -42,6 +42,7 @@ const RefundPolicyPage = () => {
             <li>Items damaged through misuse or improper handling</li>
             <li>Items with missing or damaged serial numbers</li>
             <li>Items that have been flashed with custom firmware after purchase</li>
+            <li>The mail-in GrapheneOS Flashing Service once flashing has begun (see the Flashing Service terms — full refund is available before flashing starts, and if we cannot flash your device you are refunded in full minus return shipping)</li>
             <li>Software or digital downloads</li>
           </ul>
         </div>
@@ -148,6 +149,9 @@ const RefundPolicyPage = () => {
             <li>Item cannot be resold as new</li>
           </ul>
           <p>Partial refund amounts will be determined based on the condition of the returned item and its resale value.</p>
+        <p className="mt-4"><strong>Note on the Flashing Service:</strong> the service fee is non-refundable once
+        flashing has begun — the service is supplied to your specification with your express consent (Consumer
+        Contracts Regulations 2013). GrapheneOS alters the device's verified boot state. Certain high-security banking apps may not function on the flashed device. We are not responsible for software incompatibility post-flash.</p>
         </div>
       )
     },

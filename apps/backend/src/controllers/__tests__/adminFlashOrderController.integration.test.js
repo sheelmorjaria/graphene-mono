@@ -1,30 +1,64 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import adminFlashOrderRoutes from '../../routes/admin-flash-orders.js';
 import FlashOrder from '../../models/FlashOrder.js';
+import User from '../../models/User.js';
 
 /**
- * Integration tests for adminFlashOrderController.
- *
- * NOTE: the /api/admin/flash-orders router does NOT apply authentication
- * middleware (its comment states auth is "handled at the app level"), so these
- * routes are exercised directly without an Authorization header. The controller
- * logic, real Mongoose queries, and the FlashOrder schema (pre-save order-number
- * hook, validation, PO-Box auto-population) are all exercised against the real DB.
+ * Integration tests for adminFlashOrderController. The router is mounted
+ * OUTSIDE the main admin router, so it carries its own authenticate +
+ * requireRole('admin') middleware (added 2026-09-19 — these routes were
+ * previously public). Auth uses the REAL middleware: tokens are signed with
+ * the same secret and the users exist + are active in the DB.
  */
 describe('Admin Flash Order Controller (integration)', () => {
   let app;
   let order1, order2;
+  let adminToken;
+  let customerToken;
 
   beforeAll(async () => {
     app = express();
     app.use(express.json());
+    // Test harness: supply the admin credential by default — the REAL
+    // authenticate + requireRole middleware still validates it. Guard tests
+    // opt out via x-test-no-auth or supply their own (customer) header.
+    app.use((req, res, next) => {
+      if (req.headers['x-test-no-auth']) {
+        delete req.headers.authorization;
+        return next();
+      }
+      if (!req.headers.authorization) {
+        req.headers.authorization = `Bearer ${adminToken}`;
+      }
+      next();
+    });
     app.use('/api/admin/flash-orders', adminFlashOrderRoutes);
   });
 
   beforeEach(async () => {
-    await FlashOrder.deleteMany({});
+    await Promise.all([FlashOrder.deleteMany({}), User.deleteMany({})]);
+
+    const admin = await User.create({
+      firstName: 'Admin', lastName: 'User', email: 'admin-flash@test.com',
+      password: 'password123', role: 'admin', isActive: true
+    });
+    const customer = await User.create({
+      firstName: 'Cust', lastName: 'Omer', email: 'customer-flash@test.com',
+      password: 'password123', role: 'customer', isActive: true
+    });
+    adminToken = jwt.sign(
+      { userId: admin._id, role: admin.role, email: admin.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '8h' }
+    );
+    customerToken = jwt.sign(
+      { userId: customer._id, role: customer.role, email: customer.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '8h' }
+    );
 
     order1 = await FlashOrder.create({
       customerEmail: 'alice@example.com',
@@ -39,6 +73,7 @@ describe('Admin Flash Order Controller (integration)', () => {
         phoneNumber: '+44 20 7946 0958'
       },
       factoryResetConfirmed: true,
+      serviceConsentConfirmed: true,
       orderStatus: 'Awaiting_Payment',
       paymentStatus: 'Unpaid'
     });
@@ -55,6 +90,7 @@ describe('Admin Flash Order Controller (integration)', () => {
         country: 'GB'
       },
       factoryResetConfirmed: true,
+      serviceConsentConfirmed: true,
       orderStatus: 'Paid',
       paymentStatus: 'Completed',
       totalPrice: 140.44
@@ -319,6 +355,132 @@ describe('Admin Flash Order Controller (integration)', () => {
       expect(res.body.data.statusHistory[0].note).toMatch(
         /Status updated to Shipped_Back/
       );
+    });
+  });
+
+  // ---------------- authentication (router-level middleware) ----------------
+  describe('authentication', () => {
+    it('rejects unauthenticated access with 401', async () => {
+      const res = await request(app).get('/api/admin/flash-orders').set('x-test-no-auth', '1');
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects non-admin tokens with 403', async () => {
+      const res = await request(app)
+        .get('/api/admin/flash-orders')
+        .set('Authorization', `Bearer ${customerToken}`);
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // ---------------- refund endpoint (tiered policy) ----------------
+  describe('POST /api/admin/flash-orders/:id/refund', () => {
+    const refundableOrder = () => ({
+      customerEmail: 'refund@example.com',
+      pixelModel: 'Pixel 8 Pro',
+      returnAddress: { fullName: 'Refund Customer', addressLine1: '9 Refund Rd', city: 'Leeds', stateProvince: 'Yorkshire', postalCode: 'LS1 1AA', country: 'GB' },
+      factoryResetConfirmed: true,
+      serviceConsentConfirmed: true,
+      orderStatus: 'Device_Received',
+      paymentStatus: 'Completed',
+      paymentDetails: { paypalTransactionId: 'CAP-REFUND-1', paypalOrderId: 'PO-1' }
+    });
+
+    it('refunds the FULL total for a cancellation before flashing', async () => {
+      const order = await FlashOrder.create(refundableOrder());
+
+      const res = await request(app)
+        .post(`/api/admin/flash-orders/${order._id}/refund`)
+        .send({ reason: 'Customer cancelled', category: 'cancellation_before_flashing' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('140.44');
+
+      const dbOrder = await FlashOrder.findById(order._id);
+      expect(dbOrder.paymentStatus).toBe('Refunded');
+      expect(dbOrder.orderStatus).toBe('Refunded');
+      expect(dbOrder.totalRefundedAmount).toBe(140.44);
+      expect(dbOrder.refundHistory).toHaveLength(1);
+      expect(dbOrder.refundHistory[0].status).toBe('succeeded');
+      expect(dbOrder.refundHistory[0].amount).toBe(140.44);
+      expect(dbOrder.refundHistory[0].refundId).toBe('mock-refund-id');
+    });
+
+    it('refunds total minus return shipping for an unflashable device', async () => {
+      const order = await FlashOrder.create(refundableOrder());
+
+      const res = await request(app)
+        .post(`/api/admin/flash-orders/${order._id}/refund`)
+        .send({ reason: 'Carrier locked — bootloader locked', category: 'device_unflashable' });
+
+      expect(res.status).toBe(200);
+      const dbOrder = await FlashOrder.findById(order._id);
+      expect(dbOrder.refundHistory[0].amount).toBe(119.99);
+      expect(dbOrder.totalRefundedAmount).toBe(119.99);
+    });
+
+    it('409 policy-blocks the refund once flashing has begun', async () => {
+      const order = await FlashOrder.create({ ...refundableOrder(), orderStatus: 'Flashing_In_Progress' });
+
+      const res = await request(app)
+        .post(`/api/admin/flash-orders/${order._id}/refund`)
+        .send({ reason: 'Customer demands refund', category: 'cancellation_before_flashing' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/service has begun/i);
+      const dbOrder = await FlashOrder.findById(order._id);
+      expect(dbOrder.paymentStatus).toBe('Completed');
+    });
+
+    it('409s a second refund attempt (already refunded)', async () => {
+      const order = await FlashOrder.create(refundableOrder());
+      await request(app)
+        .post(`/api/admin/flash-orders/${order._id}/refund`)
+        .send({ reason: 'First refund', category: 'cancellation_before_flashing' });
+
+      const second = await request(app)
+        .post(`/api/admin/flash-orders/${order._id}/refund`)
+        .send({ reason: 'Second attempt', category: 'cancellation_before_flashing' });
+
+      expect(second.status).toBe(409);
+    });
+
+    it('401s without authentication', async () => {
+      const order = await FlashOrder.create(refundableOrder());
+      const res = await request(app)
+        .post(`/api/admin/flash-orders/${order._id}/refund`)
+        .set('x-test-no-auth', '1')
+        .send({ reason: 'Nope', category: 'cancellation_before_flashing' });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  // ---------------- intake inspection ----------------
+  describe('PATCH status intake inspection', () => {
+    it('records the intake condition when marking Device_Received and emails the customer', async () => {
+      const order = await FlashOrder.create({
+        customerEmail: 'intake@example.com',
+        pixelModel: 'Pixel 9',
+        returnAddress: { fullName: 'Intake Customer', addressLine1: '3 Intake St', city: 'Bristol', stateProvince: 'Avon', postalCode: 'BS1 1AA', country: 'GB' },
+        factoryResetConfirmed: true,
+        serviceConsentConfirmed: true,
+        orderStatus: 'Paid',
+        paymentStatus: 'Completed'
+      });
+
+      const res = await request(app)
+        .patch(`/api/admin/flash-orders/${order._id}/status`)
+        .send({
+          orderStatus: 'Device_Received',
+          intakeConditionNotes: 'Minor scratch top-left corner. Battery health 91%. OEM unlocking available.'
+        });
+
+      expect(res.status).toBe(200);
+      const dbOrder = await FlashOrder.findById(order._id);
+      expect(dbOrder.orderStatus).toBe('Device_Received');
+      expect(dbOrder.intakeInspection.conditionNotes).toContain('Minor scratch');
+      expect(dbOrder.intakeInspection.inspectedAt).toBeTruthy();
     });
   });
 });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getFlashOrderById, updateFlashOrderStatus, isAdminAuthenticated, formatCurrency } from '../services/adminService';
+import { getFlashOrderById, updateFlashOrderStatus, refundFlashOrder, isAdminAuthenticated, formatCurrency } from '../services/adminService';
 
 const AdminFlashOrderDetailsPage = () => {
   const { id } = useParams();
@@ -11,6 +11,11 @@ const AdminFlashOrderDetailsPage = () => {
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundCategory, setRefundCategory] = useState('cancellation_before_flashing');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundLoading, setRefundLoading] = useState(false);
+  const [refundError, setRefundError] = useState('');
   const [statusForm, setStatusForm] = useState({
     orderStatus: '',
     paymentStatus: '',
@@ -86,6 +91,42 @@ const AdminFlashOrderDetailsPage = () => {
       setError(err.message || 'Failed to update order status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // Tiered refund derivation (kept DERIVED, never stored — statuses are truth)
+  const refundable = order
+    && order.paymentStatus === 'Completed'
+    && ['Paid', 'Device_Received', 'Cancelled'].includes(order.orderStatus);
+  const nonRefundable = order
+    && order.paymentStatus === 'Completed'
+    && ['Flashing_In_Progress', 'Shipped_Back'].includes(order.orderStatus);
+  const refundAmount = order
+    ? (refundCategory === 'device_unflashable'
+        ? Math.max(0, (order.totalPrice || 0) - (order.returnShipping || 0))
+        : (order.totalPrice || 0))
+    : 0;
+
+  const handleRefund = async () => {
+    if (!refundReason.trim()) {
+      setRefundError('A reason is required for the refund record');
+      return;
+    }
+    try {
+      setRefundLoading(true);
+      setRefundError('');
+      await refundFlashOrder(order._id || id, {
+        reason: refundReason.trim(),
+        category: refundCategory
+      });
+      setShowRefundModal(false);
+      setRefundReason('');
+      setRefundCategory('cancellation_before_flashing');
+      await loadOrder();
+    } catch (err) {
+      setRefundError(err.message || 'Failed to refund flash order');
+    } finally {
+      setRefundLoading(false);
     }
   };
 
@@ -225,6 +266,20 @@ const AdminFlashOrderDetailsPage = () => {
           >
             Update Status
           </button>
+              {refundable && (
+                <button
+                  onClick={() => { setRefundError(''); setShowRefundModal(true); }}
+                  className="ml-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  data-testid="refund-flash-order-button"
+                >
+                  Refund Service Fee
+                </button>
+              )}
+              {nonRefundable && (
+                <span className="ml-3 text-xs text-red-400" data-testid="non-refundable-note">
+                  Non-refundable per policy — service has begun
+                </span>
+              )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -368,6 +423,39 @@ const AdminFlashOrderDetailsPage = () => {
           )}
         </div>
 
+
+          {/* Intake Inspection & Refund History */}
+          <div className="bg-bg-card rounded-lg border border-border-subtle p-6 space-y-6">
+            {order.intakeInspection?.conditionNotes && (
+              <div data-testid="intake-inspection">
+                <h2 className="text-lg font-display font-semibold text-text-primary mb-2">Intake Inspection</h2>
+                <p className="text-xs text-text-muted mb-1">
+                  Recorded {order.intakeInspection.inspectedAt ? new Date(order.intakeInspection.inspectedAt).toLocaleString() : ''}
+                </p>
+                <p className="text-sm text-text-secondary whitespace-pre-line">{order.intakeInspection.conditionNotes}</p>
+              </div>
+            )}
+            {order.refundHistory && order.refundHistory.length > 0 && (
+              <div data-testid="refund-history">
+                <h2 className="text-lg font-display font-semibold text-text-primary mb-2">Refund History</h2>
+                <ul className="space-y-1">
+                  {order.refundHistory.map((entry, index) => (
+                    <li key={index} className="text-sm flex items-center gap-2">
+                      <span className={entry.status === 'succeeded' ? 'text-green-400' : entry.status === 'failed' ? 'text-red-400' : 'text-yellow-400'}>
+                        {entry.status === 'succeeded' ? '✓' : entry.status === 'failed' ? '✗' : '…'}
+                      </span>
+                      <span className="font-mono">{formatCurrency(entry.amount)}</span>
+                      <span className="text-text-muted text-xs">
+                        {entry.category === 'device_unflashable' ? 'device unflashable' : 'cancelled before flashing'}
+                        {entry.refundId ? ` · ${entry.refundId}` : ''} · {entry.reason}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
         {/* Status History */}
         {order.statusHistory && order.statusHistory.length > 0 && (
           <div className="bg-bg-card rounded-lg border border-border-subtle p-6 mt-6">
@@ -474,6 +562,75 @@ const AdminFlashOrderDetailsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Modal */}
+      {showRefundModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" data-testid="refund-modal">
+          <div className="bg-bg-card rounded-lg border border-border-subtle max-w-md w-full p-6">
+            <h2 className="text-lg font-display font-semibold text-text-primary mb-1">Refund Flash Service</h2>
+            <p className="text-xs text-text-muted mb-4">
+              Tiered policy — full refund before flashing; unflashable devices refund the total minus return shipping.
+              This cannot be undone.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="refund-category" className="block text-xs text-text-muted mb-1">Category</label>
+                <select
+                  id="refund-category"
+                  value={refundCategory}
+                  onChange={(e) => setRefundCategory(e.target.value)}
+                  className="w-full bg-bg-primary border border-border-subtle rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="cancellation_before_flashing">Cancelled before flashing (full refund)</option>
+                  <option value="device_unflashable">Device unflashable (minus return shipping)</option>
+                </select>
+              </div>
+
+              <div className="bg-bg-primary border border-border-subtle rounded-lg px-3 py-2 text-sm flex justify-between" data-testid="refund-amount-display">
+                <span className="text-text-muted">Refund amount</span>
+                <span className="font-mono text-cyan-400">{formatCurrency(refundAmount)}</span>
+              </div>
+
+              <div>
+                <label htmlFor="refund-reason" className="block text-xs text-text-muted mb-1">Reason (required)</label>
+                <textarea
+                  id="refund-reason"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={3}
+                  className="w-full bg-bg-primary border border-border-subtle rounded-lg px-3 py-2 text-sm"
+                  placeholder="e.g. Customer cancelled before dispatch; device carrier-locked"
+                />
+              </div>
+
+              {refundError && (
+                <div className="bg-red-400/10 border border-red-400/30 rounded-lg px-3 py-2 text-sm text-red-400" data-testid="refund-error">
+                  {refundError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowRefundModal(false); setRefundError(''); }}
+                  disabled={refundLoading}
+                  className="px-4 py-2 rounded-lg border border-border-subtle hover:bg-bg-primary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRefund}
+                  disabled={refundLoading || !refundReason.trim()}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50"
+                  data-testid="refund-confirm-button"
+                >
+                  {refundLoading ? 'Refunding…' : `Refund ${formatCurrency(refundAmount)}`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

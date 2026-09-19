@@ -1111,6 +1111,40 @@ export const updateFlashOrderStatus = async (orderId, statusData) => {
   }
 };
 
+// Refund a Flash Order (tiered policy — server refuses once flashing has begun;
+// amounts are server-computed from the category)
+export const refundFlashOrder = async (orderId, refundData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/flash-orders/${orderId}/refund`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(refundData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to refund flash order');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Refund flash order error:', error);
+    throw error;
+  }
+};
+
 // Get Flash Order statistics (admin only)
 export const getFlashOrderStats = async () => {
   try {

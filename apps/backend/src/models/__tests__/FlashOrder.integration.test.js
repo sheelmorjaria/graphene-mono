@@ -392,3 +392,72 @@ describe('FlashOrder Model', () => {
     });
   });
 });
+
+// Tiered-refund policy fields + order-time service consent (2026-09-19).
+// serviceConsentConfirmed deliberately has NO `required` — existing prod
+// documents lack it and required would fail every future save (C1).
+describe('FlashOrder — service consent + refund ledger fields', () => {
+  const baseConsentFixture = () => ({
+    customerEmail: 'consent@example.com',
+    pixelModel: 'Pixel 8 Pro',
+    returnAddress: {
+      fullName: 'Consent Tester',
+      addressLine1: '1 Test Way',
+      city: 'London',
+      stateProvince: 'England',
+      postalCode: 'NW9 1TX',
+      country: 'GB'
+    },
+    factoryResetConfirmed: true,
+    serviceConsentConfirmed: true
+  });
+
+  it('stores serviceConsentConfirmed and defaults it to false', async () => {
+    const saved = await FlashOrder.create(baseConsentFixture());
+    expect(saved.serviceConsentConfirmed).toBe(true);
+
+    const without = await FlashOrder.create({ ...baseConsentFixture(), serviceConsentConfirmed: undefined });
+    expect(without.serviceConsentConfirmed).toBe(false);
+  });
+
+  it('persists the intake inspection record', async () => {
+    const adminId = new mongoose.Types.ObjectId();
+    const saved = await FlashOrder.create({
+      ...baseConsentFixture(),
+      intakeInspection: {
+        inspectedAt: new Date(),
+        conditionNotes: 'Minor scratch top-left corner. Battery health 91%. OEM unlocking available.',
+        inspectedBy: adminId
+      }
+    });
+    expect(saved.intakeInspection.conditionNotes).toContain('Minor scratch');
+    expect(String(saved.intakeInspection.inspectedBy)).toBe(String(adminId));
+  });
+
+  it('persists refund history entries and rejects an invalid status', async () => {
+    const saved = await FlashOrder.create({
+      ...baseConsentFixture(),
+      refundHistory: [{
+        refundId: 'REF-FLASH-1',
+        amount: 140.44,
+        reason: 'Cancelled before flashing',
+        category: 'cancellation_before_flashing',
+        status: 'succeeded'
+      }]
+    });
+    expect(saved.totalRefundedAmount).toBe(0);
+    expect(saved.refundHistory).toHaveLength(1);
+    expect(saved.refundHistory[0].status).toBe('succeeded');
+
+    const badStatus = new FlashOrder({
+      ...baseConsentFixture(),
+      refundHistory: [{ refundId: 'X', amount: 1, status: 'maybe' }]
+    });
+    await expect(badStatus.save()).rejects.toThrow();
+    const badCategory = new FlashOrder({
+      ...baseConsentFixture(),
+      refundHistory: [{ refundId: 'X', amount: 1, status: 'succeeded', category: 'goodwill' }]
+    });
+    await expect(badCategory.save()).rejects.toThrow();
+  });
+});

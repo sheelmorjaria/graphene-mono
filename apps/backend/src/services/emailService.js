@@ -1199,6 +1199,118 @@ class EmailService {
     }
   }
 
+
+  // Flash service refund (tiered policy): sent after a successful PayPal
+  // refund of a flashing-service order that had NOT begun flashing.
+  async sendFlashServiceRefundEmail(order, refundEntry) {
+    try {
+      const tierSentence = refundEntry?.category === 'device_unflashable'
+        ? 'Your device could not be flashed and will be returned to you at no charge.'
+        : 'Your order was cancelled before the flashing service began.';
+
+      const content = `
+        <p>Your flash service order has been refunded.</p>
+
+        <div class="order-details">
+          <h3>Refund Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value highlight">${order.orderNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Device:</span>
+            <span class="detail-value">${order.pixelModel}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Refund Amount:</span>
+            <span class="detail-value success">£${(refundEntry?.amount ?? order.totalRefundedAmount ?? 0).toFixed(2)}</span>
+          </div>
+          ${refundEntry?.refundId ? `
+          <div class="detail-row">
+            <span class="detail-label">Refund ID:</span>
+            <span class="detail-value">${refundEntry.refundId}</span>
+          </div>
+          ` : ''}
+          <div class="detail-row">
+            <span class="detail-label">Reason:</span>
+            <span class="detail-value">${refundEntry?.reason || 'Refund issued'}</span>
+          </div>
+        </div>
+
+        <p>${tierSentence}</p>
+
+        <p>The refund will appear in your original payment method within 5-10 business days. If you have any questions, please contact our support team with your order number.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Flash Service Refund',
+        content,
+        order.returnAddress?.fullName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: order.customerEmail,
+        subject: `Refund Confirmation - Flash Service ${order.orderNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'flash_service_refund_email' });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Flash service inbound inspection: emailed when the device is marked
+  // received, documenting its condition before any work begins (the
+  // chargeback paper trail for pre-existing damage claims).
+  async sendFlashServiceIntakeEmail(order) {
+    try {
+      const customerEmail = order?.customerEmail;
+      if (!customerEmail) {
+        return { success: false, error: 'No customer email available on flash order' };
+      }
+
+      const notes = order.intakeInspection?.conditionNotes || 'No issues noted.';
+      const content = `
+        <p>Your device has arrived and been inspected. Here is the condition we recorded before any work begins:</p>
+
+        <div class="order-details">
+          <h3>Intake Inspection</h3>
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value highlight">${order.orderNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Device:</span>
+            <span class="detail-value">${order.pixelModel}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Condition Recorded:</span>
+            <span class="detail-value">${notes}</span>
+          </div>
+        </div>
+
+        <p>We are proceeding with the flashing service. If the condition noted above does not match your device, contact us with your order number before your device is returned.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Device Received - Flash Service',
+        content,
+        order.returnAddress?.fullName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: customerEmail,
+        subject: `Device Received - Flash Service ${order.orderNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'flash_service_intake_email' });
+      return { success: false, error: error.message };
+    }
+  }
+
   // Send refund confirmation email
   async sendRefundConfirmationEmail(order, refundEntry) {
     try {

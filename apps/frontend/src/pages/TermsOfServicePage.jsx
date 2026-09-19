@@ -197,6 +197,45 @@ const TermsOfServicePage = () => {
                 <li>Items must be in original condition</li>
                 <li>Return shipping costs may apply</li>
               </ul>
+              <p className="mt-4 text-text-secondary">
+                The 28-day return period above applies to hardware purchases. The mail-in{' '}
+                <strong>GrapheneOS Flashing Service</strong> is governed by the terms below instead.
+              </p>
+            </div>
+          </section>
+
+          <section id="flash-service-terms" className="mb-8">
+            <h2 className="text-2xl font-heading font-semibold text-text-primary mb-4">
+              Flashing Service — Refunds, Inspection and Liability
+            </h2>
+            <div className="space-y-4 text-text-secondary">
+              <p>
+                <strong className="text-text-primary">Refunds.</strong> The Flashing Service is supplied to your
+                specification with your express consent. Under the Consumer Contracts Regulations 2013 your right to
+                cancel ends when the service is fully performed. You receive a <strong>full refund</strong> if you cancel
+                before flashing begins, and a full refund minus return shipping if we cannot flash your device (it will
+                be returned to you at no charge). Once flashing has begun the service fee is non-refundable.
+              </p>
+              <p>
+                <strong className="text-text-primary">Inbound inspection.</strong> We perform a hardware inspection on
+                receipt of your device and email you the condition we record. If the device has undisclosed physical
+                damage we will pause the service and contact you; if you cancel at that stage you are liable for return
+                shipping.
+              </p>
+              <p>
+                <strong className="text-text-primary">Pre-qualification.</strong> You must ensure your device is
+                carrier-unlocked and that 'OEM Unlocking' is available in Developer Options before sending it. If the
+                device cannot be flashed due to carrier locks, your refund is the amount paid minus return shipping.
+              </p>
+              <p>
+                <strong className="text-text-primary">Verified boot and app compatibility.</strong> {BANKING}
+              </p>
+              <p>
+                <strong className="text-text-primary">Liability.</strong> We take full responsibility if our flashing
+                process permanently bricks your device: we will reimburse the current fair market value of the exact
+                model sent, or replace it with a like-for-like unit. We are not liable for pre-existing damage or for
+                software incompatibility with third-party applications.
+              </p>
             </div>
           </section>
 

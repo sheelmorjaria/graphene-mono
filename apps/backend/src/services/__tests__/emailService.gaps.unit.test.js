@@ -801,4 +801,61 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       expect(result.success).toBe(false);
     });
   });
+
+  // ---------------- flash service emails ----------------
+  describe('sendFlashServiceRefundEmail', () => {
+    it('sends tier B wording for unflashable devices with the deducted amount', async () => {
+      const order = {
+        orderNumber: 'FLO-9-001', customerEmail: 'flash@example.com',
+        pixelModel: 'Pixel 8 Pro', totalPrice: 140.44, totalRefundedAmount: 119.99,
+        returnAddress: { fullName: 'Flash Customer' }
+      };
+      const refundEntry = { amount: 119.99, reason: 'Carrier locked', category: 'device_unflashable', refundId: 'REF-F-1' };
+
+      const result = await emailService.sendFlashServiceRefundEmail(order, refundEntry);
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.to).toBe('flash@example.com');
+      expect(call.subject).toContain('FLO-9-001');
+      expect(call.htmlContent).toContain('£119.99');
+      expect(call.htmlContent).toContain('could not be flashed');
+      expect(call.htmlContent).toContain('returned to you at no charge');
+    });
+
+    it('sends cancellation wording for tier A refunds', async () => {
+      const order = {
+        orderNumber: 'FLO-9-002', customerEmail: 'flash@example.com',
+        pixelModel: 'Pixel 9', returnAddress: { fullName: 'Flash Customer' }
+      };
+      const result = await emailService.sendFlashServiceRefundEmail(order, { amount: 140.44, reason: 'Changed mind', category: 'cancellation_before_flashing' });
+
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.htmlContent).toContain('cancelled before the flashing service began');
+    });
+  });
+
+  describe('sendFlashServiceIntakeEmail', () => {
+    it('emails the recorded intake condition to the customer', async () => {
+      const order = {
+        orderNumber: 'FLO-9-003', customerEmail: 'flash@example.com', pixelModel: 'Pixel 9 Pro XL',
+        returnAddress: { fullName: 'Flash Customer' },
+        intakeInspection: { conditionNotes: 'Minor scratch top-left corner. Battery health 91%.' }
+      };
+      const result = await emailService.sendFlashServiceIntakeEmail(order);
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.to).toBe('flash@example.com');
+      expect(call.subject).toContain('Device Received');
+      expect(call.htmlContent).toContain('Minor scratch top-left corner');
+      expect(call.htmlContent).toContain('proceeding with the flashing service');
+    });
+
+    it('fails without sending when there is no customer email', async () => {
+      const result = await emailService.sendFlashServiceIntakeEmail({ orderNumber: 'FLO-9-004' });
+      expect(result.success).toBe(false);
+      expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+  });
 });

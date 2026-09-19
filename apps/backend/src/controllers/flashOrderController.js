@@ -44,7 +44,7 @@ export const PO_BOX_ADDRESS = {
  */
 export const createFlashOrder = async (req, res) => {
   try {
-    const { customerEmail, pixelModel, returnAddress, factoryResetConfirmed, shippingRegion } = req.body;
+    const { customerEmail, pixelModel, returnAddress, factoryResetConfirmed, serviceConsentConfirmed, shippingRegion } = req.body;
 
     // Validate required fields
     if (!customerEmail || !pixelModel || !returnAddress) {
@@ -80,6 +80,13 @@ export const createFlashOrder = async (req, res) => {
       });
     }
 
+    if (serviceConsentConfirmed !== true) {
+      return res.status(400).json({
+        success: false,
+        error: 'You must acknowledge that the service begins upon receipt of your device and that you lose the right to cancel once flashing is complete'
+      });
+    }
+
     // Resolve return-shipping region (defaults to UK for backward compatibility)
     const region = Object.keys(SHIPPING_RATES).includes(shippingRegion) ? shippingRegion : 'uk';
     const returnShipping = SHIPPING_RATES[region];
@@ -99,6 +106,7 @@ export const createFlashOrder = async (req, res) => {
         phoneNumber: returnAddress.phoneNumber || ''
       },
       factoryResetConfirmed: true,
+      serviceConsentConfirmed: true,
       basePrice: BASE_PRICE,
       returnShipping,
       shippingRegion: region,
@@ -203,6 +211,20 @@ const handleFlashPaymentCaptureCompleted = async (webhookEvent) => {
 
     // Find and update the Flash Order
     const order = await FlashOrder.findById(customId);
+
+    // Refund guard: a retried/delayed CAPTURE.COMPLETED must never resurrect
+    // a refunded order (it would flip paymentStatus back to Completed and
+    // re-stamp the PO Box).
+    if (order?.paymentStatus === 'Refunded') {
+      logger.warn('Ignoring CAPTURE.COMPLETED for refunded Flash Order', { orderId: order._id });
+      return;
+    }
+
+    // Retry idempotency: already processed this exact capture — skip
+    if (order?.paymentStatus === 'Completed' && order.paymentDetails?.paypalTransactionId === captureId) {
+      logger.info('Flash Order capture already processed — skipping webhook replay', { orderId: order._id });
+      return;
+    }
     if (!order) {
       logger.warn(`Flash Order not found for webhook: ${customId}`);
       return;

@@ -206,7 +206,8 @@ describe('FlashServiceForm Component', () => {
         country: 'GB',
         phoneNumber: '+44 20 7946 0958'
       },
-      factoryResetConfirmed: true
+      factoryResetConfirmed: true,
+      serviceConsentConfirmed: true
     };
 
 
@@ -229,6 +230,7 @@ describe('FlashServiceForm Component', () => {
       await userEvent.type(screen.getByLabelText(/postal code/i), 'E1 6AN');
       await userEvent.type(screen.getByLabelText(/phone number/i), '+44 20 7946 0958');
       await userEvent.click(screen.getByLabelText(/factory reset/i));
+      await userEvent.click(screen.getByTestId('service-consent-checkbox'));
 
       await userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
 
@@ -266,6 +268,7 @@ describe('FlashServiceForm Component', () => {
 
       // Check factory reset
       await userEvent.click(screen.getByLabelText(/factory reset/i));
+      await userEvent.click(screen.getByTestId('service-consent-checkbox'));
 
       // Submit form
       const submitButton = screen.getByRole('button', { name: /continue to payment/i });
@@ -293,6 +296,7 @@ describe('FlashServiceForm Component', () => {
       await userEvent.type(screen.getByLabelText(/postal code/i), validFormData.returnAddress.postalCode);
 
       await userEvent.click(screen.getByLabelText(/factory reset/i));
+      await userEvent.click(screen.getByTestId('service-consent-checkbox'));
 
       const submitButton = screen.getByRole('button', { name: /continue to payment/i });
       await userEvent.click(submitButton);
@@ -324,6 +328,7 @@ describe('FlashServiceForm Component', () => {
       await userEvent.type(screen.getByLabelText(/postal code/i), validFormData.returnAddress.postalCode);
 
       await userEvent.click(screen.getByLabelText(/factory reset/i));
+      await userEvent.click(screen.getByTestId('service-consent-checkbox'));
 
       const submitButton = screen.getByRole('button', { name: /continue to payment/i });
       await userEvent.click(submitButton);
@@ -388,4 +393,43 @@ describe('FlashServiceForm Component', () => {
       });
     });
   });
+
+// ---------------- service consent (UK CCR 2013) ----------------
+describe('service consent confirmation', () => {
+  const fillEverythingButConsent = async () => {
+    await userEvent.type(screen.getByLabelText(/email/i), 'consent@example.com');
+    await userEvent.selectOptions(screen.getByLabelText(/pixel model/i), 'Pixel 8 Pro');
+    await userEvent.type(screen.getByLabelText(/full name/i), 'Consent Tester');
+    await userEvent.type(screen.getByLabelText(/address line 1/i), '1 Test Way');
+    await userEvent.type(screen.getByLabelText(/city/i), 'London');
+    await userEvent.type(screen.getByLabelText(/state\/province/i), 'England');
+    await userEvent.type(screen.getByLabelText(/postal code/i), 'NW9 1TX');
+  };
+
+  it('keeps the submit button disabled until the consent box is ticked', async () => {
+    render(<FlashServiceForm onSuccess={vi.fn()} onError={vi.fn()} />);
+    await fillEverythingButConsent();
+    await userEvent.click(screen.getByLabelText(/factory reset/i));
+
+    const submit = screen.getByRole('button', { name: /continue to payment/i });
+    expect(submit).toBeDisabled();
+
+    await userEvent.click(screen.getByTestId('service-consent-checkbox'));
+    expect(submit).not.toBeDisabled();
+  });
+
+  it('sends serviceConsentConfirmed with the order payload', async () => {
+    render(<FlashServiceForm onSuccess={vi.fn()} onError={vi.fn()} />);
+    await fillEverythingButConsent();
+    await userEvent.click(screen.getByLabelText(/factory reset/i));
+    await userEvent.click(screen.getByTestId('service-consent-checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: /continue to payment/i }));
+
+    await waitFor(() => {
+      expect(createFlashOrder).toHaveBeenCalledWith(expect.objectContaining({
+        serviceConsentConfirmed: true
+      }));
+    });
+  });
+});
 });

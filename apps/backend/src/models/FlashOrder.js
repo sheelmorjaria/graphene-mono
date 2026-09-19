@@ -77,6 +77,70 @@ const flashOrderSchema = new mongoose.Schema({
     required: [true, 'Factory reset confirmation is required'],
     default: false
   },
+  // UK CCR 2013: consumer must expressly consent to the service beginning
+  // and acknowledge losing the cancel-right once it is fully performed.
+  // Controller-enforced (like factoryResetConfirmed) but deliberately NOT
+  // schema-required — existing production documents lack the field and a
+  // `required` validator would fail every future save of those docs.
+  serviceConsentConfirmed: {
+    type: Boolean,
+    default: false
+  },
+  // Inbound inspection at Device_Received — the chargeback paper trail for
+  // pre-existing damage claims
+  intakeInspection: {
+    inspectedAt: { type: Date },
+    conditionNotes: { type: String, trim: true, maxlength: 2000 },
+    inspectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  },
+  // Refund ledger (tiered flash-service refund policy)
+  totalRefundedAmount: {
+    type: Number,
+    min: [0, 'Total refunded amount cannot be negative'],
+    default: 0
+  },
+  refundHistory: [{
+    refundId: {
+      type: String,
+      required: [true, 'Refund ID is required'],
+      trim: true,
+      maxlength: 255
+    },
+    amount: {
+      type: Number,
+      required: [true, 'Refund amount is required'],
+      min: [0, 'Refund amount cannot be negative']
+    },
+    date: {
+      type: Date,
+      required: [true, 'Refund date is required'],
+      default: Date.now
+    },
+    reason: {
+      type: String,
+      trim: true,
+      maxlength: 500
+    },
+    category: {
+      type: String,
+      enum: {
+        values: ['cancellation_before_flashing', 'device_unflashable'],
+        message: 'Refund category must be one of: cancellation_before_flashing, device_unflashable'
+      }
+    },
+    adminUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ['pending', 'succeeded', 'failed'],
+        message: 'Refund status must be one of: pending, succeeded, failed'
+      },
+      default: 'pending'
+    }
+  }],
   orderStatus: {
     type: String,
     required: true,

@@ -23,7 +23,8 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
       country: 'GB',
       phoneNumber: ''
     },
-    factoryResetConfirmed: false
+    factoryResetConfirmed: false,
+    serviceConsentConfirmed: false
   });
 
   const [errors, setErrors] = useState({});
@@ -37,6 +38,10 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
 
   const isFormValid = () => {
     if (!formData.factoryResetConfirmed) return false;
+
+    // UK CCR 2013: express consent to the service beginning + loss of the
+    // cancel-right once flashing completes
+    if (!formData.serviceConsentConfirmed) return false;
 
     const hasEmail = validateEmail(formData.customerEmail);
     const hasPixelModel = formData.pixelModel !== '';
@@ -120,7 +125,8 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
           country: formData.returnAddress.country,
           phoneNumber: formData.returnAddress.phoneNumber
         },
-        factoryResetConfirmed: true
+        factoryResetConfirmed: true,
+        serviceConsentConfirmed: true
       };
 
       // Only include optional fields if they have values
@@ -362,6 +368,25 @@ const FlashServiceForm = ({ onSuccess, onError }) => {
             <span className="text-sm text-text-secondary">
               I confirm that my device has been factory reset and all personal data has been removed.
               I understand that Graphene Security is not responsible for any data loss.
+            </span>
+          </label>
+        </div>
+
+        {/* Service Consent (UK CCR 2013 — right to cancel ends once the
+            service supplied to the customer's specification is performed) */}
+        <div className="p-4 bg-bg-elevated rounded-lg border border-border-subtle">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.serviceConsentConfirmed}
+              onChange={(e) => handleInputChange('serviceConsentConfirmed', e.target.checked)}
+              className="mt-1 w-5 h-5 text-cyan-400 bg-bg-card border-border-subtle rounded focus:ring-cyan-400 focus:ring-2"
+              data-testid="service-consent-checkbox"
+            />
+            <span className="text-sm text-text-secondary">
+              I understand that the GrapheneOS Flash Service is performed to my specification. I consent to the
+              service beginning upon receipt of my device, and I acknowledge that I lose my right to cancel and
+              receive a refund of the service fee once the flashing process is complete.
             </span>
           </label>
         </div>

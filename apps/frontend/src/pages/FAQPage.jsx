@@ -277,7 +277,9 @@ const FAQPage = () => {
           a: (
             <div className="space-y-3 text-text-secondary">
               <p>
-                We offer a <strong className="text-cyan-400">28-day return policy</strong> for most items.
+                We offer a <strong className="text-cyan-400">28-day return policy</strong> for most items. The 28-day policy covers hardware purchases; the mail-in Flashing Service is
+                refundable in full before flashing begins (minus return shipping if the device cannot be flashed) and
+                the service fee is non-refundable once flashing has started.
                 To be eligible for a return, the item must be:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">

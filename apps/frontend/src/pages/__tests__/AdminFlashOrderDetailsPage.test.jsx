@@ -198,4 +198,73 @@ describe('AdminFlashOrderDetailsPage', () => {
       expect(screen.queryByText('Update Order Status')).not.toBeInTheDocument();
     });
   });
+
+// ---------------- flash refund UI (tiered policy) ----------------
+describe('refund UI', () => {
+  const refundableOrder = {
+    ...mockOrder,
+    orderStatus: 'Device_Received',
+    paymentStatus: 'Completed',
+    totalPrice: 140.44,
+    returnShipping: 20.45,
+    paymentDetails: { paypalTransactionId: 'CAP-1' }
+  };
+
+  it('shows the Refund Service Fee button for a paid, not-yet-flashed order', async () => {
+    adminService.getFlashOrderById.mockResolvedValue({ data: refundableOrder });
+    render(<AdminFlashOrderDetailsPage />);
+
+    expect(await screen.findByTestId('refund-flash-order-button')).toBeInTheDocument();
+    expect(screen.queryByTestId('non-refundable-note')).not.toBeInTheDocument();
+  });
+
+  it('shows the non-refundable note once flashing has begun', async () => {
+    adminService.getFlashOrderById.mockResolvedValue({ data: { ...refundableOrder, orderStatus: 'Flashing_In_Progress' } });
+    render(<AdminFlashOrderDetailsPage />);
+
+    expect(await screen.findByTestId('non-refundable-note')).toBeInTheDocument();
+    expect(screen.queryByTestId('refund-flash-order-button')).not.toBeInTheDocument();
+  });
+
+  it('opens the modal, computes the amount by category, and refunds with a reason', async () => {
+    adminService.getFlashOrderById.mockResolvedValue({ data: refundableOrder });
+    adminService.refundFlashOrder.mockResolvedValue({ success: true });
+    render(<AdminFlashOrderDetailsPage />);
+
+    fireEvent.click(await screen.findByTestId('refund-flash-order-button'));
+    expect(screen.getByTestId('refund-modal')).toBeInTheDocument();
+    // Full amount by default
+    expect(screen.getByTestId('refund-amount-display')).toHaveTextContent('£140.44');
+
+    // Switch to unflashable — total minus shipping
+    fireEvent.change(screen.getByLabelText(/category/i), { target: { value: 'device_unflashable' } });
+    expect(screen.getByTestId('refund-amount-display')).toHaveTextContent('£119.99');
+
+    fireEvent.change(screen.getByLabelText(/reason/i), { target: { value: 'Carrier locked on arrival' } });
+    fireEvent.click(screen.getByTestId('refund-confirm-button'));
+
+    await waitFor(() => {
+      expect(adminService.refundFlashOrder).toHaveBeenCalledWith(mockOrder._id, {
+        reason: 'Carrier locked on arrival',
+        category: 'device_unflashable'
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('refund-modal')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders a server 409 (policy block) in the modal', async () => {
+    adminService.getFlashOrderById.mockResolvedValue({ data: refundableOrder });
+    adminService.refundFlashOrder.mockRejectedValue(new Error('Not refundable: the flashing service has begun.'));
+    render(<AdminFlashOrderDetailsPage />);
+
+    fireEvent.click(await screen.findByTestId('refund-flash-order-button'));
+    fireEvent.change(screen.getByLabelText(/reason/i), { target: { value: 'Attempted refund' } });
+    fireEvent.click(screen.getByTestId('refund-confirm-button'));
+
+    expect(await screen.findByTestId('refund-error')).toHaveTextContent(/service has begun/i);
+  });
+});
+
 });

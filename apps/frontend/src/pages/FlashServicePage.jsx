@@ -91,7 +91,43 @@ const FlashServicePage = () => {
                   returned unflashed at the sender's expense and no refund of the service fee can be made.
                 </span>
               </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-400 mt-0.5">•</span>
+                <span>
+                  Ensure <strong className="text-text-primary">'OEM Unlocking'</strong> is available in your device's
+                  Developer Options before sending it — carrier-locked devices often have it disabled, and the bootloader
+                  cannot be unlocked without it.
+                </span>
+              </li>
             </ul>
+          </div>
+        )}
+
+        {/* Refund policy for the flashing service (differs from the 28-day
+            hardware policy — service supplied to specification, UK CCR 2013) */}
+        {step === 'form' && (
+          <div className="max-w-2xl mx-auto mb-8 p-5 bg-bg-card border border-border-subtle rounded-lg" data-testid="refund-policy">
+            <h2 className="text-sm font-heading font-semibold text-cyan-400 uppercase tracking-wider mb-3">
+              Refund Policy — Flash Service
+            </h2>
+            <ul className="space-y-2 text-sm text-text-secondary">
+              <li className="flex items-start gap-2">
+                <span className="text-cyan-400 mt-0.5">✓</span>
+                <span><strong className="text-text-primary">Cancel any time before flashing begins</strong> for a full refund of everything you paid.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-cyan-400 mt-0.5">✓</span>
+                <span>If we <strong className="text-text-primary">cannot flash your device</strong> (for example it arrives carrier-locked with OEM Unlocking unavailable), you are refunded in full minus return shipping, and your device is returned to you at no charge.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-400 mt-0.5">!</span>
+                <span>Once flashing has begun the <strong className="text-text-primary">service fee is non-refundable</strong>: this service is supplied to your specification with your express consent, so your right to cancel ends when the service is performed (Consumer Contracts Regulations 2013).</span>
+              </li>
+            </ul>
+            <p className="mt-3 text-xs text-text-muted border-t border-border-subtle pt-3">
+              Please note: GrapheneOS alters the device's verified boot state. Certain high-security banking apps may not
+              function on the flashed device. We are not responsible for software incompatibility post-flash.
+            </p>
           </div>
         )}
 
