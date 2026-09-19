@@ -486,7 +486,7 @@ const AdminOrderDetailsPage = () => {
                 <div className="px-6 py-4">
                   <div className="mb-4">
                     <p className="text-sm text-gray-600 mb-2">
-                      Order Total: <span className="font-medium">{formatCurrency(order.finalAmount)}</span>
+                      Order Total: <span className="font-medium">{formatCurrency(order.totalAmount)}</span>
                     </p>
                     {order.refundHistory && order.refundHistory.length > 0 && (
                       <p className="text-sm text-gray-600 mb-2">
