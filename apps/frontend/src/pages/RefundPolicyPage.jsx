@@ -249,7 +249,7 @@ const RefundPolicyPage = () => {
             Returns & Exchanges Policy
           </p>
           <p className="text-text-muted mt-2">
-            Last updated: January 2026
+            Last updated: September 2026
           </p>
         </div>
 
