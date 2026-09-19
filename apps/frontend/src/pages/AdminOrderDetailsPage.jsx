@@ -572,10 +572,10 @@ const AdminOrderDetailsPage = () => {
                             <div className="h-16 w-16 flex-shrink-0">
                               <img
                                 className="h-16 w-16 rounded-lg object-cover"
-                                src={item.productImage || '/placeholder-product.jpg'}
+                                src={item.productImage || '/images/placeholder.png'}
                                 alt={item.productName}
                                 onError={(e) => {
-                                  e.target.src = '/placeholder-product.jpg';
+                                  e.target.src = '/images/placeholder.png';
                                 }}
                               />
                             </div>
