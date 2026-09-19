@@ -112,6 +112,19 @@ describe('AdminOrderDetailsPage — Devices / IMEIs', () => {
     expect(screen.getByTestId(`allocate-input-${ITEM_ID}`)).toBeInTheDocument();
   });
 
+  it('renders Items Ordered from real schema fields (no invented names)', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('GrapheneOS Pixel 9 Pro').length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByText(/good · Obsidian · 256GB/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SKU: PIX-9PRO-V1').length).toBeGreaterThan(0);
+    // Real money fields render — no £NaN anywhere on the page
+    expect(screen.getAllByText('£999.99').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('NaN');
+  });
+
   it('allocates a scanned IMEI to the order item (JIT flow)', async () => {
     adminService.allocateDevice.mockResolvedValue({
       data: { itemAllocation: { itemId: ITEM_ID, allocated: 1, required: 1 } }

@@ -572,8 +572,8 @@ const AdminOrderDetailsPage = () => {
                             <div className="h-16 w-16 flex-shrink-0">
                               <img
                                 className="h-16 w-16 rounded-lg object-cover"
-                                src={item.image}
-                                alt={item.name}
+                                src={item.productImage || '/placeholder-product.jpg'}
+                                alt={item.productName}
                                 onError={(e) => {
                                   e.target.src = '/placeholder-product.jpg';
                                 }}
@@ -581,22 +581,25 @@ const AdminOrderDetailsPage = () => {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                {item.name}
+                                {item.productName}
                               </div>
                               <div className="text-sm text-gray-500">
-                                SKU: {item.slug}
+                                {[item.condition, item.color, item.storage].filter(Boolean).join(' · ')}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                SKU: {item.sku}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(item.price)}
+                          {formatCurrency(item.unitPrice)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {item.quantity}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatCurrency(item.lineTotal)}
+                          {formatCurrency(item.totalPrice)}
                         </td>
                       </tr>
                     ))}
