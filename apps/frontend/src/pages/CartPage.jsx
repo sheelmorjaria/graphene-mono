@@ -438,13 +438,6 @@ const CartPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                   </svg>
                 </Link>
-
-                <Link
-                  to="/products"
-                  className="block w-full text-center text-cyan-400 hover:text-matrix-400 py-3 mt-3 font-mono text-sm transition-colors"
-                >
-                  Continue Shopping
-                </Link>
               </div>
             </div>
           </div>
