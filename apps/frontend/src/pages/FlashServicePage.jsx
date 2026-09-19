@@ -65,6 +65,36 @@ const FlashServicePage = () => {
           </div>
         </div>
 
+        {/* Device eligibility requirements — shown on the order step */}
+        {step === 'form' && (
+          <div className="max-w-2xl mx-auto mb-8 p-5 bg-yellow-400/10 border border-yellow-400/30 rounded-lg" data-testid="device-requirements">
+            <h2 className="text-sm font-heading font-semibold text-yellow-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Before you send your device
+            </h2>
+            <ul className="space-y-2 text-sm text-text-secondary">
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-400 mt-0.5">•</span>
+                <span>
+                  Your Pixel must be <strong className="text-text-primary">carrier unlocked (SIM-free)</strong>.
+                  Carrier-locked devices cannot have their bootloader unlocked, so GrapheneOS cannot be installed.
+                  Check with your carrier before ordering if you're unsure.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-400 mt-0.5">•</span>
+                <span>
+                  Your device must <strong className="text-text-primary">not be blacklisted</strong> — reported lost or
+                  stolen, or blocked by Google or your carrier. We verify the IMEI on arrival; blacklisted devices are
+                  returned unflashed at the sender's expense and no refund of the service fee can be made.
+                </span>
+              </li>
+            </ul>
+          </div>
+        )}
+
         {/* Progress indicator */}
         <div className="max-w-2xl mx-auto mb-8">
           <div className="flex items-center justify-between">
