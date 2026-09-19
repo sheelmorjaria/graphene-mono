@@ -74,15 +74,9 @@ const RefundPolicyPage = () => {
           <p><strong className="text-cyan-400">If approved:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-4">
             <li>Refund will be processed within <strong className="text-matrix-400">5-10 business days</strong></li>
-            <li>Credit will be applied to your original payment method</li>
+            <li>Refunds are issued to your PayPal account — PayPal is our only payment method, so your refund returns the way you paid</li>
             <li>You will receive an email confirmation</li>
           </ul>
-          <p><strong className="text-cyan-400">Payment Processing Times:</strong></p>
-          <ul className="list-disc list-inside space-y-1 ml-4">
-            <li>Credit/Debit Cards: 5-10 business days</li>
-            <li>PayPal: 3-5 business days</li>
-          </ul>
-        </div>
       )
     },
     {
@@ -162,9 +156,9 @@ const RefundPolicyPage = () => {
         <div className="space-y-4 text-text-secondary">
           <p>If you haven't received your refund within the stated timeframes:</p>
           <ol className="list-decimal list-inside space-y-2 ml-4">
-            <li>Check your bank account again</li>
-            <li>Contact your credit card company (processing may take additional time)</li>
-            <li>Contact your bank (there may be processing delays)</li>
+            <li>Check your PayPal account again, including your linked bank or card (PayPal sometimes routes refunds to the underlying funding source)</li>
+            <li>If you paid as a PayPal guest by debit/credit card, check that card's statement</li>
+            <li>Contact PayPal support (processing may take additional time on their side)</li>
             <li>If you've completed all above and still not received your refund, contact us</li>
           </ol>
           <p className="text-text-muted">Please include your order number and the date of return in your communication.</p>

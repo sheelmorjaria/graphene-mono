@@ -338,11 +338,12 @@ const FAQPage = () => {
           q: 'What payment methods do you accept?',
           a: (
             <div className="space-y-3 text-text-secondary">
-              <p>We accept multiple payment methods for your convenience:</p>
+              <p>We accept <strong className="text-cyan-400">PayPal</strong> for all payments:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Credit/Debit Cards (Visa, Mastercard, Maestro)</li>
-                <li>PayPal</li>
+                <li>PayPal balance, linked bank account, or linked card</li>
+                <li>No PayPal account? PayPal's own checkout offers a guest "pay by debit/credit card" option where available</li>
               </ul>
+              <p>All transactions are processed over an SSL encrypted checkout.</p>
             </div>
           )
         },
@@ -354,10 +355,9 @@ const FAQPage = () => {
                 Absolutely. We take security seriously:
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>All payments are encrypted with TLS 1.3</li>
-                <li>We do not store complete credit card details</li>
-                <li>Payment processing is handled by PCI-compliant providers</li>
-                <li>Crypto payments are processed through reputable services</li>
+                <li>All payments are processed by PayPal over encrypted TLS connections</li>
+                <li>We never see or store your card details — PayPal handles all payment data</li>
+                <li>No account required: you can check out as a guest via PayPal</li>
               </ul>
               <div className="mt-4 p-4 bg-matrix-subtle border border-matrix rounded-lg">
                 <p className="text-matrix-400 font-mono text-sm">
