@@ -175,24 +175,27 @@ const FlashOrderSuccessPage = () => {
               Shipping Instructions
             </h2>
 
-            {/* PO Box Address */}
-            <div className="bg-bg-elevated rounded-lg p-4 mb-4">
-              <h3 className="text-sm font-heading font-semibold text-cyan-400 uppercase tracking-wider mb-3">
-                Send Your Device To:
-              </h3>
-              <div className="space-y-1 text-text-primary">
-                {instructions.poBoxAddress.recipientName && (
-                  <p className="font-semibold">{instructions.poBoxAddress.recipientName}</p>
-                )}
-                {instructions.poBoxAddress.poBoxName && (
-                  <p>{instructions.poBoxAddress.poBoxName}</p>
-                )}
-                <p className={instructions.poBoxAddress.recipientName ? '' : 'font-semibold'}>{instructions.poBoxAddress.street}</p>
-                <p>{instructions.poBoxAddress.city}</p>
-                <p>{instructions.poBoxAddress.postalCode}</p>
-                <p>{instructions.poBoxAddress.country}</p>
+            {/* PO Box Address — guarded: the order may predate PO Box stamping
+                or the webhook may not have landed yet */}
+            {instructions.poBoxAddress && (
+              <div className="bg-bg-elevated rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-heading font-semibold text-cyan-400 uppercase tracking-wider mb-3">
+                  Send Your Device To:
+                </h3>
+                <div className="space-y-1 text-text-primary">
+                  {instructions.poBoxAddress.recipientName && (
+                    <p className="font-semibold">{instructions.poBoxAddress.recipientName}</p>
+                  )}
+                  {instructions.poBoxAddress.poBoxName && (
+                    <p>{instructions.poBoxAddress.poBoxName}</p>
+                  )}
+                  <p className={instructions.poBoxAddress.recipientName ? '' : 'font-semibold'}>{instructions.poBoxAddress.street}</p>
+                  <p>{instructions.poBoxAddress.city}</p>
+                  <p>{instructions.poBoxAddress.postalCode}</p>
+                  <p>{instructions.poBoxAddress.country}</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Important Instructions */}
             <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-4">

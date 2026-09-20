@@ -489,6 +489,12 @@ export const captureFlashOrderPayPalOrder = async (req, res) => {
     order.paymentDetails.paypalTransactionId = capture?.id || captureResponse.result.id;
     if (payerId) order.paymentDetails.paypalPayerId = payerId;
     order.paymentDetails.paypalPayerEmail = captureResponse.result.payer?.emailAddress;
+    // Stamp the PO Box at capture — the webhook does this too, but a capture
+    // arriving before its webhook left poBoxAddress null and crashed the
+    // success page (prod: reading 'recipientName' of undefined).
+    if (!order.poBoxAddress) {
+      order.poBoxAddress = PO_BOX_ADDRESS;
+    }
     order.statusHistory.push({ status: 'Paid', note: 'PayPal payment captured' });
     await order.save();
 
