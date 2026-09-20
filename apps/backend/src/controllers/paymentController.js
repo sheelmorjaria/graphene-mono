@@ -640,6 +640,15 @@ export const capturePayPalPayment = async (req, res) => {
               if (!base.productImage) {
                 base.productImage = variation.images?.[0] || product.images?.[0] || null;
               }
+              // Price from the SAME source create-order charged PayPal from
+              // (catalog variation) — the cart's stored unitPrice can be
+              // stale if a price sync landed between add-to-cart and payment
+              // (prod incident: item showed £265 while £270 was charged).
+              const catalogPrice = variation.salePrice || variation.price;
+              if (typeof catalogPrice === 'number' && catalogPrice > 0) {
+                base.unitPrice = catalogPrice;
+                base.totalPrice = Math.round(catalogPrice * item.quantity * 100) / 100;
+              }
             }
           } catch {
             // Catalog lookup is best-effort enrichment; the cart-supplied
