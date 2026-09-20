@@ -389,17 +389,26 @@ export const getOrderById = async (req, res) => {
               in: {
                 _id: '$$item._id',
                 productId: '$$item.productId',
-                name: '$$item.name',
-                slug: '$$item.slug',
-                price: '$$item.price',
+                // REAL orderItemSchema field names — this projection used to
+                // rename them to name/slug/price/lineTotal/image, which do
+                // not exist on the schema, so the admin Items Ordered table
+                // rendered blanks and £NaN even when the data was correct.
+                productName: '$$item.productName',
+                productSlug: '$$item.productSlug',
+                productImage: '$$item.productImage',
+                variationId: '$$item.variationId',
+                sku: '$$item.sku',
+                condition: '$$item.condition',
+                color: '$$item.color',
+                storage: '$$item.storage',
                 quantity: '$$item.quantity',
-                image: '$$item.image',
-                lineTotal: '$$item.lineTotal',
+                unitPrice: '$$item.unitPrice',
+                totalPrice: '$$item.totalPrice',
+                devices: '$$item.devices',
                 productDetails: {
                   currentName: '$$item.productDetails.name',
                   currentSlug: '$$item.productDetails.slug',
-                  currentImage: '$$item.productDetails.image',
-                  currentPrice: '$$item.productDetails.price'
+                  currentImage: '$$item.productDetails.image'
                 }
               }
             }

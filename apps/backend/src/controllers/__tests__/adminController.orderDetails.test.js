@@ -94,11 +94,16 @@ describe('Admin Controller - getOrderById', () => {
         {
           _id: mongoose.Types.ObjectId(),
           productId: mongoose.Types.ObjectId(),
-          name: 'Test Product',
-          price: 89.99,
+          productName: 'GrapheneOS Pixel 9 Pro',
+          productSlug: 'grapheneos-pixel-9-pro',
+          productImage: '/images/products/9proobsidian.jpg',
+          sku: 'PIX-9PRO-256GB-OBSIDIAN-B',
+          condition: 'good',
+          color: 'Obsidian',
+          storage: '256GB',
           quantity: 1,
-          lineTotal: 89.99,
-          image: 'test-image.jpg'
+          unitPrice: 89.99,
+          totalPrice: 89.99
         }
       ],
       customer: {
