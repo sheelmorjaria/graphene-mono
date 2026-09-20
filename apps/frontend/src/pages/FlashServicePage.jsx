@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import FlashServiceForm from '../components/checkout/FlashServiceForm';
-import PayPalPayment from '../components/checkout/PayPalPayment';
+import FlashOrderPayPalPayment from '../components/checkout/FlashOrderPayPalPayment';
 import { createFlashOrder, formatFlashOrderCurrency, getShippingOption } from '../services/flashOrderService';
 import SEOWrapper from '../components/SEO/SEOWrapper';
 
@@ -202,22 +202,13 @@ const FlashServicePage = () => {
               </div>
             </div>
 
-            <PayPalPayment
-              flashOrderId={orderData.orderId}
-              orderSummary={{
-                orderTotal: orderData.totalPrice || 140.44,
-                cartTotal: orderData.basePrice || 119.99,
-                shippingCost: orderData.returnShipping || 20.45,
-                items: [{
-                  name: `GrapheneOS Flashing - ${orderData.pixelModel}`,
-                  quantity: 1,
-                  unitPrice: orderData.basePrice || 119.99,
-                  totalPrice: orderData.basePrice || 119.99
-                }]
-              }}
-              onPaymentSuccess={handlePaymentSuccess}
-              onPaymentError={handlePaymentError}
-              onPaymentCancel={() => setStep('form')}
+            {/* Server-side PayPal (backend creates + captures; amounts are
+                never client-controlled, and payment status is final BEFORE
+                we navigate — no webhook-timing "Order Pending" limbo). */}
+            <FlashOrderPayPalPayment
+              orderId={orderData.orderId}
+              amount={orderData.totalPrice || 140.44}
+              onSuccess={handlePaymentSuccess}
             />
           </div>
         )}

@@ -15,7 +15,7 @@ vi.mock('../../components/checkout/FlashServiceForm', () => ({
   default: () => <div data-testid="flash-service-form">form</div>
 }));
 
-vi.mock('../../components/checkout/PayPalPayment', () => ({
+vi.mock('../../components/checkout/FlashOrderPayPalPayment', () => ({
   default: () => <div data-testid="paypal-payment">payment</div>
 }));
 
