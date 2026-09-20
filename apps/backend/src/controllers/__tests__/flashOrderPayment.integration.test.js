@@ -1,3 +1,4 @@
+import emailService from '../../services/emailService.js';
 import '../../test/setup.js';
 import request from 'supertest';
 import express from 'express';
@@ -108,6 +109,8 @@ describe('Flash order PayPal payment flow', () => {
       const instructions = await request(app).get(`/api/flash-orders/${testOrder._id}/instructions`);
       expect(instructions.status).toBe(200);
       expect(instructions.body.data.paymentStatus).toBe('Completed');
+    expect(emailService.sendFlashOrderConfirmationEmail).toHaveBeenCalled();
+
     });
 
     it('is idempotent for an already-captured order', async () => {

@@ -858,4 +858,37 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       expect(sendEmailSpy).not.toHaveBeenCalled();
     });
   });
+
+  // ---------------- flash order confirmation ----------------
+  describe('sendFlashOrderConfirmationEmail', () => {
+    it('sends payment confirmation with the PO Box shipping instructions', async () => {
+      const order = {
+        orderNumber: 'FLO-1-777', customerEmail: 'flash-conf@example.com', pixelModel: 'Pixel 9a',
+        basePrice: 119.99, returnShipping: 20.45, totalPrice: 140.44,
+        returnAddress: { fullName: 'Flash Conf Customer' },
+        poBoxAddress: {
+          recipientName: 'Mr Sheel Morjaria', poBoxName: 'Security', street: 'PO Box 81688',
+          city: 'London', postalCode: 'NW9 1TX', country: 'United Kingdom',
+          instructions: 'Include your order number on the package.'
+        }
+      };
+      const result = await emailService.sendFlashOrderConfirmationEmail(order);
+
+      expect(result.success).toBe(true);
+      const call = sendEmailSpy.mock.calls[0][0];
+      expect(call.to).toBe('flash-conf@example.com');
+      expect(call.subject).toContain('FLO-1-777');
+      expect(call.htmlContent).toContain('Pixel 9a');
+      expect(call.htmlContent).toContain('£140.44');
+      expect(call.htmlContent).toContain('PO Box 81688');
+      expect(call.htmlContent).toContain('NW9 1TX');
+      expect(call.htmlContent).toContain('FLO-1-777'); // order number with parcel
+    });
+
+    it('fails without sending when there is no customer email', async () => {
+      const result = await emailService.sendFlashOrderConfirmationEmail({ orderNumber: 'FLO-1-778' });
+      expect(result.success).toBe(false);
+      expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+  });
 });

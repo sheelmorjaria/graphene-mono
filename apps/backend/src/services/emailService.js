@@ -514,12 +514,14 @@ class EmailService {
   // Send order confirmation email
   async sendOrderConfirmationEmail(order) {
     try {
-      const itemsHtml = order.items.map(item => `
+      const itemsHtml = order.items.map(item => {
+        const variant = [item.condition, item.color, item.storage].filter(Boolean).join(' · ');
+        return `
         <div class="item">
-          <strong>${item.productName}</strong><br>
+          <strong>${item.productName}</strong>${variant ? `<br><span style="color:#6b7280">${variant}</span>` : ''}<br>
           Quantity: ${item.quantity} × £${item.unitPrice.toFixed(2)} = £${item.totalPrice.toFixed(2)}
         </div>
-      `).join('');
+      `;}).join('');
 
       const content = `
         <p>Thank you for your order! We're excited to process your GrapheneOS device.</p>
@@ -1199,6 +1201,81 @@ class EmailService {
     }
   }
 
+
+  // Flash order payment confirmation: sent when a flash service order is
+  // paid. This is the customer's "what happens next" email — it carries the
+  // PO Box shipping instructions, so it must arrive right after payment.
+  async sendFlashOrderConfirmationEmail(order) {
+    try {
+      const customerEmail = order?.customerEmail;
+      if (!customerEmail) {
+        return { success: false, error: 'No customer email available on flash order' };
+      }
+
+      const address = order.poBoxAddress || {};
+      const addressLines = [
+        address.recipientName,
+        address.poBoxName,
+        address.street,
+        [address.city, address.postalCode].filter(Boolean).join(' '),
+        address.country
+      ].filter(Boolean).join('<br>');
+
+      const content = `
+        <p>Thank you — your payment for the GrapheneOS Flashing Service has been received.</p>
+
+        <div class="order-details">
+          <h3>Order Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value highlight">${order.orderNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Device:</span>
+            <span class="detail-value">${order.pixelModel}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Flashing Service:</span>
+            <span class="detail-value">£${(order.basePrice ?? 0).toFixed(2)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Return Shipping:</span>
+            <span class="detail-value">£${(order.returnShipping ?? 0).toFixed(2)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Total Paid:</span>
+            <span class="detail-value success">£${(order.totalPrice ?? 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="order-details">
+          <h3>Next Step — Send Us Your Device</h3>
+          <p>Post your ${order.pixelModel} to:</p>
+          <p>${addressLines}</p>
+          <p>${address.instructions || 'Include your order number on the package. Wrap device in bubble wrap and use a sturdy box.'}</p>
+          <p>Include your order number (<strong>${order.orderNumber}</strong>) with the parcel so we can match it to your order. We recommend a tracked service — we cannot be responsible for parcels lost in transit to us.</p>
+        </div>
+
+        <p>Once your device arrives we will inspect it, flash GrapheneOS, and return it securely. We'll email you when it's on its way back.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Flash Service Order Confirmed',
+        content,
+        order.returnAddress?.fullName || 'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: customerEmail,
+        subject: `Order Confirmation - Flash Service ${order.orderNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'flash_order_confirmation_email' });
+      return { success: false, error: error.message };
+    }
+  }
 
   // Flash service refund (tiered policy): sent after a successful PayPal
   // refund of a flashing-service order that had NOT begun flashing.

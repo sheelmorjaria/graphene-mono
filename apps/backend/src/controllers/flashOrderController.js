@@ -1,3 +1,4 @@
+import emailService from '../services/emailService.js';
 import FlashOrder from '../models/FlashOrder.js';
 import { getPayPalClient } from './paymentController.js';
 import { verifyPayPalWebhookSignature } from '../services/paypalWebhookVerificationService.js';
@@ -233,6 +234,14 @@ const handleFlashPaymentCaptureCompleted = async (webhookEvent) => {
     // Update order status and populate PO Box
     order.paymentStatus = 'Completed';
     order.orderStatus = 'Paid';
+    // Confirmation email — the refund/replay guards above mean we only reach
+    // here for orders the capture endpoint did NOT already complete (its
+    // early-return skips already-Completed orders), so no double-send.
+    try {
+      await emailService.sendFlashOrderConfirmationEmail(order);
+    } catch (emailError) {
+      logError(emailError, { context: 'flash_webhook_confirmation_email', orderId: order._id });
+    }
     order.poBoxAddress = PO_BOX_ADDRESS;
     order.paymentDetails = {
       paypalOrderId: paypalOrderId,
@@ -497,6 +506,13 @@ export const captureFlashOrderPayPalOrder = async (req, res) => {
     }
     order.statusHistory.push({ status: 'Paid', note: 'PayPal payment captured' });
     await order.save();
+
+    // Confirmation email — fire-and-forget, never fails the capture
+    try {
+      await emailService.sendFlashOrderConfirmationEmail(order);
+    } catch (emailError) {
+      logError(emailError, { context: 'flash_capture_confirmation_email', orderId: order._id });
+    }
 
     logPaymentEvent('flash_payment_completed', {
       orderId: order._id,

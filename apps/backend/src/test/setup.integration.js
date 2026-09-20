@@ -144,6 +144,7 @@ vi.mock('../services/emailService.js', () => ({
     sendReturnRejectedEmail: emailStub(),
     sendReturnRefundedEmail: emailStub(),
     sendFlashServiceRefundEmail: emailStub(),
+    sendFlashOrderConfirmationEmail: emailStub(),
     sendFlashServiceIntakeEmail: emailStub(),
     sendRefundConfirmationEmail: emailStub(),
     sendAccountDisabledEmail: emailStub(),
