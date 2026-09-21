@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { startRoyalMailPoller } from './src/services/orderTrackingPoller.js';
 import dotenv from 'dotenv';
 import logger, { logError } from './src/utils/logger.js';
 import app from './src/app.js';
@@ -82,6 +83,11 @@ if (process.env.NODE_ENV !== 'test') {
       // Don't exit - let health check handle this
     });
   });
+
+  // Royal Mail tracking poller — auto-advances shipped → out_for_delivery →
+  // delivered. Inert in test env (this block never runs there) and until
+  // ROYAL_MAIL_API_CLIENT_ID/SECRET are configured.
+  startRoyalMailPoller();
 
   server.on('error', (error) => {
     console.error('❌ Server failed to start:', error.message);

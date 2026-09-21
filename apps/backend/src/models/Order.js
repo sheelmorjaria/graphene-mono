@@ -437,6 +437,9 @@ const orderSchema = new mongoose.Schema({
 // Compound index for efficient querying by user and date
 orderSchema.index({ userId: 1, orderDate: -1 });
 
+// Status queries — the Royal Mail tracking poller selects shipped/out_for_delivery orders
+orderSchema.index({ status: 1 });
+
 // Indexes for report aggregations
 orderSchema.index({ createdAt: 1, orderStatus: 1 }); // For sales reports
 orderSchema.index({ 'cartItems.product': 1, createdAt: 1 }); // For product performance

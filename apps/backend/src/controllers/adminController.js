@@ -16,7 +16,7 @@ export const adminLogin = async (req, res) => {
     console.log('🟡 Admin login attempt started');
     // IP diagnostics (temporary): what the app sees behind CapRover's proxy —
     // determines correct trust-proxy hop count for the rate limiter/allowlist
-    console.log('🟡 IP view:', JSON.stringify({ ip: req.ip, ips: req.ips, xff: req.headers['x-forwarded-for'], remote: req.socket?.remoteAddress }));
+    console.log('🟡 IP view:', JSON.stringify({ ip: req.ip, ips: req.ips, xff: req.headers?.['x-forwarded-for'], remote: req.socket?.remoteAddress }));
     const { email, password } = req.body;
     console.log('🟡 Email:', email);
 
@@ -642,7 +642,9 @@ const getValidStatusTransitions = () => {
   };
 };
 
-const isValidStatusTransition = (currentStatus, newStatus) => {
+// Exported — the Royal Mail tracking poller reuses this so the status
+// machine has a single source of truth.
+export const isValidStatusTransition = (currentStatus, newStatus) => {
   const transitions = getValidStatusTransitions();
   return transitions[currentStatus]?.includes(newStatus) || false;
 };
@@ -756,6 +758,13 @@ export const updateOrderStatus = async (req, res) => {
 
       // Update order status
       order.status = newStatus;
+
+      // Stamp the delivery date when marking delivered — the 28-day returns
+      // window is computed from it (frontend gate + userReturnController),
+      // and nothing else ever wrote this field
+      if (newStatus === 'delivered' && !order.deliveryDate) {
+        order.deliveryDate = new Date();
+      }
 
       // Add to status history
       if (!order.statusHistory) {
