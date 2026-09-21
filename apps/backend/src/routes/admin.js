@@ -29,12 +29,13 @@ import {
 } from '../controllers/settingsController.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.js';
+import { adminLoginIpAllowlist } from '../middleware/ipAllowlist.js';
 import { uploadProductImages, processProductImages, uploadProductAndVariationImages, processProductAndVariationImages, handleImageUploadError } from '../middleware/imageUpload.js';
 
 const router = express.Router();
 
 // Public admin routes (no authentication required)
-router.post('/login', adminLoginLimiter, adminLogin);
+router.post('/login', adminLoginIpAllowlist, adminLoginLimiter, adminLogin);
 
 // Protected admin routes (authentication + admin role required)
 router.use(authenticate);
