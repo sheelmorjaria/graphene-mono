@@ -1,5 +1,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+// Auth header for /user/* endpoints (JWT Bearer — these routes all require it).
+// Mirrors orderService: reads the customer session token from localStorage.
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No auth token found. Please log in.');
+  }
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+};
+
+
 // Get eligible items for return from a specific order
 export const getEligibleReturnItems = async (orderId) => {
   try {
@@ -9,9 +20,7 @@ export const getEligibleReturnItems = async (orderId) => {
 
     const response = await fetch(`${API_BASE_URL}/user/orders/${orderId}/eligible-returns`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
 
@@ -37,9 +46,7 @@ export const submitReturnRequest = async (returnRequestData) => {
 
     const response = await fetch(`${API_BASE_URL}/user/returns/request`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(returnRequestData)
     });
@@ -73,9 +80,7 @@ export const getUserReturnRequests = async (params = {}) => {
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
 
@@ -101,9 +106,7 @@ export const getReturnRequestDetails = async (returnRequestId) => {
 
     const response = await fetch(`${API_BASE_URL}/user/returns/${returnRequestId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
 
