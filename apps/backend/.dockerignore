@@ -25,3 +25,26 @@ __tests__
 .idea
 .vscode
 *.log
+# Legacy duplicates from the monorepo migration — never ship in the image
+# (8.4MB CeX CLI binary, e2e screenshots, playwright reports, debug scripts).
+# Root-anchored patterns so src/ and public/ are untouched.
+/*.png
+cli-linux-amd64
+playwright-report
+test-results
+/jest.config*.js
+/syncFromCLI.js
+/products-export*.csv
+/backend.log
+/test*.js
+/debug*.js
+/fix*.js
+/complete-e2e-test.js
+/simple-frontend-test.js
+/exportProducts.js
+/updateProductImages.js
+/fix-unstable-mocks.sh
+/Dockerfile*
+/captain-definition
+/eslint.config.js
+/vitest*.js
