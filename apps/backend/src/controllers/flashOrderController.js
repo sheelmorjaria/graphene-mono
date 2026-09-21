@@ -210,6 +210,17 @@ const handleFlashPaymentCaptureCompleted = async (webhookEvent) => {
       return;
     }
 
+    // PayPal routes webhooks by EVENT TYPE, not by flow — both subscriptions
+    // receive every PAYMENT.CAPTURE.COMPLETED of the app, so store-checkout
+    // events land here too (their custom_id is a JSON checkout reference
+    // {"c":cartId,"s":shippingId}). Anything that isn't a bare 24-hex
+    // ObjectId is not one of ours; ignore it quietly instead of letting
+    // findById throw a CastError on every store capture.
+    if (!/^[0-9a-fA-F]{24}$/.test(customId)) {
+      logger.info('Flash Order webhook custom_id is not a flash order reference — ignoring event', { customId });
+      return;
+    }
+
     // Find and update the Flash Order
     const order = await FlashOrder.findById(customId);
 
@@ -280,6 +291,12 @@ const handleFlashPaymentCaptureDenied = async (webhookEvent) => {
     const customId = resource.custom_id;
 
     if (!customId) {
+      return;
+    }
+
+    // Same event-type routing as the completed handler: ignore foreign
+    // custom_ids (store checkout JSON refs) instead of throwing CastError
+    if (!/^[0-9a-fA-F]{24}$/.test(customId)) {
       return;
     }
 

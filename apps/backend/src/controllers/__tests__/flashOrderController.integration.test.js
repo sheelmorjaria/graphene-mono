@@ -169,6 +169,39 @@ describe('FlashOrder API Endpoints', () => {
       expect(updatedOrder.paymentDetails.paypalTransactionId).toBe('CAPTURE123');
     });
 
+    it('ignores store-checkout events delivered here (PayPal routes by event type, not flow)', async () => {
+      // Store checkouts set custom_id to a JSON checkout reference
+      // ({"c":cartId,"s":shippingId}) — PayPal delivers capture events to BOTH
+      // webhook subscriptions. Regression: findById on that JSON threw a
+      // CastError on every real store order (live incident 2026-09-21).
+      const createResponse = await request(app)
+        .post('/api/flash-orders')
+        .send(validOrderData);
+      const orderId = createResponse.body.data.orderId;
+
+      const webhookPayload = {
+        event_type: 'PAYMENT.CAPTURE.COMPLETED',
+        resource: {
+          id: 'CAPTURE-STORE-1',
+          amount: { value: '260.45', currency_code: 'GBP' },
+          custom_id: JSON.stringify({ c: '6a5cfca95dc1e34ccdc61459', s: '688393497c7b456a2116bf12' }),
+          supplementary_data: { related_ids: { order_id: 'PAYPAL-STORE-1' } }
+        }
+      };
+
+      const webhookResponse = await request(app)
+        .post('/api/flash-orders/paypal-webhook')
+        .send(webhookPayload)
+        .set('paypal-transmission-id', 'WEBHOOK-STORE-1');
+
+      expect(webhookResponse.status).toBe(200);
+
+      // The existing flash order must be untouched (not completed, no email)
+      const order = await FlashOrder.findById(orderId);
+      expect(order.paymentStatus).toBe('Unpaid');
+      expect(order.paymentDetails?.paypalTransactionId).toBeUndefined();
+    });
+
     it('should return 200 for failed payment and not update order', async () => {
       const createResponse = await request(app)
         .post('/api/flash-orders')
