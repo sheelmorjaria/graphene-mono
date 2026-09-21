@@ -65,7 +65,10 @@ export const verifyPayPalWebhookSignature = async ({ headers = {}, event, webhoo
       },
       body: JSON.stringify({
         webhook_id: webhookId,
-        event,
+        // Schema requires the event under `webhook_event` — sending it as
+        // `event` returns 400 INVALID_REQUEST and every real webhook was
+        // rejected (live incident 2026-09-21; fail-closed hid the bug).
+        webhook_event: event,
         auth_algo: headers['paypal-auth-algo'],
         cert_url: headers['paypal-cert-url'],
         transmission_id: headers['paypal-transmission-id'],
@@ -75,7 +78,11 @@ export const verifyPayPalWebhookSignature = async ({ headers = {}, event, webhoo
     });
 
     if (!response.ok) {
-      return { verified: false, reason: `PayPal verification request failed: ${response.status}` };
+      // Include PayPal's own error name/message — a bare status code made
+      // this failure undiagnosable from logs
+      const errorBody = await response.json().catch(() => ({}));
+      const detail = errorBody.name ? ` (${errorBody.name}: ${errorBody.message || 'no message'})` : '';
+      return { verified: false, reason: `PayPal verification request failed: ${response.status}${detail}` };
     }
 
     const payload = await response.json();

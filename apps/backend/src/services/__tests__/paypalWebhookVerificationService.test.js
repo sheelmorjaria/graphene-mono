@@ -69,13 +69,17 @@ describe('verifyPayPalWebhookSignature', () => {
     expect(verifyOptions.headers.Authorization).toBe('Bearer token-1');
     expect(JSON.parse(verifyOptions.body)).toEqual({
       webhook_id: 'webhook-id-1',
-      event,
+      // PayPal's schema names this `webhook_event` — a bare `event` key is a
+      // 400 INVALID_REQUEST against the real API (regression: live incident
+      // 2026-09-21 where every webhook verification failed with 400)
+      webhook_event: event,
       auth_algo: 'SHA256withRSA',
       cert_url: 'https://api-m.sandbox.paypal.com/cert',
       transmission_id: 'trans-123',
       transmission_sig: 'sig-abc',
       transmission_time: '2026-09-15T00:00:00Z'
     });
+    expect(JSON.parse(verifyOptions.body)).not.toHaveProperty('event');
   });
 
   it('rejects when PayPal says the signature is invalid', async () => {
