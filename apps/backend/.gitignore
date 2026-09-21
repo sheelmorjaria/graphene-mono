@@ -22,3 +22,22 @@ tmp/
 # Build
 dist
 build
+# Legacy monorepo-migration junk — untracked 2026-09-22 (was shipping in every
+# build context/image; CapRover's remote builder does not honour .dockerignore)
+/cli-linux-amd64
+*.png
+/playwright-report/
+/test-results/
+playwright-results.json
+/jest.config*.js
+/syncFromCLI.js
+/products-export*.csv
+/backend.log
+/test*.js
+/debug*.js
+/fix*.js
+/complete-e2e-test.js
+/simple-frontend-test.js
+/exportProducts.js
+/updateProductImages.js
+/fix-unstable-mocks.sh
