@@ -1,5 +1,5 @@
 # Backend Dockerfile
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # Install dependencies for bcrypt and other native modules + curl for health checks
 RUN apk add --no-cache python3 make g++ curl
@@ -36,7 +36,7 @@ COPY . .
 # RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 RUN apk add --no-cache tini curl
 WORKDIR /app
 
