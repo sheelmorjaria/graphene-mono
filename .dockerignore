@@ -1,0 +1,33 @@
+# Build context is the REPO ROOT for both CapRover apps
+# (captain-definition-backend / captain-definition-frontend). Only apps/backend
+# and apps/frontend get COPYed — keep their migration junk out of the images.
+
+# VCS / deps (not in fresh clones, but cheap insurance)
+.git
+**/node_modules
+
+# Monorepo-migration junk tracked in apps/backend (8.4MB CeX CLI binary,
+# ~2MB of e2e/frontend screenshots, playwright artifacts, one-off debug scripts)
+apps/backend/cli-linux-amd64
+apps/backend/*.png
+apps/backend/playwright-report
+apps/backend/test-results
+apps/backend/coverage
+apps/backend/jest.config*.js
+apps/backend/vitest.config*.js
+apps/backend/syncFromCLI.js
+apps/backend/products-export*.csv
+apps/backend/backend.log
+apps/backend/test*.js
+apps/backend/debug*.js
+apps/backend/fix*.js
+apps/backend/complete-e2e-test.js
+apps/backend/simple-frontend-test.js
+apps/backend/exportProducts.js
+apps/backend/updateProductImages.js
+apps/backend/fix-unstable-mocks.sh
+
+# Frontend artifacts not needed at build time
+apps/frontend/test-results
+apps/frontend/playwright-report
+apps/frontend/coverage
