@@ -23,6 +23,18 @@ const jsonResponse = (data, { ok = true, status = 200 } = {}) => ({
   json: async () => data
 });
 
+// Mock localStorage with a session token — the service now sends
+// Authorization headers on every /user/* call (regression fix 2026-09-21)
+const mockLocalStorage = (() => {
+  let store = { authToken: 'test-token' };
+  return {
+    getItem: (key) => store[key] || null,
+    setItem: (key, value) => { store[key] = value.toString(); },
+    clear: () => { store = { authToken: 'test-token' }; }
+  };
+})();
+Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
+
 describe('returnService', () => {
   beforeEach(() => {
     vi.clearAllMocks();

@@ -21,52 +21,54 @@ const MockRouterWithParams = ({ children, orderId = 'order123' }) => (
   </MemoryRouter>
 );
 
-describe('OrderDetailsPage - Return Status Integration', () => {
+
   const mockOrderWithoutReturn = {
-    _id: 'order123',
-    orderNumber: 'ORD-123456',
-    orderDate: '2024-11-15T09:00:00Z',
-    formattedDate: '15 November 2024',
-    status: 'delivered',
-    statusDisplay: 'Delivered',
-    deliveryDate: '2024-11-20T16:30:00Z',
-    hasReturnRequest: false,
-    items: [
-      {
-        _id: 'item1',
-        productId: 'product1',
-        productName: 'Google Pixel 8 Pro',
-        productSlug: 'google-pixel-8-pro',
-        quantity: 1,
-        unitPrice: 899,
-        totalPrice: 899,
-        productImage: 'https://example.com/image.jpg'
-      }
-    ],
-    subtotal: 899,
-    shipping: 0,
-    tax: 179.80,
-    totalAmount: 1078.80,
-    shippingAddress: {
-      fullName: 'John Doe',
-      addressLine1: '123 Test Street',
-      city: 'London',
-      stateProvince: 'England',
-      postalCode: 'SW1A 1AA',
-      country: 'GB'
-    },
-    billingAddress: {
-      fullName: 'John Doe',
-      addressLine1: '123 Test Street',
-      city: 'London',
-      stateProvince: 'England',
-      postalCode: 'SW1A 1AA',
-      country: 'GB'
-    },
-    paymentMethodDisplay: 'PayPal',
-    paymentStatus: 'paid',
-    statusHistory: []
-  };
+  _id: 'order123',
+  orderNumber: 'ORD-123456',
+  orderDate: '2024-11-15T09:00:00Z',
+  formattedDate: '15 November 2024',
+  status: 'delivered',
+  statusDisplay: 'Delivered',
+  deliveryDate: '2024-11-20T16:30:00Z',
+  hasReturnRequest: false,
+  items: [
+    {
+      _id: 'item1',
+      productId: 'product1',
+      productName: 'Google Pixel 8 Pro',
+      productSlug: 'google-pixel-8-pro',
+      quantity: 1,
+      unitPrice: 899,
+      totalPrice: 899,
+      productImage: 'https://example.com/image.jpg'
+    }
+  ],
+  subtotal: 899,
+  shipping: 0,
+  tax: 179.80,
+  totalAmount: 1078.80,
+  shippingAddress: {
+    fullName: 'John Doe',
+    addressLine1: '123 Test Street',
+    city: 'London',
+    stateProvince: 'England',
+    postalCode: 'SW1A 1AA',
+    country: 'GB'
+  },
+  billingAddress: {
+    fullName: 'John Doe',
+    addressLine1: '123 Test Street',
+    city: 'London',
+    stateProvince: 'England',
+    postalCode: 'SW1A 1AA',
+    country: 'GB'
+  },
+  paymentMethodDisplay: 'PayPal',
+  paymentStatus: 'paid',
+  statusHistory: []
+};
+
+describe('OrderDetailsPage - Return Status Integration', () => {
 
   const mockOrderWithReturn = {
     ...mockOrderWithoutReturn,
@@ -319,5 +321,56 @@ describe('OrderDetailsPage - Return Status Integration', () => {
       expect(screen.getByText('Return Request: RET-20241201001')).toBeInTheDocument();
       expect(screen.queryByText('Return Request: RET-20241202001')).not.toBeInTheDocument();
     });
+  });
+});
+describe('OrderDetailsPage - Request Return button gating (28-day window)', () => {
+  const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    orderService.formatCurrency.mockImplementation((amount) => `£${amount.toFixed(2)}`);
+    orderService.getStatusColor.mockReturnValue('text-green-600');
+    returnService.getReturnStatusColorClass.mockReturnValue('text-green-600 bg-green-50');
+  });
+
+  const renderWithOrder = async (order) => {
+    orderService.getUserOrderDetails.mockResolvedValue({ data: { order } });
+    render(
+      <MockRouterWithParams>
+        <OrderDetailsPage />
+      </MockRouterWithParams>
+    );
+    await waitFor(() => {
+      expect(screen.getAllByText(`Order ${order.orderNumber}`).length).toBeGreaterThanOrEqual(1);
+    });
+  };
+
+  // Reuses the module-scope fixture (proven render shape) with a fresh delivery date
+  const deliveredOrder = (overrides = {}) => ({
+    ...mockOrderWithoutReturn,
+    deliveryDate: daysAgo(5),
+    ...overrides
+  });
+
+  it('shows the Request Return link pointing at the return-request route when delivered and in window', async () => {
+    await renderWithOrder(deliveredOrder());
+    const link = screen.getByRole('link', { name: 'Request Return' });
+    expect(link.getAttribute('href')).toBe('/my-account/orders/order123/return');
+    expect(screen.getByText(/28 days of delivery/i)).toBeInTheDocument();
+  });
+
+  it('hides the link when the order is not delivered', async () => {
+    await renderWithOrder(deliveredOrder({ status: 'processing' }));
+    expect(screen.queryByRole('link', { name: 'Request Return' })).not.toBeInTheDocument();
+  });
+
+  it('hides the link once the 28-day window has expired', async () => {
+    await renderWithOrder(deliveredOrder({ deliveryDate: daysAgo(35) }));
+    expect(screen.queryByRole('link', { name: 'Request Return' })).not.toBeInTheDocument();
+  });
+
+  it('hides the link when a return request already exists', async () => {
+    await renderWithOrder(deliveredOrder({ hasReturnRequest: true }));
+    expect(screen.queryByRole('link', { name: 'Request Return' })).not.toBeInTheDocument();
   });
 });

@@ -16,6 +16,7 @@ import MyOrdersPage from './pages/MyOrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import ReturnHistoryPage from './pages/ReturnHistoryPage';
 import ReturnDetailsPage from './pages/ReturnDetailsPage';
+import ReturnRequestPage from './pages/ReturnRequestPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminOrdersListPage from './pages/AdminOrdersListPage';
@@ -529,6 +530,10 @@ export const AppRoutes = () => {
           
           {/* Return history page */}
           <Route path="/my-account/returns" element={<ReturnHistoryPage />} />
+
+          {/* Return request initiation — linked from the order details
+              "Request Return" button (delivered, within the 28-day window) */}
+          <Route path="/my-account/orders/:orderId/return" element={<ReturnRequestPage />} />
           
           {/* Return details page */}
           <Route path="/my-account/returns/:returnRequestId" element={<ReturnDetailsPage />} />

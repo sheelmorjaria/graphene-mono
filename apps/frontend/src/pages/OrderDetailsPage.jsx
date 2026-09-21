@@ -78,10 +78,10 @@ const OrderDetailsPage = () => {
     // Must have a delivery date
     if (!order.deliveryDate) return false;
     
-    // Must be within return window (30 days)
+    // Must be within return window (28 days — matches the refund policy, ReturnRequestPage and backend)
     const deliveryDate = new Date(order.deliveryDate);
     const returnWindowEnd = new Date(deliveryDate);
-    returnWindowEnd.setDate(returnWindowEnd.getDate() + 30);
+    returnWindowEnd.setDate(returnWindowEnd.getDate() + 28);
     
     const now = new Date();
     if (now > returnWindowEnd) return false;
@@ -371,7 +371,7 @@ const OrderDetailsPage = () => {
                         Request Return
                       </Link>
                       <p className="text-xs text-gray-500 mt-2">
-                        Items can be returned within 30 days of delivery
+                        Items can be returned within 28 days of delivery
                       </p>
                     </div>
                   )}
