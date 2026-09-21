@@ -46,3 +46,23 @@ export const passwordResetLimiter = rateLimit({
   // Skip validation errors about trust proxy setting
   validate: false
 });
+
+// Admin login rate limiter (credential brute-force guard — bots spray this
+// endpoint). Passthrough in test env, mirroring the authLimiter wiring in
+// routes/auth.js, so integration tests can hit the endpoint freely.
+export const adminLoginLimiter = process.env.NODE_ENV === 'test'
+  ? (req, res, next) => next()
+  : rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 5, // 5 failed attempts per IP per window
+      // Successful logins don't count — a real admin logging in normally
+      // can never lock themselves out, only repeated failures trip this.
+      skipSuccessfulRequests: true,
+      message: {
+        success: false,
+        error: 'Too many admin login attempts. Please try again later.'
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      validate: false
+    });
