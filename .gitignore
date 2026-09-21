@@ -51,3 +51,10 @@ apps/backend/tmp/
 # Markdown files (as per original gitignore)
 *.md
 !CLAUDE.md
+# Deployment env variants & backups — contain credentials, never commit
+.env.web
+.env.tor
+.env.web.backup
+.env.tor.backup
+**/.env.backup
+**/.env.*.backup
