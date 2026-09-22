@@ -1,9 +1,34 @@
 import { useState, useCallback, useRef } from 'react';
 import productsService from '../services/productsService';
 
+// Build-time prerendered seed: the prerender crawl embeds the products-list
+// API response in /products as <script id="__PRERENDER_PRODUCTS__">. Seeding
+// from it means the page renders the full catalog without ANY runtime fetch —
+// Google's renderer sometimes fails the refetch, and a rendered error card is
+// classified as a soft 404. Consumed once, then removed from the DOM.
+export const readPrerenderedProducts = () => {
+  if (typeof document === 'undefined') return null;
+  const el = document.getElementById('__PRERENDER_PRODUCTS__');
+  if (!el) return null;
+  el.remove();
+  try {
+    const payload = JSON.parse(el.textContent);
+    return payload?.success ? payload : null;
+  } catch {
+    return null;
+  }
+};
+
 const useProducts = () => {
-  const [products, setProducts] = useState([]);
-  const [pagination, setPagination] = useState({
+  // Lazily read (and consume) the prerendered seed exactly once
+  const seedRef = useRef(undefined);
+  if (seedRef.current === undefined) {
+    seedRef.current = readPrerenderedProducts();
+  }
+  const seed = seedRef.current;
+
+  const [products, setProducts] = useState(seed?.data || []);
+  const [pagination, setPagination] = useState(seed?.pagination || {
     page: 1,
     limit: 12,
     total: 0,
@@ -11,6 +36,9 @@ const useProducts = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Seed protection applies to the FIRST fetch only — later fetches (sort,
+  // filter, pagination changes) show errors normally.
+  const firstFetchDoneRef = useRef(false);
   
   // Use refs to track the latest request and debounce timeout
   const latestRequestRef = useRef(null);
@@ -96,6 +124,10 @@ const useProducts = () => {
                 total: 0,
                 pages: 0
               });
+            } else if (!firstFetchDoneRef.current && seed?.data?.length) {
+              // Runtime refetch failed but prerendered seed exists — keep the
+              // rendered catalog (soft-404 guard) and fail silently.
+              setError(null);
             } else {
               setError(response.message || 'Failed to fetch products');
               setProducts([]);
@@ -110,16 +142,22 @@ const useProducts = () => {
         } catch (err) {
           // Only update state if this is still the latest request
           if (latestRequestRef.current === requestId) {
-            setError(err.message || 'An error occurred while fetching products');
-            setProducts([]);
-            setPagination({
-              page: 1,
-              limit: 12,
-              total: 0,
-              pages: 0
-            });
+            if (!firstFetchDoneRef.current && seed?.data?.length) {
+              // Keep the prerendered catalog when the first refetch throws
+              setError(null);
+            } else {
+              setError(err.message || 'An error occurred while fetching products');
+              setProducts([]);
+              setPagination({
+                page: 1,
+                limit: 12,
+                total: 0,
+                pages: 0
+              });
+            }
           }
         } finally {
+          firstFetchDoneRef.current = true;
           // Only update loading state if this is still the latest request
           if (latestRequestRef.current === requestId) {
             setLoading(false);

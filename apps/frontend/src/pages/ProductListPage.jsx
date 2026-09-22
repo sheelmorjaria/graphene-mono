@@ -76,7 +76,9 @@ const ProductListPage = () => {
   };
 
   // Loading state
-  if (loading) {
+  // Spinner only when there's nothing to show — during background
+  // revalidation (prerendered seed present) the grid stays visible.
+  if (loading && products.length === 0) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center min-h-64">

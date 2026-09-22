@@ -166,6 +166,19 @@ const crawl = async (browser) => {
   const queue = [...PRERENDER_SEED_ROUTES];
   const seen = new Set(queue);
 
+  // Capture the products-LIST API response (not per-slug detail calls) while
+  // crawling /products, to embed as seed data in the saved HTML — Google's
+  // renderer sometimes fails the runtime refetch, and the seeded page keeps
+  // the full grid (see useProducts.js).
+  let productsApiPayload = null;
+  page.on('response', async (response) => {
+    if (productsApiPayload || !response.ok()) return;
+    const url = response.url();
+    if (url.includes('/api/products') && !url.includes('/products/')) {
+      try { productsApiPayload = await response.json(); } catch { /* not JSON */ }
+    }
+  });
+
   // Seed every product slug from the API: link discovery alone misses
   // paginated catalog pages (only page 1 renders on /products).
   try {
@@ -208,9 +221,18 @@ const crawl = async (browser) => {
         continue;
       }
 
+      let htmlOut = html;
+      if (route === '/products' && productsApiPayload?.success) {
+        // Embed the captured catalog payload as seed JSON. '<' is escaped so
+        // a stray '</script>' inside product names cannot break out.
+        const seedJson = JSON.stringify(productsApiPayload).replace(/</g, '\\u003c');
+        htmlOut = html.replace('</body>', `  <script id="__PRERENDER_PRODUCTS__" type="application/json">${seedJson}</script>\n</body>`);
+        console.log('  embedded products seed data');
+      }
+
       const file = join(DIST, prerenderOutputPath(route));
       mkdirSync(dirname(file), { recursive: true });
-      writeFileSync(file, html);
+      writeFileSync(file, htmlOut);
       saved.push(route);
       console.log(`  saved ${route}`);
 

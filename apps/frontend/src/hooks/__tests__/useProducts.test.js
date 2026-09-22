@@ -250,3 +250,76 @@ describe('useProducts hook', () => {
     expect(productsService.getProducts).toHaveBeenCalledWith({ page: 3 });
   });
 });
+describe('useProducts prerendered seed (soft-404 guard)', () => {
+  const SEED = {
+    success: true,
+    data: [{ _id: 'p1', name: 'Seeded Pixel', slug: 'seeded-pixel' }],
+    pagination: { page: 1, limit: 12, total: 1, pages: 1 }
+  };
+
+  const installSeed = () => {
+    const el = document.createElement('script');
+    el.id = '__PRERENDER_PRODUCTS__';
+    el.type = 'application/json';
+    el.textContent = JSON.stringify(SEED);
+    document.body.appendChild(el);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    document.getElementById('__PRERENDER_PRODUCTS__')?.remove();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    document.getElementById('__PRERENDER_PRODUCTS__')?.remove();
+  });
+
+  it('initializes products from the embedded seed without any fetch', () => {
+    installSeed();
+    const { result } = renderHook(() => useProducts());
+    expect(result.current.products).toEqual(SEED.data);
+    expect(result.current.pagination.total).toBe(1);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('keeps the seeded catalog and shows no error when the first refetch fails (Google renderer scenario)', async () => {
+    installSeed();
+    productsService.getProducts.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { result } = renderHook(() => useProducts());
+    act(() => { result.current.fetchProducts({ sort: 'price-low' }); });
+    await flushDebounce();
+
+    expect(result.current.products).toEqual(SEED.data);
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('shows errors normally for fetches AFTER the first (seed protection is one-shot)', async () => {
+    installSeed();
+    productsService.getProducts.mockResolvedValue({ success: true, data: SEED.data, pagination: SEED.pagination });
+
+    const { result } = renderHook(() => useProducts());
+    act(() => { result.current.fetchProducts({}); });
+    await flushDebounce();
+
+    productsService.getProducts.mockRejectedValue(new TypeError('Failed to fetch'));
+    act(() => { result.current.fetchProducts({ sort: 'name-asc' }); });
+    await flushDebounce();
+
+    expect(result.current.error).toBe('Failed to fetch');
+    expect(result.current.products).toEqual([]);
+  });
+
+  it('consumes the seed script so later mounts do not reuse stale data', () => {
+    installSeed();
+    const first = renderHook(() => useProducts());
+    expect(first.result.current.products).toEqual(SEED.data);
+    first.unmount();
+
+    const second = renderHook(() => useProducts());
+    expect(second.result.current.products).toEqual([]);
+  });
+});
