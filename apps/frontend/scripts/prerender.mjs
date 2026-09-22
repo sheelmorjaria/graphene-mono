@@ -232,6 +232,26 @@ const crawl = async (browser) => {
   return saved;
 };
 
+// Build-time sitemap: the crawl just enumerated every public route that
+// actually rendered — exactly the set search engines should index. Written
+// next to the prerendered HTML so deploys always ship a fresh sitemap.
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://graphene-security.com';
+const writeSitemap = (routes) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const priorityFor = (route) => {
+    if (route === '/') return '1.0';
+    if (route === '/products') return '0.9';
+    if (route.startsWith('/products/')) return '0.8';
+    return '0.5';
+  };
+  const urls = routes
+    .map((route) => `  <url><loc>${SITE_ORIGIN}${route === '/' ? '' : route}</loc><lastmod>${today}</lastmod><changefreq>${route.startsWith('/products/') ? 'weekly' : 'daily'}</changefreq><priority>${priorityFor(route)}</priority></url>`)
+    .join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  writeFileSync(join(DIST, 'sitemap.xml'), xml);
+  console.log(`🗺  sitemap.xml written (${routes.length} URLs)`);
+};
+
 const main = async () => {
   if (!existsSync(join(DIST, 'index.html'))) {
     throw new Error('dist/index.html not found — run `npm run build` first');
@@ -249,6 +269,7 @@ const main = async () => {
     });
     const saved = await crawl(browser);
     console.log(`✅ Prerendered ${saved.length} pages: ${saved.join(', ')}`);
+    if (saved.length > 0) writeSitemap(saved);
     if (saved.length === 0) {
       console.warn('⚠️  No pages were prerendered — serving falls back to the SPA shell.');
     }
