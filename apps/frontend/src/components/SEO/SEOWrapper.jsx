@@ -30,7 +30,11 @@ const SEOWrapper = ({
   const metaDescription = description || defaultDescription;
   const metaKeywords = (Array.isArray(keywords) && keywords.length ? keywords : defaultKeywords).join(', ');
   const metaImage = image ? `${siteUrl}${image}` : defaultImage;
-  const canonicalUrl = canonical || currentUrl;
+  // Absolute canonicals — Google tolerates relative ones but the safe,
+  // recommended form is fully-qualified (and GSC displays it as-declared)
+  const canonicalUrl = canonical
+    ? (canonical.startsWith('http') ? canonical : `${siteUrl}${canonical}`)
+    : currentUrl;
 
   return (
     <>
