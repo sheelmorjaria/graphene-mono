@@ -486,18 +486,24 @@ code, .code {
   margin-bottom: var(--spacing-sm);
 }
 
-.form-input,
-.form-select,
-.form-textarea {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-family: var(--font-body);
-  font-size: var(--font-size-base);
-  color: var(--color-text-primary);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-normal);
+/* Layered so Tailwind padding utilities (pl-10 etc. for input icons) can
+   override — unlayered CSS always beat @layer utilities, so the icon
+   left-padding on register/login inputs silently never applied and
+   placeholder text ran under the icons. */
+@layer components {
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+  }
 }
 
 .form-input::placeholder,
