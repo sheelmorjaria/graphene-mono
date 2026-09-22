@@ -53,11 +53,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         format: 'es',
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'payment': ['@paypal/react-paypal-js', 'qrcode.react'],
-          'redux': ['@reduxjs/toolkit', 'react-redux']
+        // Function form — the object form silently produced EMPTY react-vendor
+        // and redux chunks (React/RTK stayed glued into the main bundle).
+        // Segment-precise patterns so react-router doesn't land in react-vendor.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react-vendor';
+          if (/[\\/]node_modules[\\/](react-router|react-router-dom)[\\/]/.test(id) || id.includes('@remix-run/router')) return 'router';
+          if (/[\\/]node_modules[\\/](redux|react-redux|@reduxjs|immer|reselect|redux-thunk)[\\/]/.test(id)) return 'state';
+          if (/[\\/]node_modules[\\/](@paypal|qrcode|prop-types)[\\/]/.test(id)) return 'payment';
+          return undefined;
         }
       }
     },
