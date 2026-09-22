@@ -88,13 +88,13 @@ const AuthenticatedUserMenu = () => {
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-3 w-56 bg-bg-card backdrop-blur-md rounded-lg shadow-glow-cyan border border-border-cyan overflow-hidden z-50 animate-slideIn">
-          <div className="px-4 py-3 text-xs font-mono text-text-muted border-b border-border-subtle bg-bg-elevated">
+        <div className="absolute right-0 mt-3 w-56 bg-[var(--color-bg-card)] backdrop-blur-md rounded-lg shadow-lg border border-[var(--color-border-cyan)] overflow-hidden z-50 animate-slideIn">
+          <div className="px-4 py-3 text-xs font-mono text-[var(--color-text-muted)] border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
             {user?.email}
           </div>
           <Link
             to="/profile"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ const AuthenticatedUserMenu = () => {
           </Link>
           <Link
             to="/change-password"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,7 +114,7 @@ const AuthenticatedUserMenu = () => {
           </Link>
           <Link
             to="/addresses"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +125,7 @@ const AuthenticatedUserMenu = () => {
           </Link>
           <Link
             to="/orders"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@ const AuthenticatedUserMenu = () => {
           </Link>
           <Link
             to="/my-account/returns"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@ const AuthenticatedUserMenu = () => {
           </Link>
           <Link
             to="/account/privacy"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@ const AuthenticatedUserMenu = () => {
           </Link>
           <Link
             to="/contact-us"
-            className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-mono uppercase tracking-wider"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-mono uppercase tracking-wider"
             onClick={() => setIsDropdownOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,10 +163,10 @@ const AuthenticatedUserMenu = () => {
             </svg>
             Contact Us
           </Link>
-          <div className="border-t border-border-subtle bg-bg-elevated">
+          <div className="border-t border-[var(--color-border-subtle)] bg-bg-elevated">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-bg-hover transition-all duration-200 font-mono uppercase tracking-wider"
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-[var(--color-bg-hover)] transition-all duration-200 font-mono uppercase tracking-wider"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -223,7 +223,7 @@ const Header = () => {
 
   return (
     <header
-      className={`sticky top-0 z-sticky bg-bg-primary/95 backdrop-blur-lg border-b border-border-subtle transition-transform duration-300 ease-in-out ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}
+      className={`sticky top-0 z-50 bg-[var(--color-bg-primary)] backdrop-blur-lg border-b border-[var(--color-border-subtle)] transition-transform duration-300 ease-in-out ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}
       role="banner"
     >
       <div className="container mx-auto px-4 lg:px-6 py-4">
@@ -245,7 +245,7 @@ const Header = () => {
             {/* Mobile menu button - only visible on small screens */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 text-text-secondary hover:text-cyan-400 transition-colors duration-200"
+              className="lg:hidden p-2 text-[var(--color-text-secondary)] hover:text-cyan-400 transition-colors duration-200"
               aria-label="Toggle mobile menu"
             >
               <div className="relative w-6 h-6">
@@ -270,7 +270,7 @@ const Header = () => {
               <li>
                 <Link
                   to="/products"
-                  className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                  className="text-[var(--color-text-secondary)] hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
                 >
                   Products
                 </Link>
@@ -279,7 +279,7 @@ const Header = () => {
               <li>
                 <Link
                   to="/flash-service"
-                  className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                  className="text-[var(--color-text-secondary)] hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
                 >
                   Flashing Service
                 </Link>
@@ -288,7 +288,7 @@ const Header = () => {
               <li>
                 <Link
                   to="/contact-us"
-                  className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                  className="text-[var(--color-text-secondary)] hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
                 >
                   Contact
                 </Link>
@@ -308,7 +308,7 @@ const Header = () => {
                     <li>
                       <Link
                         to="/login"
-                        className="text-text-secondary hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                        className="text-[var(--color-text-secondary)] hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
                       >
                         Login
                       </Link>
@@ -329,12 +329,12 @@ const Header = () => {
 
           {/* Mobile Navigation Menu - toggleable */}
           {isMobileMenuOpen && (
-            <nav className="lg:hidden border-t border-border-subtle pt-4 animate-fadeIn">
+            <nav className="lg:hidden border-t border-[var(--color-border-subtle)] pt-4 animate-fadeIn">
               <ul className="flex flex-col gap-2">
                 <li>
                   <Link
                     to="/products"
-                    className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -347,7 +347,7 @@ const Header = () => {
                 <li>
                   <Link
                     to="/flash-service"
-                    className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,7 +360,7 @@ const Header = () => {
                 <li>
                   <Link
                     to="/contact-us"
-                    className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -370,7 +370,7 @@ const Header = () => {
                   </Link>
                 </li>
 
-                <li className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:bg-bg-elevated transition-all duration-200 rounded-lg">
+                <li className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-elevated)] transition-all duration-200 rounded-lg">
                   <CartIcon />
                   <span className="font-heading font-semibold text-sm uppercase tracking-wider">Cart</span>
                 </li>
@@ -381,7 +381,7 @@ const Header = () => {
                       <li>
                         <Link
                           to="/profile"
-                          className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                          className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,7 +393,7 @@ const Header = () => {
                       <li>
                         <Link
                           to="/orders"
-                          className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                          className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -408,7 +408,7 @@ const Header = () => {
                             await logout();
                             setIsMobileMenuOpen(false);
                           }}
-                          className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-bg-hover transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                          className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-[var(--color-bg-hover)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -422,7 +422,7 @@ const Header = () => {
                       <li>
                         <Link
                           to="/login"
-                          className="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-cyan-400 hover:bg-bg-elevated transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                          className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
