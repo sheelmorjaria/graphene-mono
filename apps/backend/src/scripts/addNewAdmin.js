@@ -5,7 +5,7 @@ dotenv.config();
 
 // Define the new admin user details
 const newAdminData = {
-  email: 'admin2@grapheneos-store.com', // Change this email
+  email: 'admin2@graphene-security.com', // Change this email
   password: 'SecurePassword456!', // Change this password
   firstName: 'New', // Change this name
   lastName: 'Admin', // Change this name

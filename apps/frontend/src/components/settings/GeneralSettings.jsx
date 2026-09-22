@@ -314,7 +314,7 @@ const GeneralSettings = ({ onMessage }) => {
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.storeEmail ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="support@grapheneos-store.com"
+                placeholder="support@graphene-security.com"
               />
               {errors.storeEmail && (
                 <p className="mt-1 text-sm text-red-600">{errors.storeEmail}</p>

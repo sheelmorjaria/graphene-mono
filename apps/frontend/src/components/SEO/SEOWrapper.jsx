@@ -15,7 +15,7 @@ const SEOWrapper = ({
   children
 }) => {
   const location = useLocation();
-  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://grapheneos-store.com';
+  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://graphene-security.com';
   const currentUrl = `${siteUrl}${location.pathname}`;
   
   const defaultTitle = 'Graphene Security - Privacy-Focused Smartphones';

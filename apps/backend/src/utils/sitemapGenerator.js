@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const generateSitemap = async () => {
-  const hostname = process.env.FRONTEND_URL || 'https://grapheneos-store.com';
+  const hostname = process.env.FRONTEND_URL || 'https://graphene-security.com';
   
   // Create sitemap stream
   const smStream = new SitemapStream({ hostname });
