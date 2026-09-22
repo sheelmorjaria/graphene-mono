@@ -5,112 +5,113 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 /* ===== CSS VARIABLES - CYBER-TECHNICAL PRIVACY THEME ===== */
-:root {
-  /* ===== PRIMARY COLOR PALETTE ===== */
-  /* Deep charcoal background system */
+/* ===== TAILWIND THEME =====
+   Namespaced tokens live in @theme so their utilities actually generate
+   (bg-bg-primary, text-text-secondary, z-sticky, shadow-glow-cyan, font-heading,
+   rounded-lg...). @theme emits the same variables to :root, so component CSS
+   using var(--color-*) keeps working unchanged. */
+@theme {
   --color-bg-deep: #0a0a0a;
   --color-bg-primary: #0d0d0d;
   --color-bg-secondary: #141414;
   --color-bg-elevated: #1a1a1a;
   --color-bg-card: #111111;
   --color-bg-hover: #1f1f1f;
-
-  /* Electric Cyan - Primary accent */
   --color-cyan-primary: #00d4ff;
   --color-cyan-glow: rgba(0, 212, 255, 0.4);
   --color-cyan-subtle: rgba(0, 212, 255, 0.15);
   --color-cyan-dim: rgba(0, 212, 255, 0.08);
-
-  /* Matrix Green - Secondary accent (crypto/privacy) */
   --color-matrix-primary: #00ff41;
   --color-matrix-glow: rgba(0, 255, 65, 0.4);
   --color-matrix-subtle: rgba(0, 255, 65, 0.15);
   --color-matrix-dim: rgba(0, 255, 65, 0.08);
-
-  /* Hot Pink - Sharp accent for CTAs */
   --color-pink-primary: #ff2d95;
   --color-pink-glow: rgba(255, 45, 149, 0.4);
   --color-pink-subtle: rgba(255, 45, 149, 0.15);
-
-  /* Amber - Warning states */
   --color-amber-primary: #ffb800;
   --color-amber-glow: rgba(255, 184, 0, 0.4);
   --color-amber-subtle: rgba(255, 184, 0, 0.15);
-
-  /* Red - Error states */
   --color-red-primary: #ff4757;
   --color-red-glow: rgba(255, 71, 87, 0.4);
   --color-red-subtle: rgba(255, 71, 87, 0.15);
-
-  /* ===== TEXT COLORS ===== */
   --color-text-primary: #e8e8e8;
   --color-text-secondary: #b8b8b8;
   --color-text-muted: #787878;
   --color-text-dim: #484848;
   --color-text-on-accent: #0a0a0a;
-
-  /* ===== BORDER COLORS ===== */
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-default: rgba(255, 255, 255, 0.1);
   --color-border-strong: rgba(255, 255, 255, 0.15);
   --color-border-cyan: rgba(0, 212, 255, 0.3);
   --color-border-matrix: rgba(0, 255, 65, 0.3);
   --color-border-pink: rgba(255, 45, 149, 0.3);
-
-  /* ===== STATUS COLORS ===== */
   --color-success: var(--color-matrix-primary);
   --color-success-bg: rgba(0, 255, 65, 0.1);
   --color-success-border: var(--color-border-matrix);
-
   --color-warning: var(--color-amber-primary);
   --color-warning-bg: rgba(255, 184, 0, 0.1);
   --color-warning-border: rgba(255, 184, 0, 0.3);
-
   --color-error: var(--color-red-primary);
   --color-error-bg: rgba(255, 71, 87, 0.1);
   --color-error-border: var(--color-red-subtle);
-
   --color-info: var(--color-cyan-primary);
   --color-info-bg: var(--color-cyan-subtle);
   --color-info-border: var(--color-border-cyan);
-
-  /* Status-specific colors */
   --color-status-pending: var(--color-amber-primary);
   --color-status-pending-bg: var(--color-warning-bg);
   --color-status-pending-border: var(--color-warning-border);
-
   --color-status-processing: var(--color-cyan-primary);
   --color-status-processing-bg: var(--color-info-bg);
   --color-status-processing-border: var(--color-border-cyan);
-
   --color-status-shipped: #a78bfa;
   --color-status-shipped-bg: rgba(167, 139, 250, 0.1);
   --color-status-shipped-border: rgba(167, 139, 250, 0.3);
-
   --color-status-out-for-delivery: var(--color-amber-primary);
   --color-status-out-for-delivery-bg: var(--color-warning-bg);
   --color-status-out-for-delivery-border: var(--color-warning-border);
-
   --color-status-delivered: var(--color-matrix-primary);
   --color-status-delivered-bg: var(--color-success-bg);
   --color-status-delivered-border: var(--color-success-border);
-
   --color-status-cancelled: var(--color-red-primary);
   --color-status-cancelled-bg: var(--color-error-bg);
   --color-status-cancelled-border: var(--color-error-border);
-
   --color-status-returned: var(--color-text-muted);
   --color-status-returned-bg: rgba(120, 120, 120, 0.1);
   --color-status-returned-border: rgba(255, 255, 255, 0.1);
+  --radius-none: 0;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
+  --shadow-glow-matrix: 0 0 20px rgba(0, 255, 65, 0.3);
+  --shadow-glow-pink: 0 0 20px rgba(255, 45, 149, 0.3);
+  --font-display: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-modal: 200;
+  --z-tooltip: 300;
+  --z-toast: 400;
+  --blur-sm: blur(4px);
+  --blur-md: blur(8px);
+  --blur-lg: blur(16px);
+}
 
-  /* ===== GRADIENTS ===== */
+:root {
   --gradient-primary: linear-gradient(135deg, #00d4ff 0%, #00ff41 100%);
   --gradient-secondary: linear-gradient(135deg, #ff2d95 0%, #a78bfa 100%);
   --gradient-dark: linear-gradient(180deg, #0d0d0d 0%, #0a0a0a 100%);
   --gradient-card: linear-gradient(145deg, #141414 0%, #0f0f0f 100%);
   --gradient-border: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(0, 255, 65, 0.3));
-
-  /* ===== SPACING ===== */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 0.75rem;
@@ -120,33 +121,6 @@
   --spacing-3xl: 2rem;
   --spacing-4xl: 3rem;
   --spacing-5xl: 4rem;
-
-  /* ===== BORDER RADIUS ===== */
-  --radius-none: 0;
-  --radius-sm: 0.125rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.375rem;
-  --radius-xl: 0.5rem;
-  --radius-2xl: 0.75rem;
-  --radius-full: 9999px;
-
-  /* ===== SHADOWS ===== */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-  --shadow-glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
-  --shadow-glow-matrix: 0 0 20px rgba(0, 255, 65, 0.3);
-  --shadow-glow-pink: 0 0 20px rgba(255, 45, 149, 0.3);
-
-  /* ===== TYPOGRAPHY ===== */
-  /* Font families */
-  --font-display: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
-
-  /* Font sizes */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -157,45 +131,23 @@
   --font-size-4xl: 2.25rem;
   --font-size-5xl: 3rem;
   --font-size-6xl: 3.75rem;
-
-  /* Font weights */
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
   --font-weight-black: 900;
-
-  /* Line heights */
   --line-height-tight: 1.2;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.7;
-
-  /* Letter spacing */
   --letter-spacing-tight: -0.02em;
   --letter-spacing-normal: 0;
   --letter-spacing-wide: 0.02em;
   --letter-spacing-wider: 0.05em;
-
-  /* ===== TRANSITIONS ===== */
   --transition-fast: 100ms ease-out;
   --transition-normal: 200ms ease-out;
   --transition-slow: 300ms ease-out;
   --transition-slower: 500ms ease-out;
-
-  /* ===== Z-INDEX LAYERS ===== */
-  --z-dropdown: 50;
-  --z-sticky: 100;
-  --z-modal: 200;
-  --z-tooltip: 300;
-  --z-toast: 400;
-
-  /* ===== EFFECTS ===== */
-  --blur-sm: blur(4px);
-  --blur-md: blur(8px);
-  --blur-lg: blur(16px);
-
-  /* Tailwind v4 CSS Custom Properties */
   --border: 0 0% 90%;
   --input: 0 0% 20%;
   --ring: 189 100% 50%;
@@ -217,6 +169,7 @@
   --card-foreground: 0 0% 91%;
   --radius: 0.375rem;
 }
+
 
 /* ===== BASE STYLES ===== */
 * {
