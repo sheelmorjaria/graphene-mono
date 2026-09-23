@@ -13,7 +13,7 @@ const structuredFaqs = [
   },
   {
     question: 'Which devices do you sell?',
-    answer: 'We sell Google Pixel phones with GrapheneOS pre-installed, including the Pixel 6 through Pixel 10 series, Pixel Fold, and Pixel 9 Pro Fold, in a range of conditions, colours, and storage options. All prices are in GBP.'
+    answer: 'We sell Google Pixel phones with GrapheneOS pre-installed, including the Pixel 6a through Pixel 10 series, Pixel Fold, and Pixel 9 Pro Fold, in a range of conditions, colours, and storage options. All prices are in GBP.'
   },
   {
     question: 'Do I need an account to buy a phone?',
@@ -116,7 +116,7 @@ const FAQPage = () => {
                 <Link to="/flash-service" className="text-cyan-400 hover:text-matrix-400 transition-colors">
                   flashing service
                 </Link>{' '}
-                covers a wider range of models (Pixel 6 through the Pixel 10 family) — we flash
+                covers a wider range of models (Pixel 6a through the Pixel 10 family) — we flash
                 your own device so you don't need to buy new.
               </p>
             </div>

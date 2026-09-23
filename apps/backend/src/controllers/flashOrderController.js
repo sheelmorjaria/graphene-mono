@@ -6,7 +6,7 @@ import logger, { logError, logPaymentEvent } from '../utils/logger.js';
 
 // Supported Pixel models
 const SUPPORTED_PIXEL_MODELS = [
-  'Pixel 6', 'Pixel 6 Pro', 'Pixel 6a',
+  'Pixel 6a',
   'Pixel 7', 'Pixel 7 Pro', 'Pixel 7a',
   'Pixel 8', 'Pixel 8 Pro', 'Pixel 8a',
   'Pixel Fold',

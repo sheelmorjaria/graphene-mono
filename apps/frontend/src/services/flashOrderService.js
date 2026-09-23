@@ -66,8 +66,6 @@ export const getFlashOrderInstructions = async (orderId) => {
  * Supported Pixel models
  */
 export const SUPPORTED_PIXEL_MODELS = [
-  { value: 'Pixel 6', label: 'Pixel 6' },
-  { value: 'Pixel 6 Pro', label: 'Pixel 6 Pro' },
   { value: 'Pixel 6a', label: 'Pixel 6a' },
   { value: 'Pixel 7', label: 'Pixel 7' },
   { value: 'Pixel 7 Pro', label: 'Pixel 7 Pro' },

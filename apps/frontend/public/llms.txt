@@ -3,7 +3,7 @@
 > UK retailer selling Google Pixel phones with GrapheneOS pre-installed.
 > Privacy-focused smartphones, custom-prepared per order. Prices in GBP.
 
-Graphene Security sells de-googled Google Pixel smartphones (Pixel 6 through
+Graphene Security sells de-googled Google Pixel smartphones (Pixel 6a through
 Pixel 10 series, Pixel Fold and Pixel 9 Pro Fold) with GrapheneOS — the
 privacy and security hardened mobile operating system — installed and
 verified before shipping.

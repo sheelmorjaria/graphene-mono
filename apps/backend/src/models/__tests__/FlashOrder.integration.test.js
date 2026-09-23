@@ -108,7 +108,7 @@ describe('FlashOrder Model', () => {
 
   describe('Pixel Model Enum Validation', () => {
     const supportedModels = [
-      'Pixel 6', 'Pixel 6 Pro', 'Pixel 6a',
+      'Pixel 6a',
       'Pixel 7', 'Pixel 7 Pro', 'Pixel 7a',
       'Pixel 8', 'Pixel 8 Pro', 'Pixel 8a'
     ];
