@@ -70,7 +70,9 @@ const ProductDetailsPage = () => {
     return `${formatPrice(range.min)} - ${formatPrice(range.max)}`;
   };
 
-  if (loading) {
+// Spinner only when there is nothing to show — during background
+  // revalidation (prerendered seed present) the product stays visible.
+  if (loading && !product) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-64">

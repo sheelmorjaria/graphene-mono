@@ -171,11 +171,22 @@ const crawl = async (browser) => {
   // renderer sometimes fails the runtime refetch, and the seeded page keeps
   // the full grid (see useProducts.js).
   let productsApiPayload = null;
+  const productDetailPayloads = new Map(); // slug -> API JSON (per-slug seed)
   page.on('response', async (response) => {
-    if (productsApiPayload || !response.ok()) return;
+    if (!response.ok()) return;
     const url = response.url();
-    if (url.includes('/api/products') && !url.includes('/products/')) {
-      try { productsApiPayload = await response.json(); } catch { /* not JSON */ }
+    if (!url.includes('/api/products')) return;
+    if (!url.includes('/products/')) {
+      // Products LIST response (the /products catalog page)
+      if (!productsApiPayload) {
+        try { productsApiPayload = await response.json(); } catch { /* not JSON */ }
+      }
+      return;
+    }
+    // Product DETAIL response (/api/products/<slug>) — seed for that page
+    const slug = url.split('/api/products/')[1]?.split('?')[0];
+    if (slug && !productDetailPayloads.has(slug)) {
+      try { productDetailPayloads.set(slug, await response.json()); } catch { /* not JSON */ }
     }
   });
 
@@ -222,12 +233,22 @@ const crawl = async (browser) => {
       }
 
       let htmlOut = html;
+      const embedSeed = (id, payload) => {
+        // '<' is escaped so a stray '</script>' inside content can't break out
+        const seedJson = JSON.stringify(payload).replace(/</g, '\\u003c');
+        htmlOut = htmlOut.replace('</body>', `  <script id="${id}" type="application/json">${seedJson}</script>\n</body>`);
+      };
       if (route === '/products' && productsApiPayload?.success) {
-        // Embed the captured catalog payload as seed JSON. '<' is escaped so
-        // a stray '</script>' inside product names cannot break out.
-        const seedJson = JSON.stringify(productsApiPayload).replace(/</g, '\\u003c');
-        htmlOut = html.replace('</body>', `  <script id="__PRERENDER_PRODUCTS__" type="application/json">${seedJson}</script>\n</body>`);
+        embedSeed('__PRERENDER_PRODUCTS__', productsApiPayload);
         console.log('  embedded products seed data');
+      }
+      if (route.startsWith('/products/')) {
+        const slug = route.slice('/products/'.length);
+        const detailPayload = productDetailPayloads.get(slug);
+        if (detailPayload?.success) {
+          embedSeed('__PRERENDER_PRODUCT__', detailPayload);
+          console.log(`  embedded product seed data (${slug})`);
+        }
       }
 
       const file = join(DIST, prerenderOutputPath(route));

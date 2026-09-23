@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import useProductDetails from '../useProductDetails';
 import * as productDetailsService from '../../services/productDetailsService';
@@ -195,5 +195,56 @@ describe('useProductDetails', () => {
     // Should reset to loading state
     expect(result.current.loading).toBe(true);
     expect(result.current.error).toBe(null);
+  });
+});
+describe('useProductDetails prerendered seed (soft-404 guard)', () => {
+  const SEED_PRODUCT = { _id: 'p1', name: 'Seeded Pixel', slug: 'seeded-pixel' };
+  const SEED = { success: true, data: SEED_PRODUCT };
+
+  const installSeed = () => {
+    const el = document.createElement('script');
+    el.id = '__PRERENDER_PRODUCT__';
+    el.type = 'application/json';
+    el.textContent = JSON.stringify(SEED);
+    document.body.appendChild(el);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    document.getElementById('__PRERENDER_PRODUCT__')?.remove();
+  });
+
+  afterEach(() => {
+    document.getElementById('__PRERENDER_PRODUCT__')?.remove();
+  });
+
+  it('initializes the product from the embedded seed without any fetch', () => {
+    installSeed();
+    const { result } = renderHook(() => useProductDetails('seeded-pixel'));
+    expect(result.current.product).toEqual(SEED_PRODUCT);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('keeps the seeded product and shows no error when the refetch for the SAME slug fails (Google renderer scenario)', async () => {
+    installSeed();
+    productDetailsService.getProductBySlug.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { result } = renderHook(() => useProductDetails('seeded-pixel'));
+    await act(async () => {}); // let the effect's fetch settle
+
+    expect(result.current.product).toEqual(SEED_PRODUCT);
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('shows errors normally when fetching a DIFFERENT slug than the seed', async () => {
+    installSeed();
+    productDetailsService.getProductBySlug.mockResolvedValue({ success: false, error: 'Product not found' });
+
+    const { result } = renderHook(() => useProductDetails('other-pixel'));
+    await act(async () => {});
+
+    expect(result.current.product).toBeNull();
+    expect(result.current.error).toBe('Product not found');
   });
 });
