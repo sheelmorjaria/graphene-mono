@@ -103,6 +103,18 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Root → catalog, as a REAL redirect. The app's '/' route is a client-side
+  // redirect to /products and the prerender used to save a duplicate copy of
+  // the catalog under dist/index.html — Google saw two identical pages,
+  // chose '/' as canonical, and flagged /products as "Duplicate, Google
+  // chose different canonical than user". A 301 consolidates on /products.
+  // (dist/index.html still exists as the SPA fallback shell for other routes.)
+  if (req.url === '/') {
+    res.writeHead(301, { 'Location': '/products', 'Cache-Control': 'public, max-age=86400' });
+    res.end();
+    return;
+  }
+
   try {
     let filePath;
 

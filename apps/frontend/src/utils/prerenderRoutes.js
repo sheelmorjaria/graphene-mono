@@ -5,8 +5,10 @@
 
 // Public routes worth prerendering. Everything else (admin, account, cart,
 // checkout, auth) is either private, stateful, or has no crawl value.
+// '/' is NOT prerendered — the server 301s it to /products (duplicate-
+// canonical fix); dist/index.html remains the plain SPA fallback shell.
 export const PRERENDER_SEED_ROUTES = [
-  '/products', '/', '/faq', '/flash-service', '/shipping', '/contact-us', '/refunds'
+  '/products', '/faq', '/flash-service', '/shipping', '/contact-us', '/refunds'
 ];
 
 const ALLOWED_PREFIXES = [

@@ -210,7 +210,10 @@ const crawl = async (browser) => {
 
   while (queue.length > 0 && saved.length < MAX_PAGES) {
     const route = queue.shift();
-    if (!isPrerenderableRoute(route)) continue;
+    // '/' is never prerendered: the server 301s it to /products, and a saved
+    // copy here would re-create the duplicate-content/duplicate-canonical
+    // problem (it also doubles as the SPA shell — the plain vite one is right)
+    if (route === '/' || !isPrerenderableRoute(route)) continue;
 
     try {
       await page.goto(`http://localhost:${PORT}${route}`, {
