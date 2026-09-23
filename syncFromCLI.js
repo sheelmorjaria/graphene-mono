@@ -10,7 +10,12 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load root .env if present; otherwise fall back to the backend env (the
+// canonical local env — points at the MongoDB cluster the store reads/writes).
 dotenv.config();
+if (!process.env.MONGODB_URI) {
+  dotenv.config({ path: "./apps/backend/.env" });
+}
 
 // Disable buffering
 mongoose.set("bufferCommands", false);
@@ -589,6 +594,12 @@ const shouldExcludeProduct = (productName) => {
     return true;
   }
 
+  // Pixel 6 / 6 Pro delisted (owner decision 2026-09-24) — anchored so 6A
+  // and Pro Fold names are unaffected
+  if (/Pixel\s+6(\s+Pro)?$/i.test(productName.trim())) {
+    return true;
+  }
+
   // Check if it's a Final Fantasy game
   if (productName.includes('Final Fantasy') && productName.includes('Pixel Remaster')) {
     return true;
@@ -1026,8 +1037,6 @@ const DEFAULT_PRICE_QUERIES = [
   // of stock (prod incident 2026-09-15: 10a collapsed to 1 in-stock
   // variation). Query every stocked model explicitly so each DB baseModel
   // has a dedicated, untruncated quote set.
-  'PIXEL 6',
-  'PIXEL 6 PRO',
   'PIXEL 7',
   'PIXEL 7 PRO',
   'PIXEL 7A',
