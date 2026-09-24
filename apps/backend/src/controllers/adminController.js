@@ -14,9 +14,6 @@ import { getPayPalClient } from './paymentController.js';
 export const adminLogin = async (req, res) => {
   try {
     console.log('🟡 Admin login attempt started');
-    // IP diagnostics (temporary): what the app sees behind CapRover's proxy —
-    // determines correct trust-proxy hop count for the rate limiter/allowlist
-    console.log('🟡 IP view:', JSON.stringify({ ip: req.ip, ips: req.ips, xff: req.headers?.['x-forwarded-for'], remote: req.socket?.remoteAddress }));
     const { email, password } = req.body;
     console.log('🟡 Email:', email);
 
