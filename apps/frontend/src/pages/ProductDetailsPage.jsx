@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getSupportInfo } from '../utils/deviceSupport';
 import { useEffect, useState } from 'react';
 import useProductDetails from '../hooks/useProductDetails';
 import ImageGallery from '../components/ImageGallery';
@@ -72,6 +73,8 @@ const ProductDetailsPage = () => {
 
 // Spinner only when there is nothing to show — during background
   // revalidation (prerendered seed present) the product stays visible.
+  const supportInfo = product ? getSupportInfo(product.baseModel || product.name) : null;
+
   if (loading && !product) {
     return (
       <main className="container mx-auto px-4 py-8">
@@ -220,6 +223,12 @@ const ProductDetailsPage = () => {
               {product.baseModel && (
                 <p className="text-sm text-text-muted font-mono mb-2">
                   Model: <span className="text-cyan-400">{product.baseModel}</span>
+                </p>
+              )}
+
+              {supportInfo && (
+                <p className="text-sm text-text-muted font-mono mb-2" data-testid="support-end">
+                  GrapheneOS support ends: <span className="text-matrix-400 font-semibold">{supportInfo.supportEnd}</span>
                 </p>
               )}
 

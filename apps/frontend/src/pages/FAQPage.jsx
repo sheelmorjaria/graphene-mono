@@ -28,6 +28,10 @@ const structuredFaqs = [
     answer: 'All GrapheneOS phones are custom-prepared upon order to ensure maximum security and privacy. Standard shipping takes 3-5 days after preparation. See our shipping information page for details.'
   },
   {
+    question: 'How long will my device receive GrapheneOS updates?',
+    answer: 'GrapheneOS is updated for the full vendor support window of each device — 5 years from launch for the Pixel 7 generation, and 7 years from the Pixel 8 onwards. Support end dates for the devices we sell: Pixel 7 series (7, 7 Pro) October 2027; Pixel 7a May 2028; Pixel 8 series (8, 8 Pro) October 2030; Pixel 8a May 2031; Pixel 9 series (9, 9 Pro, 9 Pro XL, 9 Pro Fold, 9a) August 2031; Pixel 10 series (10, 10 Pro, 10 Pro XL, 10 Pro Fold, 10a) October 2032.'
+  },
+  {
     question: 'What is your returns policy?',
     answer: 'You can return your order within 28 days of delivery. See our refund policy page for full terms and how to request a return.'
   },
