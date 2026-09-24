@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import FlashServiceForm from '../components/checkout/FlashServiceForm';
 import FlashOrderPayPalPayment from '../components/checkout/FlashOrderPayPalPayment';
@@ -212,6 +212,70 @@ const FlashServicePage = () => {
             />
           </div>
         )}
+
+        {/* How it works + supported devices — crawlable prose describing the
+            service (form-only pages read as thin content to search engines,
+            which flagged this page as a soft 404). Always visible. */}
+        <div className="max-w-2xl mx-auto mt-12 grid gap-6" data-testid="service-info">
+          <section className="bg-bg-card border border-border-subtle rounded-lg p-6">
+            <h2 className="text-xl font-display font-semibold text-text-primary mb-4">How the Flashing Service Works</h2>
+            <ol className="space-y-3 text-sm text-text-secondary list-decimal list-inside">
+              <li><strong className="text-text-primary">Place your order and pay securely.</strong> You'll receive an email confirmation and a PO Box shipping address for your device.</li>
+              <li><strong className="text-text-primary">Post your Pixel to us.</strong> Wrap it in bubble wrap, include your order number, and send it tracked. Your data is wiped during the flash, so back it up and factory reset first.</li>
+              <li><strong className="text-text-primary">We flash and verify GrapheneOS.</strong> Your device is unlocked, flashed with the latest stable GrapheneOS release, and security-checked — usually within 24 hours of arrival.</li>
+              <li><strong className="text-text-primary">Your phone comes back insured.</strong> UK return shipping is fully insured and typically arrives the next working day.</li>
+            </ol>
+            <p className="mt-4 text-sm text-text-muted">
+              The service costs £119.99 plus return shipping (£20.45 UK insured, £13.95 Europe and rest of world).
+              Payment is handled by PayPal; guest checkout is available.
+            </p>
+          </section>
+
+          <section className="bg-bg-card border border-border-subtle rounded-lg p-6">
+            <h2 className="text-xl font-display font-semibold text-text-primary mb-3">Supported Devices</h2>
+            <p className="text-sm text-text-secondary mb-3">
+              We flash the following Google Pixel models with GrapheneOS — the same privacy-hardened operating system
+              installed on every phone we sell:
+            </p>
+            <ul className="text-sm text-text-secondary grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 font-mono">
+              <li>Pixel 6a</li>
+              <li>Pixel 7 / 7 Pro / 7a</li>
+              <li>Pixel 8 / 8 Pro / 8a</li>
+              <li>Pixel 9 / 9 Pro XL / 9a</li>
+              <li>Pixel 10 / 10a</li>
+              <li>Pixel 10 Pro / XL / Fold</li>
+              <li>Pixel Fold</li>
+              <li>Pixel 9 Pro Fold</li>
+            </ul>
+            <p className="mt-3 text-xs text-text-muted">
+              Your device must be carrier unlocked (SIM-free) and not blacklisted. Prefer a pre-flashed phone?
+              Browse our <Link to="/products" className="text-cyan-400 hover:underline">ready-flashed Pixel catalog</Link> —
+              every handset is prepared, verified, and ships next day.
+            </p>
+          </section>
+
+          <section className="bg-bg-card border border-border-subtle rounded-lg p-6">
+            <h2 className="text-xl font-display font-semibold text-text-primary mb-3">Frequently Asked Questions</h2>
+            <dl className="space-y-4 text-sm">
+              <div>
+                <dt className="font-semibold text-text-primary">Is GrapheneOS safe to install?</dt>
+                <dd className="text-text-secondary mt-1">Yes — GrapheneOS is an open-source, security-hardened mobile operating system focused on privacy. It's verified-boot compatible and receives regular security updates.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-text-primary">Will my banking apps work?</dt>
+                <dd className="text-text-secondary mt-1">Most UK banking apps work on GrapheneOS. A small number of high-security apps that depend on Google Play Services may not function; we're not responsible for software incompatibility after flashing.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-text-primary">How long does the whole process take?</dt>
+                <dd className="text-text-secondary mt-1">Typically 3–5 days door to door within the UK, including postage both ways and the flash itself.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-text-primary">What if my device can't be flashed?</dt>
+                <dd className="text-text-secondary mt-1">You're refunded in full minus return shipping, and your device is returned to you at no charge. See the refund policy above for full details.</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
       </div>
     </div>
   );
