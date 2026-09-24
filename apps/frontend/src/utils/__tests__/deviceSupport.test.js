@@ -14,6 +14,12 @@ describe('deviceSupport', () => {
     }
   });
 
+  it('matches case and spacing variants from the API ("7A", "9 pro xl")', () => {
+    expect(getSupportInfo('7A').supportEnd).toBe('May 2028');
+    expect(getSupportInfo('9 pro xl').supportEnd).toBe('August 2031');
+    expect(getSupportInfo('Pixel 10 PRO Fold').supportEnd).toBe('October 2032');
+  });
+
   it('accepts full "Pixel ..." names as well as bare base models', () => {
     expect(getSupportInfo('Pixel 9 Pro XL').supportEnd).toBe('August 2031');
     expect(getSupportInfo('9 Pro XL').supportEnd).toBe('August 2031');

@@ -36,6 +36,8 @@ export const DEVICE_SUPPORT_TIMELINE = {
 // Returns { launch, supportEnd } or null when unknown.
 export const getSupportInfo = (model) => {
   if (!model) return null;
-  const bare = String(model).replace(/^Pixel\s+/i, '').trim();
-  return DEVICE_SUPPORT_TIMELINE[bare] || null;
+  const normalize = (m) => String(m).replace(/^Pixel\s+/i, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const bare = normalize(model);
+  const entry = Object.entries(DEVICE_SUPPORT_TIMELINE).find(([key]) => normalize(key) === bare);
+  return entry ? entry[1] : null;
 };

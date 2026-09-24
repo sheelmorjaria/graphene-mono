@@ -1,3 +1,4 @@
+import { getSupportInfo } from '../utils/deviceSupport';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
@@ -60,6 +61,7 @@ const ProductCard = ({ product }) => {
 
 
   const stockStatus_ = getStockStatusDisplay();
+  const supportInfo = getSupportInfo(product.baseModel || product.name);
 
   return (
     <article
@@ -155,7 +157,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Lead Time */}
-        <div className="mb-4">
+        <div className="mb-2">
           <div className="flex items-center text-sm text-text-muted font-mono">
             <svg className="w-4 h-4 mr-2 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -163,6 +165,18 @@ const ProductCard = ({ product }) => {
             <span>{getLeadTime()}</span>
           </div>
         </div>
+
+        {/* GrapheneOS support window */}
+        {supportInfo && (
+          <div className="mb-4" data-testid="support-until">
+            <div className="flex items-center text-sm text-text-muted font-mono">
+              <svg className="w-4 h-4 mr-2 text-matrix-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>Supported until <span className="text-matrix-400 font-semibold">{supportInfo.supportEnd}</span></span>
+            </div>
+          </div>
+        )}
 
         {/* Action Button */}
         <div className="mt-auto pt-2">
