@@ -807,10 +807,10 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
     it('sends tier B wording for unflashable devices with the deducted amount', async () => {
       const order = {
         orderNumber: 'FLO-9-001', customerEmail: 'flash@example.com',
-        pixelModel: 'Pixel 8 Pro', totalPrice: 140.44, totalRefundedAmount: 119.99,
+        pixelModel: 'Pixel 8 Pro', totalPrice: 105.44, totalRefundedAmount: 84.99,
         returnAddress: { fullName: 'Flash Customer' }
       };
-      const refundEntry = { amount: 119.99, reason: 'Carrier locked', category: 'device_unflashable', refundId: 'REF-F-1' };
+      const refundEntry = { amount: 84.99, reason: 'Carrier locked', category: 'device_unflashable', refundId: 'REF-F-1' };
 
       const result = await emailService.sendFlashServiceRefundEmail(order, refundEntry);
 
@@ -818,7 +818,7 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       const call = sendEmailSpy.mock.calls[0][0];
       expect(call.to).toBe('flash@example.com');
       expect(call.subject).toContain('FLO-9-001');
-      expect(call.htmlContent).toContain('£119.99');
+      expect(call.htmlContent).toContain('£84.99');
       expect(call.htmlContent).toContain('could not be flashed');
       expect(call.htmlContent).toContain('returned to you at no charge');
     });
@@ -828,7 +828,7 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
         orderNumber: 'FLO-9-002', customerEmail: 'flash@example.com',
         pixelModel: 'Pixel 9', returnAddress: { fullName: 'Flash Customer' }
       };
-      const result = await emailService.sendFlashServiceRefundEmail(order, { amount: 140.44, reason: 'Changed mind', category: 'cancellation_before_flashing' });
+      const result = await emailService.sendFlashServiceRefundEmail(order, { amount: 105.44, reason: 'Changed mind', category: 'cancellation_before_flashing' });
 
       const call = sendEmailSpy.mock.calls[0][0];
       expect(call.htmlContent).toContain('cancelled before the flashing service began');
@@ -864,7 +864,7 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
     it('sends payment confirmation with the PO Box shipping instructions', async () => {
       const order = {
         orderNumber: 'FLO-1-777', customerEmail: 'flash-conf@example.com', pixelModel: 'Pixel 9a',
-        basePrice: 119.99, returnShipping: 20.45, totalPrice: 140.44,
+        basePrice: 84.99, returnShipping: 20.45, totalPrice: 105.44,
         returnAddress: { fullName: 'Flash Conf Customer' },
         poBoxAddress: {
           recipientName: 'Mr Sheel Morjaria', poBoxName: 'Security', street: 'PO Box 81688',
@@ -879,7 +879,7 @@ describe('Email Service - Gap Coverage (send*Email methods)', () => {
       expect(call.to).toBe('flash-conf@example.com');
       expect(call.subject).toContain('FLO-1-777');
       expect(call.htmlContent).toContain('Pixel 9a');
-      expect(call.htmlContent).toContain('£140.44');
+      expect(call.htmlContent).toContain('£105.44');
       expect(call.htmlContent).toContain('PO Box 81688');
       expect(call.htmlContent).toContain('NW9 1TX');
       expect(call.htmlContent).toContain('FLO-1-777'); // order number with parcel

@@ -82,8 +82,8 @@ describe('FlashOrder API Endpoints', () => {
         .send(validOrderData);
 
       expect(response.status).toBe(201);
-      expect(response.body.data.totalPrice).toBe(140.44); // 119.99 + 20.45
-      expect(response.body.data.basePrice).toBe(119.99);
+      expect(response.body.data.totalPrice).toBe(105.44); // 84.99 + 20.45
+      expect(response.body.data.basePrice).toBe(84.99);
       expect(response.body.data.returnShipping).toBe(20.45);
     });
 
@@ -92,7 +92,7 @@ describe('FlashOrder API Endpoints', () => {
       const uk = await request(app).post('/api/flash-orders').send(validOrderData);
       expect(uk.body.data.shippingRegion).toBe('uk');
       expect(uk.body.data.returnShipping).toBe(20.45);
-      expect(uk.body.data.totalPrice).toBe(140.44); // 119.99 + 20.45
+      expect(uk.body.data.totalPrice).toBe(105.44); // 84.99 + 20.45
 
       // Europe — standard rate
       const europe = await request(app)
@@ -100,7 +100,7 @@ describe('FlashOrder API Endpoints', () => {
         .send({ ...validOrderData, shippingRegion: 'europe' });
       expect(europe.body.data.shippingRegion).toBe('europe');
       expect(europe.body.data.returnShipping).toBe(13.95);
-      expect(europe.body.data.totalPrice).toBe(133.94); // 119.99 + 13.95
+      expect(europe.body.data.totalPrice).toBe(98.94); // 84.99 + 13.95
 
       // Rest of World — same standard rate
       const world = await request(app)
@@ -108,7 +108,7 @@ describe('FlashOrder API Endpoints', () => {
         .send({ ...validOrderData, shippingRegion: 'world' });
       expect(world.body.data.shippingRegion).toBe('world');
       expect(world.body.data.returnShipping).toBe(13.95);
-      expect(world.body.data.totalPrice).toBe(133.94);
+      expect(world.body.data.totalPrice).toBe(98.94);
     });
 
     it('should return 400 if factoryResetConfirmed is false', async () => {
@@ -139,7 +139,7 @@ describe('FlashOrder API Endpoints', () => {
         event_type: 'PAYMENT.CAPTURE.COMPLETED',
         resource: {
           id: 'CAPTURE123',
-          amount: { value: '140.44', currency_code: 'GBP' },
+          amount: { value: '105.44', currency_code: 'GBP' },
           custom_id: orderId.toString(),
           supplementary_data: {
             related_ids: { order_id: 'PAYPAL-123' }
@@ -364,7 +364,7 @@ describe('FlashOrder API Endpoints', () => {
       event_type: 'PAYMENT.CAPTURE.COMPLETED',
       resource: {
         id: 'CAPTURE-REFUNDED-1',
-        amount: { value: '140.44', currency_code: 'GBP' },
+        amount: { value: '105.44', currency_code: 'GBP' },
         custom_id: orderId.toString(),
         supplementary_data: { related_ids: { order_id: 'PO-WH-1' } }
       }

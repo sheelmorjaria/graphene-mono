@@ -93,7 +93,7 @@ describe('Admin Flash Order Controller (integration)', () => {
       serviceConsentConfirmed: true,
       orderStatus: 'Paid',
       paymentStatus: 'Completed',
-      totalPrice: 140.44
+      totalPrice: 105.44
     });
   });
 
@@ -214,8 +214,8 @@ describe('Admin Flash Order Controller (integration)', () => {
           refunded: 0
         })
       );
-      // order2 has paymentStatus Completed + totalPrice 140.44
-      expect(res.body.data.totalRevenue).toBe(140.44);
+      // order2 has paymentStatus Completed + totalPrice 105.44
+      expect(res.body.data.totalRevenue).toBe(105.44);
     });
   });
 
@@ -394,15 +394,15 @@ describe('Admin Flash Order Controller (integration)', () => {
         .send({ reason: 'Customer cancelled', category: 'cancellation_before_flashing' });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toContain('140.44');
+      expect(res.body.message).toContain('105.44');
 
       const dbOrder = await FlashOrder.findById(order._id);
       expect(dbOrder.paymentStatus).toBe('Refunded');
       expect(dbOrder.orderStatus).toBe('Refunded');
-      expect(dbOrder.totalRefundedAmount).toBe(140.44);
+      expect(dbOrder.totalRefundedAmount).toBe(105.44);
       expect(dbOrder.refundHistory).toHaveLength(1);
       expect(dbOrder.refundHistory[0].status).toBe('succeeded');
-      expect(dbOrder.refundHistory[0].amount).toBe(140.44);
+      expect(dbOrder.refundHistory[0].amount).toBe(105.44);
       expect(dbOrder.refundHistory[0].refundId).toBe('mock-refund-id');
     });
 
@@ -415,8 +415,8 @@ describe('Admin Flash Order Controller (integration)', () => {
 
       expect(res.status).toBe(200);
       const dbOrder = await FlashOrder.findById(order._id);
-      expect(dbOrder.refundHistory[0].amount).toBe(119.99);
-      expect(dbOrder.totalRefundedAmount).toBe(119.99);
+      expect(dbOrder.refundHistory[0].amount).toBe(84.99);
+      expect(dbOrder.totalRefundedAmount).toBe(84.99);
     });
 
     it('409 policy-blocks the refund once flashing has begun', async () => {

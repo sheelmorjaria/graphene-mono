@@ -21,6 +21,11 @@ if (!process.env.MONGODB_URI) {
 mongoose.set("bufferCommands", false);
 mongoose.set("bufferTimeoutMS", 20000);
 
+// Store price = supplier (CeX) quote + flashing markup. This is the flashing
+// charge baked into every phone sold, so it must track the flash service fee
+// (BASE_PRICE in apps/backend/src/controllers/flashOrderController.js).
+const FLASH_MARKUP_GBP = 84.99;
+
 // Import models from backend
 let User, Product;
 
@@ -549,7 +554,7 @@ const createProduct = async (productData, adminUser) => {
     condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
     color: modelInfo?.color || 'Unknown',
     storage: modelInfo?.storage || '128GB',
-    price: (productData.price || 0) + 120.00,
+    price: (productData.price || 0) + FLASH_MARKUP_GBP,
     stockQuantity: 10,
     stockStatus: 'in_stock',
     sku: variationSku,
@@ -858,7 +863,7 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false, n
                 condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
                 color: modelInfo?.color || 'Unknown',
                 storage: modelInfo?.storage || '128GB',
-                price: (productData.price || 0) + 120.00,
+                price: (productData.price || 0) + FLASH_MARKUP_GBP,
                 stockQuantity: 10,
                 stockStatus: 'in_stock',
                 sku: variationSku,
@@ -898,7 +903,7 @@ export const syncAndroidPhones = async (searchQuery = 'PIXEL', dryRun = false, n
               condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent',
               color: modelInfo?.color || 'Unknown',
               storage: modelInfo?.storage || '128GB',
-              price: (productData.price || 0) + 120.00,
+              price: (productData.price || 0) + FLASH_MARKUP_GBP,
               stockQuantity: 10,
               stockStatus: 'in_stock',
               sku: variationSku,
@@ -1023,7 +1028,7 @@ export const findVariationImage = (baseModel, color, files) => {
 };
 
 // Prices-only sync: fetches supplier (CeX/webuy) prices from the CLI and
-// updates the PRICE of EXISTING variations (supplier price + £120 markup —
+// updates the PRICE of EXISTING variations (supplier price + FLASH_MARKUP_GBP —
 // same formula as the full sync). Never creates products or variations.
 //
 //   node syncFromCLI.js prices [--query PIXEL] [--dry-run]   (dry-run is the DEFAULT)
@@ -1104,7 +1109,7 @@ export const syncPricesOnly = async (searchQuery = DEFAULT_PRICE_QUERIES, apply 
         modelInfo.storage
       ].join('|');
       if (!wanted.has(key)) {
-        wanted.set(key, { ...modelInfo, condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent', price: item.price + 120.0 });
+        wanted.set(key, { ...modelInfo, condition: condition ? getConditionLabel(condition).toLowerCase() : 'excellent', price: item.price + FLASH_MARKUP_GBP });
       }
     }
 

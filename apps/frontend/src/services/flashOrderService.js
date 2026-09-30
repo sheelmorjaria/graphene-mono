@@ -92,7 +92,7 @@ export const SUPPORTED_PIXEL_MODELS = [
  * source of truth for the charged amount — these are for display only.
  */
 export const FLASH_ORDER_PRICING = {
-  basePrice: 119.99,
+  basePrice: 84.99,
   shippingOptions: [
     { region: 'uk', label: 'UK (insured)', price: 20.45 },
     { region: 'europe', label: 'Europe', price: 13.95 },

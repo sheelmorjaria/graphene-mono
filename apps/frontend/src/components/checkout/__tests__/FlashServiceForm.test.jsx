@@ -10,7 +10,7 @@ vi.mock('../../../services/flashOrderService', () => {
     { region: 'europe', label: 'Europe', price: 13.95 },
     { region: 'world', label: 'Rest of World', price: 13.95 }
   ];
-  const basePrice = 119.99;
+  const basePrice = 84.99;
   const optionFor = (region = 'uk') =>
     SHIPPING_OPTIONS.find((o) => o.region === region) || SHIPPING_OPTIONS[0];
   return {
@@ -71,22 +71,22 @@ describe('FlashServiceForm Component', () => {
     it('should render pricing information', () => {
       render(<FlashServiceForm onSuccess={mockOnSuccess} onError={mockOnError} />);
 
-      expect(screen.getByText(/£119.99/)).toBeInTheDocument();
+      expect(screen.getByText(/£84.99/)).toBeInTheDocument();
       // £20.45 appears in both the Return Shipping summary and the UK <option>
       expect(screen.getAllByText(/£20.45/).length).toBeGreaterThan(0);
-      expect(screen.getByText(/£140.44/i)).toBeInTheDocument();
+      expect(screen.getByText(/£105.44/i)).toBeInTheDocument();
     });
 
     it('updates return shipping and total when region changes', async () => {
       render(<FlashServiceForm onSuccess={mockOnSuccess} onError={mockOnError} />);
 
-      // Defaults to UK (insured): 119.99 + 20.45 = 140.44
-      expect(screen.getByText(/£140.44/)).toBeInTheDocument();
+      // Defaults to UK (insured): 84.99 + 20.45 = 105.44
+      expect(screen.getByText(/£105.44/)).toBeInTheDocument();
 
       await userEvent.selectOptions(screen.getByLabelText(/return shipping region/i), 'europe');
 
-      // Europe: 119.99 + 13.95 = 133.94
-      expect(screen.getByText(/£133.94/)).toBeInTheDocument();
+      // Europe: 84.99 + 13.95 = 98.94
+      expect(screen.getByText(/£98.94/)).toBeInTheDocument();
     });
 
     it('should render service description', () => {
@@ -247,7 +247,7 @@ describe('FlashServiceForm Component', () => {
         orderNumber: 'FLO-1234567890-001',
         customerEmail: 'test@example.com',
         pixelModel: 'Pixel 8 Pro',
-        totalPrice: 140.44
+        totalPrice: 105.44
       };
 
       createFlashOrder.mockResolvedValue(mockResponse);

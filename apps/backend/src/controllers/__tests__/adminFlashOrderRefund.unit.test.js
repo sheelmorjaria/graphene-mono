@@ -54,9 +54,9 @@ describe('Admin Flash Order refund (unit)', () => {
     pixelModel: 'Pixel 8 Pro',
     orderStatus: 'Device_Received',
     paymentStatus: 'Completed',
-    basePrice: 119.99,
+    basePrice: 84.99,
     returnShipping: 20.45,
-    totalPrice: 140.44,
+    totalPrice: 105.44,
     totalRefundedAmount: 0,
     refundHistory: [],
     statusHistory: [],
@@ -166,7 +166,7 @@ describe('Admin Flash Order refund (unit)', () => {
   // ---------------- success paths ----------------
   test('cancellation refunds the FULL total and flips statuses', async () => {
     const finalized = paidOrder({
-      refundHistory: [{ refundId: 'pending-x', amount: 140.44, status: 'pending', category: 'cancellation_before_flashing' }]
+      refundHistory: [{ refundId: 'pending-x', amount: 105.44, status: 'pending', category: 'cancellation_before_flashing' }]
     });
     let call = 0;
     FlashOrder.findById.mockImplementation(() => {
@@ -178,12 +178,12 @@ describe('Admin Flash Order refund (unit)', () => {
 
     expect(refundCapturedPayment).toHaveBeenCalledWith(expect.objectContaining({
       captureId: 'CAP-FLASH-1',
-      body: { amount: { value: '140.44', currencyCode: 'GBP' } }
+      body: { amount: { value: '105.44', currencyCode: 'GBP' } }
     }));
     expect(finalized.refundHistory[0].status).toBe('succeeded');
     expect(finalized.paymentStatus).toBe('Refunded');
     expect(finalized.orderStatus).toBe('Refunded');
-    expect(finalized.totalRefundedAmount).toBe(140.44);
+    expect(finalized.totalRefundedAmount).toBe(105.44);
     expect(finalized.statusHistory.some((h) => h.status === 'Refunded')).toBe(true);
     expect(emailService.sendFlashServiceRefundEmail).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
@@ -192,7 +192,7 @@ describe('Admin Flash Order refund (unit)', () => {
   test('device_unflashable refunds total minus return shipping', async () => {
     req.body.category = 'device_unflashable';
     const finalized = paidOrder({
-      refundHistory: [{ refundId: 'pending-x', amount: 119.99, status: 'pending', category: 'device_unflashable' }]
+      refundHistory: [{ refundId: 'pending-x', amount: 84.99, status: 'pending', category: 'device_unflashable' }]
     });
     let call = 0;
     FlashOrder.findById.mockImplementation(() => {
@@ -203,7 +203,7 @@ describe('Admin Flash Order refund (unit)', () => {
     await refundFlashOrder(req, res);
 
     expect(refundCapturedPayment).toHaveBeenCalledWith(expect.objectContaining({
-      body: { amount: { value: '119.99', currencyCode: 'GBP' } }
+      body: { amount: { value: '84.99', currencyCode: 'GBP' } }
     }));
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });

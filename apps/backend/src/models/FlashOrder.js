@@ -156,7 +156,7 @@ const flashOrderSchema = new mongoose.Schema({
   // Pricing fields
   basePrice: {
     type: Number,
-    default: 119.99
+    default: 84.99
   },
   returnShipping: {
     type: Number,
@@ -169,7 +169,7 @@ const flashOrderSchema = new mongoose.Schema({
   },
   totalPrice: {
     type: Number,
-    default: 140.44, // 119.99 + 20.45
+    default: 105.44, // 84.99 + 20.45
     min: [0, 'Total price cannot be negative']
   },
   // PO Box address - ONLY revealed after payment
@@ -224,7 +224,7 @@ flashOrderSchema.pre('save', async function(next) {
 
   // Calculate total price if not set
   if (this.totalPrice === undefined || this.totalPrice === null) {
-    const base = this.basePrice ?? 119.99;
+    const base = this.basePrice ?? 84.99;
     const shipping = this.returnShipping ?? 20.45;
     this.totalPrice = base + shipping;
   }

@@ -188,7 +188,7 @@ const FlashServicePage = () => {
                 <div className="pt-3 border-t border-border-subtle space-y-2">
                   <div className="flex justify-between">
                     <span className="text-text-secondary">Flashing Service:</span>
-                    <span className="text-text-primary font-mono">{formatFlashOrderCurrency(orderData.basePrice || 119.99)}</span>
+                    <span className="text-text-primary font-mono">{formatFlashOrderCurrency(orderData.basePrice || 84.99)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-text-secondary">Return Shipping ({getShippingOption(orderData.shippingRegion).label}):</span>
@@ -196,7 +196,7 @@ const FlashServicePage = () => {
                   </div>
                   <div className="flex justify-between pt-2 border-t border-border-subtle font-semibold">
                     <span className="text-text-primary">Total:</span>
-                    <span className="text-cyan-400 font-mono font-bold">{formatFlashOrderCurrency(orderData.totalPrice || 140.44)}</span>
+                    <span className="text-cyan-400 font-mono font-bold">{formatFlashOrderCurrency(orderData.totalPrice || 105.44)}</span>
                   </div>
                 </div>
               </div>
@@ -207,7 +207,7 @@ const FlashServicePage = () => {
                 we navigate — no webhook-timing "Order Pending" limbo). */}
             <FlashOrderPayPalPayment
               orderId={orderData.orderId}
-              amount={orderData.totalPrice || 140.44}
+              amount={orderData.totalPrice || 105.44}
               onSuccess={handlePaymentSuccess}
             />
           </div>
@@ -226,7 +226,7 @@ const FlashServicePage = () => {
               <li><strong className="text-text-primary">Your phone comes back insured.</strong> UK return shipping is fully insured and typically arrives the next working day.</li>
             </ol>
             <p className="mt-4 text-sm text-text-muted">
-              The service costs £119.99 plus return shipping (£20.45 UK insured, £13.95 Europe and rest of world).
+              The service costs £84.99 plus return shipping (£20.45 UK insured, £13.95 Europe and rest of world).
               Payment is handled by PayPal; guest checkout is available.
             </p>
           </section>

@@ -15,7 +15,7 @@ const SUPPORTED_PIXEL_MODELS = [
 ];
 
 // Default pricing
-const BASE_PRICE = 119.99;
+const BASE_PRICE = 84.99;
 // Return-shipping rates by destination region. UK includes insurance;
 // Europe and Rest of World are standard (uninsured) rates.
 const SHIPPING_RATES = {

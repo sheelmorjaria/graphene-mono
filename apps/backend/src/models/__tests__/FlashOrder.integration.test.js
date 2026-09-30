@@ -209,7 +209,7 @@ describe('FlashOrder Model', () => {
 
   describe('Total Price Calculation', () => {
     it('should calculate totalPrice as basePrice + returnShipping', async () => {
-      const basePrice = 119.99;
+      const basePrice = 84.99;
       const returnShipping = 20.45;
       const expectedTotal = basePrice + returnShipping;
 
@@ -225,8 +225,8 @@ describe('FlashOrder Model', () => {
     it('should default to base pricing if not provided', async () => {
       const order = new FlashOrder(validData);
       await order.save();
-      // Default should be 119.99 + 20.45 = 140.44
-      expect(order.totalPrice).toBe(140.44);
+      // Default should be 84.99 + 20.45 = 105.44
+      expect(order.totalPrice).toBe(105.44);
     });
 
     it('should not allow negative totalPrice', async () => {
@@ -439,7 +439,7 @@ describe('FlashOrder — service consent + refund ledger fields', () => {
       ...baseConsentFixture(),
       refundHistory: [{
         refundId: 'REF-FLASH-1',
-        amount: 140.44,
+        amount: 105.44,
         reason: 'Cancelled before flashing',
         category: 'cancellation_before_flashing',
         status: 'succeeded'

@@ -205,7 +205,7 @@ describe('refund UI', () => {
     ...mockOrder,
     orderStatus: 'Device_Received',
     paymentStatus: 'Completed',
-    totalPrice: 140.44,
+    totalPrice: 105.44,
     returnShipping: 20.45,
     paymentDetails: { paypalTransactionId: 'CAP-1' }
   };
@@ -234,11 +234,11 @@ describe('refund UI', () => {
     fireEvent.click(await screen.findByTestId('refund-flash-order-button'));
     expect(screen.getByTestId('refund-modal')).toBeInTheDocument();
     // Full amount by default
-    expect(screen.getByTestId('refund-amount-display')).toHaveTextContent('£140.44');
+    expect(screen.getByTestId('refund-amount-display')).toHaveTextContent('£105.44');
 
     // Switch to unflashable — total minus shipping
     fireEvent.change(screen.getByLabelText(/category/i), { target: { value: 'device_unflashable' } });
-    expect(screen.getByTestId('refund-amount-display')).toHaveTextContent('£119.99');
+    expect(screen.getByTestId('refund-amount-display')).toHaveTextContent('£84.99');
 
     fireEvent.change(screen.getByLabelText(/reason/i), { target: { value: 'Carrier locked on arrival' } });
     fireEvent.click(screen.getByTestId('refund-confirm-button'));
