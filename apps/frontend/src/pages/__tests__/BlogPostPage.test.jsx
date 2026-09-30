@@ -90,3 +90,55 @@ describe('BlogPostPage', () => {
     expect(screen.queryByText(/min read/i)).not.toBeInTheDocument();
   });
 });
+
+describe('BlogPostPage — Duress PIN post', () => {
+  const DURESS_SLUG = 'duress-pin-grapheneos';
+
+  it('renders the article header and guide sections', () => {
+    renderPost(DURESS_SLUG);
+
+    expect(
+      screen.getByRole('heading', { name: /The Ultimate Privacy Failsafe/i, level: 1 })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /What is a Duress PIN\?/i, level: 2 })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /How to Set Up a Duress PIN on GrapheneOS/i, level: 2 })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /Crucial Safety Warnings/i, level: 2 })
+    ).toBeInTheDocument();
+  });
+
+  it('renders the seven setup steps as a numbered list', () => {
+    renderPost(DURESS_SLUG);
+
+    expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(7);
+    expect(screen.getByText(/Confirm the Duress PIN by entering it again/i)).toBeInTheDocument();
+  });
+
+  it('links both CTAs to the storefront pages', () => {
+    renderPost(DURESS_SLUG);
+
+    const shopCta = screen.getByRole('link', { name: /Shop Pre-Installed GrapheneOS Phones/i });
+    expect(shopCta).toHaveAttribute('href', '/products');
+
+    const flashCta = screen.getByRole('link', { name: /Learn About Our Mail-in Flash Service/i });
+    expect(flashCta).toHaveAttribute('href', '/flash-service');
+  });
+
+  it('emits BlogPosting JSON-LD and the duress canonical URL', async () => {
+    renderPost(DURESS_SLUG);
+
+    await waitFor(() => {
+      const ldScripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+      expect(
+        ldScripts.some((script) => script.textContent?.includes('"@type":"BlogPosting"'))
+      ).toBe(true);
+    });
+
+    const canonical = document.querySelector('link[rel="canonical"]');
+    expect(canonical?.getAttribute('href')).toBe(`https://graphene-security.com/blog/${DURESS_SLUG}`);
+  });
+});

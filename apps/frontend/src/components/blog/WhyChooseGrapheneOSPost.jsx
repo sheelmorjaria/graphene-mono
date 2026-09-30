@@ -1,29 +1,4 @@
-import { Link } from 'react-router-dom';
-
-// Numbered section heading — the terminal aesthetic's take on long-form
-// structure: mono index, cyan accent, generous top spacing.
-const SectionHeading = ({ id, index, children }) => (
-  <h2
-    id={id}
-    className="group mt-14 mb-6 flex items-baseline gap-3 font-heading text-2xl sm:text-3xl font-bold text-text-primary tracking-tight"
-  >
-    <span className="font-mono text-sm text-cyan-400/70 tracking-widest">{index}</span>
-    <span className="border-b-2 border-transparent group-hover:border-cyan-400/40 transition-colors duration-200">
-      {children}
-    </span>
-  </h2>
-);
-
-const Paragraph = ({ children }) => (
-  <p className="mb-6 text-lg leading-relaxed text-text-secondary">{children}</p>
-);
-
-const Bullet = ({ children }) => (
-  <li className="flex items-start gap-3 mb-3">
-    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0"></span>
-    <span className="leading-relaxed text-text-secondary">{children}</span>
-  </li>
-);
+import { SectionHeading, Paragraph, Bullet, BlogPostCTA } from './postTypography';
 
 // Big Tech app → privacy app swap table. Horizontally scrollable on phones
 // rather than collapsing — the four columns only make sense side by side.
@@ -310,20 +285,7 @@ const WhyChooseGrapheneOSPost = () => (
       </Bullet>
     </ul>
 
-    <div className="flex flex-col sm:flex-row gap-4 p-6 rounded-lg border border-cyan-400/20 bg-gradient-to-br from-cyan-400/5 to-matrix-400/5">
-      <Link
-        to="/products"
-        className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-gradient-to-r from-cyan-400 to-matrix-400 text-text-on-accent font-heading font-semibold text-sm uppercase tracking-wider hover:shadow-glow-cyan transition-all duration-200"
-      >
-        Secure Your Phone Today
-      </Link>
-      <Link
-        to="/flash-service"
-        className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-cyan-400/40 text-cyan-400 font-heading font-semibold text-sm uppercase tracking-wider hover:bg-cyan-400/10 transition-all duration-200"
-      >
-        Learn About Our Flash Service
-      </Link>
-    </div>
+    <BlogPostCTA />
   </article>
 );
 

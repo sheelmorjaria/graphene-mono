@@ -6,8 +6,28 @@
 //   1. Create src/components/blog/<Name>Post.jsx exporting the article body.
 //   2. Add an entry below, newest first.
 import WhyChooseGrapheneOSPost from '../components/blog/WhyChooseGrapheneOSPost';
+import DuressPINPost from '../components/blog/DuressPINPost';
 
 export const blogPosts = [
+  {
+    slug: 'duress-pin-grapheneos',
+    title: 'The Ultimate Privacy Failsafe: How to Set Up a Duress PIN on GrapheneOS',
+    description:
+      'If you are ever forced to unlock your phone, a GrapheneOS Duress PIN wipes the device the instant it is entered. What duress codes are, who needs one, and how to configure it safely.',
+    keywords: [
+      'GrapheneOS duress PIN',
+      'duress password',
+      'wipe phone under duress',
+      'GrapheneOS security features',
+      'rubber-hose cryptanalysis',
+      'coercion protection',
+      'GrapheneOS factory reset wipe'
+    ],
+    datePublished: '2026-10-01',
+    dateModified: '2026-10-01',
+    readingTime: 5,
+    component: DuressPINPost
+  },
   {
     slug: 'why-choose-grapheneos',
     title: 'Why Choose GrapheneOS? Reclaiming Your Mobile Privacy and Security',

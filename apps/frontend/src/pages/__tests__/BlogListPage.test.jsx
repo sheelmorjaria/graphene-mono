@@ -27,8 +27,9 @@ describe('BlogListPage', () => {
   it('shows each post with its publication date', () => {
     render(<BlogListPage />);
 
-    // The registry post is published 2026-10-01 — shown in en-GB long form
-    expect(screen.getByText(/1 October 2026/i)).toBeInTheDocument();
+    // Registry posts are published 2026-10-01 — shown in en-GB long form.
+    // Posts sharing a date each render their own <time> element.
+    expect(screen.getAllByText(/1 October 2026/i).length).toBe(blogPosts.length);
   });
 
   it('sets the listing SEO metadata', async () => {
