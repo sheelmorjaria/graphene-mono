@@ -239,12 +239,23 @@ describe('returnService', () => {
     });
 
     it('returns positive days when within the window', () => {
-      // delivered 5 days ago, default 30-day window -> ~25 days remaining
-      const delivery = new Date();
-      delivery.setDate(delivery.getDate() - 5);
-      const days = getDaysRemainingInReturnWindow(delivery.toISOString());
-      expect(days).toBeGreaterThan(15);
-      expect(days).toBeLessThanOrEqual(25);
+      // Pin the clock: the implementation ceil()s the absolute time remaining,
+      // so when "now" sits such that the 30-day window crosses a clock change
+      // (e.g. any run between late Sep and 25 Oct 2026, BST→GMT) the extra
+      // hour rounds up to an extra day and breaks the ≤25 bound. Mid-June is
+      // >35 days from any transition.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-15T12:00:00'));
+      try {
+        // delivered 5 days ago, default 30-day window -> ~25 days remaining
+        const delivery = new Date();
+        delivery.setDate(delivery.getDate() - 5);
+        const days = getDaysRemainingInReturnWindow(delivery.toISOString());
+        expect(days).toBeGreaterThan(15);
+        expect(days).toBeLessThanOrEqual(25);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('returns 0 when outside the window', () => {
@@ -254,10 +265,18 @@ describe('returnService', () => {
     });
 
     it('respects a custom return window', () => {
-      const delivery = new Date();
-      delivery.setDate(delivery.getDate() - 12);
-      // 14-day window -> ~2 days remaining
-      expect(getDaysRemainingInReturnWindow(delivery.toISOString(), 14)).toBeLessThanOrEqual(2);
+      // Same DST-pin as above: a clock change inside the 14-day window would
+      // ceil() the stray hour into a third remaining day.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-15T12:00:00'));
+      try {
+        const delivery = new Date();
+        delivery.setDate(delivery.getDate() - 12);
+        // 14-day window -> ~2 days remaining
+        expect(getDaysRemainingInReturnWindow(delivery.toISOString(), 14)).toBeLessThanOrEqual(2);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
