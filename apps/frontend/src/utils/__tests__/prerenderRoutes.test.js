@@ -9,7 +9,8 @@ describe('isPrerenderableRoute', () => {
   it('allows public catalog and content pages', () => {
     for (const route of [
       '/', '/products', '/products/grapheneos-pixel-7a', '/faq', '/shipping',
-      '/flash-service', '/contact-us', '/refunds', '/privacy', '/terms'
+      '/flash-service', '/contact-us', '/refunds', '/privacy', '/terms',
+      '/blog', '/blog/why-choose-grapheneos'
     ]) {
       expect(isPrerenderableRoute(route), route).toBe(true);
     }
@@ -55,5 +56,9 @@ describe('PRERENDER_SEED_ROUTES', () => {
     for (const route of PRERENDER_SEED_ROUTES) {
       expect(isPrerenderableRoute(route), route).toBe(true);
     }
+  });
+
+  it('seeds the blog index so blog pages are baked at build time', () => {
+    expect(PRERENDER_SEED_ROUTES).toContain('/blog');
   });
 });

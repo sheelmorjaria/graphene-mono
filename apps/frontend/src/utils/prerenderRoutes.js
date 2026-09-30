@@ -8,7 +8,7 @@
 // '/' is NOT prerendered — the server 301s it to /products (duplicate-
 // canonical fix); dist/index.html remains the plain SPA fallback shell.
 export const PRERENDER_SEED_ROUTES = [
-  '/products', '/faq', '/flash-service', '/shipping', '/contact-us', '/refunds'
+  '/products', '/faq', '/flash-service', '/shipping', '/contact-us', '/refunds', '/blog'
 ];
 
 const ALLOWED_PREFIXES = [
@@ -19,7 +19,8 @@ const ALLOWED_PREFIXES = [
   '/shipping',
   '/refunds',
   '/privacy',
-  '/terms'
+  '/terms',
+  '/blog'
 ];
 
 const BLOCKED_PREFIXES = [

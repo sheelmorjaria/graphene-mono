@@ -158,3 +158,43 @@ export const generateWebPageStructuredData = ({ name, description, path, type = 
     ...(breadcrumbs ? { breadcrumb: generateBreadcrumbStructuredData(breadcrumbs) } : {})
   };
 };
+
+// BlogPosting for articles from the static registry (src/data/blogPosts.js).
+// Published under the store's identity — the store writes the articles, so
+// author/publisher is the Organization, never the GrapheneOS project.
+export const generateBlogPostingStructuredData = (post) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    url: `${SITE_URL}/blog/${post.slug}`,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/blog/${post.slug}`
+    },
+    datePublished: post.datePublished,
+    dateModified: post.dateModified || post.datePublished,
+    image: [`${SITE_URL}/og-image.jpg`],
+    author: {
+      "@type": "Organization",
+      name: "Graphene Security",
+      url: SITE_URL
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Graphene Security",
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo.png`
+      }
+    },
+    ...(post.keywords?.length ? { keywords: post.keywords.join(', ') } : {}),
+    isPartOf: {
+      "@type": "WebSite",
+      url: SITE_URL,
+      name: "Graphene Security"
+    }
+  };
+};

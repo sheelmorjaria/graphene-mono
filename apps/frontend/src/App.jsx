@@ -46,6 +46,8 @@ import ShippingInformationPage from './pages/ShippingInformationPage';
 import FAQPage from './pages/FAQPage';
 import FlashServicePage from './pages/FlashServicePage';
 import FlashOrderSuccessPage from './pages/FlashOrderSuccessPage';
+import BlogListPage from './pages/BlogListPage';
+import BlogPostPage from './pages/BlogPostPage';
 import AdminFlashOrdersListPage from './pages/AdminFlashOrdersListPage';
 import AdminFlashOrderDetailsPage from './pages/AdminFlashOrderDetailsPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -287,6 +289,15 @@ const Header = () => {
 
               <li>
                 <Link
+                  to="/blog"
+                  className="text-[var(--color-text-secondary)] hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
+                >
+                  Blog
+                </Link>
+              </li>
+
+              <li>
+                <Link
                   to="/contact-us"
                   className="text-[var(--color-text-secondary)] hover:text-cyan-400 transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider"
                 >
@@ -354,6 +365,19 @@ const Header = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                     Flashing Service
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/blog"
+                    className="flex items-center gap-3 px-4 py-3 text-[var(--color-text-secondary)] hover:text-cyan-400 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 font-heading font-semibold text-sm uppercase tracking-wider rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m0 0a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zm-4-2v10" />
+                    </svg>
+                    Blog
                   </Link>
                 </li>
 
@@ -563,6 +587,10 @@ export const AppRoutes = () => {
           {/* Flash Service routes */}
           <Route path="/flash-service" element={<FlashServicePage />} />
           <Route path="/flash-order/success" element={<FlashOrderSuccessPage />} />
+
+          {/* Blog routes (static registry — see src/data/blogPosts.js) */}
+          <Route path="/blog" element={<BlogListPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
 
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
