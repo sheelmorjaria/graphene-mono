@@ -115,6 +115,22 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Collapse trailing slashes with a 301. The static handler normalises them
+  // for file lookup, so /products/ served the same page as /products — and
+  // once the SPA hydrates it derives its canonical from location.pathname,
+  // making /products/ self-canonicalise. Two live URLs each claiming to be
+  // canonical → GSC "Duplicate, Google chose different canonical than user".
+  const pathname = req.url.split('?')[0];
+  if (pathname !== '/' && pathname.endsWith('/')) {
+    const search = req.url.slice(pathname.length);
+    res.writeHead(301, {
+      'Location': `${pathname.replace(/\/+$/, '')}${search}`,
+      'Cache-Control': 'public, max-age=86400'
+    });
+    res.end();
+    return;
+  }
+
   try {
     let filePath;
 
