@@ -152,8 +152,21 @@ describe('Product Model - Variations', () => {
 
     it('should calculate correct price range', () => {
       const priceRange = product.getPriceRange();
-      expect(priceRange.min).toBe(599); // Lowest effective price (salePrice where present)
+      // Effective price = salePrice where present, and only variations the
+      // customer can actually buy: the £599 excellent/Black is out of stock,
+      // so the range starts at the cheapest IN-STOCK effective price (649).
+      expect(priceRange.min).toBe(649);
       expect(priceRange.max).toBe(799);
+    });
+
+    it('should fall back to all variations for the range when everything is out of stock', () => {
+      product.variations.forEach(variation => {
+        variation.stockStatus = 'out_of_stock';
+        variation.stockQuantity = 0;
+      });
+
+      // Fully sold-out products still show their range rather than £0–£0
+      expect(product.getPriceRange()).toEqual({ min: 599, max: 799 });
     });
 
     it('should get total stock across all variations', () => {

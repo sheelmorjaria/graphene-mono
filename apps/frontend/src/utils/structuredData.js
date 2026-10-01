@@ -5,9 +5,14 @@ const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://graphene-security.com
 
 // The products API exposes no top-level price: offers live on variations[]
 // (salePrice preferred) with a priceRange summary. Derive the advertised
-// "from" price for the Offer schema.
+// "from" price for the Offer schema — cheapest BUYABLE variation, skipping
+// out-of-stock variants so we never advertise a price that can't be
+// purchased; falls back to the full set for entirely sold-out products.
 const resolveOfferPrice = (product) => {
-  const variationPrices = (product.variations || [])
+  const variations = product.variations || [];
+  const buyable = variations.filter((variation) => variation.stockStatus !== 'out_of_stock');
+  const pool = buyable.length > 0 ? buyable : variations;
+  const variationPrices = pool
     .map((variation) => variation.salePrice ?? variation.price)
     .filter((price) => Number.isFinite(price));
   if (variationPrices.length > 0) {

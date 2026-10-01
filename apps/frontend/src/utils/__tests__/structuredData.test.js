@@ -47,6 +47,29 @@ describe('generateProductStructuredData', () => {
     expect(schema.offers.price).toBe(265);
   });
 
+  it('ignores out-of-stock variations when deriving the offer price', () => {
+    const schema = generateProductStructuredData(buildProduct({
+      variations: [
+        { price: 200, salePrice: null, stockStatus: 'out_of_stock' },
+        { price: 300, salePrice: null, stockStatus: 'in_stock' }
+      ]
+    }));
+    // Advertising the sold-out £200 with InStock availability would be a
+    // price the customer cannot buy — the cheapest buyable variation wins.
+    expect(schema.offers.price).toBe(300);
+  });
+
+  it('falls back to out-of-stock variations when nothing is buyable', () => {
+    const schema = generateProductStructuredData(buildProduct({
+      variations: [
+        { price: 200, salePrice: null, stockStatus: 'out_of_stock' },
+        { price: 240, salePrice: null, stockStatus: 'out_of_stock' }
+      ],
+      isInStock: false
+    }));
+    expect(schema.offers.price).toBe(200);
+  });
+
   it('marks availability from isInStock', () => {
     expect(generateProductStructuredData(buildProduct()).offers.availability)
       .toBe('https://schema.org/InStock');

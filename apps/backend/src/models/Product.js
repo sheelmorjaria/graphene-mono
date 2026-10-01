@@ -208,8 +208,14 @@ productSchema.methods.getPriceRange = function() {
   if (!this.variations || this.variations.length === 0) {
     return { min: 0, max: 0 };
   }
-  
-  const prices = this.variations.map(v => v.salePrice || v.price);
+
+  // Advertise only what's buyable: out-of-stock variations are excluded so
+  // the range never leads with a price customers can't get (mirrors
+  // getAvailableColors' stock filter). Fully sold-out products fall back to
+  // the complete range rather than reporting £0.
+  const buyable = this.variations.filter(v => v.stockStatus !== 'out_of_stock');
+  const pool = buyable.length > 0 ? buyable : this.variations;
+  const prices = pool.map(v => v.salePrice || v.price);
   return {
     min: Math.min(...prices),
     max: Math.max(...prices)
