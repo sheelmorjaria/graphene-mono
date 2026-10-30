@@ -58,3 +58,19 @@ apps/backend/tmp/
 .env.tor.backup
 **/.env.backup
 **/.env.*.backup
+
+# Aegis installer kit — signing material and build artefacts never commit.
+# The keystore MUST be backed up offline: every future kit update has to be
+# signed with the SAME key or customers cannot upgrade in place.
+aegis-kit/aegis-release.keystore
+aegis-kit/.keystore-password
+aegis-kit/*.zip
+aegis-kit/*.apk
+
+# Aegis engine build workspace (canonical source lives in the separate
+# engine repo/tar) and stray local artefacts
+aegis-engine-extract/
+aegis-engine-src.zip
+workspace-*.tar
+.aider-desk/
+.aider.input.history

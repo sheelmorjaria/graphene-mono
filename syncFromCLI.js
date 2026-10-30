@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -1373,14 +1373,12 @@ export const assignVariationImages = async (apply = false, migrateUploads = fals
 };
 
 // Check if this file is being run directly
-const isMainModule = () => {
-  // Get the current file path
-  const currentFilePath = new URL(import.meta.url).pathname;
-  // Get the executed script path
-  const executedFilePath = process.argv[1];
-  
-  return currentFilePath === executedFilePath;
-};
+// Compare as file URLs: process.argv[1] is the script path EXACTLY as typed
+// ("syncFromCLI.js" when run relative from the repo root), which never
+// string-matches the absolute import.meta.url pathname — the script then
+// exits silently without running the command (bit the price-sync cron).
+const isMainModule = () =>
+  !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 // Run if executed directly
 if (isMainModule()) {

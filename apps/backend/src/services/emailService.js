@@ -1277,6 +1277,129 @@ class EmailService {
     }
   }
 
+  // Aegis order payment confirmation: sent when an Aegis Hardening Suite
+  // licence order is paid. Carries the per-order installer-kit download
+  // link (automated delivery) — the receipt AND the delivery in one email.
+  async sendAegisOrderConfirmationEmail(order, { downloadUrl } = {}) {
+    try {
+      const customerEmail = order?.customerEmail;
+      if (!customerEmail) {
+        return { success: false, error: 'No customer email available on Aegis order' };
+      }
+
+      const content = `
+        <p>Thank you — your payment for the Aegis Hardening Suite has been received.</p>
+
+        <div class="order-details">
+          <h3>Order Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value highlight">${order.orderNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Product:</span>
+            <span class="detail-value">Aegis Hardening Suite (lifetime licence)</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Licensed Device:</span>
+            <span class="detail-value">Pixel ${order.pixelModel}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Total Paid:</span>
+            <span class="detail-value success">£${(order.amountGbp ?? 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        ${downloadUrl ? `
+        <div class="order-details">
+          <h3>Your Installer Kit</h3>
+          <p>Download your installer kit and setup guide:</p>
+          <p style="margin: 16px 0;"><a href="${downloadUrl}" style="display: inline-block; background: #22d3ee; color: #0a0f14; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Download the Aegis installer kit</a></p>
+          <p style="font-size: 13px; color: #94a3b8;">This is your personal download link for order <strong>${order.orderNumber}</strong> — keep this email. It stays active for the lifetime of your licence and always serves the latest kit version.</p>
+        </div>
+        ` : ''}
+
+        <div class="order-details">
+          <h3>What Happens Next</h3>
+          <p>The licence covers one device — your Pixel ${order.pixelModel} — for its lifetime, with 12 months of suite updates included.</p>
+          <p>Guided setup takes around 30 minutes: the installer walks you through arming the suite, setting your duress PINs and choosing your optional protections. Keep the generated recovery sheet somewhere safe and offline.</p>
+        </div>
+
+        <p>If you have any questions, reply to this email or contact our support team quoting your order number.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Aegis Order Confirmed',
+        content,
+        'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: customerEmail,
+        subject: `Your Aegis Installer Kit - Order ${order.orderNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'aegis_order_confirmation_email' });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Aegis refund: sent after a successful full PayPal refund of an Aegis
+  // licence order that had not yet been fulfilled.
+  async sendAegisRefundEmail(order, refundEntry) {
+    try {
+      const content = `
+        <p>Your Aegis Hardening Suite order has been refunded.</p>
+
+        <div class="order-details">
+          <h3>Refund Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value highlight">${order.orderNumber}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Licensed Device:</span>
+            <span class="detail-value">Pixel ${order.pixelModel}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Refund Amount:</span>
+            <span class="detail-value success">£${(refundEntry?.amount ?? order.totalRefundedAmount ?? 0).toFixed(2)}</span>
+          </div>
+          ${refundEntry?.refundId ? `
+          <div class="detail-row">
+            <span class="detail-label">Refund ID:</span>
+            <span class="detail-value">${refundEntry.refundId}</span>
+          </div>
+          ` : ''}
+          <div class="detail-row">
+            <span class="detail-label">Reason:</span>
+            <span class="detail-value">${refundEntry?.reason || 'Refund issued'}</span>
+          </div>
+        </div>
+
+        <p>The refund will appear in your original payment method within 5-10 business days. If you have any questions, please contact our support team with your order number.</p>
+      `;
+
+      const htmlContent = this.generateEmailTemplate(
+        'Aegis Order Refunded',
+        content,
+        'Valued Customer'
+      );
+
+      return await this.sendEmail({
+        to: order.customerEmail,
+        subject: `Refund Confirmation - Aegis ${order.orderNumber}`,
+        htmlContent
+      });
+
+    } catch (error) {
+      logError(error, { context: 'aegis_refund_email' });
+      return { success: false, error: error.message };
+    }
+  }
+
   // Flash service refund (tiered policy): sent after a successful PayPal
   // refund of a flashing-service order that had NOT begun flashing.
   async sendFlashServiceRefundEmail(order, refundEntry) {

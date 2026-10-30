@@ -1177,6 +1177,205 @@ export const getFlashOrderStats = async () => {
   }
 };
 
+// Aegis Order Admin Functions
+
+// Get all Aegis Orders (admin only)
+export const getAllAegisOrders = async (filters = {}) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      customerQuery,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = filters;
+
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      sortOrder
+    });
+
+    if (status && status !== 'all') {
+      params.append('status', status);
+    }
+
+    if (customerQuery) {
+      params.append('customerQuery', customerQuery);
+    }
+
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/aegis-orders?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch Aegis orders');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get all Aegis orders error:', error);
+    throw error;
+  }
+};
+
+// Get Aegis Order by ID (admin only)
+export const getAegisOrderById = async (orderId) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/aegis-orders/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch Aegis order');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get Aegis order by ID error:', error);
+    throw error;
+  }
+};
+
+// Update Aegis Order status (admin only) — Fulfilled is the licence-delivery action
+export const updateAegisOrderStatus = async (orderId, statusData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/aegis-orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(statusData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to update Aegis order status');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update Aegis order status error:', error);
+    throw error;
+  }
+};
+
+// Refund an Aegis Order (full amount only — server refuses once Fulfilled;
+// amounts are server-computed)
+export const refundAegisOrder = async (orderId, refundData) => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/aegis-orders/${orderId}/refund`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(refundData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to refund Aegis order');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Refund Aegis order error:', error);
+    throw error;
+  }
+};
+
+// Get Aegis Order statistics (admin only)
+export const getAegisOrderStats = async () => {
+  try {
+    const token = getAdminToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/aegis-orders/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        adminLogout();
+      }
+      throw new Error(data.error || 'Failed to fetch Aegis order statistics');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get Aegis order stats error:', error);
+    throw error;
+  }
+};
+
 export default {
   adminLogin,
   getDashboardMetrics,
@@ -1205,7 +1404,12 @@ export default {
   getAllFlashOrders,
   getFlashOrderById,
   updateFlashOrderStatus,
-  getFlashOrderStats
+  getFlashOrderStats,
+  getAllAegisOrders,
+  getAegisOrderById,
+  updateAegisOrderStatus,
+  refundAegisOrder,
+  getAegisOrderStats
 };
 
 // Sales Report

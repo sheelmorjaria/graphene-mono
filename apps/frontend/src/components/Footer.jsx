@@ -47,6 +47,12 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/aegis" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
+                  <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
+                  Aegis Hardening Suite
+                </Link>
+              </li>
+              <li>
                 <Link to="/blog" className="text-sm text-text-secondary hover:text-cyan-400 transition-colors duration-200 flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-border-strong group-hover:bg-cyan-400 rounded-full transition-colors duration-200"></span>
                   Blog
