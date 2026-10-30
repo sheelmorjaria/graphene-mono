@@ -19,6 +19,15 @@ vi.mock('../../models/Order.js', () => ({
   })
 }));
 
+vi.mock('../../models/AegisOrder.js', () => ({
+  default: Object.assign(vi.fn(), {
+    find: vi.fn(),
+    findById: vi.fn(),
+    countDocuments: vi.fn(),
+    aggregate: vi.fn()
+  })
+}));
+
 vi.mock('../../models/Product.js', () => ({
   default: Object.assign(vi.fn(), {
     find: vi.fn(),
@@ -67,6 +76,7 @@ import {
 
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
+import AegisOrder from '../../models/AegisOrder.js';
 import Product from '../../models/Product.js';
 import ReturnRequest from '../../models/ReturnRequest.js';
 import emailService from '../../services/emailService.js';
@@ -128,6 +138,14 @@ describe('Admin Controller - Coverage Gap Unit Tests', () => {
         .mockResolvedValueOnce(8)
         .mockResolvedValueOnce(20);
 
+      AegisOrder.countDocuments
+        .mockResolvedValueOnce(12) // total
+        .mockResolvedValueOnce(9); // paid / fulfilled
+
+      AegisOrder.aggregate
+        .mockResolvedValueOnce([{ total: 1188 }]) // gross revenue
+        .mockResolvedValueOnce([{ total: 99 }]); // refunded
+
       await getDashboardMetrics(req, res);
 
       expect(res.json).toHaveBeenCalledWith(
@@ -136,7 +154,8 @@ describe('Admin Controller - Coverage Gap Unit Tests', () => {
           data: expect.objectContaining({
             orders: { total: 100, today: 10, week: 40, month: 80, pending: 5, awaitingShipment: 3 },
             revenue: { total: 5000, today: 500, week: 2000, month: 0 },
-            customers: { newToday: 2, newWeek: 8, newMonth: 20 }
+            customers: { newToday: 2, newWeek: 8, newMonth: 20 },
+            aegis: { orders: { total: 12, paid: 9 }, revenue: { gross: 1188, net: 1089 } }
           })
         })
       );

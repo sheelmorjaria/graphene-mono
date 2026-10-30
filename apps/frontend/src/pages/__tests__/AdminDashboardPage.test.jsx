@@ -278,6 +278,35 @@ describe('AdminDashboardPage', () => {
     // Customer metrics
     expect(screen.getByText('New Customers')).toBeInTheDocument();
     expect(screen.getAllByText('Today').length).toBeGreaterThan(0);
+
+    // Aegis tile is hidden when the metrics payload carries no aegis block
+    expect(screen.queryByText('Aegis Revenue')).not.toBeInTheDocument();
+  });
+
+  it('displays the Aegis revenue tile when aegis metrics are present', async () => {
+    adminService.getDashboardMetrics.mockResolvedValue({
+      data: {
+        ...mockMetrics,
+        aegis: {
+          orders: { total: 12, paid: 9 },
+          revenue: { gross: 1188.00, net: 1089.00 }
+        }
+      }
+    });
+
+    render(
+      <MockRouter>
+        <AdminDashboardPage />
+      </MockRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Aegis Revenue')).toBeInTheDocument();
+    });
+    // net revenue rendered; gross shown in the subtitle when it differs
+    expect(screen.getByText('£1,089.00')).toBeInTheDocument();
+    expect(screen.getByText(/gross £1,188\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/12 licences/)).toBeInTheDocument();
   });
 
   it('displays quick actions section', async () => {

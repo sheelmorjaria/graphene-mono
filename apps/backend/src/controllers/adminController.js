@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
+import AegisOrder from '../models/AegisOrder.js';
 import Product from '../models/Product.js';
 import ReturnRequest from '../models/ReturnRequest.js';
 import Device from '../models/Device.js';
@@ -9,6 +10,8 @@ import Category from '../models/Category.js';
 import emailService from '../services/emailService.js';
 import { notifyIndexNow } from '../services/indexNowService.js';
 import { getPayPalClient } from './paymentController.js';
+
+const round2 = (n) => Math.round(n * 100) / 100;
 
 // Admin login
 export const adminLogin = async (req, res) => {
@@ -135,7 +138,11 @@ export const getDashboardMetrics = async (req, res) => {
       monthRevenue,
       newCustomersToday,
       newCustomersWeek,
-      newCustomersMonth
+      newCustomersMonth,
+      aegisTotalOrders,
+      aegisPaidOrders,
+      aegisGrossRevenue,
+      aegisRefundedRevenue
     ] = await Promise.all([
       // Total orders
       Order.countDocuments({}),
@@ -220,7 +227,26 @@ export const getDashboardMetrics = async (req, res) => {
       User.countDocuments({
         role: 'customer',
         createdAt: { $gte: thisMonth }
-      })
+      }),
+
+      // Aegis licence orders (all statuses)
+      AegisOrder.countDocuments({}),
+
+      // Aegis orders currently revenue-bearing (paid, awaiting fulfilment
+      // or delivered)
+      AegisOrder.countDocuments({ orderStatus: { $in: ['Paid', 'Fulfilled'] } }),
+
+      // Aegis gross revenue — every completed payment
+      AegisOrder.aggregate([
+        { $match: { paymentStatus: 'Completed' } },
+        { $group: { _id: null, total: { $sum: '$amountGbp' } } }
+      ]),
+
+      // Aegis refunded revenue — subtracted for the net figure
+      AegisOrder.aggregate([
+        { $match: { paymentStatus: 'Refunded' } },
+        { $group: { _id: null, total: { $sum: '$amountGbp' } } }
+      ])
     ]);
 
     // Format the response
@@ -243,6 +269,16 @@ export const getDashboardMetrics = async (req, res) => {
         newToday: newCustomersToday,
         newWeek: newCustomersWeek,
         newMonth: newCustomersMonth
+      },
+      aegis: {
+        orders: {
+          total: aegisTotalOrders,
+          paid: aegisPaidOrders
+        },
+        revenue: {
+          gross: aegisGrossRevenue[0]?.total || 0,
+          net: round2((aegisGrossRevenue[0]?.total || 0) - (aegisRefundedRevenue[0]?.total || 0))
+        }
       },
       lastUpdated: currentDate
     };

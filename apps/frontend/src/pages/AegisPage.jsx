@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AegisPayPalPayment from '../components/checkout/AegisPayPalPayment';
 import {
@@ -39,6 +40,7 @@ const GROUP_ICONS = {
 
 const AegisPage = () => {
   const { user, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState('form'); // 'form' | 'payment' | 'success'
   const [orderData, setOrderData] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState('');
@@ -71,6 +73,16 @@ const AegisPage = () => {
       cancelled = true;
     };
   }, []);
+
+  // Deep-link prefill: product pages link here as /aegis?model=<baseModel>
+  // ("7 Pro" etc.) — preselect it once the catalog list arrives and confirms
+  // it's a stocked model.
+  useEffect(() => {
+    const modelParam = searchParams.get('model');
+    if (modelParam && models.length > 0 && models.some((m) => m.value === modelParam)) {
+      setPixelModel((current) => current || modelParam);
+    }
+  }, [searchParams, models]);
 
   const validate = () => {
     if (!EMAIL_RE.test(email.trim())) return 'Enter a valid email address.';

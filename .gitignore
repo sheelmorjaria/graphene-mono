@@ -74,3 +74,4 @@ aegis-engine-src.zip
 workspace-*.tar
 .aider-desk/
 .aider.input.history
+aegis-kit/*.idsig

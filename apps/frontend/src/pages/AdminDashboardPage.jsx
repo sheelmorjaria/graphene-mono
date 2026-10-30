@@ -302,6 +302,20 @@ const AdminDashboardPage = () => {
                     </svg>
                   }
                 />
+
+                {metrics.aegis && (
+                  <MetricCard
+                    title="Aegis Revenue"
+                    value={formatCurrency(metrics.aegis.revenue.net)}
+                    subtitle={`${formatNumber(metrics.aegis.orders.total)} licences · net of refunds${metrics.aegis.revenue.gross !== metrics.aegis.revenue.net ? ` (gross ${formatCurrency(metrics.aegis.revenue.gross)})` : ''}`}
+                    color="cyan"
+                    icon={
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    }
+                  />
+                )}
               </div>
             </div>
 
@@ -412,6 +426,24 @@ const AdminDashboardPage = () => {
                       <h3 className="ml-4 text-lg font-heading font-semibold text-text-primary uppercase tracking-wider">Flash Orders</h3>
                     </div>
                     <p className="text-text-secondary text-sm font-mono">Manage GrapheneOS flashing service orders</p>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/admin/aegis-orders"
+                  className="group relative bg-bg-card p-6 rounded-lg border border-border-subtle hover:border-cyan-400/50 hover:shadow-glow-cyan transition-all duration-300 block"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    <div className="flex items-center mb-4">
+                      <div className="p-3 bg-cyan-subtle text-cyan-400 rounded-lg border border-cyan-400/30">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </div>
+                      <h3 className="ml-4 text-lg font-heading font-semibold text-text-primary uppercase tracking-wider">Aegis Orders</h3>
+                    </div>
+                    <p className="text-text-secondary text-sm font-mono">Aegis Hardening Suite licences, delivery and refunds</p>
                   </div>
                 </Link>
 

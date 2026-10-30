@@ -196,4 +196,21 @@ describe('AegisPage', () => {
       expect(screen.getByTestId('aegis-models-error')).toBeInTheDocument();
     });
   });
+
+  it('preselects the model from the ?model= deep link (product-page cross-sell)', async () => {
+    render(<AegisPage />, { initialEntries: ['/aegis?model=7%20Pro'] });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Pixel model to license/i)).toHaveValue('7 Pro');
+    });
+  });
+
+  it('ignores a deep-linked model that is not stocked', async () => {
+    render(<AegisPage />, { initialEntries: ['/aegis?model=Pixel%204'] });
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Pixel 7 Pro' })).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText(/Pixel model to license/i)).toHaveValue('');
+  });
 });
