@@ -39,6 +39,10 @@ describe('Aegis Order API (integration)', () => {
     app.use('/api/aegis-orders', aegisOrderRoutes);
     kitPath = path.join(os.tmpdir(), `aegis-test-kit-${Date.now()}.zip`);
     fs.writeFileSync(kitPath, KIT_BYTES);
+    // Build the schema indexes the way the full CI run does (earlier suites
+    // sync them; running this file alone would otherwise skip them) — the
+    // seed below must satisfy the unique variations.sku index.
+    await Product.syncIndexes();
   });
 
   beforeEach(async () => {
@@ -58,10 +62,12 @@ describe('Aegis Order API (integration)', () => {
     // Catalog: two stocked models + one delisted (isActive false). Raw
     // collection insert — only baseModel/isActive matter here, and the
     // Product schema's required catalog fields are irrelevant to matching.
+    // Each doc carries a UNIQUE variations.sku: the schema's unique index
+    // on that path rejects multiple nulls (E11000) once indexes exist.
     await Product.collection.insertMany([
-      { name: 'GrapheneOS Pixel 7 Pro', slug: 'grapheneos-pixel-7-pro', sku: 'PX-7PRO', baseModel: '7 Pro', isActive: true },
-      { name: 'GrapheneOS Pixel 10 Pro Fold', slug: 'grapheneos-pixel-10-pro-fold', sku: 'PX-10PROFOLD', baseModel: '10 Pro Fold', isActive: true },
-      { name: 'GrapheneOS Pixel 6', slug: 'grapheneos-pixel-6', sku: 'PX-6', baseModel: '6', isActive: false }
+      { name: 'GrapheneOS Pixel 7 Pro', slug: 'grapheneos-pixel-7-pro', sku: 'PX-7PRO', baseModel: '7 Pro', isActive: true, variations: [{ sku: 'test-var-7pro' }] },
+      { name: 'GrapheneOS Pixel 10 Pro Fold', slug: 'grapheneos-pixel-10-pro-fold', sku: 'PX-10PROFOLD', baseModel: '10 Pro Fold', isActive: true, variations: [{ sku: 'test-var-10profold' }] },
+      { name: 'GrapheneOS Pixel 6', slug: 'grapheneos-pixel-6', sku: 'PX-6', baseModel: '6', isActive: false, variations: [{ sku: 'test-var-6' }] }
     ]);
 
     paidOrder = await AegisOrder.create({
