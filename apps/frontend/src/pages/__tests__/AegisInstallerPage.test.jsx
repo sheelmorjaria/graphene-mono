@@ -184,6 +184,34 @@ describe('AegisInstallerPage', () => {
     expect(adbClient.launchSetupActivity).toHaveBeenCalled();
   });
 
+  it('treats "device owner already set" as success on retry (idempotent provision)', async () => {
+    adbClient.installApkFromUrl.mockResolvedValue();
+    adbClient.runCommand.mockImplementation(async (cmd) => {
+      if (cmd.startsWith('dpm set-device-owner')) {
+        return { exitCode: 1, stdout: '', stderr: 'java.lang.IllegalStateException: Trying to set the device owner, but device owner is already set!' };
+      }
+      return { exitCode: 0, stdout: '', stderr: '' };
+    });
+
+    render(<AegisInstallerPage />, { initialEntries: ['/aegis/installer?token=abcdefghij0123456789'] });
+    await advanceThrough('prepare');
+    fireEvent.click(screen.getByTestId('continue-button'));
+    adbClient.connect.mockResolvedValue({ serial: 'S', deviceModel: 'shiba', grapheneosVersion: '1' });
+    fireEvent.click(screen.getByTestId('connect-button'));
+    await screen.findByTestId('device-connected');
+    fireEvent.click(screen.getByTestId('continue-button'));
+    fireEvent.click(screen.getByTestId('install-button'));
+    await screen.findByTestId('installer-step-provision');
+
+    fireEvent.click(screen.getByTestId('provision-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('installer-step-arm')).toBeInTheDocument();
+    });
+    // No failure card, and the retry note is shown in the results
+    expect(screen.queryByTestId('dpm-failed')).not.toBeInTheDocument();
+  });
+
   it('writes activity to the log panel', async () => {
     render(<AegisInstallerPage />, { initialEntries: ['/aegis/installer?token=abcdefghij0123456789'] });
 

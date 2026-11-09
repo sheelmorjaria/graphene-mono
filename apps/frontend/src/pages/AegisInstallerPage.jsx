@@ -214,7 +214,20 @@ const AegisInstallerPage = () => {
       for (const { label, cmd, critical } of PROVISION_COMMANDS) {
         appendLog(`$ ${cmd}`);
         const result = await adbClient.runCommand(cmd);
-        const entry = { label, cmd, ok: result.exitCode === 0, critical: Boolean(critical), output: result.stdout || result.stderr };
+        // Idempotent retry: on an already-provisioned phone dpm refuses a
+        // second set-device-owner with "already set" — that's success.
+        const alreadyDone = /already\s+(set|an?\s+device\s+owner|owner)/i.test(
+          `${result.stdout} ${result.stderr}`
+        );
+        const entry = {
+          label,
+          cmd,
+          ok: result.exitCode === 0 || alreadyDone,
+          critical: Boolean(critical),
+          output: alreadyDone && result.exitCode !== 0
+            ? 'Device owner already set — continuing'
+            : (result.stdout || result.stderr)
+        };
         results.push(entry);
         setProvisionResults([...results]);
         appendLog(`${entry.ok ? 'OKAY' : 'WARN'}${entry.output ? `: ${entry.output}` : ''}`);
