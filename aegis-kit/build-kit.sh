@@ -10,6 +10,9 @@ set -euo pipefail
 APK_IN="${1:?usage: build-kit.sh <unsigned-release.apk> [engine-repo]}"
 ENGINE="${2:-/home/sheel/~/graphene-mono/graphene-mono/aegis-engine-extract/aegis-engine}"
 KIT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Delivery dir: inside the backend build context so CapRover's image ships
+# the artefacts (repo-root aegis-kit never enters the build context).
+DELIVERY_DIR="$KIT_DIR/../apps/backend/aegis-kit"
 BT="${ANDROID_BUILD_TOOLS:-$HOME/Android/Sdk/build-tools/36.0.0}"
 
 [ -f "$APK_IN" ] || { echo "❌ APK not found: $APK_IN" >&2; exit 1; }
@@ -35,10 +38,12 @@ cp "$ENGINE/docs/PROVISIONING.md" "$ENGINE/docs/FEATURE-MAP.md" \
    "$ENGINE/docs/THREAT-MODEL.md" "$ENGINE/LICENSE-NOTES.md" "$STAGE/"
 [ -f "$ENGINE/provision/provision.sh" ] && cp "$ENGINE/provision/provision.sh" "$STAGE/"
 
-(cd "$TMP" && zip -qr "$KIT_DIR/aegis-installer-kit.zip" aegis-installer-kit)
+mkdir -p "$DELIVERY_DIR"
+(cd "$TMP" && zip -qr "$DELIVERY_DIR/aegis-installer-kit.zip" aegis-installer-kit)
 # Keep the signed APK beside the kit — the web installer streams this file
 # (GET /api/aegis-orders/download/:token?file=apk).
-cp "$KIT_DIR/aegis-engine-signed.apk" "$KIT_DIR/aegis-engine.apk"
+cp "$KIT_DIR/aegis-engine-signed.apk" "$DELIVERY_DIR/aegis-engine.apk"
 rm -f "$KIT_DIR/aegis-engine-signed.apk"
 
-echo "✅ Kit rebuilt: $KIT_DIR/aegis-installer-kit.zip ($(du -h "$KIT_DIR/aegis-installer-kit.zip" | cut -f1)) + aegis-engine.apk"
+echo "✅ Kit rebuilt: $DELIVERY_DIR/aegis-installer-kit.zip ($(du -h "$DELIVERY_DIR/aegis-installer-kit.zip" | cut -f1)) + aegis-engine.apk"
+echo "   Commit the two files in apps/backend/aegis-kit to ship them."

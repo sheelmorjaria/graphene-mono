@@ -79,5 +79,9 @@ aegis-kit/*.idsig
 # Delivery artefacts ship in the repo (Option B) — the web installer and
 # download links serve them from the backend image. Narrow exceptions to
 # the *.zip/*.apk rules above; signing material above stays ignored.
-!aegis-kit/aegis-installer-kit.zip
-!aegis-kit/aegis-engine.apk
+# Delivery artefacts live in apps/backend/aegis-kit (inside the CapRover
+# build context); build-kit.sh writes them there from the signing dir.
+apps/backend/aegis-kit/*
+!apps/backend/aegis-kit/aegis-installer-kit.zip
+!apps/backend/aegis-kit/aegis-engine.apk
+!apps/backend/aegis-kit/README.md

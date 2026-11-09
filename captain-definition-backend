@@ -6,6 +6,7 @@
     "WORKDIR /app",
     "COPY apps/backend/package.json ./",
     "COPY apps/backend ./",
+    "COPY apps/backend/aegis-kit /app/aegis-kit",
     "WORKDIR /app",
     "RUN npm install --omit=dev --legacy-peer-deps",
     "RUN addgroup -g 1001 -S nodejs && \\",

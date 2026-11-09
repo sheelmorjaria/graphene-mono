@@ -18,18 +18,31 @@ export const AEGIS_PRICE_GBP = 99.00;
 // Automated delivery: the installer kit (built Aegis engine + setup guide,
 // zipped) is served from disk. Rebuild/replace the file to ship a new
 // version — every paid order's download link serves the current file.
-// Default resolves to <repo-root>/aegis-kit/ regardless of the process cwd
-// (dev runs from apps/backend, containers from /app) — set AEGIS_KIT_PATH
-// explicitly when the backend image ships without the repo layout.
-export const getAegisKitPath = () =>
-  process.env.AEGIS_KIT_PATH ||
-  path.resolve(__dirname, '../../../..', 'aegis-kit', 'aegis-installer-kit.zip');
+// Resolution order: AEGIS_KIT_PATH env, the repo layout (dev), then the
+// container layout — CapRover builds copy apps/backend to /app, which puts
+// the artefacts at /app/aegis-kit.
+const KIT_FILENAME = 'aegis-installer-kit.zip';
+const kitCandidates = () => [
+  path.resolve(__dirname, '../..', 'aegis-kit', KIT_FILENAME),        // backend dir (dev + backend-context builds)
+  path.resolve(__dirname, '../../../..', 'aegis-kit', KIT_FILENAME), // repo layout (legacy)
+  `/app/aegis-kit/${KIT_FILENAME}`                                   // container fallback
+];
+
+export const getAegisKitPath = () => {
+  if (process.env.AEGIS_KIT_PATH) return process.env.AEGIS_KIT_PATH;
+  const candidates = kitCandidates();
+  return candidates.find((p) => fs.existsSync(p)) || candidates[0];
+};
 
 // The raw signed APK (kept alongside the kit zip by build-kit.sh) — served
 // to the web installer for streaming install.
-export const getAegisApkPath = () =>
-  process.env.AEGIS_APK_PATH ||
-  path.join(path.dirname(getAegisKitPath()), 'aegis-engine.apk');
+export const getAegisApkPath = () => {
+  if (process.env.AEGIS_APK_PATH) return process.env.AEGIS_APK_PATH;
+  const kitDir = path.dirname(getAegisKitPath());
+  const apk = path.join(kitDir, 'aegis-engine.apk');
+  if (fs.existsSync(apk)) return apk;
+  return '/app/aegis-kit/aegis-engine.apk';
+};
 
 export const getAegisKitFilename = () => path.basename(getAegisKitPath());
 
