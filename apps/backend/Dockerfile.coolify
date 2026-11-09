@@ -16,6 +16,13 @@ COPY apps/backend ./apps/backend
 COPY apps/backend/cli-linux-amd64 ./apps/backend/cli-linux-amd64
 RUN chmod +x ./apps/backend/cli-linux-amd64
 
+# Aegis delivery artefacts (kit zip + signed APK; signing material is
+# gitignored and never reaches the build context). Served by
+# /api/aegis-orders/download/:token — the controller resolves
+# <repo-root>/aegis-kit from the controller file, which is /app/aegis-kit
+# in this layout.
+COPY aegis-kit ./aegis-kit
+
 # Build backend
 WORKDIR /app/apps/backend
 
