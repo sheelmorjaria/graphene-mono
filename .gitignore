@@ -75,3 +75,9 @@ workspace-*.tar
 .aider-desk/
 .aider.input.history
 aegis-kit/*.idsig
+
+# Delivery artefacts ship in the repo (Option B) — the web installer and
+# download links serve them from the backend image. Narrow exceptions to
+# the *.zip/*.apk rules above; signing material above stays ignored.
+!aegis-kit/aegis-installer-kit.zip
+!aegis-kit/aegis-engine.apk
