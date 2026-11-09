@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AegisPayPalPayment from '../components/checkout/AegisPayPalPayment';
 import {
@@ -244,6 +244,13 @@ const AegisPage = () => {
                   <p className="text-center text-xs text-text-muted">
                     Payment is processed by PayPal — your card details never touch our servers.
                   </p>
+
+                  <p className="text-center text-xs text-text-muted">
+                    Already have a licence?{' '}
+                    <Link to="/aegis/installer" className="text-cyan-400 hover:text-cyan-300 underline" data-testid="installer-link-from-aegis">
+                      Install it in your browser — no terminal needed
+                    </Link>
+                  </p>
                 </div>
               </form>
             </div>
@@ -327,13 +334,22 @@ const AegisPage = () => {
               </div>
 
               {downloadUrl && (
-                <a
-                  href={downloadUrl}
-                  className="inline-block mb-6 bg-gradient-to-r from-cyan-400 to-matrix-400 text-text-on-accent font-heading font-bold text-sm uppercase tracking-wider rounded-lg px-8 py-3 hover:shadow-glow-cyan transition-all"
-                  data-testid="aegis-download-button"
-                >
-                  Download the installer kit
-                </a>
+                <div className="flex flex-col sm:flex-row justify-center gap-3 mb-6">
+                  <a
+                    href={`/aegis/installer?token=${downloadUrl.split('/').pop()}`}
+                    className="inline-block bg-gradient-to-r from-cyan-400 to-matrix-400 text-text-on-accent font-heading font-bold text-sm uppercase tracking-wider rounded-lg px-8 py-3 hover:shadow-glow-cyan transition-all"
+                    data-testid="aegis-web-installer-button"
+                  >
+                    Install in your browser
+                  </a>
+                  <a
+                    href={downloadUrl}
+                    className="inline-block border border-cyan-400 text-cyan-400 font-heading font-bold text-sm uppercase tracking-wider rounded-lg px-8 py-3 hover:shadow-glow-cyan transition-all"
+                    data-testid="aegis-download-button"
+                  >
+                    Download the kit (ZIP)
+                  </a>
+                </div>
               )}
 
               <div className="text-left text-sm text-text-secondary space-y-2">

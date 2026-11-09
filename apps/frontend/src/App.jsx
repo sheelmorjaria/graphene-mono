@@ -47,6 +47,7 @@ import FAQPage from './pages/FAQPage';
 import FlashServicePage from './pages/FlashServicePage';
 import FlashOrderSuccessPage from './pages/FlashOrderSuccessPage';
 import AegisPage from './pages/AegisPage';
+import AegisInstallerPage from './pages/AegisInstallerPage';
 import BlogListPage from './pages/BlogListPage';
 import BlogPostPage from './pages/BlogPostPage';
 import AdminFlashOrdersListPage from './pages/AdminFlashOrdersListPage';
@@ -613,6 +614,7 @@ export const AppRoutes = () => {
           <Route path="/flash-service" element={<FlashServicePage />} />
           <Route path="/flash-order/success" element={<FlashOrderSuccessPage />} />
           <Route path="/aegis" element={<AegisPage />} />
+          <Route path="/aegis/installer" element={<AegisInstallerPage />} />
 
           {/* Blog routes (static registry — see src/data/blogPosts.js) */}
           <Route path="/blog" element={<BlogListPage />} />

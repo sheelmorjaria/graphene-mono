@@ -25,12 +25,22 @@ export const getAegisKitPath = () =>
   process.env.AEGIS_KIT_PATH ||
   path.resolve(__dirname, '../../../..', 'aegis-kit', 'aegis-installer-kit.zip');
 
+// The raw signed APK (kept alongside the kit zip by build-kit.sh) — served
+// to the web installer for streaming install.
+export const getAegisApkPath = () =>
+  process.env.AEGIS_APK_PATH ||
+  path.join(path.dirname(getAegisKitPath()), 'aegis-engine.apk');
+
 export const getAegisKitFilename = () => path.basename(getAegisKitPath());
 
 // Absolute download URL for emails. BACKEND_URL is the public API origin
 // (same env the rest of the app uses for absolute links).
 export const aegisDownloadUrlFor = (token) =>
   `${(process.env.BACKEND_URL || 'https://api.graphene-security.com').replace(/\/$/, '')}/api/aegis-orders/download/${token}`;
+
+// Deep link into the web installer with the licence token pre-filled
+export const aegisInstallerUrlFor = (token) =>
+  `${(process.env.FRONTEND_URL || 'https://graphene-security.com').replace(/\/$/, '')}/aegis/installer?token=${token}`;
 
 const generateDownloadToken = () => crypto.randomBytes(24).toString('base64url');
 
@@ -250,7 +260,8 @@ const handleAegisPaymentCaptureCompleted = async (webhookEvent) => {
     // already-Completed orders means no double-send between the two paths.
     try {
       await emailService.sendAegisOrderConfirmationEmail(order, {
-        downloadUrl: aegisDownloadUrlFor(order.downloadToken)
+        downloadUrl: aegisDownloadUrlFor(order.downloadToken),
+        installUrl: aegisInstallerUrlFor(order.downloadToken)
       });
     } catch (emailError) {
       logError(emailError, { context: 'aegis_webhook_confirmation_email', orderId: order._id });
@@ -457,7 +468,8 @@ export const captureAegisOrderPayPalOrder = async (req, res) => {
     // fails the capture
     try {
       await emailService.sendAegisOrderConfirmationEmail(order, {
-        downloadUrl: aegisDownloadUrlFor(order.downloadToken)
+        downloadUrl: aegisDownloadUrlFor(order.downloadToken),
+        installUrl: aegisInstallerUrlFor(order.downloadToken)
       });
     } catch (emailError) {
       logError(emailError, { context: 'aegis_capture_confirmation_email', orderId: order._id });
@@ -485,10 +497,46 @@ export const captureAegisOrderPayPalOrder = async (req, res) => {
 };
 
 /**
- * GET /api/aegis-orders/download/:token
- * Automated kit delivery: streams the installer kit zip to the holder of
- * the per-order download token (emailed at capture; also returned by the
- * capture endpoint for the success page). Public by unguessable token —
+ * GET /api/aegis-orders/download/:token/meta
+ * Licence-link validation for the web installer's first step — confirms the
+ * token is live and reveals order info, without touching any file.
+ */
+export const getAegisDownloadMeta = async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token || token.length < 16 || !/^[A-Za-z0-9_-]+$/.test(token)) {
+      return res.status(400).json({ success: false, error: 'Invalid download link' });
+    }
+
+    const order = await AegisOrder.findOne({ downloadToken: token })
+      .select('orderNumber pixelModel amountGbp orderStatus paymentStatus');
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Download link not found' });
+    }
+
+    if (order.paymentStatus !== 'Completed' || ['Refunded', 'Cancelled'].includes(order.orderStatus)) {
+      return res.status(403).json({ success: false, error: 'This download link is no longer active. If you believe this is a mistake, contact support with your order number.' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        orderNumber: order.orderNumber,
+        pixelModel: order.pixelModel,
+        amountGbp: order.amountGbp
+      }
+    });
+  } catch (error) {
+    logError(error, { context: 'aegis_download_meta' });
+    res.status(500).json({ success: false, error: 'Server error occurred while checking the download link' });
+  }
+};
+
+/**
+ * GET /api/aegis-orders/download/:token[?file=apk]
+ * Automated kit delivery: streams the installer kit zip (default) or the raw
+ * signed APK (?file=apk, for the web installer's streaming install) to the
+ * holder of the per-order download token. Public by unguessable token —
  * same auth level as the rest of this flow. Refunded/cancelled orders
  * revoke access; the link otherwise lives as long as the licence does.
  */
@@ -509,9 +557,10 @@ export const downloadAegisKit = async (req, res) => {
       return res.status(403).json({ success: false, error: 'This download link is no longer active. If you believe this is a mistake, contact support with your order number.' });
     }
 
-    const kitPath = getAegisKitPath();
-    if (!fs.existsSync(kitPath)) {
-      logError(new Error(`Aegis installer kit missing at ${kitPath}`), { context: 'aegis_kit_download' });
+    const wantApk = req.query.file === 'apk';
+    const filePath = wantApk ? getAegisApkPath() : getAegisKitPath();
+    if (!fs.existsSync(filePath)) {
+      logError(new Error(`Aegis ${wantApk ? 'APK' : 'installer kit'} missing at ${filePath}`), { context: 'aegis_kit_download' });
       return res.status(503).json({ success: false, error: 'The installer kit is temporarily unavailable. Please try again shortly or contact support.' });
     }
 
@@ -521,15 +570,15 @@ export const downloadAegisKit = async (req, res) => {
       { $inc: { downloadCount: 1 }, $set: { lastDownloadedAt: new Date() } }
     );
 
-    const stat = fs.statSync(kitPath);
-    res.setHeader('Content-Type', 'application/zip');
+    const stat = fs.statSync(filePath);
+    res.setHeader('Content-Type', wantApk ? 'application/vnd.android.package-archive' : 'application/zip');
     res.setHeader('Content-Length', stat.size);
-    res.setHeader('Content-Disposition', `attachment; filename="${getAegisKitFilename()}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
     res.setHeader('Cache-Control', 'no-store');
 
-    logPaymentEvent('aegis_kit_downloaded', { orderId: order._id, orderNumber: order.orderNumber });
+    logPaymentEvent('aegis_kit_downloaded', { orderId: order._id, orderNumber: order.orderNumber, file: wantApk ? 'apk' : 'kit' });
 
-    fs.createReadStream(kitPath).pipe(res);
+    fs.createReadStream(filePath).pipe(res);
   } catch (error) {
     logError(error, { context: 'aegis_kit_download' });
     res.status(500).json({ success: false, error: 'Server error occurred during download' });

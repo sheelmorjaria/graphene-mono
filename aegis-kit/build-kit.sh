@@ -36,6 +36,9 @@ cp "$ENGINE/docs/PROVISIONING.md" "$ENGINE/docs/FEATURE-MAP.md" \
 [ -f "$ENGINE/provision/provision.sh" ] && cp "$ENGINE/provision/provision.sh" "$STAGE/"
 
 (cd "$TMP" && zip -qr "$KIT_DIR/aegis-installer-kit.zip" aegis-installer-kit)
+# Keep the signed APK beside the kit — the web installer streams this file
+# (GET /api/aegis-orders/download/:token?file=apk).
+cp "$KIT_DIR/aegis-engine-signed.apk" "$KIT_DIR/aegis-engine.apk"
 rm -f "$KIT_DIR/aegis-engine-signed.apk"
 
-echo "✅ Kit rebuilt: $KIT_DIR/aegis-installer-kit.zip ($(du -h "$KIT_DIR/aegis-installer-kit.zip" | cut -f1))"
+echo "✅ Kit rebuilt: $KIT_DIR/aegis-installer-kit.zip ($(du -h "$KIT_DIR/aegis-installer-kit.zip" | cut -f1)) + aegis-engine.apk"

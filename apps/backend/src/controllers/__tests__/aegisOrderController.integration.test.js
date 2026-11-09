@@ -15,6 +15,7 @@ vi.mock('../../services/paypalWebhookVerificationService.js', () => ({
 }));
 
 const KIT_BYTES = Buffer.from('PK\x03\x04aegis-test-kit-zip-payload');
+const APK_BYTES = Buffer.from('PK\x03\x04aegis-test-apk-payload');
 
 /**
  * Integration tests for the Aegis Hardening Suite order flow (£99 one-off
@@ -32,6 +33,7 @@ describe('Aegis Order API (integration)', () => {
   let app;
   let paidOrder;
   let kitPath;
+  let apkPath;
 
   beforeAll(async () => {
     app = express();
@@ -39,6 +41,8 @@ describe('Aegis Order API (integration)', () => {
     app.use('/api/aegis-orders', aegisOrderRoutes);
     kitPath = path.join(os.tmpdir(), `aegis-test-kit-${Date.now()}.zip`);
     fs.writeFileSync(kitPath, KIT_BYTES);
+    apkPath = path.join(os.tmpdir(), `aegis-test-apk-${Date.now()}.apk`);
+    fs.writeFileSync(apkPath, APK_BYTES);
     // Build the schema indexes the way the full CI run does (earlier suites
     // sync them; running this file alone would otherwise skip them) — the
     // seed below must satisfy the unique variations.sku index.
@@ -51,6 +55,7 @@ describe('Aegis Order API (integration)', () => {
     process.env.PAYPAL_ENVIRONMENT = 'sandbox';
     process.env.PAYPAL_AEGIS_WEBHOOK_ID = 'test-aegis-webhook-id';
     process.env.AEGIS_KIT_PATH = kitPath;
+    process.env.AEGIS_APK_PATH = apkPath;
     process.env.BACKEND_URL = 'https://api.test.example';
     vi.mocked(verifyPayPalWebhookSignature).mockResolvedValue({ verified: true });
 
@@ -395,6 +400,87 @@ describe('Aegis Order API (integration)', () => {
       } finally {
         process.env.AEGIS_KIT_PATH = original;
       }
+    });
+
+    it('streams the raw APK for the web installer with ?file=apk', async () => {
+      await paidOrderWithToken();
+
+      const binaryParser = (res, callback) => {
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => callback(null, Buffer.concat(chunks)));
+      };
+
+      const response = await request(app)
+        .get('/api/aegis-orders/download/valid-download-token-0123456789abcdef?file=apk')
+        .parse(binaryParser);
+
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toBe('application/vnd.android.package-archive');
+      expect(response.headers['content-length']).toBe(String(APK_BYTES.length));
+      expect(response.body.equals(APK_BYTES)).toBe(true);
+
+      const saved = await AegisOrder.findOne({ downloadToken: 'valid-download-token-0123456789abcdef' });
+      expect(saved.downloadCount).toBe(1);
+    });
+
+    it('503s when the APK file is missing but the kit zip exists', async () => {
+      await paidOrderWithToken();
+      const original = process.env.AEGIS_APK_PATH;
+      process.env.AEGIS_APK_PATH = path.join(os.tmpdir(), 'aegis-apk-that-does-not-exist.apk');
+
+      try {
+        const response = await request(app)
+          .get('/api/aegis-orders/download/valid-download-token-0123456789abcdef?file=apk');
+
+        expect(response.status).toBe(503);
+      } finally {
+        process.env.AEGIS_APK_PATH = original;
+      }
+    });
+  });
+
+  describe('GET /api/aegis-orders/download/:token/meta (web installer validation)', () => {
+    const paidOrderWithToken = async (overrides = {}) => {
+      return AegisOrder.create({
+        customerEmail: 'kit@example.com',
+        pixelModel: '7 Pro',
+        amountGbp: 99.00,
+        orderStatus: 'Paid',
+        paymentStatus: 'Completed',
+        downloadToken: 'valid-download-token-0123456789abcdef',
+        ...overrides
+      });
+    };
+
+    it('returns order details for a live token without touching files', async () => {
+      await paidOrderWithToken();
+
+      const response = await request(app).get('/api/aegis-orders/download/valid-download-token-0123456789abcdef/meta');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.orderNumber).toMatch(/^AEG-/);
+      expect(response.body.data.pixelModel).toBe('7 Pro');
+      expect(response.body.data.amountGbp).toBe(99.00);
+
+      // Meta checks never count as downloads
+      const saved = await AegisOrder.findOne({ downloadToken: 'valid-download-token-0123456789abcdef' });
+      expect(saved.downloadCount).toBe(0);
+    });
+
+    it('404s an unknown token', async () => {
+      const response = await request(app).get('/api/aegis-orders/download/no-such-token-0123456789abcdef/meta');
+      expect(response.status).toBe(404);
+    });
+
+    it('403s a refunded order', async () => {
+      await paidOrderWithToken({ paymentStatus: 'Refunded', orderStatus: 'Refunded' });
+
+      const response = await request(app).get('/api/aegis-orders/download/valid-download-token-0123456789abcdef/meta');
+
+      expect(response.status).toBe(403);
+      expect(response.body.error).toMatch(/no longer active/i);
     });
   });
 });

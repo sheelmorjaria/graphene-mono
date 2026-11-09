@@ -1280,7 +1280,7 @@ class EmailService {
   // Aegis order payment confirmation: sent when an Aegis Hardening Suite
   // licence order is paid. Carries the per-order installer-kit download
   // link (automated delivery) — the receipt AND the delivery in one email.
-  async sendAegisOrderConfirmationEmail(order, { downloadUrl } = {}) {
+  async sendAegisOrderConfirmationEmail(order, { downloadUrl, installUrl } = {}) {
     try {
       const customerEmail = order?.customerEmail;
       if (!customerEmail) {
@@ -1313,9 +1313,13 @@ class EmailService {
         ${downloadUrl ? `
         <div class="order-details">
           <h3>Your Installer Kit</h3>
-          <p>Download your installer kit and setup guide:</p>
-          <p style="margin: 16px 0;"><a href="${downloadUrl}" style="display: inline-block; background: #22d3ee; color: #0a0f14; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Download the Aegis installer kit</a></p>
-          <p style="font-size: 13px; color: #94a3b8;">This is your personal download link for order <strong>${order.orderNumber}</strong> — keep this email. It stays active for the lifetime of your licence and always serves the latest kit version.</p>
+          <p>Install Aegis on your phone right from this browser — no terminal needed:</p>
+          <p style="margin: 16px 0;">
+            ${installUrl ? `<a href="${installUrl}" style="display: inline-block; background: #22d3ee; color: #0a0f14; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-right: 12px;">Install in your browser</a>` : ''}
+            <a href="${downloadUrl}" style="display: inline-block; border: 1px solid #22d3ee; color: #22d3ee; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Download the kit (ZIP)</a>
+          </p>
+          <p style="font-size: 13px; color: #94a3b8;">The browser installer needs Chrome or Edge on a computer. Prefer a terminal? The ZIP contains the APK, provisioning script and full setup guide.</p>
+          <p style="font-size: 13px; color: #94a3b8;">These are your personal links for order <strong>${order.orderNumber}</strong> — keep this email. They stay active for the lifetime of your licence and always serve the latest kit version.</p>
         </div>
         ` : ''}
 

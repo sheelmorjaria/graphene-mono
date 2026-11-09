@@ -6,6 +6,7 @@ import {
   getAegisOrderSummary,
   createAegisOrderPayPalOrder,
   captureAegisOrderPayPalOrder,
+  getAegisDownloadMeta,
   downloadAegisKit
 } from '../controllers/aegisOrderController.js';
 
@@ -34,6 +35,8 @@ router.post('/:id/paypal/create-order', createAegisOrderPayPalOrder);
 router.post('/:id/paypal/capture', captureAegisOrderPayPalOrder);
 
 // Automated kit delivery (public by unguessable per-order token)
+// ?file=apk streams the raw signed APK for the web installer
+router.get('/download/:token/meta', getAegisDownloadMeta);
 router.get('/download/:token', downloadAegisKit);
 
 export default router;
