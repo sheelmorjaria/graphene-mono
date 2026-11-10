@@ -66,12 +66,19 @@ export class AegisAdbClient {
     this.adb = adb;
     this.device = device;
 
-    const [deviceModel, grapheneosVersion] = await Promise.all([
+    const [deviceModel, grapheneosProp, incremental] = await Promise.all([
       this.getProperty('ro.product.device'),
-      this.getProperty('ro.grapheneos.version')
+      this.getProperty('ro.grapheneos.version'),
+      this.getProperty('ro.build.version.incremental')
     ]);
     this.deviceModel = deviceModel;
-    this.grapheneosVersion = grapheneosVersion;
+    // GrapheneOS detection (warning-only): most builds expose
+    // ro.grapheneos.version; some expose no graphene-named property at all
+    // and carry the release date-stamp only in the incremental
+    // (2026110200 = YYYYMMDDNN — stock Pixel incrementals are short random
+    // digit strings, never this shape).
+    this.grapheneosVersion = grapheneosProp ||
+      (/^20\d{8}$/.test(incremental || '') ? incremental : '');
 
     log(`Connected: ${device.serial} (ro.product.device: ${deviceModel || 'unknown'})`);
     return this.describeDevice();
